@@ -122,6 +122,18 @@ the raw Markdown body separately. Progress and diagnostics use stderr.
 
 ## Design and tracking
 
+The [M0 contract baseline](docs/contracts/README.md) records the command matrix,
+upstream prerequisites, shared client behavior, daemon protocol and acceptance review.
+It is a design baseline; it does not provide runnable CLI or daemon binaries.
+
+Runtime decisions:
+
+- [Daemon protocol](docs/ADRs/0001-daemon-protocol.md)
+- [Runtime ownership and recovery](docs/ADRs/0002-runtime-ownership.md)
+- [Runtime assets and packaging](docs/ADRs/0003-runtime-assets-packaging.md)
+- [Rootless networking and volumes](docs/ADRs/0004-rootless-network-volumes.md)
+- [Platform backends and validation](docs/ADRs/0005-platform-backends.md)
+
 The [product requirements](docs/prd.md) define the command matrix, transport
 rules, authentication, runtime architecture, embedding tradeoffs, storage,
 delivery milestones, and release acceptance criteria.
