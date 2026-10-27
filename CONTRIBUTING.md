@@ -14,9 +14,10 @@ Scope is optional; examples include `docs: define M0 contracts` and
 `feat(auth): add login discovery`.
 
 The PR-title workflow validates metadata only, with read-only access and no code
-checkout. It runs on PR creation, title edits, updates, and reopening. Merge-queue
-entries report success because the PR title has already been checked. The workflow
-becomes active after it lands on the default branch.
+checkout. It uses `pull_request`, matching GitStore, and runs on PR creation, title
+edits, updates, and reopening using the PR's workflow definition. Merge-queue entries
+report success because the PR title has already been checked. Fork-token restrictions
+for the pinned title action require separate verification before promising fork support.
 
 ## Application CI
 

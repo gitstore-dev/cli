@@ -90,7 +90,8 @@ git diff --check
 Expected: only PR-title validation, accepted Conventional Commit types with optional scope,
 metadata-only execution, read-only permissions, no contributor checkout, and no new
 documentation/workflow or application jobs. Whitespace checks are a local review aid.
-GitHub-hosted behavior requires an actual PR after the workflow lands on the default branch;
+The workflow uses `pull_request`, matching GitStore, and can be exercised by the PR
+introducing it. GitHub-hosted behavior still requires an actual workflow run;
 do not label local inspection as a hosted pass.
 
 ## Completion and limits

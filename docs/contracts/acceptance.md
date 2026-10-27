@@ -82,7 +82,7 @@ Date/reviewer/evidence type are inherited from the record header.
 
 | Scenario | Requirements | Artifacts / precondition | Action | Expected and observed result | Actual result | Open findings / later gate |
 | --- | --- | --- | --- | --- | --- | --- |
-| SCN-030 | FR-012–FR-013, SC-004 | Existing pr-title-lint.yml and CONTRIBUTING.md | Inspected workflow triggers/permissions/action and listed workflow files | Only PR Title Lint exists; Conventional Commit types and optional scopes retained, metadata-only pull_request_target, pull-requests: read, no checkout, five-minute timeout and merge-group no-op. Contributor guidance defers Markdown/workflow/application CI until useful targets. | pass | GitHub-hosted run not performed; workflow activates after default-branch landing. |
+| SCN-030 | FR-012–FR-013, SC-004 | Existing pr-title-lint.yml and CONTRIBUTING.md | Inspected workflow triggers/permissions/action and listed workflow files | Only PR Title Lint exists; Conventional Commit types and optional scopes retained, metadata-only pull_request matching GitStore, pull-requests: read, no checkout, five-minute timeout and merge-group no-op. Contributor guidance defers Markdown/workflow/application CI until useful targets. | pass | GitHub-hosted run not yet verified for the corrected pull_request trigger; fork-token behavior requires separate verification. |
 
 
 ## Final requirement coverage
