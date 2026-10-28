@@ -19,7 +19,7 @@ Tracking issue state is unverified. M0 completion permits owned release prerequi
 | DEP-010 | Product transfer destination/conflict/atomicity contract | CMD-058 | GitStore catalogue API maintainers | M3 | open | [reference](https://github.com/gitstore-dev/cli/issues/4) |
 | DEP-011 | Publication/release readiness and rollback contract | CMD-073, CMD-074 | GitStore catalogue/controller maintainers | M3 | open | No existing tracking reference verified |
 | DEP-012 | Daemon execution, protocol and recovery validation | CMD-005, CMD-046, CMD-047, CMD-048, CMD-049, CMD-050, CMD-051, CMD-052, CMD-053, CMD-054, CMD-055, CMD-056, CMD-057 | CLI/daemon maintainers | M2 | open | [reference](../ADRs/0002-runtime-ownership.md) |
-| DEP-013 | Distribution/image/library packaging experiments | CMD-046, CMD-047, CMD-048, CMD-049, CMD-050, CMD-051, CMD-052, CMD-083 | CLI runtime/distribution maintainers | M2 | open | [reference](../ADRs/0003-runtime-assets-packaging.md) |
+| DEP-013 | Artifact provenance and distribution/image/library packaging experiments | First M1 CLI release; CMD-046, CMD-047, CMD-048, CMD-049, CMD-050, CMD-051, CMD-052, CMD-083 runtime assets | CLI runtime/distribution maintainers | M1 artifact provenance; M2 runtime packaging | open | [reference](../ADRs/0003-runtime-assets-packaging.md) |
 | DEP-014 | Rootless networking/volumes and optional CSI experiments | CMD-046, CMD-047, CMD-048, CMD-049, CMD-050, CMD-051, CMD-052, CMD-075 | CLI runtime/storage maintainers | M2 baseline; M3 CSI | open | [reference](../ADRs/0004-rootless-network-volumes.md) |
 | DEP-015 | Platform backend packaging and support validation | CMD-046, CMD-047, CMD-048, CMD-049, CMD-050, CMD-051, CMD-052 | CLI platform/distribution maintainers | M2 macOS; Linux host matrix | open | [reference](../ADRs/0005-platform-backends.md) |
 | DEP-016 | End-to-end incremental Git progress through API/proxy | CMD-045 | GitStore API/Git and deployment maintainers | M1 streaming claim | open | [reference](https://github.com/gitstore-dev/cli/issues/4) |
@@ -76,6 +76,12 @@ Prove C/Rust wire round trips, peer auth, parser bounds/fuzz/sanitizers, durable
 ## DEP-013
 
 Execute EXP-003A/B: compare linking/license/size and maintained image pipelines, private auth redirects, safe unpack, offline/integrity/cache failures. Provision only verified profile assets; no claimed standalone installation yet.
+
+Added 2026-10-28: EXP-003C also gates artifact provenance beginning with the first M1
+CLI release. Generate digest-bound evidence in the trusted build, enforce producer/
+workflow/source policy before publication or activation, and prove tampering/wrong-
+identity/missing-evidence/offline-trust failures. Preserve third-party provenance without
+misrepresenting repackaged assets as GitStore-built. All three experiments remain not-run.
 
 ## DEP-014
 

@@ -29,6 +29,11 @@ workspace exists, then build and test the C daemon, including sanitizers, when
 its targets exist. Reuse applicable GitStore conventions at that point. Each job
 should validate implemented behavior or a concrete release requirement.
 
+When build/release targets exist, add artifact provenance generation and verification
+alongside publication. Follow [ADR 0003](docs/ADRs/0003-runtime-assets-packaging.md)
+for trusted build identities, digest binding, first-use/offline verification and the
+attestation release gate. No attestation-only workflow is needed before artifacts exist.
+
 Before advertising runtime support, add C address/undefined-behavior sanitizer and
 protocol fuzz/resource-bound tests, plus identity isolation, recovery, retained-data,
 single-writer and host/backend compatibility checks appropriate to the implementation.

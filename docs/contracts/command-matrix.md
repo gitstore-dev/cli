@@ -46,8 +46,8 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-001 | gs context list | list saved installation contexts | installation/account | LOCAL | Client context store | supported-contract | M1 | EVD-003 | — |
 | CMD-002 | gs context show | show saved installation contexts | installation/account | LOCAL | Client context store | supported-contract | M1 | EVD-003 | — |
 | CMD-003 | gs context use | use saved installation contexts | installation/account | LOCAL | Client context store | supported-contract | M1 | EVD-003 | — |
-| CMD-004 | gs config validate | Validate effective non-secret configuration | client or selected deployment | LOCAL | Client layering; component schema must match selected version | supported-contract | M1 | EVD-003, EVD-023 | — |
-| CMD-005 | gs controller config validate | Validate effective non-secret configuration | client or selected deployment | LOCAL | Client layering; component schema must match selected version | supported-contract | M2 | EVD-003, EVD-023 | DEP-012 |
+| CMD-004 | gs config validate | Validate effective non-secret CLI configuration | client context/configuration | LOCAL | Client configuration layering and source reporting | supported-contract | M1 | EVD-003 | — |
+| CMD-005 | gs <component> config validate | Validate effective non-secret component configuration | selected component and deployment/configuration | LOCAL | Selected component's versioned validation contract and existing layering | supported-contract | M2 | EVD-003, EVD-023 | DEP-012 |
 | CMD-006 | gs auth login | login selected identity | installation/issuer/account | AUTH | login(input: LoginInput!) | supported-contract | M1 | EVD-010, EVD-003 | DEP-001 |
 | CMD-007 | gs auth logout | logout selected identity | installation/issuer/account | AUTH | logout | supported-contract | M1 | EVD-010, EVD-003 | DEP-001 |
 | CMD-008 | gs auth refresh | refresh selected identity | installation/issuer/account | AUTH | refreshToken(input: RefreshTokenInput!) | supported-contract | M1 | EVD-010, EVD-003 | DEP-001 |
@@ -128,6 +128,10 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-083 | Registry credential setup (syntax gated) | Provide private image credentials | registry/account, separate from API identity | GATED | Image backend challenge/token scope contract | blocked | M2 | EVD-022 | DEP-013 |
 
 ## Inventory boundaries
+
+CMD-005 is a parameterized command family for component configuration validation,
+not a controller-only operation. Resolve `<component>` to the component's own versioned
+configuration contract; do not reuse controller defaults for other components.
 
 The first-release resource target is five Namespace operations, five Repository
 operations, six each for Product/Category/Collection, and two File operations: 30 rows.
