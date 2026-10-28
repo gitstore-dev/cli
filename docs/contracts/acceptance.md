@@ -140,3 +140,11 @@ release tests. This package makes no performance, platform or executable-release
 Repository setup review: this is a Git repository with an existing .gitignore; M0 creates
 only versioned documents. No Dockerfile, package/tool configuration, Terraform or Helm
 project exists, so no unrelated ignore files or language build scaffolding were added.
+
+## Follow-up design amendment — 2026-10-28
+
+Artifact-attestation requirements were added to PRD DIST 1, ADR-0003, DEP-013 and
+contributor guidance after the M0 review above. Changed document links and whitespace
+were checked locally; the workflow directory still contains only PR-title lint.
+EXP-003C is not-run: no artifact was built, attested or verified. The original M0
+review outcomes do not claim validation of that future release implementation.

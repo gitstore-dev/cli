@@ -3,6 +3,8 @@
 The command line interface and container runtime daemon for
 [GitStore](https://github.com/gitstore-dev/GitStore).
 
+`gs` stands for **G**it**S**tore. Environment variables use the `GITSTORE_` prefix.
+
 **Status: product design.** This repository currently contains requirements and
 documentation. The commands below describe the intended interface; no CLI or
 daemon release is available from this repository yet.

@@ -221,3 +221,10 @@ workflow; no application or Markdown/workflow lint CI was introduced.
 
 M0 is complete as a contract milestone. M1 and M2 remain separate implementation work,
 and named upstream prerequisites do not authorize changes to GitStore here.
+
+### Follow-up: artifact attestations (2026-10-28)
+
+PRD DIST 1 and ADR-0003 now extend DEP-013 with build-provenance generation and
+verification, starting with the first M1 artifact release. EXP-003C covers file/OCI/offline
+verification and negative cases; it is not-run. This is a release-design amendment,
+not an attestation-generation result or a new M0 CI workflow.

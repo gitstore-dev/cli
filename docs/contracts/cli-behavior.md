@@ -13,10 +13,12 @@ write paths, direct datastore access, server repository writes or internal gRPC 
 Remote catalogue operations never initialize the local runtime.
 
 Precedence is explicit flags, environment, selected context/configuration, defaults.
+GitStore environment variables use the `GITSTORE_` prefix.
 Accepted selector flags are `--context`, `--endpoint`, `--account`, `--namespace`,
 `--repository`, `--ref` and `--deployment`; their environment equivalents are
-`GS_CONTEXT`, `GS_ENDPOINT`, `GS_ACCOUNT`, `GS_NAMESPACE`, `GS_REPOSITORY`, `GS_REF`
-and `GS_DEPLOYMENT`. Empty required values and contradictory explicit identities fail
+`GITSTORE_CONTEXT`, `GITSTORE_ENDPOINT`, `GITSTORE_ACCOUNT`, `GITSTORE_NAMESPACE`,
+`GITSTORE_REPOSITORY`, `GITSTORE_REF` and `GITSTORE_DEPLOYMENT`. Empty required values
+and contradictory explicit identities fail
 with exit 2. An endpoint override cannot reuse another installation's credentials;
 require a matching account entry or protected explicit credential. Normalize trailing
 slashes without discarding reverse-proxy base paths. Require HTTPS except an explicit
@@ -28,6 +30,12 @@ same store atomically; switching account cannot silently cross installations. `c
 show` and validation show effective non-secret values and their source. Missing context
 or ambiguous accounts fail instead of selecting an arbitrary saved entry. Component
 configuration validation must preserve its selected server version's layering rules.
+
+`gs config validate` validates CLI configuration. `gs <component> config validate`
+validates the named component using its own versioned schema and existing layering,
+and reports effective non-secret settings, sources and actionable errors. This family
+is not restricted to the controller. Unknown component names fail with exit 2; a known
+component without an available validation contract fails unsupported with exit 6.
 
 Namespace is cluster-scoped: select by name or exact Relay ID. Namespaced kinds use
 namespace/name or their typed Relay ID; resolve names to exact identities before delete.
@@ -88,7 +96,7 @@ remains on stdout. Honor `NO_COLOR`; redirected output has no ANSI styling. Mark
 is rendered only on a TTY; redirection emits exact raw body. Unsupported formats fail
 before side effects. Streaming JSON is NDJSON, not an unterminated JSON array.
 
-`--non-interactive` or `GS_NO_INPUT=1` never prompts or opens a browser. Missing
+`--non-interactive` or `GITSTORE_NO_INPUT=1` never prompts or opens a browser. Missing
 credentials, target selection or destructive-action choices fail before submission.
 Explicit delete and stop with a named target are sufficient intent; scripts cannot
 rely on interactive defaults. First-use runtime provisioning requires explicit
