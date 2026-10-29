@@ -30,7 +30,9 @@ jobs:
       - run: cargo build --workspace --locked
       - name: Install pinned Postman CLI
         if: runner.os == 'Linux'
-        run: npm install --global postman-cli@1.75.0
+        run: |
+          npm install --global --prefix "$RUNNER_TEMP/postman" postman-cli@1.75.0
+          echo "$RUNNER_TEMP/postman/bin" >> "$GITHUB_PATH"
       - name: Controlled public-contract simulation
         if: runner.os == 'Linux'
         run: scripts/test-remote.sh
