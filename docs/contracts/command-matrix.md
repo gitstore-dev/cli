@@ -27,6 +27,7 @@ not a verified release. Source evidence is the fixed committed snapshot in the i
 | WATCH | gs + API / public GraphQL subscription | Namespace/selector/cursor → NDJSON events or human stream | Server watch permission and journal readiness; cursor opaque and distinct from object version; expiry requires explicit resnapshot. |
 | GRAPHQL | gs + API / GraphQL | query, operationName, typed/literal variables → faithful JSON response by default | Selected credentials and server field authorization; no blind mutation retry; HTTP 200 errors still fail. |
 | GIT | gs + public API Git front door / Git Smart HTTP | Worktree/remote/ref → submitted commit plus explicit admission/readiness states | Advertised Git credential mechanism only; fast-forward/no implicit edits; accepted push is not admission. |
+| CLONE | gs + public API Git front door / Git Smart HTTP | Explicit repository/destination/remote name → local clone | Selected installation/namespace and supported Git credentials; no server writes; local clone completion only. |
 | DAEMON | gs + gitstored / owner-only local socket | Profile/deployment/method parameters → operation/state/endpoints or bounded logs | Same OS peer; serialized deployment mutation, durable dedupe; current state distinct from acceptance/readiness. |
 | EXPORT | gs + API / underlying read/list | Format and selector → hydrated or authoring representation | Underlying read authorization; preserve versions/body and consistency limits; conformance gate before lossless claims. |
 | GATED | Explicit component/driver contract / advertised transport only | Future defined shape → no command offered until gate passes | No guessed credentials, mutation mapping, transfer atomicity or privilege. |
@@ -63,7 +64,7 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-018 | gs delete namespace <name> | delete namespace | cluster; name or Relay ID | WRITE | deleteNamespace(input: DeleteNamespaceInput!); request foreground termination, not physical cleanup | supported-contract | M1 | EVD-011 | — |
 | CMD-019 | gs create -f <repository.md> | create repository | namespace/name or Relay ID | WRITE | createRepository(input: CreateRepositoryInput!) | supported-contract | M1 | EVD-012 | DEP-005 |
 | CMD-020 | gs read repository <name> | read repository | namespace/name or Relay ID | READ | repository(by: RepositoryBy!) | supported-contract | M1 | EVD-012 | — |
-| CMD-021 | gs list repository | list repository | namespace/name or Relay ID | READ | repositorys(Relay pagination) | supported-contract | M1 | EVD-012 | — |
+| CMD-021 | gs list repository | list repository | namespace/name or Relay ID | READ | repositories(Relay pagination) | supported-contract | M1 | EVD-012 | — |
 | CMD-022 | gs update -f <repository.md> | update repository | namespace/name or Relay ID | WRITE | updateRepository(input: UpdateRepositoryInput!) | blocked | M1 | EVD-012 | DEP-009, DEP-005 |
 | CMD-023 | gs delete repository <name> | delete repository | namespace/name or Relay ID | WRITE | deleteRepository(input: DeleteRepositoryInput!); request foreground termination, not physical cleanup | supported-contract | M1 | EVD-012 | — |
 | CMD-024 | gs create -f <product.md> | create product | namespace/name or Relay ID | WRITE | createProduct(input: CreateProductInput!) | supported-contract | M1 | EVD-013 | DEP-003 |
@@ -126,6 +127,7 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-081 | gs read <kind> <name> -o markdown | Present raw/rendered resource body | same selector as underlying read/list | EXPORT | Only fields exposed by supported read/list; no status reconstruction | blocked | M1 | EVD-003, EVD-011, EVD-012, EVD-013, EVD-014, EVD-015, EVD-016 | DEP-005 |
 | CMD-082 | Authoring Markdown export (syntax gated) | Re-importable frontmatter plus raw body | same selector as underlying read/list | EXPORT | Only fields exposed by supported read/list; no status reconstruction | blocked | M1 | EVD-003, EVD-011, EVD-012, EVD-013, EVD-014, EVD-015, EVD-016 | DEP-005 |
 | CMD-083 | Registry credential setup (syntax gated) | Provide private image credentials | registry/account, separate from API identity | GATED | Image backend challenge/token scope contract | blocked | M2 | EVD-022 | DEP-013 |
+| CMD-084 | gs repository clone <repository> [directory] [--remote <name>] | Clone with gitstore as the default remote; allow override and configure branch tracking | selected installation/namespace/repository and local destination | CLONE | Smart HTTP info/refs and upload-pack; reject nonempty destination; see CLI behavior | supported-contract | M1 | EVD-018, EVD-003 | — |
 
 ## Inventory boundaries
 

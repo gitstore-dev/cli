@@ -1,0 +1,15 @@
+$kind: http-example
+name: Product inspection
+request:
+  method: POST
+  url: '{{baseUrl}}/graphql'
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {"data":{"product":{"id":"opaque-fixture-id","apiVersion":"catalog.gitstore.dev/v1beta1","kind":"Product","metadata":{"name":"fixture","namespace":"shop","resourceVersion":"1","revision":null},"body":"fixture body\n","spec":{"title":"Fixture"}}}}

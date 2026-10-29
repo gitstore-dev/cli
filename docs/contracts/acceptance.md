@@ -57,6 +57,22 @@ serve with datastore/detach/add options, -f/-F GraphQL inputs, and read/list for
 variants. Read/list export is an overlay rather than another server endpoint. Namespace/
 Repository watch are observed upstream but not silently added to the initial product target.
 
+### Clone convention addendum — 2026-10-29
+
+The original inventory above records the 2026-10-27 baseline. CMD-084 adds one
+positive client command: the current matrix has 84 records, of which 83 are positive
+and one is the File-list exclusion. The direct GraphQL and Git category now has three
+commands (GraphQL, sync, clone).
+
+Document review compared README examples, PRD GIT 5, the shared CLI behavior, the
+CLI contract design, and CMD-084. They specify `gitstore` by default, `--remote`
+overrides including `origin`, tracking of an existing checked-out branch, no extra
+remote alias, and rejection of a nonempty destination. Sync selects by remote URL
+and installation; renamed remotes remain eligible and `gitstore` does not resolve
+ambiguity. Review result: pass for document consistency. M1 must verify these cases
+with executable clone/sync checks, including an empty repository and a misleading
+`gitstore` remote URL. No executable behavior is claimed.
+
 ## US2 — Daemon and runtime decisions
 
 All lifecycle results are paper walkthroughs, using the published messages/ownership

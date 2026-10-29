@@ -1,0 +1,53 @@
+name: CI Integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'scripts/test_live.py'
+      - 'scripts/test-integration.sh'
+      - 'scripts/test_integration.py'
+      - 'tests/integration/**'
+      - '.github/workflows/ci-integration.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'crates/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'scripts/test_live.py'
+      - 'scripts/test-integration.sh'
+      - 'scripts/test_integration.py'
+      - 'tests/integration/**'
+      - '.github/workflows/ci-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: CLI against GitStore latest (memdb)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: rustup show
+      - name: Build CLI and image integration test
+        run: |
+          cargo build --locked -p gs
+          cargo test --locked -p gs --test images --no-run
+      - name: Pull, bootstrap and test published images
+        run: scripts/test-integration.sh

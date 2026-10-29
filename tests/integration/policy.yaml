@@ -1,0 +1,41 @@
+# Disposable integration identities only; never mount into another installation.
+apiVersion: rbac.authorization.gitstore.dev/v1beta1
+kind: RbacLocalConfiguration
+defaultDeny: true
+clusterRoles:
+  ci-admin:
+    rules:
+      - resources: ['*']
+        verbs: ['*']
+  controller:
+    rules:
+      - resources: [namespace, repository, categoryTaxonomy, product, file]
+        verbs: [read, list, watch]
+      - resources: [namespace/status, repository/status, categoryTaxonomy/status, product/status, file/status]
+        verbs: [write]
+      - resources: [namespace, repository, categoryTaxonomy, product]
+        verbs: [purge]
+      - resources: [namespace/system-repository]
+        verbs: [provision]
+      - resources: [repository]
+        verbs: [create]
+      - resources: [product/management]
+        verbs: [read, list]
+      - resources: [serviceAccount/token]
+        verbs: [issue]
+        resourceNames: [gitstore-controller-manager]
+  api-internal:
+    rules:
+      - resources: [repository]
+        verbs: [create, delete]
+      - resources: [repository/contents]
+        verbs: [read, write]
+roles: {}
+clusterRoleBindings:
+  - roleRef: {kind: ClusterRole, name: ci-admin}
+    subjects: [{kind: User, name: admin}]
+  - roleRef: {kind: ClusterRole, name: controller}
+    subjects: [{kind: ServiceAccount, name: gitstore-controller-manager}]
+  - roleRef: {kind: ClusterRole, name: api-internal}
+    subjects: [{kind: User, name: 'system:api'}]
+roleBindings: []

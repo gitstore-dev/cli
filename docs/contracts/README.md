@@ -201,10 +201,12 @@ accepted M0 design/evaluation plans, 2026-10-27. No runtime behavior has been te
 
 ## Review outcome and remaining gates
 
-The completed package contains 83 command/capability records (37 supported-contract,
+The package now contains 84 command/capability records (38 supported-contract,
 27 blocked, 19 deferred), 17 evidence records, 17 dependencies, five ADRs and 22 protocol
-JSON fixtures. The matrix includes 82 positive/proposed/local representation records
+JSON fixtures. The matrix includes 83 positive/proposed/local representation records
 and one explicit negative File-list inference; exports are overlays, not extra endpoints.
+The 2026-10-29 clone addition (CMD-084) defines the client remote-naming convention
+and reuses the existing Git read transport evidence; it adds no server capability.
 All 14 functional requirements and four success criteria have document-review evidence.
 See SCN-001–SCN-014, SCN-020–SCN-031 in the acceptance record for exact observations.
 

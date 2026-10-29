@@ -8,7 +8,7 @@ client behavior, never new server capabilities. EVD-003 identifies this design.
 ## Selection and transport
 
 Resource CRUD/read/watch and direct GraphQL use the public installation endpoint;
-repository sync uses Git; lifecycle/migration uses the daemon. No fallback between
+repository clone/sync uses Git; lifecycle/migration uses the daemon. No fallback between
 write paths, direct datastore access, server repository writes or internal gRPC calls.
 Remote catalogue operations never initialize the local runtime.
 
@@ -134,11 +134,28 @@ partial data. Mutations have no automatic retries without proven server idempote
 Transient read retries are capped at two additional attempts within the caller deadline,
 honor Retry-After when it fits, and never change credentials or transport.
 
+## Repository cloning
+
+`gs repository clone <repository> [directory] [--remote <name>]` resolves the explicit
+repository in the selected installation and namespace, then clones through its public
+Git endpoint using supported Git credentials. The destination defaults to the repository
+name. The remote defaults to `gitstore`; `--remote origin` or another valid Git remote
+name overrides it. Validate the remote name before cloning. Create only the chosen
+remote, with no additional `origin` alias. When a branch is checked out, configure it
+to track the corresponding branch on that remote. An empty repository has no branch
+to check out or track yet. Reject a nonempty destination without overwriting contents.
+Clone success means the local Git clone completed; it submits no admission or
+reconciliation operation. Git progress goes to stderr.
+
 ## Repository synchronisation
 
 Resolve from the current Git worktree even in a subdirectory. An explicit repository
 overrides inference; `--remote` and `--ref` resolve remaining ambiguity. Validate remote
-against the selected installation and resolve the full ref. Fail on no worktree/remote,
+against the selected installation and resolve the full ref. Determine eligible remotes
+from their URLs, regardless of name: `origin`, `gitstore`, and user-chosen names are
+equally eligible when they resolve to the intended installation/repository. The name
+`gitstore` alone neither establishes identity nor breaks ambiguity between eligible
+remotes. Fail on no worktree/remote,
 multiple eligible targets, mismatched installation or dirty worktree. No context fallback
 that silently targets another repository.
 

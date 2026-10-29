@@ -1,0 +1,11 @@
+name: m1
+source: GitStore b6c866421dbcf43994565f847553c1f6aec83994 public GraphQL schemas
+scope: Client serialization, response handling, isolation and transport failures only
+ownerMockSearch: skipped; no owning workspace is bound, local contract-derived mock used
+claims:
+  - status: verified-in-controlled-scenarios
+    verification: scripts/test-remote.sh passed with 36 actual CLI requests plus 2 saved collection requests on 2026-10-29
+    source: specs/002-m1-remote-cli/contracts/upstream.md
+limitations:
+  - Does not validate real provider credentials, admission, readiness or production compatibility
+  - Returns 501 for routes outside the fixture contract

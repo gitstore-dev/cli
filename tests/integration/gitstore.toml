@@ -1,0 +1,68 @@
+# Published-image config. Runtime secrets are generated into a temporary copy.
+[git_service]
+grpc_port = 50051
+data_dir = "/var/lib/gitstore/repos"
+[git_service.catalog]
+uri = "dns:///api:6000"
+[git_service.validation]
+timeout = "10s"
+[git_service.admission]
+branch_pattern = "^refs/heads/main$"
+[api]
+port = 4000
+git_port = 9000
+grpc_port = 6000
+[api.rate_limit]
+per_second = 100
+burst = 200
+[api.git_service]
+uri = "dns:///git-service:50051"
+[api.datastore]
+backend = "memdb"
+[api.auth.static_users]
+users_file = "/etc/gitstore/users.yaml"
+[api.auth.jwt]
+secret = "__CI_JWT_SECRET__"
+ttl = "1h"
+issuer = "gitstore"
+refresh_grace = "60s"
+[api.auth.authn]
+chain = ["static-users", "serviceaccount-assertion", "serviceaccount-jwt", "anonymous"]
+[api.auth.serviceaccount]
+issuer = "gitstore"
+audience = "gitstore-api"
+assertion_audience = "gitstore-api/serviceaccount-token"
+[api.auth.authz]
+provider = "rbac-local"
+[api.auth.userdir]
+provider = "static-users"
+[api.auth.rbac_local]
+policy_file = "/etc/gitstore/policy.yaml"
+[controller]
+port = 5001
+api_uri = "http://api:4000/graphql"
+[controller.serviceaccount]
+name = "gitstore-controller-manager"
+key_ref = { kind = "SecretRef", name = "gitstore-controller-manager-signing-key" }
+assertion_audience = "gitstore-api/serviceaccount-token"
+access_token_audience = "gitstore-api"
+[controller.secret_providers.bootstrap]
+type = "file"
+base_path = "/run/secrets"
+[controller.reconcile]
+max_attempts = 5
+stall_threshold = "5m"
+[controller.checkpoint]
+dir = "/var/lib/gitstore/checkpoints"
+flush_interval_events = 100
+[controller.watch]
+max_backoff = "5s"
+resync_interval = "1m"
+[grpc_auth]
+hmac_secret = "__CI_HMAC_SECRET__"
+[push_limits]
+max_pack_size = "32MiB"
+max_file_size = "8MiB"
+[log]
+level = "warn"
+format = "json"
