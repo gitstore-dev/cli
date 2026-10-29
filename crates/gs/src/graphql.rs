@@ -249,11 +249,18 @@ impl Client {
                 std::str::from_utf8(&bytes).map_err(|_| Error::remote("Response is not UTF-8"))?,
             )
             .map_err(|_| Error::remote("Response is malformed JSON"))?;
+            let has_errors = body
+                .get("errors")
+                .and_then(Value::as_array)
+                .is_some_and(|errors| !errors.is_empty());
             if !body.is_object()
+                || body
+                    .get("data")
+                    .is_some_and(|v| !v.is_object() && !v.is_null())
                 || (!body
                     .get("data")
                     .is_some_and(|v| v.is_object() || v.is_null())
-                    && !body.get("errors").is_some_and(Value::is_array))
+                    && !has_errors)
             {
                 return Err(Error::remote("Invalid GraphQL response envelope"));
             }

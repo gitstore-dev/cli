@@ -277,17 +277,18 @@ impl Transport {
             Auth::Basic { password, .. } => vec![password.expose().as_bytes()],
             Auth::Bearer { token } => vec![token.expose().as_bytes()],
         };
-        let mut redactor = ProgressRedactor {
-            secrets,
-            pending: Vec::new(),
+        let mut progress = ProgressOutput {
+            redactor: ProgressRedactor {
+                secrets,
+                pending: Vec::new(),
+            },
+            writer: io::stderr(),
         };
         cb.sideband_progress(move |data| {
             if Instant::now() >= deadline {
                 return false;
             }
-            let safe = redactor.feed(data);
-            let _ = io::stderr().lock().write_all(&safe);
-            let _ = io::stderr().lock().flush();
+            progress.feed(data);
             true
         });
         let reject = self.rejected.clone();
@@ -410,7 +411,9 @@ pub fn clone_repository(
     transport.timeout()?;
     let mut r = lib(repo.find_remote(remote))?;
     let mut options = transport.fetch(&url);
-    transport.result(r.fetch(&[] as &[&str], Some(&mut options), None), false)?;
+    let result = r.fetch(&[] as &[&str], Some(&mut options), None);
+    drop(options); // Finish progress before emitting any result or diagnostic.
+    transport.result(result, false)?;
     let default = r
         .default_branch()
         .ok()
@@ -530,7 +533,9 @@ pub fn sync(
     transport.timeout()?;
     let mut fetch = transport.fetch(&target.url);
     let refspec = format!("+{full_ref}:{tracking}");
-    transport.result(remote.fetch(&[&refspec], Some(&mut fetch), None), false)?;
+    let result = remote.fetch(&[&refspec], Some(&mut fetch), None);
+    drop(fetch);
+    transport.result(result, false)?;
     let old = lib(repo.find_reference(&tracking))?
         .target()
         .ok_or_else(|| Error::remote("Missing fetched commit"))?;
@@ -553,12 +558,12 @@ pub fn sync(
         .remote_callbacks(transport.callbacks(Some(old)))
         .follow_redirects(RemoteRedirect::None);
     let push_refspec = format!("{local}:{full_ref}");
-    transport
-        .result(pushing.push(&[&push_refspec], Some(&mut options)), true)
-        .map_err(|mut err| {
-            err.revision = Some(local.to_string());
-            err
-        })?;
+    let result = pushing.push(&[&push_refspec], Some(&mut options));
+    drop(options);
+    transport.result(result, true).map_err(|mut err| {
+        err.revision = Some(local.to_string());
+        err
+    })?;
     Ok(
         json!({"submission":"accepted","revision":local.to_string(),"remote":name,"ref":full_ref,"admission":"unverified","readiness":"unverified"}),
     )
@@ -591,6 +596,24 @@ pub fn dispatch(cli: &Cli, e: &Effective, command: &RepositoryCommand) -> Result
     }
 }
 
+// The callback owns this writer, so finalization also runs on errors/early returns.
+struct ProgressOutput<'a, W: Write> {
+    redactor: ProgressRedactor<'a>,
+    writer: W,
+}
+impl<W: Write> ProgressOutput<'_, W> {
+    fn feed(&mut self, data: &[u8]) {
+        let _ = self.writer.write_all(&self.redactor.feed(data));
+        let _ = self.writer.flush();
+    }
+}
+impl<W: Write> Drop for ProgressOutput<'_, W> {
+    fn drop(&mut self) {
+        let _ = self.writer.write_all(&self.redactor.finish());
+        let _ = self.writer.flush();
+    }
+}
+
 struct ProgressRedactor<'a> {
     secrets: Vec<&'a [u8]>,
     pending: Vec<u8>,
@@ -598,6 +621,12 @@ struct ProgressRedactor<'a> {
 impl ProgressRedactor<'_> {
     fn feed(&mut self, data: &[u8]) -> Vec<u8> {
         self.pending.extend_from_slice(data);
+        self.drain(false)
+    }
+    fn finish(&mut self) -> Vec<u8> {
+        self.drain(true)
+    }
+    fn drain(&mut self, final_chunk: bool) -> Vec<u8> {
         let mut output = Vec::new();
         let mut offset = 0;
         while offset < self.pending.len() {
@@ -609,7 +638,7 @@ impl ProgressRedactor<'_> {
             {
                 output.extend_from_slice(b"[REDACTED]");
                 offset += secret.len();
-            } else if self.secrets.iter().any(|s| s.starts_with(tail)) {
+            } else if !final_chunk && self.secrets.iter().any(|s| s.starts_with(tail)) {
                 break;
             } else {
                 let b = self.pending[offset];
@@ -637,5 +666,33 @@ mod progress_tests {
         let mut result = r.feed(b"message pass");
         result.extend(r.feed(b"word!\n"));
         assert_eq!(result, b"message [REDACTED]!\n");
+    }
+    #[test]
+    fn callback_drop_flushes_unmatched_suffix_without_losing_redaction() {
+        let mut output = Vec::new();
+        {
+            let mut progress = ProgressOutput {
+                redactor: ProgressRedactor {
+                    secrets: vec![b"password"],
+                    pending: Vec::new(),
+                },
+                writer: &mut output,
+            };
+            progress.feed(b"hook pass");
+            progress.feed(b"word done; trailing pass");
+        }
+        assert_eq!(output, b"hook [REDACTED] done; trailing pass");
+    }
+
+    #[test]
+    fn finalization_is_idempotent_and_preserves_terminal_sanitization() {
+        let mut redactor = ProgressRedactor {
+            secrets: vec![b"password"],
+            pending: Vec::new(),
+        };
+        let mut output = redactor.feed(b"hook \x1bpass");
+        output.extend(redactor.finish());
+        assert_eq!(output, b"hook [ESC]pass");
+        assert!(redactor.finish().is_empty());
     }
 }

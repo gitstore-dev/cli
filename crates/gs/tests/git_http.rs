@@ -427,3 +427,26 @@ fn saved_ref_default_and_explicit_repository_namespace_are_honored() {
     assert_eq!(o.status.code(), Some(2));
     assert_eq!(http.calls.lock().unwrap().len(), count);
 }
+
+#[test]
+fn clone_flushes_trailing_progress_at_callback_completion() {
+    let (h, http) = setup(Auth::Basic);
+    *http.mode.lock().unwrap() = Mode::TrailingProgress;
+    configure(&h, &http.endpoint, "basic");
+    let destination = h.dir.path().join("clone");
+    let output = h.run(&[
+        "repository",
+        "clone",
+        "catalog",
+        destination.to_str().unwrap(),
+        "-o",
+        "json",
+    ]);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(
+        stderr(&output).ends_with("hook pass"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!stderr(&output).contains("password"));
+}

@@ -18,8 +18,8 @@ No server working-tree changes or production credentials were used.
 | Check | Evidence / result |
 | --- | --- |
 | Locked Rust build, rustfmt, Clippy with warnings denied | Pass locally |
-| Rust unit/process/loopback suite | 37 tests pass; native-store and published-image checks intentionally ignored in the default suite |
-| Real `gs` through Postman simulation | 36 CLI requests pass, including real serialization, read/list/create/delete, ordered partial batch failure, no-write gates and transport failures |
+| Rust unit/process/loopback suite | 46 tests pass; native-store and published-image checks intentionally ignored in the default suite |
+| Real `gs` through Postman simulation | 38 CLI requests pass, including real serialization, read/list/create/delete, ordered partial batch failure, no-write gates and transport failures |
 | Saved Postman collection | 2 requests and 2 assertions pass; zero failures |
 | Postman collection lint | 2 request files; zero errors/warnings |
 | RustSec audit | Zero reported vulnerabilities and maintenance warnings at review time |
@@ -131,3 +131,12 @@ and authored resources. A failure does not stop remaining cases or the other sui
 
 The expanded 36-case suite passed locally against the same published image digests
 on 2026-10-29; project containers, volumes and network were removed afterward.
+
+
+Automated-review regressions cover malformed GraphQL envelopes with empty errors
+and absent data, valid null-data/error-only responses, unsupported versus genuine
+post-replacement directory-sync errors, and final Git progress flushing. The progress
+checks include a real CLI clone receiving a sideband message ending with a credential
+prefix, while retaining complete-credential redaction and escape sanitization.
+The local suite passes 46 Rust tests and 38 controlled CLI HTTP requests plus the
+saved collection's two assertions. Native-store and image checks remain opt-in.

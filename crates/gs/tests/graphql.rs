@@ -84,3 +84,66 @@ fn grammar_rejects_duplicate_and_subscription_without_request() {
         assert_eq!(o.status.code(), Some(exit), "{}", stderr(&o));
     }
 }
+
+fn response_envelope(reply: &'static str, resource: bool) -> std::process::Output {
+    let h = Harness::new();
+    let server = Server::http("127.0.0.1:0").unwrap();
+    h.configure(&format!("http://{}/graphql", server.server_addr()));
+    let token = h.write("token", "synthetic-only");
+    let worker = std::thread::spawn(move || {
+        let request = server
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap()
+            .unwrap();
+        request.respond(Response::from_string(reply)).unwrap();
+    });
+    let args = if resource {
+        vec!["read", "product", "fixture", "-o", "json"]
+    } else {
+        vec!["api", "graphql", "-f", "query={ok}"]
+    };
+    let output = h
+        .cmd()
+        .args(["--credential-file", token.to_str().unwrap()])
+        .args(args)
+        .output()
+        .unwrap();
+    worker.join().unwrap();
+    output
+}
+
+#[test]
+fn empty_errors_without_data_is_malformed_for_api_and_resource_reads() {
+    for resource in [false, true] {
+        let output = response_envelope(r#"{"errors":[]}"#, resource);
+        assert_eq!(output.status.code(), Some(8));
+        assert!(stdout(&output).is_empty());
+        assert!(stderr(&output).contains("Invalid GraphQL response envelope"));
+    }
+}
+
+#[test]
+fn explicit_null_data_with_empty_errors_remains_valid() {
+    let output = response_envelope(r#"{"data":null,"errors":[]}"#, false);
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(stdout(&output).contains("data"));
+}
+
+#[test]
+fn nonempty_errors_without_data_are_preserved() {
+    let output = response_envelope(
+        r#"{"errors":[{"message":"denied","extensions":{"code":"FORBIDDEN"}}],"extensions":{"trace":1}}"#,
+        false,
+    );
+    assert_eq!(output.status.code(), Some(3));
+    let body: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(body["errors"][0]["message"], "denied");
+    assert_eq!(body["extensions"]["trace"], 1);
+}
+
+#[test]
+fn invalid_data_shape_is_rejected_even_with_operation_errors() {
+    let output = response_envelope(r#"{"data":[],"errors":[{"message":"failed"}]}"#, false);
+    assert_eq!(output.status.code(), Some(8));
+    assert!(stdout(&output).is_empty());
+}
