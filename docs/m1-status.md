@@ -120,3 +120,14 @@ Compose removed all project containers, volumes and its network after the run.
 image evidence from the Ubuntu GitHub-hosted workflow, which has not run in this session.
 The image source revision differs from the M0 source baseline; this records exercised
 compatibility and does not rebaseline the public contract or close release gates.
+
+
+The published-image suite now reports six independent Git scenarios and 30 named
+command cases rather than one combined Git test and an aggregated live script.
+[The coverage table](../tests/integration/README.md) records which other CLI commands
+run against images and which remain covered by controlled/local/native-store suites.
+Each Git case owns a distinct server repository; command cases isolate configuration
+and authored resources. A failure does not stop remaining cases or the other suite.
+
+The expanded 36-case suite passed locally against the same published image digests
+on 2026-10-29; project containers, volumes and network were removed afterward.
