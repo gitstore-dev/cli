@@ -1,0 +1,40 @@
+[package]
+name = "gs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "GitStore remote catalogue CLI"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+toml = "1"
+url = { version = "2", features = ["serde"] }
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
+serde-saphyr = "2"
+cynic-parser = "0.11"
+git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2"] }
+zeroize = "1"
+tempfile = "3"
+fs2 = "0.4"
+libc = "0.2"
+humantime = "2"
+httpdate = "1"
+percent-encoding = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["keychain"] }
+security-framework-sys = "2"
+keyring-core = "1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust", "vendored"] }
+dbus-secret-service = { version = "4", features = ["crypto-rust", "vendored"] }
+dbus = { version = "0.9", features = ["vendored"] }
+keyring-core = "1"
+
+[dev-dependencies]
+assert_cmd = "2"
+tiny_http = "0.12"

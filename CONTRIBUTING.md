@@ -1,10 +1,26 @@
 # Contributing
 
-The repository is currently in product design. Start with the
-[PRD](docs/prd.md) and the [M0 specification](specs/001-m0-contracts/spec.md).
-The [M0 contract baseline](docs/contracts/README.md) publishes the operation inventory,
-runtime decisions and [acceptance evidence](docs/contracts/acceptance.md). Its reviews
-cover design/source consistency, not an executable product or validated runtime release.
+The repository has a development implementation of the unblocked M1 Rust CLI.
+Start with the [PRD](docs/prd.md), [M1 plan](specs/002-m1-remote-cli/plan.md) and
+[task list](specs/002-m1-remote-cli/tasks.md). The [M0 contract baseline](docs/contracts/README.md)
+remains authoritative for public operation boundaries and open dependency gates.
+See [M1 status](docs/m1-status.md) for evidence; implemented source is not a published
+or fully validated product release.
+
+## Development checks
+
+```sh
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+cargo build --workspace --locked
+scripts/test-remote.sh
+```
+
+The pinned toolchain is Rust 1.96.0. Controlled HTTP tests use Postman CLI 1.75.0 and
+Python 3. Git functionality is library-based; tests create fixtures through libgit2
+and run `gs` with no Git executable on PATH. Native-store smoke tests are opt-in;
+live tests require explicit disposable-installation input to `scripts/test-live.sh`.
 
 ## Pull request titles
 
@@ -22,12 +38,14 @@ for the pinned title action require separate verification before promising fork 
 ## Application CI
 
 Markdown and workflow-manifest lint jobs remain deferred. PR-title validation is the
-only initial workflow. Local inspection does not establish a GitHub-hosted pass.
+initial metadata workflow. The CLI workflow now builds, formats, lints and tests
+the Rust workspace on Linux x86_64 and macOS arm64, with controlled HTTP simulation
+on Linux. Hosted results remain unverified until the workflow runs. Local inspection
+does not establish a GitHub-hosted pass.
 
-Add CI alongside runnable implementation: build and test the Rust CLI when its
-workspace exists, then build and test the C daemon, including sanitizers, when
-its targets exist. Reuse applicable GitStore conventions at that point. Each job
-should validate implemented behavior or a concrete release requirement.
+Extend CI alongside executable changes. Add C build/behavior/sanitizer checks when
+daemon targets exist, reusing applicable GitStore conventions. Each job must validate
+implemented behavior or a concrete release requirement.
 
 When build/release targets exist, add artifact provenance generation and verification
 alongside publication. Follow [ADR 0003](docs/ADRs/0003-runtime-assets-packaging.md)
@@ -37,5 +55,13 @@ attestation release gate. No attestation-only workflow is needed before artifact
 Before advertising runtime support, add C address/undefined-behavior sanitizer and
 protocol fuzz/resource-bound tests, plus identity isolation, recovery, retained-data,
 single-writer and host/backend compatibility checks appropriate to the implementation.
-Use the M0 [review guide](specs/001-m0-contracts/quickstart.md) to inspect contract
-coverage now; do not run intended `gs` commands as though binaries already exist.
+Use the [M1 validation guide](specs/002-m1-remote-cli/quickstart.md) for executable
+checks; M2 runtime commands remain unimplemented.
+
+Published-image compatibility CI uses a separate
+[Compose target](tests/integration/README.md). Run `cargo build --locked -p gs`, then
+`scripts/test-integration.sh` to pull GitStore `:latest`, generate a disposable
+installation, test public GraphQL and Git operations, and remove the stack. It needs
+Docker Compose v2 and Python 3, requires no external account or sibling source
+checkout, and records resolved image digests in the job log. Hosted results remain
+unverified until the workflow runs.

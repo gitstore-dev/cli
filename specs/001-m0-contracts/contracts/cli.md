@@ -10,7 +10,7 @@ selectors, GraphQL operations, concurrency fields and capabilities require inven
 | context/auth switch, local status, help/version | Local context/identity selection; only documented remote verification contacts server. |
 | resource verbs, api-resources/explain, auth provider calls | Public installation capabilities and GraphQL; unsupported mappings fail before writes. |
 | api graphql | Public GraphQL using selected installation and credential; preserve errors and partial data. |
-| repository sync | Git remote/ref resolution and advertised Git credential mechanism. |
+| repository clone/sync | Git remote/ref resolution and advertised Git credential mechanism. |
 | serve/component serve, deployment, migrate | Versioned daemon API; component commands share daemon ownership. |
 | file upload, transfer, publication and CRD operations | Deferred or capability-gated; no invented endpoints or transactional semantics. |
 
@@ -19,9 +19,17 @@ then defaults. Remote context and local deployment identity remain distinct. Cre
 are isolated by installation/issuer/account; registry authentication is a separate domain.
 No failed API operation falls back to a Git write or internal RPC.
 
+`repository clone <repository> [directory] [--remote <name>]` defaults the destination
+to the repository name and the remote to `gitstore`. An override such as `--remote origin`
+creates that remote instead, with no additional alias. Configure the checked-out branch
+to track the chosen remote when a branch exists. Use the selected installation/namespace
+and supported public Git credentials; reject a nonempty destination without overwriting.
+
 `repository sync [repository]` infers a target from the current Git worktree and remote,
 including subdirectories; an explicit argument overrides inference. Missing or ambiguous
-targets require explicit selection. No implicit reset/rebase/commit/force push. Ref and
+targets require explicit selection. Eligibility depends on remote URL and selected
+installation, regardless of remote name; `gitstore` does not break ambiguity or prove
+identity. No implicit reset/rebase/commit/force push. Ref and
 remote must match the intended installation. Record the exact fetch/push contract in M0.
 
 ## Input and output

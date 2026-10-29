@@ -1,0 +1,21 @@
+$kind: http-request
+name: Read Product
+order: 1000
+method: POST
+url: '{{baseUrl}}/graphql'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {"query":"query Read($by:ProductBy!){product(by:$by){id apiVersion kind metadata{name namespace resourceVersion revision} body spec{title}}}","variables":{"by":{"namespacePath":{"namespace":"shop","name":"fixture"}}}}
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Public typed lookup returns Product", () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().data.product.kind).to.eql("Product");
+      });
+examples: ./.resources/read-product.resources/examples/

@@ -1,0 +1,6 @@
+$kind: collection
+name: GitStore M1 contract checks
+description: Derived from GitStore committed public GraphQL schemas; controlled fixtures only.
+variables:
+  - key: baseUrl
+    value: 'http://127.0.0.1:3000/gitstore'

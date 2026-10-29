@@ -1,0 +1,15 @@
+version = 1
+current_context = "development"
+[contexts.development]
+endpoint = "https://store.example.test/team/graphql"
+contract_profile = "m0-2026-10-27"
+account = "operator"
+namespace = "catalogue"
+git_endpoint = "https://git.example.test/team"
+[contexts.development.accounts.operator]
+issuer = "configured-provider"
+credential_source = "os-store"
+[contexts.development.git_auth]
+mechanism = "basic"
+account = "operator"
+issuer = "configured-provider"

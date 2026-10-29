@@ -51,6 +51,13 @@ Publish per-operation names/scope/schemas/persistence/mappings and authorization
 
 ## DEP-007
 
+File lookup normalization to a `by` selector is pending the upstream File lifecycle
+specification (direction recorded 2026-10-29). Until it ships and its public input
+shape is verified, CMD-042 retains the source-reviewed `file(namespace, name)` mapping.
+This pending normalization does not block that existing read or imply File list,
+write or lifecycle support. Update client mappings and contract fixtures together
+when the new contract becomes available.
+
 Confirm public list separately from upload negotiation; validate transfer auth/checksum/size/retention, manifest partial failure and LFS batch/missing objects. No payload command inferred from metadata/source types.
 
 ## DEP-008

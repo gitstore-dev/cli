@@ -5,9 +5,19 @@ The command line interface and container runtime daemon for
 
 `gs` stands for **G**it**S**tore. Environment variables use the `GITSTORE_` prefix.
 
-**Status: product design.** This repository currently contains requirements and
-documentation. The commands below describe the intended interface; no CLI or
-daemon release is available from this repository yet.
+**Status: M1 development implementation.** The Rust CLI implements the unblocked
+remote subset: local selection/credential commands, GraphQL, core resource inspection,
+supported create/delete operations, and library-based Git clone/sync. No CLI/daemon
+release has been published; full M1 retains upstream and release gates.
+
+Build with `cargo build --locked -p gs`, then run `target/debug/gs --help`.
+See [configuration](docs/configuration.md), [implemented remote commands](docs/remote-cli.md),
+and [validation evidence and limitations](docs/m1-status.md).
+The [M1 specification](specs/002-m1-remote-cli/spec.md),
+[plan](specs/002-m1-remote-cli/plan.md) and
+[task list](specs/002-m1-remote-cli/tasks.md) define the increment.
+Examples below describe the broader intended product; the implemented subset is
+listed in the remote-command guide. Runtime commands remain future M2 work.
 
 ## Components
 
@@ -86,6 +96,12 @@ gs read product summer-shirt -o markdown
 gs update -f product.md
 gs watch product
 
+# Clone with a remote named gitstore and track its checked-out branch.
+gs repository clone catalog
+
+# Use origin when GitStore is the primary repository.
+gs repository clone catalog --remote origin
+
 # Synchronise the current repository through Git.
 gs repository sync
 
@@ -103,13 +119,18 @@ gs deployment logs <deployment-id>
 gs deployment stop <deployment-id>
 ```
 
-Resource verbs use GraphQL; repository synchronisation uses Git. GraphQL writes
-to Git-backed resources still use server-managed Git persistence. A successful
+Resource verbs use GraphQL; repository cloning and synchronisation use Git.
+GraphQL writes to Git-backed resources still use server-managed Git persistence. A successful
 push does not imply successful admission or completed reconciliation.
 
-The repository argument is optional. Infer it from the current Git repository
-and its configured remote; require an explicit target when inference is missing
-or ambiguous.
+`gs repository clone <repository> [directory]` defaults the remote name to
+`gitstore`; `--remote <name>` overrides it. The checked-out branch tracks that
+remote. The destination defaults to the repository name.
+
+For `sync`, the repository argument is optional. Infer it from the current Git
+repository and remote URLs matching the selected installation, regardless of
+remote name. Require an explicit target when inference is missing or ambiguous;
+a remote named `gitstore` does not take priority over other eligible remotes.
 
 ## Output formats
 

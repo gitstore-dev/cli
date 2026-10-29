@@ -1,0 +1,5 @@
+name: gitstore
+version: 1
+mockSrc: default.js
+interceptRequests: true
+origin: gitstore.test

@@ -1,0 +1,105 @@
+# Isolated CLI compatibility target. Only published :latest images; no source builds.
+services:
+  credential-bootstrap:
+    image: ghcr.io/gitstore-dev/api:latest
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        /app/gitctl users add --file /config/users.yaml --username admin --password-stdin < /bootstrap/admin-password
+        /app/gitctl generate-signing-key --private-key-path /run/api-issuer/serviceaccount-signing-key
+        /app/gitctl generate-signing-key --private-key-path /run/controller-secrets/controller-key \
+          --record-output-path /run/controller-secrets/gitstore-controller-manager-signing-key.json --key-id controller-key
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/config:/config
+      - ${GITSTORE_CI_STATE:?integration state is required}/admin-password:/bootstrap/admin-password:ro
+      - api-issuer:/run/api-issuer
+      - controller-keys:/run/controller-secrets
+
+  git-service:
+    image: ghcr.io/gitstore-dev/git-service:latest
+    command: [/app/git-service, --config-file, /etc/gitstore/gitstore.toml]
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/config:/etc/gitstore:ro
+      - repositories:/var/lib/gitstore/repos
+    healthcheck:
+      test: [CMD-SHELL, 'nc -z 127.0.0.1 50051']
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  api:
+    image: ghcr.io/gitstore-dev/api:latest
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export GITSTORE_API__AUTH__SERVICEACCOUNT__SIGNING_KEY="$$(cat /run/api-issuer/serviceaccount-signing-key)"
+        exec /app/api --config-file /etc/gitstore/gitstore.toml
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/config:/etc/gitstore:ro
+      - api-issuer:/run/api-issuer:ro
+    ports:
+      - '127.0.0.1::4000'
+      - '127.0.0.1::9000'
+    depends_on:
+      credential-bootstrap:
+        condition: service_completed_successfully
+      git-service:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, wget, --quiet, --spider, 'http://127.0.0.1:4000/ready']
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  serviceaccount-enrollment:
+    image: ghcr.io/gitstore-dev/api:latest
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        export GITSTORE_BOOTSTRAP_ADMIN_USERNAME=admin
+        export GITSTORE_BOOTSTRAP_ADMIN_PASSWORD="$$(cat /bootstrap/admin-password)"
+        exec /app/gitctl enroll-serviceaccount --api-url http://api:4000/graphql \
+          --name gitstore-controller-manager --key-id controller-key --replace-existing-key \
+          --private-key-path /run/controller-secrets/controller-key \
+          --identity-output-path /run/controller-bootstrap/serviceaccount.env
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/admin-password:/bootstrap/admin-password:ro
+      - controller-keys:/run/controller-secrets:ro
+      - controller-identity:/run/controller-bootstrap
+    depends_on:
+      api:
+        condition: service_healthy
+
+  controller-manager:
+    image: ghcr.io/gitstore-dev/controller-manager:latest
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        uid="$$(sed -n 's/^GITSTORE_CONTROLLER__SERVICEACCOUNT__UID=//p' /run/controller-bootstrap/serviceaccount.env)"
+        test -n "$$uid"
+        export GITSTORE_CONTROLLER__SERVICEACCOUNT__UID="$$uid"
+        exec /app/controller-manager --config-file /etc/gitstore/gitstore.toml
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/config:/etc/gitstore:ro
+      - controller-keys:/run/secrets:ro
+      - controller-identity:/run/controller-bootstrap:ro
+      - checkpoints:/var/lib/gitstore/checkpoints
+    depends_on:
+      serviceaccount-enrollment:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, wget, --quiet, --spider, 'http://127.0.0.1:5001/health']
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+volumes:
+  repositories:
+  api-issuer:
+  controller-keys:
+  controller-identity:
+  checkpoints:

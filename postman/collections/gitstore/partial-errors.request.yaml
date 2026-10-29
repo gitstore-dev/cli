@@ -1,0 +1,22 @@
+$kind: http-request
+name: Partial GraphQL error
+order: 2000
+method: POST
+url: '{{baseUrl}}/graphql/partial'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: '{"query":"{example}"}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Partial data and error survive HTTP success", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors[0].extensions.code).to.eql("FORBIDDEN");
+        pm.expect(body.data).to.have.property("example", null);
+        pm.expect(body.extensions.trace).to.eql("fixture");
+      });

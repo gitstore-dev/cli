@@ -1,0 +1,8 @@
+simulation: m1
+routing: path
+mocks:
+  - name: gitstore
+    routeKey: gitstore
+    origin:
+      - gitstore.test
+    path: postman/mocks/gitstore/config.yaml

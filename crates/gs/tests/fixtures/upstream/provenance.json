@@ -1,0 +1,33 @@
+{
+  "revision": "b6c866421dbcf43994565f847553c1f6aec83994",
+  "sources": [
+    {
+      "path": "shared/schemas/schema.graphqls",
+      "sha256": "ca69ebe86d10cfba5c95e802624d5a00736f160f6509accd1cdfdead43b2a4ca"
+    },
+    {
+      "path": "shared/schemas/namespace.graphqls",
+      "sha256": "d3fb9036f6bc4a864557d067ac1e09ea20d382ec371693e1c9326cab9eaca0b6"
+    },
+    {
+      "path": "shared/schemas/repository.graphqls",
+      "sha256": "340048fe323c7b207cb38e80a2b9445f7398570df71bdde6085b112ee1c01323"
+    },
+    {
+      "path": "shared/schemas/product.graphqls",
+      "sha256": "aa25e3f4f5c7c7678c53c38669b9a51d358825f22e80abd6fcc21b4620c3cd5a"
+    },
+    {
+      "path": "shared/schemas/category.graphqls",
+      "sha256": "5b2e8fd0b9bf0226e5cfc2c868af089f33259db9a251d3c23c2d62c344a5cc84"
+    },
+    {
+      "path": "shared/schemas/collection.graphqls",
+      "sha256": "851adb60d0fca67a15fcb5622e5cfaa7059489163883064ee2c42dac91414ffe"
+    },
+    {
+      "path": "shared/schemas/file.graphqls",
+      "sha256": "fa6c34387625b53fbcd3455723202549366a894dbc61f1d4b8caed828c121f73"
+    }
+  ]
+}
