@@ -11,6 +11,7 @@ on:
       - 'scripts/test_live.py'
       - 'scripts/test-integration.sh'
       - 'scripts/test_integration.py'
+      - 'scripts/test_image_commands.py'
       - 'tests/integration/**'
       - '.github/workflows/ci-integration.yml'
   pull_request:
@@ -23,6 +24,7 @@ on:
       - 'scripts/test_live.py'
       - 'scripts/test-integration.sh'
       - 'scripts/test_integration.py'
+      - 'scripts/test_image_commands.py'
       - 'tests/integration/**'
       - '.github/workflows/ci-integration.yml'
   workflow_dispatch:

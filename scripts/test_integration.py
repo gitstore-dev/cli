@@ -137,9 +137,20 @@ credential_file = {json.dumps(str(state / 'git-credential.json'))}
             env.update(GITSTORE_IMAGE_CONFIG=str(state / 'cli.toml'),
                        GITSTORE_IMAGE_CREDENTIAL=str(state / 'token'),
                        GITSTORE_IMAGE_GIT_URL=git + '/gs-m1-ci/catalog.git')
-            run(['cargo', 'test', '--locked', '-p', 'gs', '--test', 'images', '--', '--ignored', '--nocapture'])
-            run([sys.executable, 'scripts/test_live.py', '--allow-live', '--config', str(state / 'cli.toml'),
-                 '--credential-file', str(state / 'token'), '--namespace', namespace, '--repository', 'catalog'])
+            # Complete both suites even if one fails; each reports named cases.
+            failures = []
+            for name, command in [
+                ('Git scenarios', ['cargo', 'test', '--locked', '-p', 'gs', '--test', 'images', '--',
+                                   '--ignored', '--nocapture', '--test-threads=1']),
+                ('CLI commands', [sys.executable, 'scripts/test_image_commands.py']),
+            ]:
+                print(f'Running {name}', flush=True)
+                try:
+                    run(command)
+                except subprocess.CalledProcessError:
+                    failures.append(name)
+            if failures:
+                raise RuntimeError('Failed suites: ' + ', '.join(failures))
             print('PASS: CLI compatibility against published GitStore :latest images.', flush=True)
         except BaseException:
             failed = True
