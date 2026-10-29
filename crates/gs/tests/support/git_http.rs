@@ -19,6 +19,7 @@ pub enum Mode {
     Redirect,
     Delay,
     LostResponse,
+    TrailingProgress,
 }
 #[derive(Clone)]
 pub enum Auth {
@@ -218,6 +219,11 @@ fn handle(
             let mut band = vec![1];
             band.extend_from_slice(chunk);
             bytes.extend(pkt(&band));
+        }
+        if matches!(mode, Mode::TrailingProgress) {
+            let mut progress = vec![2];
+            progress.extend_from_slice(b"hook pass");
+            bytes.extend(pkt(&progress));
         }
         bytes.extend_from_slice(b"0000");
         send(r, 200, bytes, "application/x-git-upload-pack-result");

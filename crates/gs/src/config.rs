@@ -277,6 +277,13 @@ impl Effective {
     }
 }
 pub fn mutate(p: &Path, update: impl FnOnce(&mut Config) -> Result<()>) -> Result<()> {
+    mutate_with_directory_sync(p, update, fs::File::sync_all)
+}
+fn mutate_with_directory_sync(
+    p: &Path,
+    update: impl FnOnce(&mut Config) -> Result<()>,
+    sync_directory: impl FnOnce(&fs::File) -> std::io::Result<()>,
+) -> Result<()> {
     let parent = p
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -304,10 +311,88 @@ pub fn mutate(p: &Path, update: impl FnOnce(&mut Config) -> Result<()>) -> Resul
     tmp.write_all(s.as_bytes())
         .and_then(|_| tmp.as_file().sync_all())
         .map_err(|_| Error::usage("Cannot persist configuration update"))?;
+    // Opening the parent must succeed before replacing the selection.
+    let directory = fs::File::open(parent)
+        .map_err(|_| Error::usage("Cannot open config directory for persistence"))?;
     tmp.persist(p)
         .map_err(|_| Error::usage("Cannot replace configuration"))?;
-    fs::File::open(parent)
-        .and_then(|f| f.sync_all())
-        .map_err(|_| Error::usage("Cannot sync config directory"))?;
+    if let Err(error) = sync_directory(&directory)
+        && !directory_sync_unsupported(&error)
+    {
+        let mut error = Error::new(
+            1,
+            "CONFIG_DURABILITY",
+            "Configuration changed, but directory sync failed; crash durability is unconfirmed",
+        );
+        error.stage = "persistence";
+        return Err(error);
+    }
     Ok(())
+}
+fn directory_sync_unsupported(error: &std::io::Error) -> bool {
+    if error.kind() == std::io::ErrorKind::Unsupported {
+        return true;
+    }
+    #[cfg(unix)]
+    if let Some(code) = error.raw_os_error() {
+        // Directory fsync is not implemented on every supported filesystem.
+        return code == libc::EINVAL || code == libc::ENOTSUP || code == libc::EOPNOTSUPP;
+    }
+    false
+}
+
+#[cfg(test)]
+mod persistence_tests {
+    use super::*;
+
+    fn selection_with_sync(result: std::io::Result<()>) -> Result<()> {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("config.toml");
+        fs::write(
+            &path,
+            r#"version = 1
+current_context = "one"
+[contexts.one]
+endpoint = "https://example.test/graphql"
+account = "alice"
+[contexts.one.accounts.alice]
+issuer = "test"
+[contexts.one.accounts.bob]
+issuer = "test"
+"#,
+        )
+        .unwrap();
+        let changed = mutate_with_directory_sync(
+            &path,
+            |config| {
+                config.contexts.get_mut("one").unwrap().account = "bob".into();
+                Ok(())
+            },
+            |_| result,
+        );
+        assert_eq!(load(&path).unwrap().contexts["one"].account, "bob");
+        changed
+    }
+
+    #[test]
+    fn unsupported_directory_sync_does_not_report_selection_failure() {
+        selection_with_sync(Err(std::io::ErrorKind::Unsupported.into())).unwrap();
+        #[cfg(unix)]
+        for code in [libc::EINVAL, libc::ENOTSUP, libc::EOPNOTSUPP] {
+            selection_with_sync(Err(std::io::Error::from_raw_os_error(code))).unwrap();
+        }
+    }
+
+    #[test]
+    fn real_directory_sync_failure_reports_changed_selection_and_uncertain_durability() {
+        #[cfg(unix)]
+        for code in [libc::EIO, libc::EACCES, libc::EPERM] {
+            let error =
+                selection_with_sync(Err(std::io::Error::from_raw_os_error(code))).unwrap_err();
+            assert_eq!(error.exit, 1);
+            assert_eq!(error.code, "CONFIG_DURABILITY");
+            assert_eq!(error.stage, "persistence");
+            assert!(error.message.contains("Configuration changed"));
+        }
+    }
 }

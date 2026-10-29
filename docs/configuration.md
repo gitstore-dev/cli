@@ -12,6 +12,12 @@ Empty values and ambiguous cross-installation selection fail. GraphQL and Git UR
 are configured independently, retaining proxy prefixes. HTTPS is required, except
 explicit `allow_loopback_http = true` for a loopback development endpoint.
 
+Selection changes use a locked atomic replacement and sync the saved file. Directory
+sync is best effort only when the filesystem explicitly reports it unsupported. A
+real directory-sync failure after replacement returns exit 1 (`CONFIG_DURABILITY`,
+stage `persistence`) and states that the selection changed but crash durability is
+unconfirmed; inspect `gs context show` before retrying.
+
 Existing GraphQL credentials come from the OS store by default. Service is
 `dev.gitstore.gs`; user key is compact JSON `[endpoint,issuer,account,"graphql"]`
 with the normalized full GraphQL endpoint. Provision the entry using native OS

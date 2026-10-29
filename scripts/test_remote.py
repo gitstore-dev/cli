@@ -46,6 +46,8 @@ issuer = "controlled-fixture"
         invoke(['api','graphql','-f','query={echo}'],3,'/denied')
         invoke(['api','graphql','-f','query={echo}'],8,'/rate')
         invoke(['api','graphql','-f','query={echo}'],8,'/malformed')
+        invoke(['api','graphql','-f','query={echo}'],8,'/empty-errors')
+        invoke(['read','product','fixture'],8,'/empty-errors')
         invoke(['api','graphql','-f','query={echo}'],8,'/oversized')
         invoke(['--timeout','100ms','api','graphql','-f','query={echo}'],7,'/timeout')
         invoke(['api','graphql','-f','query=mutation { fixture }'],8,'/disconnect')

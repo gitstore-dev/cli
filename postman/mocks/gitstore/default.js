@@ -13,6 +13,7 @@ http.createServer(async (req, res) => {
   if (req.url.endsWith('/unauthorized')) return reply(401,{});
   if (req.url.endsWith('/denied')) return reply(403,{});
   if (req.url.endsWith('/rate')) { res.setHeader('retry-after','0'); return reply(429,{}); }
+  if (req.url.endsWith('/empty-errors')) return reply(200,{errors:[]});
   if (req.url.endsWith('/partial')) return reply(200,{data:{example:null},errors:[{message:'denied',extensions:{code:'FORBIDDEN'}}],extensions:{trace:'fixture'}});
   if (req.url.endsWith('/disconnect')) return req.socket.destroy();
   if (req.url.endsWith('/timeout')) return setTimeout(()=>reply(200,{data:{ok:true}}),2000);
