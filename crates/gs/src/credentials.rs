@@ -108,15 +108,6 @@ pub fn token(cli: &Cli, e: &Effective) -> Result<Secret> {
     }
     Native.read(&key(e,"graphql"))?.ok_or_else(||Error::auth("No credential for selected installation/issuer/account; supply protected input or provision the OS store"))
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn secret_is_single_line() {
-        assert!(Secret::new("a\nb".into()).is_err());
-        assert_eq!(Secret::new("token\r\n".into()).unwrap().expose(), "token");
-    }
-}
 
 #[cfg(target_os = "linux")]
 fn linux(key: &str, remove: bool) -> Result<Option<Secret>> {
@@ -152,7 +143,7 @@ fn linux(key: &str, remove: bool) -> Result<Option<Secret>> {
         let (prompt,): (dbus::Path<'static>,) = proxy
             .method_call("org.freedesktop.Secret.Item", "Delete", ())
             .map_err(|_| Error::auth("Credential removal denied"))?;
-        if prompt.to_string() != "/" {
+        if prompt != "/" {
             // A returned prompt is not displayed unless Prompt.Prompt is invoked.
             // Dismiss it and report the required external action instead.
             let p = connection.with_proxy(
@@ -174,4 +165,14 @@ fn linux(key: &str, remove: bool) -> Result<Option<Secret>> {
     );
     let text = std::str::from_utf8(&bytes).map_err(|_| Error::auth("Credential is not UTF-8"))?;
     Secret::new(text.to_owned()).map(Some)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn secret_is_single_line() {
+        assert!(Secret::new("a\nb".into()).is_err());
+        assert_eq!(Secret::new("token\r\n".into()).unwrap().expose(), "token");
+    }
 }
