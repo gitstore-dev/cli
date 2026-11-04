@@ -3,17 +3,29 @@ pub mod authoring;
 pub mod cli;
 pub mod config;
 pub mod credentials;
+pub mod daemon_client;
+pub mod daemon_protocol;
+pub mod daemon_start;
+pub mod deployment;
 pub mod error;
 pub mod git;
 pub mod graphql;
 pub mod input;
 pub mod output;
 pub mod resources;
+#[cfg(unix)]
+pub mod runtime_credentials;
 use clap::Parser;
 use cli::*;
 use credentials::Store;
 use error::{Error, Result};
 use serde_json::json;
+pub(crate) fn initialize_http_tls() {
+    static INITIALIZED: std::sync::Once = std::sync::Once::new();
+    INITIALIZED.call_once(|| {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    });
+}
 pub fn run() -> i32 {
     let cli = match Cli::try_parse() {
         Ok(c) => c,
@@ -47,6 +59,9 @@ pub fn run() -> i32 {
     }
 }
 fn dispatch(cli: &Cli) -> Result<()> {
+    if deployment::is_local(&cli.command) {
+        return deployment::dispatch(cli);
+    }
     let prepared = if let Command::Api {
         command: ApiCommand::Graphql(a),
     } = &cli.command
@@ -151,12 +166,14 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 .map_err(|_| Error::new(1, "OUTPUT", "Cannot write token"))?;
             return Ok(());
         }
-        Command::Api { .. } => {
+        Command::Api {
+            command: ApiCommand::Graphql(_),
+        } => {
             let request = prepared.as_ref().expect("prepared GraphQL request");
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
-                cli.timeout,
+                cli.timeout(),
             )?;
             let reply = client.execute(request)?;
             output::emit(&reply.body, cli.format())?;
@@ -169,7 +186,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
-                cli.timeout,
+                cli.timeout(),
             )?;
             resources::read(&client, s, e.context.namespace.as_deref(), cli.format())?
         }
@@ -185,7 +202,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
-                cli.timeout,
+                cli.timeout(),
             )?;
             resources::list(
                 &client,
@@ -202,7 +219,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
-                cli.timeout,
+                cli.timeout(),
             )?;
             resources::delete(&client, s, e.context.namespace.as_deref(), cli.format())?
         }
@@ -216,7 +233,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
-                cli.timeout,
+                cli.timeout(),
             )?;
             let (v, error) = authoring::submit(&client, &docs)?;
             output::emit(&v, cli.format())?;

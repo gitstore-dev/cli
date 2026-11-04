@@ -1,0 +1,840 @@
+[
+  {
+    "example": "EX-001",
+    "kind": "request",
+    "part": 1,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r1",
+      "method": "system.negotiate",
+      "params": {
+        "supported": [
+          {
+            "major": 1,
+            "minor": 0
+          }
+        ],
+        "requiredCapabilities": [
+          "deployment.start"
+        ]
+      }
+    }
+  },
+  {
+    "example": "EX-001",
+    "kind": "response",
+    "part": 2,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r1",
+      "result": {
+        "selectedVersion": {
+          "major": 1,
+          "minor": 0
+        },
+        "capabilities": [
+          "system.read",
+          "deployment.validate",
+          "deployment.start",
+          "deployment.read",
+          "deployment.stop",
+          "operation.read",
+          "operation.cancel",
+          "migration.start",
+          "stream.read"
+        ],
+        "limits": {
+          "frameBytes": 1048576,
+          "nesting": 32,
+          "stringBytes": 262144,
+          "collectionItems": 4096,
+          "connections": 32,
+          "outstandingPerConnection": 16,
+          "subscriptionsPerConnection": 8,
+          "queuedEventsPerSubscription": 256,
+          "queuedBytesPerSubscription": 4194304,
+          "globalQueuedBytes": 67108864,
+          "logsPerDeploymentBytes": 67108864,
+          "logMaxAgeDays": 7,
+          "globalLogBytes": 1073741824,
+          "workers": 8,
+          "mutationPerDeployment": 1,
+          "pendingJobs": 64,
+          "partialFrameMs": 10000,
+          "idleMs": 300000,
+          "stopMs": 30000,
+          "shutdownMs": 30000,
+          "operationMetadataBytes": 268435456,
+          "operationRecords": 100000,
+          "terminalRetentionDays": 7
+        }
+      }
+    }
+  },
+  {
+    "example": "EX-002",
+    "kind": "request",
+    "part": 3,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r2",
+      "method": "deployment.validate",
+      "params": {
+        "profileId": "core",
+        "profileVersion": "1"
+      }
+    }
+  },
+  {
+    "example": "EX-002",
+    "kind": "response",
+    "part": 4,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r2",
+      "result": {
+        "valid": true,
+        "effectivePlan": {
+          "profileId": "core",
+          "components": [
+            "api",
+            "git",
+            "controller"
+          ]
+        },
+        "requiredAssets": [],
+        "hostRequirements": [
+          "user-namespaces",
+          "uid-mapping"
+        ],
+        "diagnostics": []
+      }
+    }
+  },
+  {
+    "example": "EX-003",
+    "kind": "request",
+    "part": 5,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r3",
+      "method": "deployment.start",
+      "params": {
+        "deploymentId": "dev",
+        "profileId": "core",
+        "profileVersion": "1",
+        "datastore": "memdb",
+        "allowProvision": false
+      },
+      "idempotencyKey": "start-dev-1"
+    }
+  },
+  {
+    "example": "EX-003",
+    "kind": "response",
+    "part": 6,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r3",
+      "result": {
+        "operationId": "op-start",
+        "method": "deployment.start",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "accepted",
+        "recovery": "normal"
+      }
+    }
+  },
+  {
+    "example": "EX-004",
+    "kind": "request",
+    "part": 7,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r4",
+      "method": "deployment.start",
+      "params": {
+        "deploymentId": "dev",
+        "profileId": "core",
+        "profileVersion": "1",
+        "datastore": "memdb",
+        "allowProvision": false
+      },
+      "idempotencyKey": "start-dev-1"
+    }
+  },
+  {
+    "example": "EX-004",
+    "kind": "response",
+    "part": 8,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r4",
+      "result": {
+        "operationId": "op-start",
+        "method": "deployment.start",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "accepted",
+        "recovery": "normal"
+      }
+    }
+  },
+  {
+    "example": "EX-005",
+    "kind": "request",
+    "part": 9,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r5",
+      "method": "deployment.start",
+      "params": {
+        "deploymentId": "dev",
+        "profileId": "core",
+        "profileVersion": "1",
+        "datastore": "scylladb",
+        "allowProvision": false
+      },
+      "idempotencyKey": "start-dev-1"
+    }
+  },
+  {
+    "example": "EX-005",
+    "kind": "response",
+    "part": 10,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r5",
+      "error": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "stage": "validate",
+        "retryable": false,
+        "message": "Key already identifies different parameters",
+        "operationId": "op-start",
+        "deploymentId": "dev"
+      }
+    }
+  },
+  {
+    "example": "EX-006",
+    "kind": "request",
+    "part": 11,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r6",
+      "method": "operation.inspect",
+      "params": {
+        "operationId": "op-start"
+      }
+    }
+  },
+  {
+    "example": "EX-006",
+    "kind": "response",
+    "part": 12,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r6",
+      "result": {
+        "operationId": "op-start",
+        "method": "deployment.start",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "running",
+        "recovery": "normal"
+      }
+    }
+  },
+  {
+    "example": "EX-007",
+    "kind": "request",
+    "part": 13,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r7",
+      "method": "operation.wait",
+      "params": {
+        "operationId": "op-start",
+        "until": "ready"
+      },
+      "timeoutMs": 1000
+    }
+  },
+  {
+    "example": "EX-007",
+    "kind": "response",
+    "part": 14,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r7",
+      "error": {
+        "code": "DEADLINE_EXCEEDED",
+        "stage": "wait",
+        "retryable": false,
+        "message": "Readiness not verified before deadline",
+        "operationId": "op-start",
+        "deploymentId": "dev"
+      }
+    }
+  },
+  {
+    "example": "EX-008",
+    "kind": "request",
+    "part": 15,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r8",
+      "method": "operation.inspect",
+      "params": {
+        "operationId": "op-start"
+      }
+    }
+  },
+  {
+    "example": "EX-008",
+    "kind": "response",
+    "part": 16,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r8",
+      "result": {
+        "operationId": "op-start",
+        "method": "deployment.start",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "failed",
+        "recovery": "normal",
+        "error": {
+          "code": "OPERATION_FAILED",
+          "stage": "runtime",
+          "retryable": false,
+          "message": "API health check failed",
+          "deploymentId": "dev"
+        }
+      }
+    }
+  },
+  {
+    "example": "EX-009",
+    "kind": "request",
+    "part": 17,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r9",
+      "method": "deployment.stop",
+      "params": {
+        "deploymentId": "dev"
+      },
+      "idempotencyKey": "stop-dev-1"
+    }
+  },
+  {
+    "example": "EX-009",
+    "kind": "response",
+    "part": 18,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r9",
+      "result": {
+        "operationId": "op-stop",
+        "method": "deployment.stop",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "accepted",
+        "recovery": "normal"
+      }
+    }
+  },
+  {
+    "example": "EX-010",
+    "kind": "request",
+    "part": 19,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r10",
+      "method": "operation.inspect",
+      "params": {
+        "operationId": "op-stop"
+      }
+    }
+  },
+  {
+    "example": "EX-010",
+    "kind": "response",
+    "part": 20,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r10",
+      "result": {
+        "operationId": "op-stop",
+        "method": "deployment.stop",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "succeeded",
+        "recovery": "normal",
+        "result": {
+          "writerTerminated": true,
+          "retainedVolumeIds": [
+            "repo-dev"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "example": "EX-011",
+    "kind": "request",
+    "part": 21,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r11",
+      "method": "migration.start",
+      "params": {
+        "deploymentId": "dev",
+        "targetVersion": "1",
+        "backupAcknowledged": true
+      },
+      "idempotencyKey": "migrate-dev-1"
+    }
+  },
+  {
+    "example": "EX-011",
+    "kind": "response",
+    "part": 22,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r11",
+      "result": {
+        "operationId": "op-migrate",
+        "method": "migration.start",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "accepted",
+        "recovery": "normal"
+      }
+    }
+  },
+  {
+    "example": "EX-012",
+    "kind": "request",
+    "part": 23,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r12",
+      "method": "operation.cancel",
+      "params": {
+        "operationId": "op-start"
+      },
+      "idempotencyKey": "cancel-dev-1"
+    }
+  },
+  {
+    "example": "EX-012",
+    "kind": "response",
+    "part": 24,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r12",
+      "result": {
+        "operationId": "op-cancel",
+        "method": "operation.cancel",
+        "deploymentId": "dev",
+        "acceptedAt": "2026-10-27T12:00:00Z",
+        "updatedAt": "2026-10-27T12:00:00Z",
+        "state": "accepted",
+        "recovery": "normal",
+        "targetOperationId": "op-start"
+      }
+    }
+  },
+  {
+    "example": "EX-013",
+    "kind": "request",
+    "part": 25,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r13",
+      "method": "operation.cancel",
+      "params": {
+        "operationId": "op-migrate"
+      },
+      "idempotencyKey": "cancel-migrate-1"
+    }
+  },
+  {
+    "example": "EX-013",
+    "kind": "response",
+    "part": 26,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r13",
+      "error": {
+        "code": "UNSAFE_CANCELLATION",
+        "stage": "cancel",
+        "retryable": false,
+        "message": "Migration has entered a noncancellable stage",
+        "operationId": "op-migrate",
+        "deploymentId": "dev"
+      }
+    }
+  },
+  {
+    "example": "EX-014",
+    "kind": "request",
+    "part": 27,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r14",
+      "method": "stream.subscribe",
+      "params": {
+        "deploymentId": "dev",
+        "kind": "logs",
+        "component": "api"
+      }
+    }
+  },
+  {
+    "example": "EX-014",
+    "kind": "response",
+    "part": 28,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r14",
+      "result": {
+        "subscriptionId": "sub-1",
+        "replayAvailable": true
+      }
+    }
+  },
+  {
+    "example": "EX-015",
+    "kind": "event",
+    "part": 29,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "subscriptionId": "sub-1",
+      "deploymentId": "dev",
+      "sequence": 1,
+      "type": "log",
+      "payload": {
+        "cursor": "log:1",
+        "text": "API starting"
+      }
+    }
+  },
+  {
+    "example": "EX-016",
+    "kind": "request",
+    "part": 30,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r16",
+      "method": "system.negotiate",
+      "params": {
+        "supported": [
+          {
+            "major": 2,
+            "minor": 0
+          }
+        ],
+        "requiredCapabilities": []
+      }
+    }
+  },
+  {
+    "example": "EX-016",
+    "kind": "response",
+    "part": 31,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r16",
+      "error": {
+        "code": "INCOMPATIBLE_VERSION",
+        "stage": "negotiate",
+        "retryable": false,
+        "message": "No common protocol major"
+      }
+    }
+  },
+  {
+    "example": "EX-017",
+    "kind": "request",
+    "part": 32,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r17",
+      "method": "system.negotiate",
+      "params": {
+        "supported": [
+          {
+            "major": 1,
+            "minor": 0
+          }
+        ],
+        "requiredCapabilities": [
+          "host.exec"
+        ]
+      }
+    }
+  },
+  {
+    "example": "EX-017",
+    "kind": "response",
+    "part": 33,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r17",
+      "error": {
+        "code": "UNSUPPORTED_CAPABILITY",
+        "stage": "negotiate",
+        "retryable": false,
+        "message": "Required capability is unavailable"
+      }
+    }
+  },
+  {
+    "example": "EX-018",
+    "kind": "request",
+    "part": 34,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r18",
+      "method": "stream.subscribe",
+      "params": {
+        "deploymentId": "dev",
+        "kind": "logs",
+        "cursor": "log:expired"
+      }
+    }
+  },
+  {
+    "example": "EX-018",
+    "kind": "response",
+    "part": 35,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r18",
+      "error": {
+        "code": "CURSOR_EXPIRED",
+        "stage": "stream",
+        "retryable": false,
+        "message": "Requested log history is no longer retained",
+        "deploymentId": "dev"
+      }
+    }
+  },
+  {
+    "example": "EX-019",
+    "kind": "event",
+    "part": 36,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "subscriptionId": "sub-1",
+      "deploymentId": "dev",
+      "sequence": 2,
+      "type": "error",
+      "payload": {
+        "error": {
+          "code": "STREAM_OVERFLOW",
+          "stage": "stream",
+          "retryable": false,
+          "message": "Consumer queue exceeded limit",
+          "deploymentId": "dev"
+        },
+        "gap": true
+      }
+    }
+  },
+  {
+    "example": "EX-020",
+    "kind": "response",
+    "part": 37,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": null,
+      "error": {
+        "code": "UNAUTHORIZED_PEER",
+        "stage": "authorize",
+        "retryable": false,
+        "message": "Peer identity is not permitted"
+      }
+    }
+  },
+  {
+    "example": "EX-021",
+    "kind": "response",
+    "part": 38,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": null,
+      "error": {
+        "code": "MALFORMED_FRAME",
+        "stage": "parse",
+        "retryable": false,
+        "message": "Frame is invalid or exceeds limit"
+      }
+    }
+  },
+  {
+    "example": "EX-022",
+    "kind": "request",
+    "part": 39,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r22",
+      "method": "deployment.start",
+      "params": {
+        "deploymentId": "dev",
+        "profileId": "core",
+        "profileVersion": "1",
+        "datastore": "memdb",
+        "allowProvision": false
+      },
+      "idempotencyKey": "start-dev-2"
+    }
+  },
+  {
+    "example": "EX-022",
+    "kind": "response",
+    "part": 40,
+    "message": {
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "requestId": "r22",
+      "error": {
+        "code": "OWNERSHIP_UNCERTAIN",
+        "stage": "recover",
+        "retryable": false,
+        "message": "Previous writer termination has not been established",
+        "deploymentId": "dev"
+      }
+    }
+  }
+]

@@ -1,0 +1,10 @@
+$kind: collection
+name: GitStore core runtime readiness
+description: Pinned upstream consumer contract; disposable owned namespaces only. Credentials resolve from private fixture variables and must never be saved here. Controller health has no public host-port mapping.
+variables:
+  - key: apiBase
+    value: 'http://127.0.0.1:4000'
+  - key: gitBase
+    value: 'http://127.0.0.1:9000'
+  - key: controllerBase
+    value: 'http://127.0.0.1:5001'

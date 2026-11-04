@@ -1,0 +1,295 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GitStore core bootstrap HTTP consumer contract",
+    "version": "0.1.0-alpha.8",
+    "description": "Existing upstream interfaces at commit 06152d193e854bc643fa884daa8b9f30b0d75d0f. This documents a local runtime consumer, not new server endpoints or remote CLI login support. Only explicitly owned disposable fixtures are test targets."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4000"
+    }
+  ],
+  "paths": {
+    "/ready": {
+      "get": {
+        "operationId": "coreApiReady",
+        "description": "A 200 alone is insufficient: wait for healthy status and healthy datastore/resource_watch checks. A warming process may return degraded with 200.",
+        "responses": {
+          "200": {
+            "description": "Readiness report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiHealth"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unhealthy dependencies"
+          }
+        }
+      }
+    },
+    "/graphql": {
+      "post": {
+        "operationId": "coreBootstrapGraphQL",
+        "description": "The consumer uses only the pinned login and createServiceAccount documents. Login uses generated administrator material in variables; enrollment uses its bearer token and only the controller public key. GraphQL errors/partial results remain distinct from transport success. Mutations are never retried automatically after an uncertain response.",
+        "security": [
+          {},
+          {
+            "bearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query",
+                  "variables"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GraphQL result or errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "message"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication rejected"
+          },
+          "403": {
+            "description": "Authorization rejected"
+          },
+          "429": {
+            "description": "Rate limited; no blind mutation retry"
+          }
+        }
+      }
+    },
+    "/gitstore-system/gitstore-system/info/refs": {
+      "servers": [
+        {
+          "url": "http://127.0.0.1:9000"
+        }
+      ],
+      "get": {
+        "operationId": "coreAuthenticatedGitReady",
+        "description": "Read-only authenticated advertisement for the API-provisioned system repository. API owns Git HTTP; the Git service's gRPC port is never publicly forwarded.",
+        "security": [
+          {
+            "basic": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "git-upload-pack"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Git smart HTTP advertisement",
+            "content": {
+              "application/x-git-upload-pack-advertisement": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Repository authorization rejected"
+          },
+          "404": {
+            "description": "Bootstrap repository unavailable"
+          }
+        }
+      }
+    },
+    "/health": {
+      "servers": [
+        {
+          "url": "http://127.0.0.1:5001"
+        }
+      ],
+      "get": {
+        "operationId": "coreControllerReady",
+        "description": "Internal namespace endpoint only. Require status ok, ready true, credentialReady true and all four registered kinds out of recovery, with no stalled or poisoned work. A process or HTTP 200 alone is insufficient.",
+        "responses": {
+          "200": {
+            "description": "Controller operational report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "version",
+                    "ready",
+                    "credentialReady",
+                    "kinds"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "ready": {
+                      "type": "boolean"
+                    },
+                    "credentialReady": {
+                      "type": "boolean"
+                    },
+                    "kinds": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "registered": {
+                            "type": "boolean"
+                          },
+                          "recovering": {
+                            "type": "boolean"
+                          },
+                          "stalled": {
+                            "type": "boolean"
+                          },
+                          "poisonItems": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "registered",
+                          "recovering",
+                          "stalled",
+                          "poisonItems"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Credential, recovery or reconciliation health is degraded"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "basic": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    },
+    "schemas": {
+      "ApiHealth": {
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "timestamp",
+          "checks"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "degraded",
+              "unhealthy"
+            ]
+          },
+          "version": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "checks": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "x-upstream-source": "https://github.com/gitstore-dev/GitStore/tree/06152d193e854bc643fa884daa8b9f30b0d75d0f"
+}

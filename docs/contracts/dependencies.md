@@ -84,11 +84,13 @@ Prove C/Rust wire round trips, peer auth, parser bounds/fuzz/sanitizers, durable
 
 Execute EXP-003A/B: compare linking/license/size and maintained image pipelines, private auth redirects, safe unpack, offline/integrity/cache failures. Provision only verified profile assets; no claimed standalone installation yet.
 
-Added 2026-10-28: EXP-003C also gates artifact provenance beginning with the first M1
-CLI release. Generate digest-bound evidence in the trusted build, enforce producer/
-workflow/source policy before publication or activation, and prove tampering/wrong-
-identity/missing-evidence/offline-trust failures. Preserve third-party provenance without
-misrepresenting repackaged assets as GitStore-built. All three experiments remain not-run.
+Added 2026-10-28, scope clarified 2026-11-03: EXP-003C gates artifacts produced
+and published by `gitstore-dev/cli`, beginning with the first M1 release. Verify
+exact subject/producer/workflow/source identities and negative cases before CLI
+publication. An OCI case applies only if this repository publishes OCI artifacts.
+Upstream GitStore service images do not require attestations; use trusted-source,
+pinned-platform/digest validation online and offline. Their lack of attestations
+is not a runtime blocker. All three experiments remain not-run.
 
 ## DEP-014
 

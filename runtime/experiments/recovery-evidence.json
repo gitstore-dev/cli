@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "scope": "T054 recovery prerequisites; not complete manager actor reattachment or release support",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "host": "Dedicated UID 11000 in disposable Apple Linux arm64 fixture",
+  "sourceSha256": {
+    "daemon/src/recovery.c": "ec7169182bd634eeb9579b5b66f97be4548dcf52b8a6051668a76ee8fb92af9b",
+    "daemon/src/native_exit.c": "409f7ce0e162851bf32aa847f1ce4a5b488e26297a192903bad2571759530e25",
+    "daemon/src/scope_recovery.c": "c55ec7d285d5672ea0ee21201029660e6a292e54e7666ccf1dc8d81305c8b388",
+    "daemon/src/network_restore.c": "7d1e3ec1a38be76d6680bd4d3f2f8bbc061e866d42ffde5010e5be1aea92e212",
+    "daemon/src/filesystem_job.c": "317f6285e6ad97a8d59d19b7ad217d7c4bd7b9ebac6d4fc136ba92b182a7dfa2",
+    "daemon/src/deployment_records.c": "70a435d2ffe52bb4a428854803594cc52321c6e739dd47b5aa76f2e649e6a0af",
+    "daemon/src/volumes.c": "b2737d54b342f4992dff4299d7bab146c79c869cc53a1fb09c44dc844eaa687a",
+    "daemon/tests/network_worker_probe.c": "cedf4027697cea374e9ca61c47df7b5c839cc138bb99d34807e8f0708459f03f"
+  },
+  "probeSha256": {
+    "daemon-native": "ad7532856899f2831449158ded315a3a8e5e005760ff9f803acd156ecb65f3df",
+    "daemon-native-sanitized": "4fce9d0fc691176df09940d24a1981818dc53b88f724150818083c375c6d80dd"
+  },
+  "nativeNetworkCases": [
+    {
+      "mode": "normal",
+      "root": "/home/gitstorefixture/experiments/network-restore-identity-6bgjfgl8",
+      "status": "passed"
+    },
+    {
+      "mode": "lost-ack",
+      "root": "/home/gitstorefixture/experiments/network-restore-identity-tf_dl1u9",
+      "status": "passed"
+    },
+    {
+      "mode": "sanitized-normal",
+      "root": "/home/gitstorefixture/experiments/network-restore-identity-_jmoe9lh",
+      "status": "passed",
+      "instrumentation": "ASan/UBSan; leak detection enabled"
+    }
+  ],
+  "verified": [
+    "Actual DNS, loopback forwarding and fixed owned stop",
+    "Read-only worker recovers network only from exact durable owner and live kernel evidence",
+    "Four explicitly transferred capabilities adopted only against the parent ledger identity",
+    "Wrong parent identity rejected while reply ownership remains intact",
+    "Retained volume observation does not acquire or release live writer lease",
+    "Original resource generation read separately from a later desired stop generation",
+    "Missing/substituted scope/rootfs refused without repair"
+  ],
+  "publicCoreRecords": [
+    "runtime-run-core-offline-kcbk_wf7.json",
+    "runtime-run-core-offline-yg9nj63x.json"
+  ],
+  "remaining": [
+    "Partial-stage/lost-reply reconciliation and retry-safe owner-only compensation",
+    "Ongoing readiness monitoring and restart",
+    "Safe historical retention/eviction",
+    "Full M2 verification and distribution size gates"
+  ],
+  "publicManagerLoss": {
+    "record": {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-04T11:58:05Z",
+      "scenario": "recovery",
+      "case": null,
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/recovery-boundary-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/build/root-rust/release/gs",
+          "sha256": "b428dccb06a4980a981f1ff3b89388132c8bb72aa0ded5c932704e6948d3528e"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native/gitstored",
+          "sha256": "06bf2e8578ec82fffc0c81fae3a7bfea5b63312224928f41134387e090317ccb"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-3vq22n_a/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 85.634
+    },
+    "root": "/home/gitstorefixture/experiments/gs-public-runtime-1zu8q4qj",
+    "scope": "Actual public dispatcher; manager SIGKILL, live core identities, immutable terminal replay, reattachment for observed stop, warm restart",
+    "sourceSha256": {
+      "daemon/src/restoration.c": "6e6f0e66adcd7a34fdf2c4ff590d8a48d44a056803a16a996a72c56d4b37771a",
+      "daemon/src/runtime_manager.c": "8cd031c0d807fb41a0989f8e1477197e33af1b0531520d5b7f4cc2a8963f67f3",
+      "daemon/src/cleanup.c": "81165299e53479de26bbf7f1c09dd491ab718cbf38f71287f953811f2c5eaa05",
+      "daemon/src/filesystem_job.c": "5dd40f5cf6700e107634198863c043815b0e91e396cc5e44d11995cb7813e759",
+      "daemon/src/deployments.c": "e6b9b537eab7bcb0fc709c66b9c1979f63780264ad90f2ed0b65c551ea0a19e1",
+      "daemon/src/volume_records.c": "8577eac3e7c8ae7328b84e2fe078feb22c51ab888fcc5be01cce3be115a2daa2",
+      "tests/runtime/test_recovery.py": "bb240c086f849770f0a15d9a2217377c2edb0221ddaa1adfd8f3aad5b3d60f89",
+      "tests/runtime/support.py": "c1bab69bb488a487d8ccfcebfd553002d87039bf63c6dcd635fe8170dcc697e2"
+    },
+    "preserved": [
+      "All three original native process start identities after manager death",
+      "Original completed operation record and idempotency key",
+      "Protected bootstrap material hash",
+      "Asset content hashes",
+      "Canonical retained volume device/inode"
+    ],
+    "readiness": "Old readiness invalidated on manager startup; no automatic readiness claim before observed stop/restart"
+  }
+}

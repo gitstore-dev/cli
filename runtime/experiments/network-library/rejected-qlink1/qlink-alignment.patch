@@ -1,0 +1,16 @@
+--- a/src/ip.h
++++ b/src/ip.h
+@@ -199,9 +199,12 @@
+     struct mbuf *mptr;
+ } SLIRP_PACKED_END;
+ #endif
++/* Queue overlays can be unaligned after an IPv4 header. Keep pointer
++ * accesses defined without changing the internal queue layout. */
++SLIRP_PACKED_BEGIN
+ struct qlink {
+     void *next, *prev;
+-};
++} SLIRP_PACKED_END;
+ 
+ /*
+  * Overlay for ip header used by other protocols (tcp, udp).

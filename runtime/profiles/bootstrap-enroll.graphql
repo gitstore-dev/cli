@@ -1,0 +1,8 @@
+mutation BootstrapController($name: String!, $keyID: String!, $publicKey: String!) {
+  createServiceAccount(input: {
+    metadata: {name: $name}
+    publicKeys: [{kid: $keyID, algorithm: "Ed25519", publicKeyPEM: $publicKey}]
+  }) {
+    serviceAccount { metadata { uid } }
+  }
+}

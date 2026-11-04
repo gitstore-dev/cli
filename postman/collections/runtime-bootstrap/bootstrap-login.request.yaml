@@ -1,0 +1,36 @@
+$kind: http-request
+name: Local bootstrap administrator login
+order: 2000
+method: POST
+url: '{{apiBase}}/graphql'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {"query":"mutation BootstrapLogin($username:String!,$password:String!){login(input:{username:$username,password:$password}){token{accessToken}}}","variables":{}}
+settings:
+  followRedirects: false
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const password = pm.variables.get("bootstrapPassword");
+      if (typeof password !== "string" || !/^[0-9a-f]{64}$/.test(password)) {
+        throw new Error("Provide generated disposable fixture credentials through private variables");
+      }
+      const body = JSON.parse(pm.request.body.raw);
+      body.variables = {username: "admin", password};
+      pm.request.body.update(JSON.stringify(body));
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Generated bootstrap identity can authenticate", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(typeof body.data.login.token.accessToken).to.eql("string");
+        pm.expect(body.data.login.token.accessToken.length > 0).to.eql(true);
+        pm.variables.set("bootstrapToken", body.data.login.token.accessToken);
+      });

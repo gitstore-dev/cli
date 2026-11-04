@@ -1,0 +1,60 @@
+name: Daemon
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [normal, sanitized]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Configure normal build
+        if: matrix.mode == 'normal'
+        run: cmake -S daemon -B build/daemon -DCMAKE_BUILD_TYPE=Debug -DGITSTORED_TESTING=ON
+      - name: Configure Clang 18 sanitizer build
+        if: matrix.mode == 'sanitized'
+        env:
+          CC: clang-18
+        run: cmake -S daemon -B build/daemon -DCMAKE_BUILD_TYPE=Debug -DGITSTORED_TESTING=ON -DGITSTORED_SANITIZERS=ON
+      - run: cmake --build build/daemon --parallel 2
+      - run: ctest --test-dir build/daemon --output-on-failure
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1
+      - name: Install pinned Rust toolchain
+        if: matrix.mode == 'normal'
+        run: |
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy
+      - name: Isolated Rust/C process setup
+        if: matrix.mode == 'normal'
+        run: |
+          cargo build --workspace --locked
+          scripts/test-daemon.sh --daemon build/daemon/gitstored --gs target/debug/gs
+      - name: Image code library contract checks
+        if: matrix.mode == 'normal'
+        run: |
+          cargo fmt --manifest-path daemon/image-backend/Cargo.toml -- --check
+          cargo clippy --manifest-path daemon/image-backend/Cargo.toml --all-targets --locked -- -D warnings
+          cargo test --manifest-path daemon/image-backend/Cargo.toml --locked
+          cmake -S daemon -B build/daemon-image-sdk -DCMAKE_BUILD_TYPE=Release -DGITSTORED_TESTING=ON -DGITSTORED_IMAGE_SDK=ON
+          cmake --build build/daemon-image-sdk --parallel 2
+          ctest --test-dir build/daemon-image-sdk --output-on-failure
+      - name: Production build has no test facilities
+        if: matrix.mode == 'normal'
+        run: |
+          cmake -S daemon -B build/daemon-production -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/daemon-production --parallel 2
+          build/daemon-production/gitstored --version

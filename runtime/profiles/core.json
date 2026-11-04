@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 1,
+  "profileId": "core",
+  "profileVersion": "1",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "evidence": "runtime/profiles/upstream-evidence.json; immutable source/registry identities, execution support tracked separately",
+  "components": [
+    "api",
+    "git",
+    "controller"
+  ],
+  "datastores": [
+    "memdb",
+    "scylladb"
+  ],
+  "datastoreMapping": {
+    "memdb": "memdb",
+    "scylladb": "scylla"
+  },
+  "optionalComponents": [],
+  "images": [
+    {
+      "component": "api",
+      "repository": "ghcr.io/gitstore-dev/api",
+      "indexDigest": "sha256:4dffb63e47fdb91238617d9e12bc919c4b3186e5d130c61e8360f67615972196",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:bb0767234c568b40a4eb1519b96a1f5989fe26139e218d2348fdf404e888d951",
+          "configDigest": "sha256:d8620f78fd28a0c95611d08c89f7d7e579341e5956afa96b7b9feec0579c6fc8",
+          "entrypoint": [],
+          "command": [
+            "/app/api"
+          ]
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:3c61f77edcbe719069d9173f1bad270cc46a81e97e756844cea3db8dcfb31172",
+          "configDigest": "sha256:02e6a37028739526ded8a55932bdfdafb5f814ecbafb0a139ac8b93d79379d4d",
+          "entrypoint": [],
+          "command": [
+            "/app/api"
+          ]
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [],
+        "blobOrigins": [
+          "https://pkg-containers.githubusercontent.com"
+        ],
+        "evidence": "runtime/experiments/image-library/ghcr-routing*.json"
+      }
+    },
+    {
+      "component": "git",
+      "repository": "ghcr.io/gitstore-dev/git-service",
+      "indexDigest": "sha256:63853aa8501c848860f7d206571a2aef22d25836403ebfcac6308e6067eb10ec",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:7dfc6898ad198d0c8ca9d77b09d766b24479425c4dfc55be93aceaf3bf3866b0",
+          "configDigest": "sha256:f6eb60f9d776dacf21d6738e4d2bec4c87e3a635e70663490fd46f7a63f11229",
+          "entrypoint": [],
+          "command": [
+            "/app/git-service"
+          ]
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:b5dcff4321fd0ed799b7244d9f0eeda496868afb4a2dccec94e242ea2f951f43",
+          "configDigest": "sha256:ac21ec89eb9d710fed05d7445e3d93175711e3e5bb920fcb77e414b6cba3a354",
+          "entrypoint": [],
+          "command": [
+            "/app/git-service"
+          ]
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [],
+        "blobOrigins": [
+          "https://pkg-containers.githubusercontent.com"
+        ],
+        "evidence": "runtime/experiments/image-library/ghcr-routing*.json"
+      }
+    },
+    {
+      "component": "controller",
+      "repository": "ghcr.io/gitstore-dev/controller-manager",
+      "indexDigest": "sha256:8ebf78d83db74dbf94631a917e5a8305f51a42e209c3dc4413a44fdff7d0faf3",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:a708031542e6818a093bcb44bb4144b236d12cd4d495bfb4776429f6cfdd77cd",
+          "configDigest": "sha256:a3c85f30b5687bdcb23e26fc9011ea7e276497928aad37633706357a02f1d2c2",
+          "entrypoint": [],
+          "command": [
+            "/app/controller-manager"
+          ]
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:d21a0cbfa77aa3933eb0fd4ba6575105d95bcc1176247844a0b7c6f1402257af",
+          "configDigest": "sha256:9bc8c7f6b3b9b2ba02b6784b426a9717d09dea85ae720fd9640c08c11ce85328",
+          "entrypoint": [],
+          "command": [
+            "/app/controller-manager"
+          ]
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [],
+        "blobOrigins": [
+          "https://pkg-containers.githubusercontent.com"
+        ],
+        "evidence": "runtime/experiments/image-library/ghcr-routing*.json"
+      }
+    }
+  ],
+  "config": {
+    "api": {
+      "files": [
+        "api-base.toml",
+        "api-owned.toml"
+      ],
+      "layering": "additive",
+      "nativeValidator": {
+        "imageComponent": "api",
+        "command": [
+          "/app/gitctl",
+          "validate-local-config",
+          "--config-file",
+          "/etc/gitstore/gitstore.toml",
+          "--policy-file",
+          "/etc/gitstore/policy.yaml"
+        ]
+      },
+      "layers": [
+        {
+          "api": {
+            "datastore": {
+              "backend": "memdb"
+            },
+            "port": 4000,
+            "git_port": 9000
+          }
+        }
+      ]
+    },
+    "git": {
+      "files": [
+        "git.toml"
+      ],
+      "layering": "single-file",
+      "nativeValidator": null,
+      "layers": [
+        {
+          "git_service": {
+            "grpc_port": 50051
+          }
+        }
+      ]
+    },
+    "controller": {
+      "files": [
+        "controller-base.toml",
+        "controller-owned.toml"
+      ],
+      "layering": "additive",
+      "nativeValidator": null,
+      "layers": [
+        {
+          "controller": {
+            "port": 5001
+          }
+        }
+      ]
+    }
+  },
+  "readiness": {
+    "api": {
+      "path": "/ready",
+      "port": 4000
+    },
+    "git": {
+      "kind": "authenticated-public-git",
+      "status": "execution verification required"
+    },
+    "controller": {
+      "path": "/health",
+      "port": 5001
+    }
+  },
+  "credentialPolicy": {
+    "apiIssuer": "api-only",
+    "controllerSigningRecord": "controller-only",
+    "validationGeneratesCredentials": false
+  },
+  "bootstrap": {
+    "datastore": "memdb",
+    "credentialMaterialFormat": "gitstored-bootstrap-material/v1",
+    "credentialPurpose": "bootstrap-material",
+    "credentialStorage": "OS store by default; protected-file only as explicit owner setting",
+    "serviceAccountName": "gitstore-controller-manager",
+    "controllerKeyID": "controller-key",
+    "startupOrder": [
+      "persist-or-read-existing-private-material",
+      "prepare-component-specific-inputs",
+      "launch-git-with-lazy-catalog-client",
+      "launch-api-and-provision-system-repositories",
+      "observe-api-ready-and-authenticated-public-git",
+      "enroll-existing-controller-public-key-and-record-assigned-uid",
+      "launch-controller",
+      "observe-credential-and-controller-kind-readiness"
+    ],
+    "privateEndpoints": {
+      "apiCatalogGrpc": 6000,
+      "gitServiceGrpc": 50051,
+      "controllerHealth": 5001
+    },
+    "publicDestinationRoles": {
+      "api": 4000,
+      "gitHttp": 9000
+    },
+    "ephemeralState": [
+      "memdb catalogue and identities",
+      "controller checkpoints"
+    ],
+    "retainedState": [
+      "named repository volume and RPC replay records",
+      "private credential material"
+    ],
+    "restartPolicy": "reuse stored material; missing once-created material fails without regeneration",
+    "implementationContract": "private worker preparation, fixed public HTTP interfaces and explicit owned readiness graph; compatibility evidence tracked separately"
+  }
+}

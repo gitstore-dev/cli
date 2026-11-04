@@ -148,6 +148,7 @@ pub struct Client {
 }
 impl Client {
     pub fn new(endpoint: &str, token: Secret, timeout: Duration) -> Result<Self> {
+        crate::initialize_http_tls();
         let http = reqwest::blocking::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(timeout.min(Duration::from_secs(5)))

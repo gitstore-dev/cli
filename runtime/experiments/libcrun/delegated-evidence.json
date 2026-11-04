@@ -1,0 +1,121 @@
+{
+  "date": "2026-11-03",
+  "fixture": "gitstore-m2-linux-a1a13c",
+  "platform": "linux/arm64",
+  "uid": 11000,
+  "sourceLock": "source-lock.json",
+  "scope": "tiny static payload through real libcrun C APIs; not a GitStore service or production backend adapter",
+  "fixturePreparation": "guest-only root enabled lingering and started user@11000.service; no product elevation or setup helper is implemented",
+  "sessionRuntimeDirectory": "/run/user/11000",
+  "sessionBus": "unix:path=/run/user/11000/bus",
+  "delegatedControllers": [
+    "cpu",
+    "memory",
+    "pids"
+  ],
+  "systemdCgroupManager": true,
+  "forceNoCgroup": false,
+  "observedCgroupValues": {
+    "memory.max": "134217728",
+    "pids.max": "64",
+    "cpu.max": "50000 100000"
+  },
+  "observedPayload": {
+    "noNewPrivileges": true,
+    "effectiveCapabilities": "0",
+    "seccompMode": 2,
+    "explicitFilter": "getpriority returns EPERM"
+  },
+  "seccompScope": "probe filter with default allow and one explicitly denied syscall; not a complete production service policy",
+  "normalStatic": [
+    "create/start/state/TERM/exit0/delete",
+    "worker exits and lost-start-ack SIGSEGV leave payload observable",
+    "unintended sentinel FD absent"
+  ],
+  "clang18AsanUbsan": {
+    "callerAndLibcrunInstrumented": true,
+    "normal": 0,
+    "startCrash": 0,
+    "detectLeaks": true,
+    "deliberateSegvHandling": "handle_segv=0",
+    "directElf": true
+  },
+  "cleanup": "all successful temporary roots removed only after observed payload termination, native delete and expected lifecycle/security markers",
+  "remaining": [
+    "public lifecycle dispatch of the native adapter",
+    "actual core service compatibility under the registered policy",
+    "network and retained-volume integration",
+    "actual GitStore lifecycle",
+    "amd64 and hosted validation"
+  ],
+  "maintainedPolicyCandidate": {
+    "date": "2026-11-04",
+    "sourceLock": "../../profiles/seccomp/source-lock.json",
+    "specialization": "native arm64, zero capabilities, minimum Linux 6.8",
+    "inheritedFixtureSeccomp": 0,
+    "payloadSeccomp": 2,
+    "clone3": "explicit ENOSYS result",
+    "normalStatic": {
+      "normal": 0,
+      "startCrash": 0
+    },
+    "clang18AsanUbsan": {
+      "normal": 0,
+      "startCrash": 0
+    },
+    "unknownAllowNamesRemainDefaultDenied": [
+      "getxattrat",
+      "listmount",
+      "listxattrat",
+      "mseal",
+      "removexattrat",
+      "riscv_hwprobe",
+      "setxattrat",
+      "statmount",
+      "uretprobe"
+    ],
+    "limits": "Tiny static workload only; complete API/Git/controller compatibility and amd64 native execution remain unverified"
+  },
+  "daemonAdapter": {
+    "date": "2026-11-04",
+    "implementation": [
+      "daemon/src/backend_libcrun.c",
+      "daemon/src/native_abi.c",
+      "daemon/src/native_job.c",
+      "daemon/src/native_exit.c",
+      "daemon/src/execution_plan.c"
+    ],
+    "build": "pinned static libcrun from daemon/cmake/Libcrun.cmake; crun executable, dynamic plugin loading, BPF and CRIU disabled",
+    "ordinary": {
+      "fixtureNormal": 0,
+      "fixtureLostStartAck": 0,
+      "registeredSyntheticGitNormal": 0,
+      "registeredSyntheticGitLostStartAck": 0
+    },
+    "clang18AsanUbsan": {
+      "fixtureNormal": 0,
+      "fixtureLostStartAck": 0,
+      "registeredSyntheticGitNormal": 0,
+      "registeredSyntheticGitLostStartAck": 0,
+      "detectLeaks": true,
+      "addressSpaceException": "ASan reserves many TiB; instrumented worker and OCI payload omit RLIMIT_AS. Ordinary lane proves 1GiB worker soft and 1TiB workload soft/hard, with 512MiB physical cgroup limit. Other bounds remain."
+    },
+    "observed": [
+      "stale process-start stamp refuses TERM before signalling",
+      "asynchronous cancellation reaps worker, leaves cancellation byte unread, and preserves workload uncertainty",
+      "workload survives lost START acknowledgement and worker cancellation",
+      "parent-only PID/start-time collector reaps actual exit 0",
+      "unintended sentinel descriptor absent",
+      "registered Git factory fixes command/config arguments and mount destinations; private config and root reject writes; private tmpfs and writable repository mount work",
+      "Jansson symbols hidden from dynamic export; JSON-C ABI isolated in its own translation unit"
+    ],
+    "workerPreconditions": "single-threaded parent/subreaper with default SIGCHLD; non-root Linux >=6.8, cgroup-v2 delegated cpu/memory/pids and reachable owner session bus; CORE=0 and finite file bounds. Native worker retains ordinary dumpability for rootless uid/gid-map procfs access; credential/image workers keep their separate stricter policy.",
+    "limits": [
+      "synthetic registered payload, not actual GitStore or image-authenticity proof",
+      "runtime namespace/network and canonical volume lifetime integration remain T041/T043",
+      "public lifecycle, bootstrap/readiness, restart recovery and package support not enabled",
+      "amd64 and hosted CI unverified"
+    ],
+    "failedDiagnosticRoots": "failed synthetic roots retained for explicit ownership observation, not automatically removed on uncertain outcomes"
+  }
+}

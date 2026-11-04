@@ -1,0 +1,964 @@
+{
+  "schemaVersion": 1,
+  "recorded": "2026-11-03",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "evidenceLevel": "committed source and public registry metadata; no runtime execution",
+  "sources": [
+    {
+      "path": "gitstore-api/cmd/gitctl/main.go",
+      "url": "https://raw.githubusercontent.com/gitstore-dev/GitStore/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/cmd/gitctl/main.go",
+      "sha256": "0316ecb89319e63fbdd0c22e4700301b3e52c7e34b9dc6b31135feff08956aea",
+      "matches": [
+        {
+          "line": 45,
+          "text": "var migrateSchema = scylla.Migrate"
+        },
+        {
+          "line": 58,
+          "text": "case \"generate\":"
+        },
+        {
+          "line": 60,
+          "text": "case \"hash-password\":"
+        },
+        {
+          "line": 80,
+          "text": "case \"users\":"
+        },
+        {
+          "line": 83,
+          "text": "case \"rbac\":"
+        },
+        {
+          "line": 86,
+          "text": "case \"gen-jwt-secret\":"
+        },
+        {
+          "line": 89,
+          "text": "case \"gen-hmac-secret\":"
+        },
+        {
+          "line": 92,
+          "text": "case \"scylla-projection-audit\":"
+        },
+        {
+          "line": 95,
+          "text": "case \"migrate\":"
+        },
+        {
+          "line": 96,
+          "text": "return runMigrate(args[1:], stdout, stderr)"
+        },
+        {
+          "line": 98,
+          "text": "case \"scylla-projection-repair\":"
+        },
+        {
+          "line": 101,
+          "text": "case \"enroll-serviceaccount\":"
+        },
+        {
+          "line": 104,
+          "text": "case \"generate-signing-key\":"
+        },
+        {
+          "line": 107,
+          "text": "case \"validate-local-config\":"
+        },
+        {
+          "line": 118,
+          "text": "fmt.Fprintln(output, \"Usage: gitctl <subcommand> [args]\")"
+        },
+        {
+          "line": 159,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 160,
+          "text": "root := flags.String(\"root\", \"..\", \"repository root\")"
+        },
+        {
+          "line": 161,
+          "text": "catalogPath := flags.String(\"catalog\", \"\", \"catalog override for validation\")"
+        },
+        {
+          "line": 162,
+          "text": "check := flags.Bool(\"check\", false, \"report drift without modifying files\")"
+        },
+        {
+          "line": 163,
+          "text": "if err := flags.Parse(args[1:]); err != nil {"
+        },
+        {
+          "line": 166,
+          "text": "if flags.NArg() != 0 {"
+        },
+        {
+          "line": 280,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 281,
+          "text": "configFile := flags.String(\"config-file\", \"\", \"path to config.toml\")"
+        },
+        {
+          "line": 282,
+          "text": "policyFile := flags.String(\"policy-file\", \"\", \"path to policy.yaml\")"
+        },
+        {
+          "line": 283,
+          "text": "if err := flags.Parse(args); err != nil {"
+        },
+        {
+          "line": 318,
+          "text": "fmt.Fprintln(stderr, \"Usage: gitctl rbac (role add | binding add) [flags]\")"
+        },
+        {
+          "line": 322,
+          "text": "case \"role add\":"
+        },
+        {
+          "line": 324,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 325,
+          "text": "path := flags.String(\"file\", \"\", \"path to policy.yaml\")"
+        },
+        {
+          "line": 326,
+          "text": "name := flags.String(\"name\", \"\", \"new role name\")"
+        },
+        {
+          "line": 327,
+          "text": "scope := flags.String(\"scope\", \"cluster\", \"role scope: cluster or namespace (definitions have no namespace)\")"
+        },
+        {
+          "line": 329,
+          "text": "flags.Var(&allow, \"allow\", \"allowed action; repeat or use commas\")"
+        },
+        {
+          "line": 330,
+          "text": "flags.Var(&deny, \"deny\", \"denied action; repeat or use commas\")"
+        },
+        {
+          "line": 331,
+          "text": "if err := flags.Parse(args[2:]); err != nil {"
+        },
+        {
+          "line": 335,
+          "text": "flags.Visit(func(f *flag.Flag) {"
+        },
+        {
+          "line": 344,
+          "text": "if flags.NArg() != 0 {"
+        },
+        {
+          "line": 358,
+          "text": "case \"binding add\":"
+        },
+        {
+          "line": 360,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 361,
+          "text": "path := flags.String(\"file\", \"\", \"path to policy.yaml\")"
+        },
+        {
+          "line": 362,
+          "text": "subject := flags.String(\"subject\", \"\", \"identity subject\")"
+        },
+        {
+          "line": 363,
+          "text": "role := flags.String(\"role\", \"\", \"existing role name\")"
+        },
+        {
+          "line": 364,
+          "text": "scope := flags.String(\"scope\", \"cluster\", \"binding scope: cluster or namespace\")"
+        },
+        {
+          "line": 365,
+          "text": "namespace := flags.String(\"namespace\", \"\", \"explicit namespace required only for namespace bindings\")"
+        },
+        {
+          "line": 366,
+          "text": "subjectKind := flags.String(\"subject-kind\", \"User\", \"User, Group or ServiceAccount\")"
+        },
+        {
+          "line": 367,
+          "text": "roleKind := flags.String(\"role-kind\", \"ClusterRole\", \"ClusterRole or Role\")"
+        },
+        {
+          "line": 368,
+          "text": "if err := flags.Parse(args[2:]); err != nil {"
+        },
+        {
+          "line": 375,
+          "text": "if flags.NArg() != 0 {"
+        },
+        {
+          "line": 391,
+          "text": "fmt.Fprintln(stderr, \"Usage: gitctl rbac (role add | binding add) [flags]\")"
+        },
+        {
+          "line": 398,
+          "text": "fmt.Fprintln(stderr, \"Usage: gitctl users add --file <users.yaml> --username <name> --password-stdin [--email <email>] [--display-name <name>]\")"
+        },
+        {
+          "line": 402,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 403,
+          "text": "path := flags.String(\"file\", \"\", \"path to users.yaml\")"
+        },
+        {
+          "line": 404,
+          "text": "username := flags.String(\"username\", \"\", \"unique username\")"
+        },
+        {
+          "line": 405,
+          "text": "email := flags.String(\"email\", \"\", \"optional email address\")"
+        },
+        {
+          "line": 406,
+          "text": "displayName := flags.String(\"display-name\", \"\", \"optional display name\")"
+        },
+        {
+          "line": 407,
+          "text": "passwordStdin := flags.Bool(\"password-stdin\", false, \"read the password from stdin\")"
+        },
+        {
+          "line": 408,
+          "text": "if err := flags.Parse(args[1:]); err != nil {"
+        },
+        {
+          "line": 453,
+          "text": "if err := flags.Parse(args); err != nil {"
+        },
+        {
+          "line": 477,
+          "text": "dryRun := flags.Bool(\"dry-run\", false, \"print the repair plan without mutating Scylla\")"
+        },
+        {
+          "line": 478,
+          "text": "confirm := flags.Bool(\"confirm\", false, \"confirm conditional projection mutations\")"
+        },
+        {
+          "line": 479,
+          "text": "if err := flags.Parse(args); err != nil {"
+        },
+        {
+          "line": 522,
+          "text": "func runMigrate(args []string, stdout, stderr io.Writer) int {"
+        },
+        {
+          "line": 524,
+          "text": "timeout := flags.Duration(\"timeout\", 5*time.Minute, \"maximum migration duration\")"
+        },
+        {
+          "line": 525,
+          "text": "if err := flags.Parse(args); err != nil {"
+        },
+        {
+          "line": 528,
+          "text": "if flags.NArg() != 0 || *timeout <= 0 {"
+        },
+        {
+          "line": 536,
+          "text": "if err := migrateSchema(ctx, cfg(), log); err != nil {"
+        },
+        {
+          "line": 546,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 547,
+          "text": "hosts := flags.String(\"hosts\", envOrDefault(\"GITSTORE_API__DATASTORE__SCYLLA__HOSTS\", \"localhost:9042\"), \"comma-separated Scylla host:port endpoints\")"
+        },
+        {
+          "line": 548,
+          "text": "keyspace := flags.String(\"keyspace\", envOrDefault(\"GITSTORE_API__DATASTORE__SCYLLA__KEYSPACE\", \"gitstore\"), \"Scylla keyspace\")"
+        },
+        {
+          "line": 549,
+          "text": "username := flags.String(\"username\", os.Getenv(\"GITSTORE_API__DATASTORE__SCYLLA__USERNAME\"), \"Scylla username\")"
+        },
+        {
+          "line": 550,
+          "text": "tls := flags.Bool(\"tls\", envBool(\"GITSTORE_API__DATASTORE__SCYLLA__TLS\"), \"enable TLS\")"
+        },
+        {
+          "line": 551,
+          "text": "disableShardAware := flags.Bool("
+        }
+      ]
+    },
+    {
+      "path": "gitstore-api/cmd/gitctl/enroll_serviceaccount.go",
+      "url": "https://raw.githubusercontent.com/gitstore-dev/GitStore/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/cmd/gitctl/enroll_serviceaccount.go",
+      "sha256": "c205f8a679c85d213df157adaec9f6684ad15ac62cb547a86e01500d8eb4b911",
+      "matches": [
+        {
+          "line": 30,
+          "text": "const signingRecordRotationHint = \"For hot rotation, enroll a distinct key ID, atomically replace the controller-only signing record, and observe all replicas before retiring the old key. Never put private records in Git or shared config.\""
+        },
+        {
+          "line": 62,
+          "text": "type enrollmentClient struct {"
+        },
+        {
+          "line": 69,
+          "text": "fmt.Fprintln(stderr, \"ServiceAccount is cluster-scoped: remove --namespace and enroll with --name; existing UID/key checks still apply\")"
+        },
+        {
+          "line": 73,
+          "text": "flags := flag.NewFlagSet(\"enroll-serviceaccount\", flag.ContinueOnError)"
+        },
+        {
+          "line": 74,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 75,
+          "text": "enrollment := serviceAccountEnrollment{}"
+        },
+        {
+          "line": 76,
+          "text": "flags.StringVar(&enrollment.apiURL, \"api-url\", envOrDefault(\"API_URL\", \"http://localhost:4000/graphql\"), \"GitStore GraphQL API URL\")"
+        },
+        {
+          "line": 77,
+          "text": "flags.StringVar(&enrollment.adminToken, \"admin-token\", \"\", \"authenticated administrator bearer token\")"
+        },
+        {
+          "line": 78,
+          "text": "flags.StringVar(&enrollment.name, \"name\", \"gitstore-controller-manager\", \"ServiceAccount name\")"
+        },
+        {
+          "line": 79,
+          "text": "flags.StringVar(&enrollment.keyID, \"key-id\", \"controller-key\", \"enrolled public key ID\")"
+        },
+        {
+          "line": 80,
+          "text": "flags.StringVar(&enrollment.privateKeyPath, \"private-key-path\", \"\", \"explicit secure local private-key file path\")"
+        },
+        {
+          "line": 81,
+          "text": "flags.StringVar(&enrollment.identityPath, \"identity-output-path\", \"\", \"optional secure local ServiceAccount identity file path\")"
+        },
+        {
+          "line": 82,
+          "text": "flags.BoolVar(&enrollment.replaceKey, \"replace-existing-key\", false, \"replace this key ID when the ServiceAccount already exists\")"
+        },
+        {
+          "line": 83,
+          "text": "flags.StringVar(&enrollment.adminUsername, \"admin-username\", \"\", \"administrator username for bootstrap authentication\")"
+        },
+        {
+          "line": 84,
+          "text": "flags.StringVar(&enrollment.adminPassword, \"admin-password\", \"\", \"administrator password for bootstrap authentication\")"
+        },
+        {
+          "line": 85,
+          "text": "if err := flags.Parse(args); err != nil {"
+        },
+        {
+          "line": 88,
+          "text": "if flags.NArg() != 0 {"
+        },
+        {
+          "line": 89,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount does not accept positional arguments\")"
+        },
+        {
+          "line": 92,
+          "text": "if enrollment.adminToken == \"\" {"
+        },
+        {
+          "line": 93,
+          "text": "enrollment.adminToken = os.Getenv(\"BOOTSTRAP_TOKEN\")"
+        },
+        {
+          "line": 95,
+          "text": "if enrollment.adminUsername == \"\" {"
+        },
+        {
+          "line": 96,
+          "text": "enrollment.adminUsername = os.Getenv(\"GITSTORE_BOOTSTRAP_ADMIN_USERNAME\")"
+        },
+        {
+          "line": 98,
+          "text": "if enrollment.adminPassword == \"\" {"
+        },
+        {
+          "line": 99,
+          "text": "enrollment.adminPassword = os.Getenv(\"GITSTORE_BOOTSTRAP_ADMIN_PASSWORD\")"
+        },
+        {
+          "line": 101,
+          "text": "if err := enrollment.validate(); err != nil {"
+        },
+        {
+          "line": 102,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount configuration is invalid\")"
+        },
+        {
+          "line": 106,
+          "text": "client := enrollmentClient{httpClient: &http.Client{Timeout: 10 * time.Second}}"
+        },
+        {
+          "line": 107,
+          "text": "if enrollment.adminToken == \"\" {"
+        },
+        {
+          "line": 108,
+          "text": "token, err := client.login(context.Background(), enrollment)"
+        },
+        {
+          "line": 110,
+          "text": "fmt.Fprintf(stderr, \"enroll-serviceaccount bootstrap authentication failed: %v\\n\", err)"
+        },
+        {
+          "line": 113,
+          "text": "enrollment.adminToken = token"
+        },
+        {
+          "line": 116,
+          "text": "privateKey, generated, err := loadOrGeneratePrivateKey(enrollment.privateKeyPath)"
+        },
+        {
+          "line": 118,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not use the private-key path\")"
+        },
+        {
+          "line": 123,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not prepare the key pair\")"
+        },
+        {
+          "line": 127,
+          "text": "uid, err := client.enroll(context.Background(), enrollment, publicKeyPEM, algorithm)"
+        },
+        {
+          "line": 130,
+          "text": "if generated && writePrivateKey(enrollment.privateKeyPath, privateKeyPEM) != nil {"
+        },
+        {
+          "line": 131,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not securely persist the private key\")"
+        },
+        {
+          "line": 134,
+          "text": "if err := writeServiceAccountIdentity(enrollment.identityPath, uid); err != nil {"
+        },
+        {
+          "line": 135,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not securely persist the ServiceAccount identity\")"
+        },
+        {
+          "line": 138,
+          "text": "fmt.Fprintln(stdout, \"ServiceAccount enrollment created.\")"
+        },
+        {
+          "line": 141,
+          "text": "case errors.Is(err, errServiceAccountAlreadyExists) && !enrollment.replaceKey && !generated:"
+        },
+        {
+          "line": 142,
+          "text": "if err := requireServiceAccountIdentity(enrollment.identityPath); err != nil {"
+        },
+        {
+          "line": 143,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount existing enrollment requires its persisted ServiceAccount identity\")"
+        },
+        {
+          "line": 146,
+          "text": "fmt.Fprintln(stdout, \"ServiceAccount enrollment already exists; no changes made.\")"
+        },
+        {
+          "line": 148,
+          "text": "case errors.Is(err, errServiceAccountAlreadyExists) && enrollment.replaceKey:"
+        },
+        {
+          "line": 149,
+          "text": "uid, err := client.rotate(context.Background(), enrollment, publicKeyPEM, algorithm)"
+        },
+        {
+          "line": 151,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not replace the enrolled public key\")"
+        },
+        {
+          "line": 154,
+          "text": "if generated && writePrivateKey(enrollment.privateKeyPath, privateKeyPEM) != nil {"
+        },
+        {
+          "line": 155,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not securely persist the private key\")"
+        },
+        {
+          "line": 158,
+          "text": "if err := writeServiceAccountIdentity(enrollment.identityPath, uid); err != nil {"
+        },
+        {
+          "line": 159,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount could not securely persist the ServiceAccount identity\")"
+        },
+        {
+          "line": 162,
+          "text": "fmt.Fprintln(stdout, \"ServiceAccount enrollment key replaced.\")"
+        },
+        {
+          "line": 166,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount already exists; refusing to persist an unverified private key without --replace-existing-key\")"
+        },
+        {
+          "line": 169,
+          "text": "fmt.Fprintln(stderr, \"enroll-serviceaccount request failed\")"
+        },
+        {
+          "line": 177,
+          "text": "return errors.New(\"required enrollment value is empty\")"
+        },
+        {
+          "line": 284,
+          "text": "return errors.New(\"existing ServiceAccount identity does not match the enrolled account\")"
+        },
+        {
+          "line": 344,
+          "text": "func (c enrollmentClient) enroll(ctx context.Context, enrollment serviceAccountEnrollment, publicKey, algorithm string) (string, error) {"
+        },
+        {
+          "line": 345,
+          "text": "payload, err := c.graphQL(ctx, enrollment, createServiceAccountMutation, map[string]string{"
+        },
+        {
+          "line": 346,
+          "text": "\"name\":      enrollment.name,"
+        },
+        {
+          "line": 347,
+          "text": "\"keyID\":     enrollment.keyID,"
+        },
+        {
+          "line": 357,
+          "text": "func (c enrollmentClient) rotate(ctx context.Context, enrollment serviceAccountEnrollment, publicKey, algorithm string) (string, error) {"
+        },
+        {
+          "line": 358,
+          "text": "payload, err := c.graphQL(ctx, enrollment, rotateServiceAccountKeyMutation, map[string]string{"
+        },
+        {
+          "line": 359,
+          "text": "\"name\":      enrollment.name,"
+        },
+        {
+          "line": 360,
+          "text": "\"keyID\":     enrollment.keyID,"
+        },
+        {
+          "line": 370,
+          "text": "func (c enrollmentClient) login(ctx context.Context, enrollment serviceAccountEnrollment) (string, error) {"
+        },
+        {
+          "line": 371,
+          "text": "payload, err := c.graphQL(ctx, enrollment, `mutation Login($username: String!, $password: String!) {"
+        },
+        {
+          "line": 373,
+          "text": "}`, map[string]string{\"username\": enrollment.adminUsername, \"password\": enrollment.adminPassword})"
+        },
+        {
+          "line": 390,
+          "text": "func (c enrollmentClient) graphQL(ctx context.Context, enrollment serviceAccountEnrollment, query string, variables map[string]string) (json.RawMessage, error) {"
+        },
+        {
+          "line": 398,
+          "text": "request, err := http.NewRequestWithContext(ctx, http.MethodPost, enrollment.apiURL, bytes.NewReader(body))"
+        },
+        {
+          "line": 403,
+          "text": "if enrollment.adminToken != \"\" {"
+        },
+        {
+          "line": 404,
+          "text": "request.Header.Set(\"Authorization\", \"Bearer \"+enrollment.adminToken)"
+        },
+        {
+          "line": 450,
+          "text": "flags.SetOutput(stderr)"
+        },
+        {
+          "line": 451,
+          "text": "path := flags.String(\"private-key-path\", \"\", \"explicit secure local private-key file path\")"
+        },
+        {
+          "line": 452,
+          "text": "recordPath := flags.String(\"record-output-path\", \"\", \"optional absolute path for an atomic controller signing record\")"
+        },
+        {
+          "line": 453,
+          "text": "keyID := flags.String(\"key-id\", \"\", \"enrolled key ID required with --record-output-path\")"
+        },
+        {
+          "line": 454,
+          "text": "if err := flags.Parse(args); err != nil || flags.NArg() != 0 || strings.TrimSpace(*path) == \"\" || !filepath.IsAbs(*path) {"
+        },
+        {
+          "line": 455,
+          "text": "fmt.Fprintln(stderr, \"generate-signing-key requires an absolute --private-key-path\")"
+        }
+      ]
+    },
+    {
+      "path": "compose.yml",
+      "url": "https://raw.githubusercontent.com/gitstore-dev/GitStore/06152d193e854bc643fa884daa8b9f30b0d75d0f/compose.yml",
+      "sha256": "4f2929f8e4e04098874199ea36621fac6209be30b54ed874d678235486faf21e",
+      "matches": [
+        {
+          "line": 3,
+          "text": "image: ghcr.io/gitstore-dev/git-service"
+        },
+        {
+          "line": 18,
+          "text": "image: ghcr.io/gitstore-dev/api"
+        },
+        {
+          "line": 29,
+          "text": "depends_on:"
+        },
+        {
+          "line": 34,
+          "text": "healthcheck:"
+        },
+        {
+          "line": 35,
+          "text": "test: [\"CMD\", \"wget\", \"--quiet\", \"--tries=1\", \"--spider\", \"http://localhost:4000/ready\"]"
+        },
+        {
+          "line": 42,
+          "text": "image: ghcr.io/gitstore-dev/controller-manager"
+        },
+        {
+          "line": 51,
+          "text": "depends_on:"
+        },
+        {
+          "line": 56,
+          "text": "healthcheck:"
+        },
+        {
+          "line": 57,
+          "text": "test: [\"CMD\", \"wget\", \"--quiet\", \"--tries=1\", \"--spider\", \"http://localhost:5001/health\"]"
+        },
+        {
+          "line": 65,
+          "text": "image: otel/opentelemetry-collector-contrib:0.162.0"
+        },
+        {
+          "line": 72,
+          "text": "depends_on: [tempo, loki]"
+        },
+        {
+          "line": 82,
+          "text": "image: prom/prometheus:v3.5.0"
+        },
+        {
+          "line": 93,
+          "text": "depends_on: [otel-collector]"
+        },
+        {
+          "line": 101,
+          "text": "image: grafana/tempo:2.10.8"
+        },
+        {
+          "line": 117,
+          "text": "image: grafana/loki:3.7.8"
+        }
+      ]
+    },
+    {
+      "path": "compose.local.yml",
+      "url": "https://raw.githubusercontent.com/gitstore-dev/GitStore/06152d193e854bc643fa884daa8b9f30b0d75d0f/compose.local.yml",
+      "sha256": "234ea6edf55d77643ec7fea465ea1e6ef2a34f7e497339ef782a86045129d789",
+      "matches": [
+        {
+          "line": 4,
+          "text": "command: [\"/app/git-service\", \"--config-file\", \"/etc/gitstore/gitstore.toml\"]"
+        },
+        {
+          "line": 12,
+          "text": "command:"
+        },
+        {
+          "line": 25,
+          "text": "depends_on:"
+        },
+        {
+          "line": 31,
+          "text": "command:"
+        },
+        {
+          "line": 44,
+          "text": "depends_on:"
+        },
+        {
+          "line": 45,
+          "text": "serviceaccount-enrollment:"
+        },
+        {
+          "line": 50,
+          "text": "image: ghcr.io/gitstore-dev/api"
+        },
+        {
+          "line": 54,
+          "text": "command:"
+        },
+        {
+          "line": 59,
+          "text": "/app/gitctl generate-signing-key --private-key-path /run/api-issuer/serviceaccount-signing-key"
+        },
+        {
+          "line": 60,
+          "text": "/app/gitctl generate-signing-key --private-key-path /run/controller-secrets/.controller-enrollment-key"
+        },
+        {
+          "line": 68,
+          "text": "serviceaccount-enrollment:"
+        },
+        {
+          "line": 70,
+          "text": "image: ghcr.io/gitstore-dev/api"
+        },
+        {
+          "line": 77,
+          "text": "command:"
+        },
+        {
+          "line": 79,
+          "text": "- enroll-serviceaccount"
+        },
+        {
+          "line": 91,
+          "text": "depends_on:"
+        }
+      ]
+    },
+    {
+      "path": "docs/configuration.md",
+      "url": "https://raw.githubusercontent.com/gitstore-dev/GitStore/06152d193e854bc643fa884daa8b9f30b0d75d0f/docs/configuration.md",
+      "sha256": "48cbe10763faf2005f7b477b7026870a8ade9eb50f4819421d389f932271c5a8",
+      "matches": [
+        {
+          "line": 6,
+          "text": "routers and independent of OTLP export. `api.profiling.uri` and"
+        },
+        {
+          "line": 7,
+          "text": "`controller.profiling.uri` default to empty (disabled). An enabled URI must"
+        },
+        {
+          "line": 58,
+          "text": "`observability.otlp.uri` (environment: `GITSTORE_OBSERVABILITY__OTLP__URI`) to"
+        },
+        {
+          "line": 65,
+          "text": "`make compose OBSERVABILITY=otel` adds the pinned local observability stack and"
+        },
+        {
+          "line": 97,
+          "text": "`observability.otlp.trace_sample_ratio`"
+        },
+        {
+          "line": 213,
+          "text": "All three services accept `--config-file <path>`. The flag selects the file"
+        },
+        {
+          "line": 219,
+          "text": "**`gitstore-api` and `gitstore-controller-manager` only**: `--config-file` may"
+        },
+        {
+          "line": 221,
+          "text": "`--config-file base.toml --config-file overlay.toml`. The first occurrence is"
+        },
+        {
+          "line": 225,
+          "text": "\u2014 it only accepts a single `--config-file`."
+        },
+        {
+          "line": 278,
+          "text": "**Explicit file**: `gitstore-api --config-file /path/to/config.toml` (required when selected). Repeat the flag to layer overlays: `--config-file base.toml --config-file overlay.toml` (later file wins per key)."
+        },
+        {
+          "line": 357,
+          "text": "| `api.auth.serviceaccount.signing_key` | `GITSTORE_API__AUTH__SERVICEACCOUNT__SIGNING_KEY` | PEM private key | (empty) | **Yes, when a service-account provider is chained** | **Yes** | API-only Ed25519 or ECDSA P-256 access-token signing key |"
+        },
+        {
+          "line": 362,
+          "text": "Never put `api.auth.serviceaccount.signing_key` in a configuration file mounted by"
+        },
+        {
+          "line": 438,
+          "text": "`api.datastore.scylla.auto_migrate = false` (environment:"
+        },
+        {
+          "line": 440,
+          "text": "image's `gitctl migrate --hosts scylla:9042 --keyspace gitstore --timeout 5m`"
+        },
+        {
+          "line": 445,
+          "text": "The operator must create the keyspace first. `gitctl migrate` uses the same"
+        },
+        {
+          "line": 462,
+          "text": "| `api.datastore.scylla.auto_migrate`              | `GITSTORE_API__DATASTORE__SCYLLA__AUTO_MIGRATE`                | boolean         | `true`           | No       | No        | Run startup schema migration automatically     |"
+        },
+        {
+          "line": 644,
+          "text": "| `--config-file <path>` | string | Load config from this path instead of `gitstore.toml` |"
+        },
+        {
+          "line": 681,
+          "text": "**Explicit file**: `gitstore-controller-manager --config-file /path/to/config.toml` (required when selected). Repeat the flag to layer overlays: `--config-file base.toml --config-file overlay.toml` (later file wins per key)."
+        },
+        {
+          "line": 693,
+          "text": "| `controller.serviceaccount.uid`                    | `GITSTORE_CONTROLLER__SERVICEACCOUNT__UID`                     | string   | (empty)                             | **Yes**          | No        | Enrolled ServiceAccount UID; prevents identity reuse after deletion |"
+        }
+      ]
+    }
+  ],
+  "images": [
+    {
+      "repository": "ghcr.io/gitstore-dev/api",
+      "tag": "0.1.0-alpha.8",
+      "digest": "sha256:4dffb63e47fdb91238617d9e12bc919c4b3186e5d130c61e8360f67615972196",
+      "platforms": [
+        {
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "digest": "sha256:bb0767234c568b40a4eb1519b96a1f5989fe26139e218d2348fdf404e888d951",
+          "configDigest": "sha256:d8620f78fd28a0c95611d08c89f7d7e579341e5956afa96b7b9feec0579c6fc8",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/api"
+          ]
+        },
+        {
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          },
+          "digest": "sha256:3c61f77edcbe719069d9173f1bad270cc46a81e97e756844cea3db8dcfb31172",
+          "configDigest": "sha256:02e6a37028739526ded8a55932bdfdafb5f814ecbafb0a139ac8b93d79379d4d",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/api"
+          ]
+        }
+      ],
+      "attempts": [
+        {
+          "tag": "v0.1.0-alpha.8",
+          "httpStatus": 404
+        }
+      ],
+      "evidence": "registry metadata only; not executed or attested"
+    },
+    {
+      "repository": "ghcr.io/gitstore-dev/git-service",
+      "tag": "0.1.0-alpha.8",
+      "digest": "sha256:63853aa8501c848860f7d206571a2aef22d25836403ebfcac6308e6067eb10ec",
+      "platforms": [
+        {
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "digest": "sha256:7dfc6898ad198d0c8ca9d77b09d766b24479425c4dfc55be93aceaf3bf3866b0",
+          "configDigest": "sha256:f6eb60f9d776dacf21d6738e4d2bec4c87e3a635e70663490fd46f7a63f11229",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/git-service"
+          ]
+        },
+        {
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          },
+          "digest": "sha256:b5dcff4321fd0ed799b7244d9f0eeda496868afb4a2dccec94e242ea2f951f43",
+          "configDigest": "sha256:ac21ec89eb9d710fed05d7445e3d93175711e3e5bb920fcb77e414b6cba3a354",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/git-service"
+          ]
+        }
+      ],
+      "attempts": [
+        {
+          "tag": "v0.1.0-alpha.8",
+          "httpStatus": 404
+        }
+      ],
+      "evidence": "registry metadata only; not executed or attested"
+    },
+    {
+      "repository": "ghcr.io/gitstore-dev/controller-manager",
+      "tag": "0.1.0-alpha.8",
+      "digest": "sha256:8ebf78d83db74dbf94631a917e5a8305f51a42e209c3dc4413a44fdff7d0faf3",
+      "platforms": [
+        {
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "digest": "sha256:a708031542e6818a093bcb44bb4144b236d12cd4d495bfb4776429f6cfdd77cd",
+          "configDigest": "sha256:a3c85f30b5687bdcb23e26fc9011ea7e276497928aad37633706357a02f1d2c2",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/controller-manager"
+          ]
+        },
+        {
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          },
+          "digest": "sha256:d21a0cbfa77aa3933eb0fd4ba6575105d95bcc1176247844a0b7c6f1402257af",
+          "configDigest": "sha256:9bc8c7f6b3b9b2ba02b6784b426a9717d09dea85ae720fd9640c08c11ce85328",
+          "sourceRevisionLabel": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "entrypoint": null,
+          "cmd": [
+            "/app/controller-manager"
+          ]
+        }
+      ],
+      "attempts": [
+        {
+          "tag": "v0.1.0-alpha.8",
+          "httpStatus": 404
+        }
+      ],
+      "evidence": "registry metadata only; not executed or attested"
+    }
+  ],
+  "optionalMappings": {
+    "oidc": "not verified",
+    "admin": "not verified",
+    "storefront": "not verified"
+  },
+  "limits": [
+    "Source handlers, not help text, determine callable mappings.",
+    "Image revision labels are claims, not build provenance.",
+    "Registry metadata is not Linux/runtime compatibility evidence.",
+    "Upstream images do not require attestations."
+  ]
+}

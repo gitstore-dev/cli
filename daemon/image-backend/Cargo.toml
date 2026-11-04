@@ -1,0 +1,40 @@
+[package]
+name = "gitstored-image"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT"
+publish = false
+
+# A native code dependency of the C daemon, resolved separately from the gs
+# executable so its native TLS feature cannot change gs's reqwest TLS backend.
+[workspace]
+
+[lib]
+crate-type = ["rlib", "staticlib"]
+
+[dependencies]
+oci-client = { git = "https://github.com/oras-project/rust-oci-client", rev = "71c08729adeb88fbdda43966ece962d32b58fb8d", default-features = false }
+ocirender = "=0.2.3"
+oci-spec = { version = "=0.10.0", default-features = false, features = ["image"] }
+reqwest = { version = "0.13", default-features = false, features = ["stream", "native-tls"] }
+tower = { version = "0.5", features = ["util"] }
+http = "1"
+http-body-util = "0.1"
+futures-util = "0.3"
+tokio = { version = "1", features = ["rt", "time", "io-util"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tar = "0.4"
+libc = "0.2"
+sha2 = "0.11"
+hex = "0.4"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+codegen-units = 1

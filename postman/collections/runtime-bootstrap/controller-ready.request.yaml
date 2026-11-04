@@ -1,0 +1,25 @@
+$kind: http-request
+name: Core controller ready
+order: 5000
+method: GET
+url: '{{controllerBase}}/health'
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Controller credential and all kinds are ready", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.version).to.eql("0.1.0-alpha.8");
+        pm.expect(body.status).to.eql("ok");
+        pm.expect(body.ready).to.eql(true);
+        pm.expect(body.credentialReady).to.eql(true);
+        for (const kind of ["Namespace", "Repository", "CategoryTaxonomy", "Product"]) {
+          pm.expect(body.kinds[kind].registered).to.eql(true);
+          pm.expect(body.kinds[kind].recovering).to.eql(false);
+          pm.expect(body.kinds[kind].stalled).to.eql(false);
+          pm.expect(body.kinds[kind].poisonItems).to.eql(0);
+        }
+      });

@@ -1,0 +1,49 @@
+--- a/src/ip.h
++++ b/src/ip.h
+@@ -203,6 +203,12 @@
+     void *next, *prev;
+ };
+ 
++/* Packet access view only: preserve naturally aligned queue/container layouts. */
++SLIRP_PACKED_BEGIN
++struct qlink_unaligned {
++    void *next, *prev;
++} SLIRP_PACKED_END;
++
+ /*
+  * Overlay for ip header used by other protocols (tcp, udp).
+  */
+--- a/src/tcpip.h
++++ b/src/tcpip.h
+@@ -76,13 +76,13 @@
+ #define ti_urp ti_t.th_urp
+ 
+ #define tcpiphdr2qlink(T) \
+-    ((struct qlink *)(((char *)(T)) - sizeof(struct qlink)))
++    ((struct qlink_unaligned *)(((char *)(T)) - sizeof(struct qlink)))
+ #define qlink2tcpiphdr(Q) \
+     ((struct tcpiphdr *)(((char *)(Q)) + sizeof(struct qlink)))
+ #define tcpiphdr_next(T) qlink2tcpiphdr(tcpiphdr2qlink(T)->next)
+ #define tcpiphdr_prev(T) qlink2tcpiphdr(tcpiphdr2qlink(T)->prev)
+ #define tcpfrag_list_first(T) qlink2tcpiphdr((T)->seg_next)
+-#define tcpfrag_list_end(F, T) (tcpiphdr2qlink(F) == (struct qlink *)(T))
++#define tcpfrag_list_end(F, T) (tcpiphdr2qlink(F) == (struct qlink_unaligned *)(T))
+ #define tcpfrag_list_empty(T) ((T)->seg_next == (struct tcpiphdr *)(T))
+ 
+ /* This is the difference between the size of a tcpiphdr structure, and the
+--- a/src/misc.h
++++ b/src/misc.h
+@@ -46,10 +46,12 @@
+     struct emu_t *next;
+ };
+ 
++/* Generic queue helpers also operate on unaligned packet overlays. */
++SLIRP_PACKED_BEGIN
+ struct slirp_quehead {
+     struct slirp_quehead *qh_link;
+     struct slirp_quehead *qh_rlink;
+-};
++} SLIRP_PACKED_END;
+ 
+ /* Insert element a into queue b */
+ void slirp_insque(void *a, void *b);

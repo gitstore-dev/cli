@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "upstreamRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "sources": [
+    {
+      "source": "shared/schemas/namespace.graphqls",
+      "sha256": "d3fb9036f6bc4a864557d067ac1e09ea20d382ec371693e1c9326cab9eaca0b6",
+      "operations": [
+        "createNamespace(input: CreateNamespaceInput!)",
+        "namespace(by: NamespaceBy!)"
+      ],
+      "reference": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/shared/schemas/namespace.graphqls"
+    },
+    {
+      "source": "shared/schemas/repository.graphqls",
+      "sha256": "340048fe323c7b207cb38e80a2b9445f7398570df71bdde6085b112ee1c01323",
+      "operations": [
+        "createRepository(input: CreateRepositoryInput!)",
+        "repository(by: RepositoryBy!)"
+      ],
+      "reference": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/shared/schemas/repository.graphqls"
+    }
+  ],
+  "scope": "Explicit raw GraphQL consumer checks; does not ungate high-level Namespace/Repository authoring commands",
+  "memdbBoundary": "Catalogue identities reset across API restart; stopped-volume retained Git content is separate evidence"
+}
