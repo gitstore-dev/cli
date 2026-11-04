@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "recorded": "2026-11-04",
+  "status": "private-native-core-bootstrap-verified; public lifecycle integration pending",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "profileDigest": "sha256:9ecc9d536b8a8c3addc7186192b67f596bc2cb4dea2c64a4c597adefe8576dc7",
+  "host": {
+    "fixture": "gitstore-m2-linux-a1a13c",
+    "user": 11000,
+    "platform": "linux-arm64",
+    "kernel": "6.18.35",
+    "guest": "Ubuntu 24.04",
+    "cgroup": "delegated systemd user cpu/memory/pids",
+    "scope": "Apple VM development fixture; not clean install or release support"
+  },
+  "libraries": {
+    "execution": "pinned libcrun 1.30.1 C API",
+    "network": "pinned patched libslirp 4.9.7 C API",
+    "crypto": "OpenSSL 3.0.13 Ed25519 and RAND_priv_bytes",
+    "passwordHash": "libxcrypt 4.4.36 bcrypt 2b cost 10",
+    "http": "libcurl 8.5.0; no executable wrappers"
+  },
+  "images": [
+    {
+      "component": "api",
+      "repository": "ghcr.io/gitstore-dev/api",
+      "os": "linux",
+      "architecture": "arm64",
+      "digest": "sha256:3c61f77edcbe719069d9173f1bad270cc46a81e97e756844cea3db8dcfb31172",
+      "configDigest": "sha256:02e6a37028739526ded8a55932bdfdafb5f814ecbafb0a139ac8b93d79379d4d",
+      "entrypoint": [],
+      "command": [
+        "/app/api"
+      ]
+    },
+    {
+      "component": "git",
+      "repository": "ghcr.io/gitstore-dev/git-service",
+      "os": "linux",
+      "architecture": "arm64",
+      "digest": "sha256:b5dcff4321fd0ed799b7244d9f0eeda496868afb4a2dccec94e242ea2f951f43",
+      "configDigest": "sha256:ac21ec89eb9d710fed05d7445e3d93175711e3e5bb920fcb77e414b6cba3a354",
+      "entrypoint": [],
+      "command": [
+        "/app/git-service"
+      ]
+    },
+    {
+      "component": "controller",
+      "repository": "ghcr.io/gitstore-dev/controller-manager",
+      "os": "linux",
+      "architecture": "arm64",
+      "digest": "sha256:d21a0cbfa77aa3933eb0fd4ba6575105d95bcc1176247844a0b7c6f1402257af",
+      "configDigest": "sha256:9bc8c7f6b3b9b2ba02b6784b426a9717d09dea85ae720fd9640c08c11ce85328",
+      "entrypoint": [],
+      "command": [
+        "/app/controller-manager"
+      ]
+    }
+  ],
+  "materialization": {
+    "api": {
+      "downloadedBytes": 53713883,
+      "mergedBytes": 111229952,
+      "logicalBytes": 164431558
+    },
+    "git": {
+      "downloadedBytes": 11731577,
+      "mergedBytes": 25366528,
+      "logicalBytes": 36594127
+    },
+    "controller": {
+      "downloadedBytes": 19246155,
+      "mergedBytes": 38989824,
+      "logicalBytes": 57733290
+    },
+    "scope": "verified immutable source blobs; private execution copies; API imported from verified offline OCI; Git/controller acquired through image library"
+  },
+  "runs": [
+    {
+      "fixture": "core-live-dtw71rl4",
+      "result": "first wait expired after 20 seconds; controller reached healthy recovery after about 25 seconds; identity-checked recovered stop passed; reservations/data retained"
+    },
+    {
+      "fixture": "core-live-9um8zgit",
+      "result": "actual core bootstrap, health, enrollment and reverse stop passed"
+    },
+    {
+      "fixture": "core-live-99fr5etf",
+      "result": "generation-bound graph persisted before next effect; actual bootstrap and reverse stop passed"
+    },
+    {
+      "fixture": "core-live-59qvgmiq",
+      "result": "ASan/UBSan C, libcrun and libslirp path; actual published images; bootstrap and reverse stop passed",
+      "sanitizers": "ASAN handle_segv=0,detect_leaks=0 for integration probe; UBSAN halt_on_error=1; behavior suite separately detect_leaks=1"
+    },
+    {
+      "fixture": "core-live-r50l5zvx",
+      "result": "actual core bootstrap and reverse stop through reusable nonblocking private bootstrap jobs passed; descriptors closed, finite memory/files and dumpability disabled"
+    },
+    {
+      "fixture": "core-live-2v8ifvuv",
+      "result": "same nonblocking bootstrap jobs with ASan/UBSan C/native libraries; actual core bootstrap and reverse stop passed"
+    },
+    {
+      "fixture": "core-live-_m9z_hdm",
+      "result": "independent population observer returned unknown after controller exit; kept ownership; identity-checked recovered stop passed; not a passing termination-proof run"
+    },
+    {
+      "fixture": "core-live-dvwkmqjj",
+      "result": "observer diagnostic confirmed held cgroup.events ENODEV while cached directory/file link counts remained 2/1; kept ownership; identity-checked recovered stop passed"
+    },
+    {
+      "fixture": "core-live-biaiuj84",
+      "result": "combined image/libcrun/libslirp/bootstrap libraries: actual core health, parent-closed Git FD3 lease exclusion, held cgroup2 empty/deactivation proof and retained writer reacquisition passed"
+    },
+    {
+      "fixture": "core-live-puksufd_",
+      "result": "ASan/UBSan C/native path: actual core health, unchanged live cgroup membership, parent-closed Git FD3 lease exclusion, held cgroup2 empty/deactivation proof and retained writer reacquisition passed"
+    }
+  ],
+  "checks": [
+    "Git starts first with lazy catalogue client",
+    "API provisions its system repositories through Git RPC before HTTP/catalogue service readiness",
+    "API /ready healthy at alpha.8",
+    "authenticated Basic Git smart HTTP system-repository refs",
+    "controller separate existing Ed25519 public key enrolled once through public GraphQL; API-assigned UID persisted before overlay/launch",
+    "controller health ready, credentialReady and all four kinds registered/recovered/nonstalled/nonpoisoned",
+    "boot/PID/start-time observations checked before health and signal",
+    "reverse controller/API/Git stop, own reaper exit collection and non-forced native delete",
+    "network worker stopped after native workloads; repository and ownership records retained"
+  ],
+  "controlled": {
+    "httpCases": 27,
+    "normal": "passed",
+    "asanUbsan": "passed",
+    "cases": "malformed/oversized/redirect/slow/denied/partial/lost-ack enrollment; no mutation retries or attacker proxy/redirect hits; synthetic fixture only",
+    "behaviorSuite": {
+      "normalLinux": 31,
+      "asanUbsanLinux": 31,
+      "result": "passed"
+    },
+    "rust": "workspace tests, fmt, locked Clippy -D warnings and build passed; six focused add-only credential cases pass",
+    "postT042SettingsSuite": {
+      "normalLinux": 32,
+      "asanUbsanLinux": 32,
+      "result": "passed; owner settings checked before state DB/credential/workload effects"
+    },
+    "bootstrapJobBoundary": {
+      "normal": "passed",
+      "asanUbsan": "passed",
+      "scope": "own worker crash, deadline and cancellation produce uncertain; cancel byte remains unconsumed; no credential/file effects"
+    },
+    "cgroupIdentityNegativeCases": {
+      "asanUbsan": "passed",
+      "scope": "ordinary and removed ordinary filesystem objects cannot forge cgroup proof; stale PID/start and unowned scopes rejected"
+    },
+    "latestBehaviorSuite": {
+      "macControl": 31,
+      "linuxCombinedLibraries": 34,
+      "linuxNativeAsanUbsan": 34,
+      "result": "all passed; Rust image SDK not sanitizer instrumented"
+    },
+    "publicCliNegative": {
+      "case": "missing execution capability before asset/credential effects",
+      "fixture": "gs-public-runtime-nm8_l1wa",
+      "result": "one actual gs/daemon test passed; positive public runtime still gated"
+    }
+  },
+  "postman": {
+    "openapiValidation": "passed with openapi-spec-validator 0.7.2",
+    "collectionLint": {
+      "requests": 5,
+      "errors": 0,
+      "warnings": 0,
+      "exit": 0
+    },
+    "savedApiReadyRequest": "controlled endpoint only: one request, one assertion, zero failures, exit 0; isolated CLI home and no-report-events",
+    "limits": "Full real collection and Postman simulation not run. Default host skills status/update hit SecItemCopyMatching -50 exit 139; no cloud publication."
+  },
+  "unverified": [
+    "public start/stop/serve, foreground cancellation and manager scheduling/recovery",
+    "positive OS-store creation (explicit protected-file synthetic fixture used)",
+    "clean install, packaging/size gates and release support",
+    "real retained-user-repository round trip/restart/backup/restore and no-overlap acceptance",
+    "Scylla migrations and optional profiles",
+    "native config-validator execution"
+  ],
+  "reproduction": "runtime/experiments/provisioning/README.md",
+  "terminationProof": {
+    "nativeDeleteAlone": "insufficient: pinned libcrun can warn on cgroup destroy failure yet remove native status",
+    "kernelCapture": "boot/PID/start, exact registered crun scope and stable held cgroup2 directory/events inode identities",
+    "stop": "observed init exit plus held subtree populated=0 or actual kernel-node deactivation; file/path disappearance alone never proof",
+    "lease": "actual Git workload retains FD3; parent closes its writer; concurrent acquisition refused until shutdown and cgroup proof; same retained data inode reacquired",
+    "limits": "parent-held evidence only; automatic manager crash recovery and descendant stress remain pending",
+    "sources": [
+      "https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html",
+      "https://github.com/torvalds/linux/blob/v6.18/fs/kernfs/file.c",
+      "https://github.com/torvalds/linux/blob/v6.18/kernel/cgroup/cgroup.c"
+    ]
+  },
+  "parentActorIntegration": {
+    "date": "2026-11-04",
+    "fixture": "gitstore-m2-linux-a1a13c",
+    "mode": "normal combined libraries; SDK/libcrun/libslirp/bootstrap enabled",
+    "offlineAssetActor": {
+      "root": "/home/gitstorefixture/experiments/asset-actor-_81idlmo",
+      "exit": 0,
+      "checks": [
+        "cold offline API import",
+        "warm same-inode use without consent",
+        "fresh tamper rejection"
+      ]
+    },
+    "coreActorRuns": [
+      {
+        "root": "/home/gitstorefixture/experiments/deployment-actor-0lr092_f",
+        "exit": 1,
+        "readiness": "verified",
+        "failure": "final metadata transaction rejected retained asset reference unpin; all exact recorded native/network PIDs subsequently absent; ledger retained"
+      },
+      {
+        "root": "/home/gitstorefixture/experiments/deployment-actor-5g2c0gad",
+        "exit": 0,
+        "checks": [
+          "three registered offline images",
+          "private materialization",
+          "canonical retained writer",
+          "isolated network",
+          "Git/API/controller bootstrap",
+          "current core readiness",
+          "reverse TERM",
+          "init exit and held cgroup empty proof",
+          "non-forced native deletion",
+          "writer reacquisition",
+          "network exit",
+          "durable stopped metadata with released asset references"
+        ]
+      }
+    ],
+    "limitations": [
+      "private actor integration; public dispatcher/CLI not yet verified",
+      "ASan/UBSan core actor with SDK not run; Rust SDK not instrumented",
+      "no native image validator command evidence",
+      "no production publication or package-size claim"
+    ]
+  },
+  "publicCliCheckpoint": {
+    "date": "2026-11-04",
+    "fixture": "gitstore-m2-linux-a1a13c",
+    "coreCases": {
+      "cold": "gs-public-runtime-_3a5ikpg",
+      "foreground": "gs-public-runtime-j2dcp_71",
+      "concurrent": "gs-public-runtime-pg64qgzb",
+      "missingCapability": "gs-public-runtime-q1vqpcak",
+      "unavailableOptional": "gs-public-runtime-zppmtehu",
+      "interactiveApproval": "gs-public-runtime-hz86g1j4",
+      "droppedAck": "gs-public-runtime-pp7_50ua",
+      "detachedReplay": "gs-public-runtime-z1oqj3jv"
+    },
+    "installedStartup": "installed-startup-j5fmzv5w",
+    "publicWireRestart": "dispatch-ctx6a3b6",
+    "hostPreflightPositive": "deployment-actor-y4ve3tar",
+    "actualTunDenial": {
+      "fixture": "gs-public-runtime-btd_ztx_",
+      "result": "UNSUPPORTED_HOST/tun before assets/credentials/workloads",
+      "deviceRestoredMode": "0666"
+    },
+    "scenarioRunner": {
+      "record": "runtime-run-core-offline-6xe5yved.json",
+      "fixture": "gs-public-runtime-jge5_14i",
+      "status": "passed"
+    },
+    "sizeCheckpoint": {
+      "fixture": "core-size-4vabnjo6",
+      "strippedDaemonBytes": 7116616,
+      "targetBytes": 5242880,
+      "targetMet": false
+    },
+    "limitations": [
+      "Scoped Linux arm64 development evidence; not release support",
+      "Full logs/migrations/recovery and cross-host clean-install gates remain open"
+    ]
+  },
+  "assetAndVolumeCheckpoint": {
+    "recordedAt": "2026-11-04",
+    "fixture": "gitstore-m2-linux-a1a13c",
+    "uid": 11000,
+    "assetCases": {
+      "passed": 6,
+      "record": "/home/gitstorefixture/experiments/runtime-run-exp-003b-sk30onih.json",
+      "inputs": "verified offline arm64 and negative amd64 OCI layouts",
+      "registryTimingFailuresRetained": [
+        "runtime-run-exp-003b-e9yayktc.json",
+        "runtime-run-exp-003b-3iatmdgk.json"
+      ]
+    },
+    "volumeCases": {
+      "passed": 1,
+      "record": "/home/gitstorefixture/experiments/runtime-run-exp-004b-local-4rb1q9jr.json",
+      "root": "/home/gitstorefixture/experiments/gs-public-runtime-fx_pvj_h",
+      "checks": [
+        "observed stop",
+        "same retained data device/inode",
+        "same synthetic retained content SHA-256",
+        "actual exclusive writer lease while Git runs"
+      ]
+    },
+    "verification": {
+      "linuxNative": "37/37 passed",
+      "linuxCAsanUbsan": "37/37 passed; leak detection enabled; Rust SDK excluded",
+      "hostC": "33/33 passed",
+      "rustWorkspace": "fmt/clippy/test/build passed; opt-in scenarios separate"
+    },
+    "remaining": [
+      "live private provider compatibility",
+      "registry timing investigation",
+      "live full-disk recovery",
+      "parent crash reconciliation",
+      "bounded transient cleanup",
+      "migration backup validation"
+    ],
+    "imageSdk": {
+      "record": "/home/gitstorefixture/experiments/runtime-run-exp-003b-sdk-tsfbsd4u.json",
+      "unitChecksPassed": 13,
+      "optInCasesPassed": [
+        "authorized/private Basic and anonymous/wrong-account/wrong-password denial",
+        "expired bearer token rejection",
+        "issuer pull-scope denial with observed scope",
+        "actual HTTPS cross-port credential stripping/downgrade/foreign/loop rejection"
+      ],
+      "limit": "controlled provider fixtures; product trust roots unchanged"
+    },
+    "disk": {
+      "record": "/home/gitstorefixture/experiments/runtime-run-exp-004b-disk-w7u1nxb5.json",
+      "capacity": "1 MiB private tmpfs in owned user/mount namespaces",
+      "checks": [
+        "real image capacity preflight QUOTA before transfer",
+        "actual ENOSPC rejects new volume allocation",
+        "existing volume inode and bytes preserved"
+      ],
+      "limit": "native primitives, not live full-disk recovery; private tmpfs disappears at exit"
+    },
+    "backupRestore": {
+      "record": "/home/gitstorefixture/experiments/runtime-run-exp-004b-local-mwwnhce6.json",
+      "root": "/home/gitstorefixture/experiments/gs-public-runtime-ww2eluno",
+      "status": "passed",
+      "limit": "harness archive/restore of synthetic files under actual stopped-volume lease; no product backup/migration claim"
+    }
+  },
+  "candidateCheckpoint": {
+    "recordedAt": "2026-11-04",
+    "configuration": "production-mode Linux arm64 pair; native libraries enabled; TESTING=OFF; explicit synthetic protected-file credentials",
+    "packageInventory": "runtime/packaging/linux-arm64-candidate.json",
+    "coreSizes": {
+      "gs": 5525032,
+      "gitstored": 5658000,
+      "target": 5242880,
+      "status": "both miss"
+    },
+    "packageBytes": 5185243,
+    "reusedHostLibraryBytes": 25611792,
+    "cases": {
+      "interactive": "runtime-run-clean-install-q0y6y2qq.json",
+      "automationAndOffline": "runtime-run-clean-install-9l17q45e.json",
+      "warm": "runtime-run-clean-install-758gmikg.json",
+      "isolation": "runtime-run-clean-install-op5qhyxy.json",
+      "foregroundDetached": "runtime-run-clean-install-nqzb4v_m.json",
+      "missingRuntimeOptional": "runtime-run-clean-install-h275lt__.json",
+      "publicGraphqlGitAndRetainedRestart": "runtime-run-clean-install-v4i_ohvt.json",
+      "cliTLS": "runtime-run-cli-tls-zdss9az5.json",
+      "sdkTLSAndAuth": "runtime-run-exp-003b-sdk-_a1ihv82.json"
+    },
+    "costs": {
+      "coldRegistryScenarioSeconds": 136.208,
+      "coldOfflineReadySeconds": 42.353,
+      "managerRssKiB": 13920,
+      "managerMemoryScope": "manager only at second readiness; excludes workload/worker peaks",
+      "logicalAssetBytes": 258759008,
+      "logicalStateBytesAfterTwoStarts": 776611941,
+      "verifiedPayloadBytes": 84691615,
+      "payloadAccounting": "SDK-reported verified image payloads; excludes HTTP/TLS framing; offline count is bytes imported, not network traffic"
+    },
+    "boundary": "Memdb identity reset explicitly returns NOT_FOUND; known retained commit/tree/blob checked read-only after observed stop under actual writer lease; no public hydration/persistent metadata claim",
+    "verification": "current Linux Rust workspace passed after refreshing copied test-source timestamps; host fmt/Clippy/tests passed; native C normal and ASan/UBSan 37/37; fixture handles stopped, data retained"
+  }
+}

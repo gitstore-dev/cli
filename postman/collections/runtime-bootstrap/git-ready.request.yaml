@@ -1,0 +1,26 @@
+$kind: http-request
+name: Authenticated core Git ready
+order: 4000
+method: GET
+url: '{{gitBase}}/gitstore-system/gitstore-system/info/refs?service=git-upload-pack'
+queryParams:
+  - key: service
+    value: git-upload-pack
+auth:
+  type: basic
+  credentials:
+    - key: username
+      value: '{{bootstrapUsername}}'
+    - key: password
+      value: '{{bootstrapPassword}}'
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Authenticated Git returns a smart HTTP advertisement", () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get("Content-Type")).to.include("application/x-git-upload-pack-advertisement");
+        pm.expect(pm.response.text().startsWith("001e# service=git-upload-pack\n")).to.eql(true);
+      });

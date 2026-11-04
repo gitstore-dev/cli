@@ -227,6 +227,8 @@ and named upstream prerequisites do not authorize changes to GitStore here.
 ### Follow-up: artifact attestations (2026-10-28)
 
 PRD DIST 1 and ADR-0003 now extend DEP-013 with build-provenance generation and
-verification, starting with the first M1 artifact release. EXP-003C covers file/OCI/offline
-verification and negative cases; it is not-run. This is a release-design amendment,
+verification for `gitstore-dev/cli`-published artifacts, starting with M1. EXP-003C
+covers file/offline release verification and negative cases; OCI applies only to
+images published by this CLI repository. Upstream GitStore service images need
+trusted-source/digest checks, not attestations (scope clarified 2026-11-03). It is not-run. This is a release-design amendment,
 not an attestation-generation result or a new M0 CI workflow.

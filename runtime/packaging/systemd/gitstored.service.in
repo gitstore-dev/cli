@@ -1,0 +1,25 @@
+[Unit]
+Description=GitStore local runtime manager
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart="@CMAKE_INSTALL_FULL_BINDIR@/gitstored" --runtime-dir %t/gitstore --state-dir %S/gitstore
+RuntimeDirectory=gitstore
+RuntimeDirectoryMode=0700
+StateDirectory=gitstore
+StateDirectoryMode=0700
+UMask=0077
+Environment="PATH=/nonexistent" "HOME=%h" "XDG_RUNTIME_DIR=%t" "DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus"
+Delegate=cpu memory pids
+LimitCORE=0
+KillMode=process
+SendSIGKILL=no
+TimeoutStopSec=30s
+Restart=on-failure
+RestartSec=1s
+RestartPreventExitStatus=2 3 5
+
+[Install]
+WantedBy=default.target

@@ -79,7 +79,8 @@ process tree or a requirement for users to install Go/make/Compose.
 
 Native libcrun faults can affect the daemon. Memory/process ownership, worker concurrency,
 backend discovery and lock recovery are implementation risks, not tested guarantees.
-No Linux/macOS runtime was started for this ADR. Store technology and library bindings
+No Linux/macOS runtime was started at the original ADR date; the later
+implementation checkpoint below records a narrow native namespace experiment. Store technology and library bindings
 must be chosen against this contract during M2; they cannot weaken durable acceptance.
 
 ## Validation gate
@@ -90,3 +91,27 @@ failure at image/network/volume/start/readiness/migration/acknowledgment/restart
 demonstrate retained data, inspectable operations, bounded retries and zero overlapping
 writers. Paper walkthroughs in [acceptance](../contracts/acceptance.md) establish design
 coverage only. Runtime maintainers own this gate before any daemon release claim.
+
+## 2026-11-03 process-boundary implementation checkpoint
+
+[EXP-003A](../../runtime/experiments/libcrun.md) records the native experiment. Actual libcrun 1.30.1 static/shared C callers
+on the disposable Ubuntu arm64 fixture exercise namespace create/start/state,
+SIGTERM/delete, native callbacks and allocation/free ownership. A worker deliberately
+crashes after successful start before its reply; the payload survives and remains
+observable by recorded PID plus process-start-time identity. The single-threaded
+parent uses `PR_SET_CHILD_SUBREAPER`, reaps the actual payload exit status and never
+runs the lifecycle API from an unrestricted thread pool. Inherited private sentinel
+FDs do not reach the payload. The instrumented shared-library/caller build passes
+Clang 18 ASan/UBSan in both normal and lost-ack worker-crash scenarios.
+
+Adopt that bounded forked-worker boundary for development integration, using the
+same daemon executable and private internal IPC. The parent alone owns SQLite,
+scheduling and resource reservations. Native worker death records uncertainty;
+it cannot release a writer or prove workload termination. Keep runtime-library
+allocation/callback lifetimes within the worker's call and retain only copied,
+validated observations in the parent. Subreaper exit routing is part of the model.
+
+The experiment explicitly excludes cgroups/networking and uses only a tiny owned
+payload. It does not close DEP-012, prove full service startup/restart recovery,
+authorize a generic execution method or qualify other hosts. Actual image/network,
+retained-writer and manager-restart acceptance gates remain mandatory.

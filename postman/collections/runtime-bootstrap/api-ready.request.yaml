@@ -1,0 +1,19 @@
+$kind: http-request
+name: Core API ready
+order: 1000
+method: GET
+url: '{{apiBase}}/ready'
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("API dependencies and version are ready", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.version).to.eql("0.1.0-alpha.8");
+        pm.expect(body.status).to.eql("healthy");
+        pm.expect(body.checks.datastore.status).to.eql("healthy");
+        pm.expect(body.checks.resource_watch.status).to.eql("healthy");
+      });

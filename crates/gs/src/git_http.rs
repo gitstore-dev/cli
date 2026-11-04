@@ -25,6 +25,7 @@ pub(super) struct Network {
 }
 impl Network {
     pub fn install(auth: Arc<Auth>, allowed: Vec<String>, deadline: Instant) -> Result<Self> {
+        crate::initialize_http_tls();
         let exclusive = ACTIVE
             .lock()
             .map_err(|_| Error::remote("Git transport lock unavailable"))?;

@@ -70,10 +70,10 @@ host path, OCI hooks, raw runtime flags, arbitrary mount or privileged mode.
 | system.negotiate | bootstrap | supported, requiredCapabilities as above | selectedVersion, capabilities, limits; connection established | incompatible version, missing required capability |
 | system.capabilities | system.read | {} | selectedVersion, capabilities, limits | negotiation required |
 | deployment.validate | deployment.validate | profileId, profileVersion, components? [registered enum], datastore? enum, deploymentId?, allowProvision? bool | valid bool, effective non-secret plan, requiredAssets, hostRequirements, diagnostics; no downloads/workloads | unknown profile, unsupported host/backend, config invalid |
-| deployment.start | deployment.start | deploymentId, profileId, profileVersion, components? [enum], datastore? enum, allowProvision? bool=false | operation reference after durable intent; not readiness | existing incompatible deployment, unowned writer, provisioning required, unsupported host |
+| deployment.start | deployment.start | deploymentId, profileId, profileVersion, components? [enum], datastore? enum, allowProvision? bool, assetManifestDigest? sha256=false | operation reference after durable intent; not readiness | existing incompatible deployment, unowned writer, provisioning required, unsupported host |
 | deployment.inspect | deployment.read | deploymentId | Deployment record below | not found |
 | deployment.list | deployment.read | limit? 1–100=100, cursor? opaque | deployments, nextCursor?; bounded page | cursor expired |
-| deployment.stop | deployment.stop | deploymentId | durable operation; success after observed termination, volumes retained | unowned workloads, stop deadline, unknown target |
+| deployment.stop | deployment.stop | deploymentId, expectedOperationId? (current start only) | durable operation; success after observed termination, volumes retained | unowned workloads, stop deadline, unknown target |
 | operation.inspect | operation.read | operationId | Operation record below | not found or retention expired |
 | operation.wait | operation.read | operationId, until enum accepted/terminal/ready | operation plus deployment when condition reached; otherwise error with identity | unsupported ready condition, operation failed, deadline exceeded |
 | operation.cancel | operation.cancel | operationId | durable cancellation-request operation, target identity | unsafe/noncancellable stage; already-terminal returns no-op result |
@@ -103,6 +103,11 @@ running/stopped, component identities/states, readiness pending/ready/failed, re
 volume/network identities, writerOwnership held/released/uncertain, lastOperationId?,
 generation, observedGeneration, recovery, observedAt. Redact configuration and backend diagnostics. Readiness belongs
 to the intended deployment generation; it is independent of operation acceptance.
+When real public forwards are verified, inspection additionally exposes
+`endpoints` with only `api` and `git` HTTP URLs on owned high IPv4 loopback ports.
+Never expose private RPC/controller ports or embed credentials. This projection
+is implemented for verified current native core generations; control-only or
+unready generations do not advertise it.
 
 ## Idempotency, deadlines, cancellation and recovery
 
@@ -987,3 +992,10 @@ negotiated except the handshake example. Timestamp strings and IDs are illustrat
   }
 }
 ```
+
+A start may bind `assetManifestDigest` to the registered immutable assessment. A
+changed digest fails before acceptance/effects. Foreground-owned stop supplies
+`expectedOperationId`; acceptance requires that exact current start so an old
+observer cannot stop a later generation. Omission retains explicit operator stop
+semantics. `implementationVersion` in negotiation/capabilities identifies the
+installed application version independently of the protocol major/minor.

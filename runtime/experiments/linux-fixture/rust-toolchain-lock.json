@@ -1,0 +1,23 @@
+{
+  "purpose": "private guest development toolchain only; not a runtime asset",
+  "version": "1.96.0",
+  "manifest": "https://static.rust-lang.org/dist/channel-rust-1.96.0.toml",
+  "components": {
+    "rustc": {
+      "url": "https://static.rust-lang.org/dist/2026-05-28/rustc-1.96.0-aarch64-unknown-linux-gnu.tar.xz",
+      "sha256": "76b1a6e8dd1636e364d4bbba685485ff44eee5ff6434add089bab4c703c7e19d"
+    },
+    "cargo": {
+      "url": "https://static.rust-lang.org/dist/2026-05-28/cargo-1.96.0-aarch64-unknown-linux-gnu.tar.xz",
+      "sha256": "09ea03e74aa94e07db7bc00bd2ec1ad86d90a7348c89fde3909a8922543b949f"
+    },
+    "rust-std": {
+      "url": "https://static.rust-lang.org/dist/2026-05-28/rust-std-1.96.0-aarch64-unknown-linux-gnu.tar.xz",
+      "sha256": "538e85452709687797d990579a491ff9b02f8bffba4a5d54cfa945e28868053e"
+    },
+    "clippy-preview": {
+      "url": "https://static.rust-lang.org/dist/2026-05-28/clippy-1.96.0-aarch64-unknown-linux-gnu.tar.xz",
+      "sha256": "f0304a59688cccc77da29bbfbb96cb29407b4fdc152337f8de198d81a01eac05"
+    }
+  }
+}

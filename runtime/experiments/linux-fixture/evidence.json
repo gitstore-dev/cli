@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-03",
+  "provider": "Apple container CLI 1.6.1 aa8d76b",
+  "fixture": "gitstore-m2-linux-a1a13c",
+  "scope": "disposable Linux API/build fixture; not product backend support",
+  "base": "docker.io/library/ubuntu@sha256:19cad59657037cffa0ac9a48107019b768900ff1071140965827513ac866bd5e",
+  "baseIndex": "sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852",
+  "fixtureImage": "docker.io/library/gitstore-m2-fixture:a1a13c-ubuntu2404-aclcompat",
+  "fixtureIndex": "sha256:0bf2f725e3ee269a2e804c3426e38270e43eaa41960add5ad0ef12e072181178",
+  "fixturePlatformManifest": "sha256:ce5607dd705d9f7b84f212f7cdcfd393276f28b209a3bdb12eda9d00f237cfd5",
+  "resources": {
+    "cpus": 2,
+    "memoryBytes": 4294967296
+  },
+  "hostHomeMount": false,
+  "sshAgentEnvironment": false,
+  "sshAgentSocket": false,
+  "guestUid": 11000,
+  "guestGid": 11000,
+  "kernel": "6.18.35 aarch64",
+  "distribution": "Ubuntu 24.04",
+  "nativeBuild": {
+    "compiler": "GCC 13.3.0",
+    "cmake": "3.28.3",
+    "openssl": "3.0.13",
+    "libslirp": "4.7.0",
+    "rust": "1.96.0 ac68faa20",
+    "cargo": "1.96.0 30a34c682",
+    "meson": "1.3.2",
+    "libslirpExperiment": "4.9.7 ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
+    "glib": "2.80.0-6ubuntu3.10"
+  },
+  "nativeControlTests": {
+    "ctest": 22,
+    "passed": 22,
+    "runtimeWorkloads": false,
+    "imageSdk": true,
+    "clang18AsanUbsan": {
+      "ctest": 22,
+      "passed": 22,
+      "imageSdk": false
+    }
+  },
+  "fixtureOnlyDifferences": [
+    "systemd and build packages installed only in guest",
+    "journal POSIX ACL PAX headers removed only for var/log/journal to work around Apple invalid extended attribute error",
+    "full guest Linux capabilities and unmasked proc/sys are explicit VM fixture settings, not product fallback",
+    "guest TUN device mode 0666 prepared explicitly by guest root for ordinary-user networking experiment",
+    "official hash-verified Rust components installed only under guest-owned experiments/rust-sdk",
+    "vendored source transport AppleDouble sidecars removed only after magic/version verification; use COPYFILE_DISABLE=1 for subsequent tar transfers"
+  ],
+  "failedApproaches": [
+    "Ubuntu base without /sbin/init",
+    "Apple machine mode automatically exposes SSH-agent socket; owned machine stopped/deleted without querying agent",
+    "Apple commit/import of original journal ACL-bearing rootfs rejected invalid extended attribute; no --force used"
+  ],
+  "imageLibraryTests": {
+    "rust": "7 pass, native-TLS; Linux arm64 offline build, synthetic HTTP only",
+    "coreWorkloads": false
+  },
+  "networkLibraryTests": {
+    "version": "4.9.7-gstd-queueview2",
+    "normal": "GCC Werror static/shared and concurrent private namespace/DNS/loopback/cleanup pass",
+    "sanitized": "Clang 18 ASan/UBSan static/shared/concurrent and deliberately unaligned generic queue accesses pass; five upstream tests pass",
+    "selected": true,
+    "pristine497": "Rejected: debug and release fail upstream tcp_input.c:263 qlink alignment under Clang 18 UBSan",
+    "earlierQlink1": "Rejected: packed containing layout and incomplete generic access coverage",
+    "runtimeIntegrated": false
+  },
+  "credentialBrokerTests": {
+    "rust": "4 pass including real gs private-descriptor process; offline Rust 1.96.0",
+    "c": "private launcher, FD/environment sentinels, malformed response and deadline pass",
+    "endToEnd": "C worker -> pinned installed copy of actual gs -> synthetic private file pass; mode 0644 refused",
+    "nativeOsStore": false,
+    "realUserCredentialsAccessed": false
+  },
+  "imageStagingWorker": {
+    "evidence": "runtime/experiments/provisioning/evidence.json",
+    "pinnedArm64ApiStage": true,
+    "hardDeadline": true,
+    "activation": true,
+    "upstreamExecution": false,
+    "activationScope": "internal cache-only fixture with parent ledger; no service execution"
+  }
+}

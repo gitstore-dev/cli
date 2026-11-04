@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GitStore registered upstream image asset manifest",
+  "description": "Internal immutable plan, compared with the compiled trusted catalogue. A digest alone never authenticates an arbitrary supplied manifest. CLI-published artifact provenance is a separate release gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profileId", "profileVersion", "profileDigest", "serverRevision", "platform", "images", "manifestDigest"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "profileId": {"const": "core"},
+    "profileVersion": {"const": "1"},
+    "profileDigest": {"$ref": "#/$defs/digest"},
+    "serverRevision": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "platform": {
+      "type": "object", "additionalProperties": false,
+      "required": ["os", "architecture"],
+      "properties": {"os": {"const": "linux"}, "architecture": {"enum": ["amd64", "arm64"]}}
+    },
+    "images": {
+      "type": "array", "minItems": 1, "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["component", "kind", "source", "indexDigest", "digest", "configDigest", "integrityPolicy", "tokenOrigins", "blobOrigins"],
+        "properties": {
+          "component": {"enum": ["api", "git", "controller"]},
+          "kind": {"const": "oci-image"},
+          "source": {"enum": ["ghcr.io/gitstore-dev/api", "ghcr.io/gitstore-dev/git-service", "ghcr.io/gitstore-dev/controller-manager"]},
+          "indexDigest": {"$ref": "#/$defs/digest"},
+          "digest": {"$ref": "#/$defs/digest"},
+          "configDigest": {"$ref": "#/$defs/digest"},
+          "integrityPolicy": {"const": "source-platform-digest"},
+          "tokenOrigins": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/origin"}},
+          "blobOrigins": {"type": "array", "maxItems": 8, "items": {"$ref": "#/$defs/origin"}}
+        }
+      }
+    },
+    "manifestDigest": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "origin": {"type": "string", "maxLength": 1024, "pattern": "^https://[a-z0-9.-]+(:[0-9]+)?$"}
+  }
+}

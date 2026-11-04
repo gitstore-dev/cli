@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "scope": "Committed reference inputs and public manifest/config metadata; provider lifecycle not verified. No upstream attestation requirement.",
+  "sourceEvidence": [
+    {
+      "path": "compose.oidc.yml",
+      "sha256": "5d796cceecd2bce3cf8babebd8c6a1aef2cc153623e7d1fa79b7a8edd6104cc6"
+    },
+    {
+      "path": "config/oidc/kratos/kratos.yml",
+      "sha256": "130bcea3dadc7ec857f9969da94a58b51409c2fa45d409ff9c4aeb2cd58f0503"
+    },
+    {
+      "path": ".github/workflows/cd-optional.yml",
+      "sha256": "7e037e44ce92c4c2e3c8dc931c32076d43fd47ee0cbdd7a29b7afe020b8b33d1"
+    },
+    {
+      "path": "docs/ADRs/0012-admin-storefront-graphql-endpoints.md",
+      "sha256": "9acdd6715afda941dfb251c4b85ffa955b833eebcb4bcf7b2a37fcf93190e668"
+    }
+  ],
+  "registryEvidence": [
+    {
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "digest": "sha256:aaa98321b67686c9a34e8d345b3ccddf4256431a3ded76770aec974d7c5738be",
+          "configDigest": "sha256:9b588743c9a6fa7a025cfddc12e1e4597f68cd5d01e4f33fffdb39026f00a711",
+          "sourceRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "command": "/app/bridge",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "digest": "sha256:c0dd139d8462be03cb9dee8bf6a5b2751f920af0ad7242e24c1fd084d9ef8206",
+          "configDigest": "sha256:e7861581e2b9902f3c683f760cee67b918d8d50b5abba4494d4d70c7f3d2e3ab",
+          "sourceRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+          "command": "/app/bridge",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "ghcr.io/gitstore-dev/oidc-bridge:0.1.0-alpha.8",
+      "resolvedDigest": "sha256:2b53cd68392f0280a32f500cea96f2b06b0305b0647bfada2b61d8c214e2b8cf",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "digest": "sha256:7cd546cd5c0de9bb14b5c04ffa87800bc74315d6047e9be6c09d3de325071b89",
+          "configDigest": "sha256:12512fb1c25434417c47b04b5d44aa45703139ce90f8c03078f6144519d243bf",
+          "user": "10000",
+          "entrypoint": "/bin/sh",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "digest": "sha256:6982d56d099de2d58de4993ce4ae1d46fde3ba85c2ec4102d6d15248ad42a15b",
+          "configDigest": "sha256:215521c1a54224bb335db2868e711a588bdee91c11db5558bb6496a9988f0a1f",
+          "user": "10000",
+          "entrypoint": "/bin/sh",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "oryd/kratos-selfservice-ui-node:v1.3.1",
+      "resolvedDigest": "sha256:2d6f9a84456c0e6797664e65f2a743f695794788f1e276f915d247f9e35684a3",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    {
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "digest": "sha256:cbf42f0edc946c0bc1b8eeed62403734e1f25dc67a3491455d07a92fdb558b28",
+          "configDigest": "sha256:6a2e324ebe59af6031c4c1cd96c1d5072c2ebc36563d2196365e43b8297c062d",
+          "entrypoint": "docker-entrypoint.sh",
+          "command": "postgres",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "digest": "sha256:7a8050e52090c5f77effbe7e0cbed4a0587306776c3f26dc99933a63c619eaf1",
+          "configDigest": "sha256:c54a696c68013b2f8f42f479e00a2b6ad24c5ef10ee31cdfb8972cec3dad7eb7",
+          "entrypoint": "docker-entrypoint.sh",
+          "command": "postgres",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "postgres:16-alpine",
+      "resolvedDigest": "sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "digest": "sha256:38bbfe332099e9214b8041dffe5e3eaa271140993f148d3c8a5f7af825013097",
+          "configDigest": "sha256:f116c8174bd68d953e094eae204c143515cca04f8bafe1c02911ee989cb5df4f",
+          "sourceRevision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
+          "user": "nonroot",
+          "entrypoint": "hydra",
+          "command": "serve",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "digest": "sha256:8da222f6374ade339e6a578f9ca9e34ad7af6a6168e4501f3f68b1f01b3c242d",
+          "configDigest": "sha256:ea2db2f9dc090250f1579731ffe541eef5d05bc9645899dbac7f5305086a23e1",
+          "sourceRevision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
+          "user": "nonroot",
+          "entrypoint": "hydra",
+          "command": "serve",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "oryd/hydra:v2.3.0",
+      "resolvedDigest": "sha256:b94007e19a1f7f78157e7f4ea340da8a55b5f104a0f1198755c256f38ef32b4b",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "digest": "sha256:c47903ba278bbcb330b5af4ce43d33dc17adacc1d40456b8e2a235add8ababa5",
+          "configDigest": "sha256:0a3ac92960bcff42da933bdb4232f1040be0921a389573b9b31e73f5b24fd633",
+          "sourceRevision": "36e624c716e45ab405599c71b42c384dd45bdfbb",
+          "user": "10000",
+          "entrypoint": "kratos",
+          "command": "serve",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "digest": "sha256:dae4fe524d9559fd4bd41d756d47f45d2e61d8f0c22de0fd116687a4b0f7cc7e",
+          "configDigest": "sha256:21a041195fb71062ee87f7fa3ec53f798c4bae7fa0bb045e65de32c1a03f2b9b",
+          "sourceRevision": "36e624c716e45ab405599c71b42c384dd45bdfbb",
+          "user": "10000",
+          "entrypoint": "kratos",
+          "command": "serve",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "oryd/kratos:v1.3.1",
+      "resolvedDigest": "sha256:fe2428f103a6240c064b6ea77d3088610865c55fcebccb30355857eccdc25b4b",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    {
+      "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "actualPlatform": "linux/amd64",
+          "digest": "sha256:d4b6583cc0f2715ca698c8ee2771b7d2e17d3c50f04070a1a1af63ba5867c615",
+          "configDigest": "sha256:c7f0b210ead484b8778cf4c774a3f9ce37c6c1464e66a58e45ce1a7dd5f0b2e7",
+          "entrypoint": "./mailslurper",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "actualPlatform": "linux/amd64",
+          "status": "platform-mismatch"
+        }
+      ],
+      "reference": "oryd/mailslurper:latest-smtps",
+      "resolvedDigest": "sha256:d4b6583cc0f2715ca698c8ee2771b7d2e17d3c50f04070a1a1af63ba5867c615",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    }
+  ],
+  "components": {
+    "oidc": {
+      "status": "not-enabled",
+      "shipped": "OIDC bridge alpha.8 and reference provider images exist",
+      "linuxArm64Prerequisite": "An approved native SMTP image/configuration or verified external SMTP mapping replacing the amd64-only reference MailSlurper image",
+      "implementationRemaining": [
+        "Complete provider graph and migration ownership",
+        "Private client enrollment without secrets in arguments",
+        "Current-generation issuer/provider readiness",
+        "Native amd64 lifecycle validation; metadata support alone does not verify execution"
+      ],
+      "uidEvidence": "Native registered user namespace UID 10000 libcrun and owned slirp/TAP probes passed; no subuid/helper prerequisite was found"
+    },
+    "admin": {
+      "status": "mapping-unavailable",
+      "prerequisite": "Published image plus configuration, enrollment and readiness mapping; ADR 0012 remains Proposed at pinned revision"
+    },
+    "storefront": {
+      "status": "mapping-unavailable",
+      "prerequisite": "Published image plus configuration, enrollment and readiness mapping; ADR 0012 describes a future buyer surface"
+    }
+  },
+  "candidateSmtpReplacement": {
+    "metadata": {
+      "mediaType": "application/vnd.oci.image.index.v1+json",
+      "platforms": [
+        {
+          "architecture": "amd64",
+          "actualPlatform": "linux/amd64",
+          "digest": "sha256:18156f9ee243aa339170ac33d09d6d5a80b10d9e06b265f90f223a777a8f4b73",
+          "configDigest": "sha256:580a202b5088e9c651a8e8b4e461e3213fbd3a3aacaa3d2251892a546a734116",
+          "entrypoint": "/mailpit",
+          "status": "metadata-verified"
+        },
+        {
+          "architecture": "arm64",
+          "actualPlatform": "linux/arm64",
+          "digest": "sha256:e5bf699db0edd1a813496f7a49e546d328e3484cd4d35bc4e3e29b403405715c",
+          "configDigest": "sha256:245e558b2e440962f2d646b6415fbb99b38761dc8a170e6646edf1113779965f",
+          "entrypoint": "/mailpit",
+          "status": "metadata-verified"
+        }
+      ],
+      "reference": "axllent/mailpit:v1.33.0",
+      "resolvedDigest": "sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231",
+      "schemaVersion": 1,
+      "scope": "manifest/config metadata only; no layers, execution or attestation prerequisite",
+      "status": "metadata-reviewed"
+    },
+    "documentation": [
+      "https://mailpit.axllent.org/docs/install/docker/",
+      "https://mailpit.axllent.org/docs/configuration/smtp/",
+      "https://github.com/axllent/mailpit/releases/tag/v1.33.0"
+    ],
+    "selection": "Candidate only; native platform metadata verified; courier and lifecycle not yet verified; acquired only for an explicitly selected OIDC profile",
+    "packaging": "Separate consented runtime image, never bundled into core executables"
+  }
+}

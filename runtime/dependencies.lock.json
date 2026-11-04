@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Development code dependencies; not release provenance or host support evidence",
+  "toolchain": {
+    "cStandard": "C17",
+    "cmakeMinimum": "3.28",
+    "localCmake": "3.31.6",
+    "linuxSanitizerCompiler": "Clang 18",
+    "localCompiler": "AppleClang 21.0.0",
+    "architectures": [
+      "amd64",
+      "arm64"
+    ]
+  },
+  "dependencies": {
+    "jansson": {
+      "version": "2.15.1",
+      "revision": "dbb5fb3636e155fccfce4cd215de752779bd6971",
+      "url": "https://github.com/akheron/jansson/releases/download/v2.15.1/jansson-2.15.1.tar.gz",
+      "archive": "jansson-2.15.1.tar.gz",
+      "sha256": "0c7114dc0b2d22a670724a1f95922029d7077c19dbf79a584cb8084d2f267f2f",
+      "license": "MIT",
+      "licenseFile": "LICENSE",
+      "transitiveLibraries": [
+        "platform C library"
+      ],
+      "build": {
+        "JANSSON_BUILD_SHARED_LIBS": false,
+        "JANSSON_WITHOUT_TESTS": true,
+        "JANSSON_EXAMPLES": false,
+        "JANSSON_BUILD_DOCS": false,
+        "JANSSON_INSTALL": false
+      },
+      "patches": [
+        "Private generated jansson_config.h: JSON_PARSER_MAX_DEPTH=33 with preparse 32-container structural bound; protocol boundary tests required",
+        "daemon/cmake/PatchJansson.cmake: remove decoder-only NUL-key rejection; use existing length-aware key insertion/lookup and duplicate rejection"
+      ]
+    },
+    "sqlite": {
+      "version": "3.51.3",
+      "revision": "2026-03-13 10:38:09 737ae4a34738ffa0c3ff7f9bb18df914dd1cad163f28fd6b6e114a344fe6d618",
+      "url": "https://www.sqlite.org/2026/sqlite-amalgamation-3510300.zip",
+      "archive": "sqlite-amalgamation-3510300.zip",
+      "sha256": "acb1e6f5d832484bf6d32b681e858c38add8b2acdfd42ac5df24b8afb46552b4",
+      "license": "blessing",
+      "licenseFile": "sqlite3.c header",
+      "transitiveLibraries": [
+        "platform C library"
+      ],
+      "build": {
+        "SQLITE_THREADSAFE": 0,
+        "SQLITE_OMIT_LOAD_EXTENSION": 1,
+        "SQLITE_DQS": 0,
+        "SQLITE_DEFAULT_MEMSTATUS": 0
+      },
+      "notes": "Single daemon control owner; extensions disabled. Runtime journaling/limits enforced separately."
+    }
+  },
+  "platformCrypto": {
+    "purpose": "Maintained SHA-256 for canonical intent fingerprints; no custom cryptographic primitive",
+    "macos": {
+      "library": "CommonCrypto",
+      "source": "Apple platform SDK",
+      "localSdk": "MacOSX27.0",
+      "api": "CC_SHA256",
+      "delivery": "OS libSystem"
+    },
+    "linux": {
+      "library": "OpenSSL::Crypto",
+      "abi": "3",
+      "api": "SHA256",
+      "source": "compatible host development/runtime library; resolved version recorded by CMake",
+      "validation": "Ubuntu 24.04 arm64 fixture OpenSSL 3.0.13; all 14 native control tests pass; not runtime workload or release inventory evidence",
+      "license": "Apache-2.0"
+    }
+  },
+  "capabilityLibraries": {
+    "image": {
+      "status": "private acquisition/import/resume/materialization and parent cache primitives implemented; public lifecycle remains gated",
+      "integration": "ordinary separately resolved Rust staticlib linked to the C daemon; native TLS cannot unify features with gs",
+      "manifest": "daemon/image-backend/Cargo.toml",
+      "lock": "daemon/image-backend/Cargo.lock",
+      "inventory": "runtime/experiments/image-library/rust-source-inventory.json",
+      "ociClientRevision": "71c08729adeb88fbdda43966ece962d32b58fb8d",
+      "ocirenderVersion": "0.2.3",
+      "hostChecks": "macOS arm64 control bridge/seven SDK checks; Ubuntu 24.04 arm64 thirteen SDK checks, explicit private registry scenario and real API cache/materialization probes pass",
+      "runtimeExecutables": [],
+      "linuxExternalLibraries": [
+        "OpenSSL libssl.so.3",
+        "OpenSSL libcrypto.so.3",
+        "libgcc_s.so.1",
+        "platform libc/loader"
+      ],
+      "limits": "strict bounded plans; worker AS/file/deadline/cancellation/disk bounds; no network for offline/materialization; public owner settings and lifecycle dispatch pending",
+      "binding": "daemon/src/image_backend.h",
+      "build": "daemon/cmake/ImageBackend.cmake; GITSTORED_IMAGE_SDK development Linux linkage"
+    },
+    "network": {
+      "status": "private bounded libslirp engine, confined persistent worker, durable namespace attachments and strict live worker reopen pass ordinary and Clang18 ASan/UBSan Linux arm64 probes; public dispatch and actual core startup remain pending",
+      "implementation": "libslirp",
+      "origin": "code",
+      "version": "4.9.7-gstd-queueview2",
+      "revision": "ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
+      "url": "https://qemu.googlesource.com/libslirp/+archive/ce12dcddf710a71dc0de6450ec95edbadf8e9f66.tar.gz",
+      "sha256": "6787fae6585d6f674af057189f2c21c01ecb2d8b687b3eed5509af3d13897cc4",
+      "patch": "runtime/experiments/network-library/queue-access.patch",
+      "patchSha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
+      "patchRecord": "runtime/experiments/network-library/patch-lock.json",
+      "build": {
+        "default_library": "static",
+        "version_suffix": "-gstd-queueview2",
+        "sanitizer_exemptions": [],
+        "cmake": "daemon/cmake/Slirp.cmake"
+      },
+      "evidence": "Linux arm64 GCC13.3 Werror release and Clang18 ASan/UBSan static/shared/concurrent probes plus five upstream tests pass",
+      "runtimeExecutables": [],
+      "normalExternalLibraries": [
+        "GLib2.0",
+        "PCRE2 8",
+        "platform C/m/loader"
+      ],
+      "scope": "IPv4 owned namespace/TAP, DNS, fixed API/Git high loopback forwards; native namespace joins and retained writer lease primitives pass; public lifecycle/recovery remain gated"
+    },
+    "execution": {
+      "status": "private registered libcrun lifecycle/signal/exit adapter passes; public lifecycle dispatch pending",
+      "implementation": "libcrun",
+      "version": "1.30.1",
+      "revision": "079ff6a7a16d029460af882f9ea44674e6a510b6",
+      "sourceLock": "runtime/experiments/libcrun/source-lock.json",
+      "build": "daemon/cmake/Libcrun.cmake",
+      "link": "static libcrun; required system libraries remain separately measured",
+      "runtimeExecutables": [],
+      "minimumSystemLibraries": {
+        "libsystemd": "255",
+        "libseccomp": "2.5.5",
+        "json-c": "0.17",
+        "libcap": "compatible platform ABI"
+      },
+      "features": "caps/seccomp/systemd enabled; no crun executable, dynload, CRIU, eBPF or alternative-language/VM handlers",
+      "evidence": "runtime/experiments/libcrun/adapter.md"
+    },
+    "bootstrap": {
+      "status": "private generated credential material, add-only broker/file provisioning and bounded public HTTP client verified on Linux arm64 controlled fixtures; real core graph and public dispatch pending",
+      "implementation": "OpenSSL 3 key/random APIs, libxcrypt bcrypt and libcurl HTTP APIs through declared CMake dependencies",
+      "build": "daemon/cmake/Bootstrap.cmake",
+      "normalExternalLibraries": [
+        "OpenSSL >=3.0",
+        "libxcrypt >=4.4.36",
+        "libcurl >=8.5.0"
+      ],
+      "runtimeExecutables": [],
+      "scope": "ordinary linked code libraries; no openssl, crypt or curl executable wrapper; OS credential store remains default, protected-file source explicit; no upstream image attestation requirement"
+    }
+  },
+  "executionPolicyCandidate": {
+    "status": "enforced by private registered synthetic workload tests; actual core service compatibility unverified",
+    "sourceLock": "runtime/profiles/seccomp/source-lock.json",
+    "normalizer": "runtime/profiles/seccomp/normalize.py",
+    "sourceRevision": "4b8214fc4971e06172938a1f1554ccff6647ee80",
+    "sourceSha256": "6416b47770785a41ac59073cdc77d9fe98517df2799dc83ef207e622de3053f6",
+    "license": "Apache-2.0",
+    "capabilities": [],
+    "architectures": [
+      "amd64",
+      "arm64"
+    ],
+    "minimumKernel": "6.8",
+    "runtimeExecutables": []
+  }
+}

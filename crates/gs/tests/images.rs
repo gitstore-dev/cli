@@ -30,6 +30,7 @@ struct Fixture {
 }
 impl Fixture {
     fn new(name: &str) -> Self {
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let fixture = Self {
             temp: tempfile::tempdir().unwrap(),
             config: env::var("GITSTORE_IMAGE_CONFIG").unwrap(),

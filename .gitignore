@@ -28,3 +28,8 @@ rustc-ice-*.txt
 *.log
 .DS_Store
 postman/.runtime/
+
+# Native builds and disposable runtime fixtures
+/build/
+__pycache__/
+*.pyc

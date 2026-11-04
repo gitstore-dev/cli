@@ -1,0 +1,47 @@
+{
+  "scope": "selected development queue-access fix; original queue/container layouts preserved; native arm64 probes pass",
+  "versionSuffix": "-gstd-queueview2",
+  "upstreamRevision": "ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
+  "patch": "queue-access.patch",
+  "patchSha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
+  "files": [
+    {
+      "file": "src/ip.h",
+      "originalSha256": "fe06a55d7d1a24a1af588fe9f828ce5ff8250e3ffc737d4a304ac18f768c4945",
+      "patchedSha256": "8a2a2d330a7c9804f4ac8213fff5c56b2b650c715f1a60fb8b0178128626c911",
+      "replacements": [
+        [
+          "struct qlink {\n    void *next, *prev;\n};\n",
+          "struct qlink {\n    void *next, *prev;\n};\n\n/* Packet access view only: preserve naturally aligned queue/container layouts. */\nSLIRP_PACKED_BEGIN\nstruct qlink_unaligned {\n    void *next, *prev;\n} SLIRP_PACKED_END;\n"
+        ]
+      ]
+    },
+    {
+      "file": "src/tcpip.h",
+      "originalSha256": "5143183232b82899509854fd4696f03f4337c507f7c6ebc0fb8678d8240f4811",
+      "patchedSha256": "f35d36b56bee921b5c517e4b0af7926f665690cda6b66db0430ef11372bd74c6",
+      "replacements": [
+        [
+          "((struct qlink *)(((char *)(T)) - sizeof(struct qlink)))",
+          "((struct qlink_unaligned *)(((char *)(T)) - sizeof(struct qlink)))"
+        ],
+        [
+          "(tcpiphdr2qlink(F) == (struct qlink *)(T))",
+          "(tcpiphdr2qlink(F) == (struct qlink_unaligned *)(T))"
+        ]
+      ]
+    },
+    {
+      "file": "src/misc.h",
+      "originalSha256": "450b3cfb772ddc6b0363f3075484ed8ee1ad81b3e02b5a5113155ca6a117c4ea",
+      "patchedSha256": "0214e458a123f1cec1a3dcc3c032ece24a2c2d4be7f57e0f47861d1bbcfcaecb",
+      "replacements": [
+        [
+          "struct slirp_quehead {\n    struct slirp_quehead *qh_link;\n    struct slirp_quehead *qh_rlink;\n};\n",
+          "/* Generic queue helpers also operate on unaligned packet overlays. */\nSLIRP_PACKED_BEGIN\nstruct slirp_quehead {\n    struct slirp_quehead *qh_link;\n    struct slirp_quehead *qh_rlink;\n} SLIRP_PACKED_END;\n"
+        ]
+      ]
+    }
+  ],
+  "change": "Dedicated packed packet-access view, existing generic helper view packed; original qlink/ipq/ipas layouts and all queue/protocol logic unchanged"
+}

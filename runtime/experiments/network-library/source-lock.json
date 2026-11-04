@@ -1,0 +1,33 @@
+{
+  "scope": "selected ordinary network code dependency; runtime adapter pending T041",
+  "version": "4.9.7",
+  "revision": "ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
+  "url": "https://qemu.googlesource.com/libslirp/+archive/ce12dcddf710a71dc0de6450ec95edbadf8e9f66.tar.gz",
+  "sha256": "6787fae6585d6f674af057189f2c21c01ecb2d8b687b3eed5509af3d13897cc4",
+  "tagArchive": {
+    "url": "https://qemu.googlesource.com/libslirp/+archive/refs/tags/v4.9.7.tar.gz",
+    "sha256": "153c75576092eb9fb967324ce1808b7c042f2435969031b841b4ef845df90097",
+    "comparison": "Every member name/type/mode/link target/file SHA256 matches commit archive; gzip bytes differ"
+  },
+  "sdk": {
+    "distribution": "Ubuntu 24.04 arm64",
+    "glib": "2.80.0-6ubuntu3.10",
+    "meson": "1.3.2",
+    "ninja": "1.11.1",
+    "compiler": "GCC 13.3.0; Clang 18.1.3 instrumentation"
+  },
+  "license": "BSD-3-Clause; preserve upstream LICENSE and COPYRIGHT",
+  "ordinaryExternalLibraries": [
+    "GLib 2.0",
+    "PCRE2 8",
+    "platform C/m/loader"
+  ],
+  "helperExecutables": [],
+  "selectedVersion": "4.9.7-gstd-queueview2",
+  "privatePatch": {
+    "record": "runtime/experiments/network-library/patch-lock.json",
+    "file": "runtime/experiments/network-library/queue-access.patch",
+    "sha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
+    "policy": "no sanitizer exemptions; normal container layout unchanged"
+  }
+}

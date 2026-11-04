@@ -164,3 +164,12 @@ contributor guidance after the M0 review above. Changed document links and white
 were checked locally; the workflow directory still contains only PR-title lint.
 EXP-003C is not-run: no artifact was built, attested or verified. The original M0
 review outcomes do not claim validation of that future release implementation.
+
+## Attestation scope clarification — 2026-11-03
+
+The user clarified that attestation requirements concern artifacts published by
+`gitstore-dev/cli`. PRD DIST 1, ADR 0003, DEP-013 and the M2 design now explicitly
+exclude upstream GitStore service images from that requirement. Their integrity
+checks use trusted sources and pinned platform/digest identities. No upstream
+attestation gate or bundled runtime GitHub CLI verifier is required. This is a
+documentation correction, not executed release/runtime verification.

@@ -1,0 +1,13 @@
+{
+  "auth": "explicit anonymous; ambient helpers disabled",
+  "observedAt": "2026-11-03T20:18:06Z",
+  "redirectOrigins": [
+    "https://pkg-containers.githubusercontent.com"
+  ],
+  "reference": "ghcr.io/gitstore-dev/git-service@sha256:7dfc6898ad198d0c8ca9d77b09d766b24479425c4dfc55be93aceaf3bf3866b0",
+  "requestOrigins": [
+    "https://ghcr.io",
+    "https://pkg-containers.githubusercontent.com"
+  ],
+  "scope": "metadata and first byte of first compressed layer; no full layer digest/unpack/execution claim"
+}

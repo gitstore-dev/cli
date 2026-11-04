@@ -1,0 +1,9 @@
+{
+  "scope": "candidate private source patch; not selected until instrumented/normal probes pass",
+  "upstreamRevision": "ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
+  "file": "src/ip.h",
+  "originalSha256": "fe06a55d7d1a24a1af588fe9f828ce5ff8250e3ffc737d4a304ac18f768c4945",
+  "patchedSha256": "c2d3f87b3fc4cd784b56b1b10ca5b21a1516fbbbb761ca194f817604f08b0894",
+  "patchSha256": "87fe3fa2e85c41359c9f815f29bd0ce866b0b8c8fd43ccac56df458e41721122",
+  "change": "Use upstream packing macros on internal qlink; pointer member offsets/size preserved, alignment requirement corrected; no sanitizer suppression or protocol change"
+}

@@ -1,0 +1,40 @@
+$kind: http-request
+name: Enroll existing local controller public key
+order: 3000
+method: POST
+url: '{{apiBase}}/graphql'
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{bootstrapToken}}'
+body:
+  type: json
+  content: |-
+    {"query":"mutation BootstrapController($name:String!,$keyID:String!,$publicKey:String!){createServiceAccount(input:{metadata:{name:$name},publicKeys:[{kid:$keyID,algorithm:\"Ed25519\",publicKeyPEM:$publicKey}]}){serviceAccount{metadata{uid}}}}","variables":{}}
+settings:
+  followRedirects: false
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const publicKey = pm.variables.get("controllerPublicKey");
+      if (typeof publicKey !== "string" || publicKey.length > 1024 ||
+          !publicKey.startsWith("-----BEGIN PUBLIC KEY-----\n")) {
+        throw new Error("Provide the existing disposable controller public key");
+      }
+      const body = JSON.parse(pm.request.body.raw);
+      body.variables = {name: "gitstore-controller-manager", keyID: "controller-key", publicKey};
+      pm.request.body.update(JSON.stringify(body));
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Enrollment returns the server-assigned identity", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(/^[A-Za-z0-9-]{1,128}$/.test(body.data.createServiceAccount.serviceAccount.metadata.uid)).to.eql(true);
+      });

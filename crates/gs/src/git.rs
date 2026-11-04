@@ -529,7 +529,7 @@ pub fn sync(
     }
     let tracking = format!("refs/remotes/{}/{}", name, &full_ref[11..]);
     let mut remote = lib(repo.remote_anonymous(&target.url))?;
-    let transport = Transport::new(e, cli.timeout, vec![target.url.clone(), push_url.clone()])?;
+    let transport = Transport::new(e, cli.timeout(), vec![target.url.clone(), push_url.clone()])?;
     transport.timeout()?;
     let mut fetch = transport.fetch(&target.url);
     let refspec = format!("+{full_ref}:{tracking}");
@@ -583,7 +583,7 @@ pub fn dispatch(cli: &Cli, e: &Effective, command: &RepositoryCommand) -> Result
             let path = directory
                 .clone()
                 .unwrap_or_else(|| PathBuf::from(repository));
-            clone_repository(e, repository, &path, remote, cli.timeout)
+            clone_repository(e, repository, &path, remote, cli.timeout())
         }
         RepositoryCommand::Sync { repository, remote } => sync(
             cli,

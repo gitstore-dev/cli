@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-04",
+  "fixture": "gitstore-m2-linux-a1a13c",
+  "platform": "linux/arm64",
+  "uid": 11000,
+  "scope": "private daemon code primitives, not actual GitStore service or public deployment dispatch",
+  "build": "daemon/cmake/Slirp.cmake; pinned 4.9.7-gstd-queueview2 archive and hash-bound queue access patch; static C library, no external network helper executable",
+  "engine": [
+    "owned nonblocking gs0 TAP",
+    "maintained IPv4/TCP/UDP/DNS implementation",
+    "fixed API4000/Git9000 destination roles; allocated high host ports bound to 127.0.0.1",
+    "idempotent role allocation and paired listener removal",
+    "unconsumed independent control signal",
+    "512 poll slots, 64 timers/callbacks per step, <=50ms poll",
+    "callback table retained through library cleanup; timer rescan after callbacks",
+    "no raw library/packet strings logged"
+  ],
+  "ordinary": {
+    "single": 0,
+    "concurrentAlpha": 0,
+    "concurrentBeta": 0
+  },
+  "clang18AsanUbsan": {
+    "single": 0,
+    "concurrentAlpha": 0,
+    "concurrentBeta": 0,
+    "sourceLibraryInstrumented": true,
+    "sanitizerExemptions": [],
+    "boundsNote": "ASan diagnostic worker omits RLIMIT_AS because shadow reservations exceed ordinary 512MiB soft address bound; CORE/file bounds retained"
+  },
+  "ownedNamespaces": {
+    "constructor": "daemon/src/namespace_owner.c",
+    "ordinaryCombinedEngine": 0,
+    "checks": [
+      "private single-UID/GID user namespace and net namespace",
+      "fd type and NS_GET_OWNER_UID validation",
+      "network NS_GET_USERNS links to exact user namespace",
+      "keeper PID/start-time and /proc namespace/mapping identity",
+      "stale keeper/changed inode/non-namespace descriptor rejection",
+      "SCM_RIGHTS strict fixed descriptor transfer and unrelated descriptor closure",
+      "creator lifeline EOF stops/reaps only its keeper"
+    ],
+    "clang18CombinedEngine": 0
+  },
+  "nativeJoin": {
+    "ordinaryNormal": 0,
+    "ordinaryLostStartAck": 0,
+    "scope": "registered synthetic Git payload uses persisted immutable network attachment before CREATE, exact exported namespaces and read-only resolver; packet worker stops after observed workload termination; no actual GitStore service",
+    "clang18Normal": 0,
+    "clang18LostStartAck": 0,
+    "attachmentChecks": [
+      "idempotent reservation",
+      "foreign namespace receipt refused",
+      "attachment update/delete refused",
+      "retained data reopened after observed payload exit/delete",
+      "boot identity and actual systemd cgroup membership bound"
+    ]
+  },
+  "rawSharedNamespaceLibraryProbe": {
+    "ordinaryNormal": 0,
+    "ordinaryLostStartAck": 0,
+    "clang18Normal": 0,
+    "clang18LostStartAck": 0
+  },
+  "remaining": [
+    "public deployment dispatch and actual GitStore service bootstrap",
+    "manager restart/reconciliation across all workload/cgroup/volume attachments",
+    "amd64 reference-host and distribution validation"
+  ],
+  "persistentWorker": {
+    "implementation": [
+      "daemon/src/network_worker.c",
+      "daemon/src/network_recovery.c",
+      "daemon/src/network_records.c",
+      "daemon/src/network_sandbox.c"
+    ],
+    "runner": "python3 runtime/experiments/network-library/test_worker.py BUILD/network_worker_probe [--sanitized]",
+    "ordinary": {
+      "concurrentNormal": 0,
+      "concurrentLostAck": 0
+    },
+    "clang18AsanUbsan": {
+      "concurrentNormal": 0,
+      "concurrentLostAck": 0,
+      "nativeLibrariesInstrumented": true,
+      "sanitizerExemptions": []
+    },
+    "checks": [
+      "parent accepted start/resource reservation precedes blocked fork",
+      "SQLite PID/start/boot/scope identity commit precedes permit",
+      "no namespace/TAP/listener before permit",
+      "only user/net descriptors exported; private TAP/lifeline retained",
+      "detached worker survives parent-handle closure and lost readiness acknowledgment",
+      "reopened SQLite identity checked against live kernel PID/start/boot, exact scope and held lock",
+      "namespace type/owner/maps/linkage and live high loopback listener inode/port checks",
+      "wrong boot/start/scope and changed immutable receipt rejected",
+      "distinct concurrent namespace inode and high-port allocations",
+      "fixed TERM uses retained pidfd; observed worker/keeper exit and listener closure",
+      "separate mapped user/mount/IPC sandbox, one-MiB/32-inode read-only tmpfs, no host directory FDs",
+      "zero capabilities and NNP; maintained Moby policy reduced with libcrun/seccomp library compiler",
+      "actual exec, new user namespace, Unix socket, host signal, new pidfd and filesystem write denials",
+      "DNS and forwarded synthetic response work inside confinement"
+    ],
+    "ordinaryFixtures": {
+      "normal": {
+        "pid": 116642,
+        "start": 3261989,
+        "userInode": 4026532199,
+        "networkInode": 4026532200,
+        "apiPort": 34223,
+        "gitPort": 38687
+      },
+      "lostAck": {
+        "pid": 116643,
+        "start": 3261989,
+        "userInode": 4026532270,
+        "networkInode": 4026532271,
+        "apiPort": 40543,
+        "gitPort": 33231
+      }
+    },
+    "failuresCorrected": [
+      "fchdir through a pre-unshare directory handle selected an old mount, causing EINVAL; select cwd before cloning mounts",
+      "raw json_dumps output used the bounded Jansson allocator and could not be freed with libc free; use gstd_json_dump ownership adapter"
+    ],
+    "limits": "ordinary worker address limit 512MiB; instrumentation omits address limit for ASan shadow mappings; no full service or manager recovery claim"
+  }
+}

@@ -12,6 +12,18 @@ pub struct Error {
     pub revision: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub submission: Option<String>,
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
+    pub local_identity: Option<Box<LocalIdentity>>,
+}
+#[derive(Debug, Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalIdentity {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub operation_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deployment_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub idempotency_key: Option<String>,
 }
 pub type Result<T> = std::result::Result<T, Error>;
 impl Error {
@@ -24,6 +36,7 @@ impl Error {
             retryable: false,
             revision: None,
             submission: None,
+            local_identity: None,
         }
     }
     pub fn usage(message: &str) -> Self {

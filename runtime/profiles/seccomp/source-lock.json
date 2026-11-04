@@ -1,0 +1,23 @@
+{
+  "repository": "moby/profiles",
+  "revision": "4b8214fc4971e06172938a1f1554ccff6647ee80",
+  "url": "https://github.com/moby/profiles/blob/4b8214fc4971e06172938a1f1554ccff6647ee80/seccomp/default.json",
+  "sha256": "6416b47770785a41ac59073cdc77d9fe98517df2799dc83ef207e622de3053f6",
+  "bytes": 17867,
+  "license": "Apache-2.0",
+  "licenseFile": "LICENSE.moby",
+  "licenseSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "notice": "Pinned repository root and seccomp directory contain no NOTICE file",
+  "scope": "T040 service-policy candidate; normalize for zero capabilities, native 64-bit architecture and minimum Linux 6.8; not yet production lifecycle validation",
+  "recorded": "2026-11-04",
+  "generatedPolicies": {
+    "amd64": {
+      "file": "amd64.json",
+      "sha256": "da59ef83673de7460814c7244d1a388b366dba30167887bd3b0c99b5aabb96c6"
+    },
+    "arm64": {
+      "file": "arm64.json",
+      "sha256": "69fdf5dfb678beea386b92bc23585d46ede36bea5b6c608e0ae9ec08b2b4da60"
+    }
+  }
+}

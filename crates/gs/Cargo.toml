@@ -12,7 +12,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision"] }
 toml = "1"
 url = { version = "2", features = ["serde"] }
-reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "json", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 serde-saphyr = "2"
 cynic-parser = "0.11"
 git2 = { version = "0.21", default-features = false, features = ["vendored-libgit2"] }

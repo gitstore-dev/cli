@@ -34,6 +34,13 @@ pub fn key(e: &Effective, purpose: &str) -> String {
 pub trait Store {
     fn read(&self, key: &str) -> Result<Option<Secret>>;
     fn remove(&self, key: &str) -> Result<bool>;
+    /// Private runtime bootstrap only. Implementations must never replace an
+    /// existing credential, unlock a collection or open an authorization UI.
+    fn insert_runtime_if_absent(&self, _: &str, _: &Secret) -> Result<()> {
+        Err(Error::unsupported(
+            "runtime credential creation in this store",
+        ))
+    }
 }
 pub struct Native;
 #[cfg(target_os = "macos")]
@@ -54,6 +61,81 @@ fn entry(key: &str) -> Result<keyring_core::Entry> {
         .map_err(|_| Error::auth("Cannot access OS credential entry"))
 }
 impl Store for Native {
+    fn insert_runtime_if_absent(&self, key: &str, value: &Secret) -> Result<()> {
+        if self.read(key)?.is_some() {
+            return Ok(());
+        }
+        #[cfg(target_os = "linux")]
+        {
+            use dbus_secret_service::{EncryptionType, SecretService};
+            use std::collections::HashMap;
+            // In this pinned library timeout=0 returns before Prompt.Prompt.
+            // Do not call ensure_unlocked/unlock or create a collection.
+            let service = SecretService::connect_with_max_prompt_timeout(EncryptionType::Dh, 0)
+                .map_err(|_| Error::auth("Linux Secret Service unavailable"))?;
+            let collection = service
+                .get_default_collection()
+                .map_err(|_| Error::auth("No default credential collection"))?;
+            if collection
+                .is_locked()
+                .map_err(|_| Error::auth("Cannot inspect credential collection"))?
+            {
+                return Err(Error::auth(
+                    "Credential collection is locked; unlock it outside gs",
+                ));
+            }
+            collection
+                .create_item(
+                    "GitStore runtime bootstrap material",
+                    HashMap::from([("service", "dev.gitstore.gs"), ("user", key)]),
+                    value.expose().as_bytes(),
+                    false,
+                    "text/plain",
+                )
+                .map_err(|_| {
+                    Error::auth(
+                        "Runtime credential creation denied or requires external authorization",
+                    )
+                })?;
+            Ok(())
+        }
+        #[cfg(target_os = "macos")]
+        {
+            // Add-only Keychain API: unlike set_password it cannot overwrite a
+            // credential inserted between the read and this call.
+            let interaction = unsafe {
+                security_framework_sys::keychain::SecKeychainSetUserInteractionAllowed(0)
+            };
+            if interaction != 0 {
+                return Err(Error::auth("Cannot disable credential-store interaction"));
+            }
+            let service = b"dev.gitstore.gs";
+            let status = unsafe {
+                security_framework_sys::keychain::SecKeychainAddGenericPassword(
+                    std::ptr::null_mut(),
+                    service.len() as u32,
+                    service.as_ptr().cast(),
+                    key.len() as u32,
+                    key.as_ptr().cast(),
+                    value.expose().len() as u32,
+                    value.expose().as_ptr().cast(),
+                    std::ptr::null_mut(),
+                )
+            };
+            if status != 0 && status != -25299 {
+                // errSecDuplicateItem
+                return Err(Error::auth(
+                    "Runtime credential creation denied or unavailable",
+                ));
+            }
+            Ok(())
+        }
+        #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+        {
+            let _ = (key, value);
+            Err(Error::unsupported("native runtime credential store"))
+        }
+    }
     fn read(&self, key: &str) -> Result<Option<Secret>> {
         #[cfg(target_os = "linux")]
         {
