@@ -104,6 +104,12 @@ int main(void) {
     gstd_bootstrap_graph stale = graph;
     stale.generation++;
     CHECK(gstd_deployment_graph_step(db, &target, config, &stale, GSTD_BOOT_PREPARE, 0, NULL) < 0);
+    stale = graph;
+    stale.persistent = 1;
+    CHECK(gstd_deployment_graph_step(db, &target, config, &stale, GSTD_BOOT_PREPARE, 0, NULL) < 0);
+    stale = graph;
+    stale.fresh_datastore = 1;
+    CHECK(gstd_deployment_graph_step(db, &target, config, &stale, GSTD_BOOT_PREPARE, 0, NULL) < 0);
     CHECK(!gstd_deployment_graph_step(db, &target, config, &graph, GSTD_BOOT_PREPARE, 0, NULL));
     CHECK(graph.stage == GSTD_BOOT_LAUNCH_GIT);
     SQL("COMMIT");
@@ -195,6 +201,35 @@ int main(void) {
               &s, NULL) == SQLITE_OK);
     CHECK(sqlite3_step(s) == SQLITE_ROW && sqlite3_column_int64(s, 0) == 1 &&
           !strcmp((const char *)sqlite3_column_text(s, 1), "running"));
+    sqlite3_finalize(s);
+    /* Controlled metadata model only: no native handles/workloads are present.
+     * Force both deadlines before any filesystem/native dispatch. Real paused
+     * workload retry is exercised separately by tests/runtime/test_recovery.py. */
+    CHECK(gstd_schedule_take(db, 0, scheduled) == 1 && !strcmp(scheduled, stop_operation));
+    prepared.recovery_proven = 1;
+    CHECK(!gstd_cleanup_begin(&prepared, stop_operation, &cleanup));
+    CHECK(cleanup.generation == 2 && prepared.target.generation == 1);
+    CHECK(gstd_cleanup_retry_begin(&cleanup, stop_operation) == -1);
+    cleanup.deadline_ms = 0;
+    CHECK(gstd_cleanup_poll(&cleanup) == 1 && cleanup.outcome == -2);
+    CHECK(!gstd_schedule_finish(db, stop_operation));
+    json_object_set_new(stop_message, "idempotencyKey", json_string("retry-stop"));
+    CHECK(!gstd_request_parse(stop_message, &stop_request));
+    char retried[65];
+    CHECK(gstd_accept(db, &stop_request, NULL, NULL, retried) == GSTD_ACCEPT_NEW);
+    CHECK(gstd_schedule_take(db, 0, scheduled) == 1 && !strcmp(scheduled, retried));
+    CHECK(!gstd_cleanup_retry_begin(&cleanup, retried));
+    CHECK(cleanup.generation == 3 && prepared.target.generation == 1 &&
+          prepared.recovery_generation == 3 && !strcmp(prepared.recovery_operation, retried));
+    cleanup.deadline_ms = 0;
+    CHECK(gstd_cleanup_poll(&cleanup) == 1 && cleanup.outcome == -2);
+    CHECK(!gstd_schedule_finish(db, retried));
+    CHECK(sqlite3_prepare_v2(
+              db,
+              "SELECT count(*) FROM operations WHERE method='deployment.stop' "
+              "AND state='failed' AND json_extract(error,'$.code')='OWNERSHIP_UNCERTAIN'",
+              -1, &s, NULL) == SQLITE_OK);
+    CHECK(sqlite3_step(s) == SQLITE_ROW && sqlite3_column_int(s, 0) == 2);
     sqlite3_finalize(s);
     gstd_deployment_target_clear(&prepared.target);
     json_decref(stop_message);

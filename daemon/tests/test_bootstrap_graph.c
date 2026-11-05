@@ -66,6 +66,52 @@ int main(void) {
         CHECK(!gstd_bootstrap_graph_observe(&graph, 3, stage, 0, NULL));
     CHECK(graph.stage == GSTD_BOOT_COMPLETE && !graph.controller && !*graph.controller_uid);
     json_decref(manifest);
+    manifest = gstd_asset_manifest_for_datastore(components, "arm64", "scylladb");
+    CHECK(manifest && gstd_bootstrap_graph_begin(manifest, "memdb", 4, &graph) == -1);
+    CHECK(gstd_bootstrap_graph_persistent_begin(manifest, 4, 2, &graph) == -1);
+    for (int fresh = 0; fresh <= 1; fresh++) {
+        CHECK(!gstd_bootstrap_graph_persistent_begin(manifest, 4, fresh, &graph));
+        CHECK(graph.persistent && graph.fresh_datastore == (unsigned)fresh);
+        CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_PREPARE, 0, NULL));
+        CHECK(graph.stage == GSTD_BOOT_LAUNCH_DATASTORE);
+        CHECK(gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_LAUNCH_API, 0, NULL) == -1);
+        CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_LAUNCH_DATASTORE, 0, NULL));
+        CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_WAIT_DATASTORE, 1, NULL));
+        CHECK(graph.stage == GSTD_BOOT_WAIT_DATASTORE);
+        CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_WAIT_DATASTORE, 0, NULL));
+        if (fresh) {
+            CHECK(graph.stage == GSTD_BOOT_PREPARE_KEYSPACE);
+            uncertain = graph;
+            CHECK(
+                !gstd_bootstrap_graph_observe(&uncertain, 4, GSTD_BOOT_PREPARE_KEYSPACE, -2, NULL));
+            CHECK(uncertain.outcome == -2 &&
+                  gstd_bootstrap_graph_observe(&uncertain, 4, GSTD_BOOT_LAUNCH_API, 0, NULL) == -1);
+            CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_PREPARE_KEYSPACE, 0, NULL));
+            uncertain = graph;
+            CHECK(!gstd_bootstrap_graph_observe(&uncertain, 4, GSTD_BOOT_MIGRATE_SCHEMA, -1, NULL));
+            CHECK(uncertain.outcome == -1 &&
+                  gstd_bootstrap_graph_observe(&uncertain, 4, GSTD_BOOT_LAUNCH_GIT, 0, NULL) == -1);
+            CHECK(gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_MIGRATE_SCHEMA, 1, NULL) == -1);
+            CHECK(!gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_MIGRATE_SCHEMA, 0, NULL));
+        }
+        CHECK(graph.stage == GSTD_BOOT_LAUNCH_GIT);
+        CHECK(gstd_bootstrap_graph_observe(&graph, 4, GSTD_BOOT_PREPARE_KEYSPACE, 0, NULL) == -1);
+        for (gstd_bootstrap_stage stage = GSTD_BOOT_LAUNCH_GIT; stage <= GSTD_BOOT_WAIT_GIT;
+             stage++)
+            CHECK(!gstd_bootstrap_graph_observe(&graph, 4, stage, 0, NULL));
+        CHECK(graph.stage == GSTD_BOOT_COMPLETE);
+    }
+    graph = (gstd_bootstrap_graph){.generation = 5,
+                                   .stage = GSTD_BOOT_ENROLL,
+                                   .controller = 1,
+                                   .persistent = 1,
+                                   .controller_uid = "retained-uid"};
+    CHECK(gstd_bootstrap_graph_observe(&graph, 5, GSTD_BOOT_ENROLL, 0, "replacement-uid") == -1);
+    CHECK(graph.stage == GSTD_BOOT_ENROLL && !strcmp(graph.controller_uid, "retained-uid"));
+    CHECK(!gstd_bootstrap_graph_observe(&graph, 5, GSTD_BOOT_ENROLL, 0, graph.controller_uid));
+    CHECK(graph.stage == GSTD_BOOT_BIND_CONTROLLER &&
+          !strcmp(graph.controller_uid, "retained-uid"));
+    json_decref(manifest);
     json_decref(components);
     return 0;
 }

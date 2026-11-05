@@ -8,8 +8,8 @@ class Optional(unittest.TestCase):
         f = Fixture()
         self.addCleanup(f.close)
         before = f.call("deployment", "list")
-        for component, prerequisite in (("oidc", b"SMTP"), ("admin", b"published image"),
-                                        ("storefront", b"published image")):
+        for component, prerequisite in (("oidc", b"API issuer integration"), ("admin", b"Admin UI"),
+                                        ("storefront", b"publication reads")):
             for prefix in ((component, "serve"), ("serve", "--add", component)):
                 with self.subTest(component=component, prefix=prefix):
                     result = f.call("--non-interactive", *prefix, "--deployment", "optional",

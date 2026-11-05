@@ -1,5 +1,6 @@
 #ifndef GSTD_NATIVE_POPULATION_H
 #define GSTD_NATIVE_POPULATION_H
+#include <jansson.h>
 #include <stdint.h>
 #include <sys/types.h>
 typedef struct {
@@ -20,5 +21,12 @@ int gstd_native_population_empty(const gstd_native_population *);
 /* Confirm a still-live init remains in the exact captured kernel group. */
 int gstd_native_population_matches(const gstd_native_population *, const char *native_id, pid_t,
                                    uint64_t start, const char *boot);
+/* Capture/reopen the exact cgroup2 path and inode pair before OCI START. These
+ * observers do not signal, create, release a writer or infer death from ENOENT.
+ * Missing/replaced/inaccessible groups fail closed. Identity is boot-bound. */
+json_t *gstd_native_population_identity(const gstd_native_population *, const char *native_id,
+                                        const char *boot);
+int gstd_native_population_reopen(const json_t *, const char *native_id, const char *boot,
+                                  gstd_native_population *);
 void gstd_native_population_close(gstd_native_population *);
 #endif

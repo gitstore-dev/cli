@@ -1,0 +1,35 @@
+$kind: http-request
+name: Create synthetic identity once
+order: 2000
+method: POST
+url: '{{identityAdminUrl}}/admin/identities'
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+settings:
+  followRedirects: false
+scripts:
+- type: beforeRequest
+  language: text/javascript
+  code: 'if(pm.variables.get("mailboxVerified")!=="true" || pm.variables.get("identityAttempted")) throw
+    new Error("Identity mutation is single attempt");
+
+    pm.collectionVariables.set("identityAttempted","true");'
+- type: afterResponse
+  language: text/javascript
+  code: 'try {
+
+    const b=pm.response.json(); const valid=pm.response.code===201 && b.schema_id==="gitstore-user" &&
+    b.traits.email===pm.variables.get("fixtureEmail") && b.traits.username===pm.variables.get("fixtureUsername")
+    && /^[0-9a-f-]{36}$/.test(b.id);
+
+    pm.test("Synthetic identity acknowledged",()=>pm.expect(valid).to.eql(true)); if(!valid) throw new
+    Error(); pm.collectionVariables.set("identityCreated","true");
+
+    } catch (_) { pm.execution.setNextRequest(null); throw new Error("Disposable courier fixture assertion
+    failed"); }'
+body:
+  type: json
+  content: '{"schema_id": "gitstore-user", "traits": {"email": "{{fixtureEmail}}", "username": "{{fixtureUsername}}"}}'

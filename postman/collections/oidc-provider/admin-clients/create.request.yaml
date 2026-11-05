@@ -1,0 +1,48 @@
+$kind: http-request
+name: Create owned fixture client once
+order: 1000
+method: POST
+url: '{{baseUrl}}/admin/clients'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "client_id": "{{clientId}}",
+      "client_secret": "{{clientSecret}}",
+      "grant_types": ["authorization_code", "refresh_token"],
+      "response_types": ["code"],
+      "scope": "openid profile email offline_access",
+      "audience": ["{{audience}}"],
+      "redirect_uris": ["{{redirectUri}}"],
+      "token_endpoint_auth_method": "client_secret_basic"
+    }
+settings:
+  followRedirects: false
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      if (!/^gitstore-oidc-fixture-[a-z0-9-]+$/.test(String(pm.variables.get("clientId") || ""))) {
+        throw new Error("Use a disposable fixture client identity");
+      }
+      if (!/^[A-Za-z0-9_-]{32,128}$/.test(String(pm.variables.get("clientSecret") || ""))) {
+        throw new Error("Provide synthetic fixture material through a protected local environment file");
+      }
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Single creation returns the selected public identity", () => {
+        pm.response.to.have.status(201);
+        const value = pm.response.json();
+        pm.expect(value.client_id).to.eql(pm.variables.get("clientId"));
+        pm.expect(value.grant_types.slice().sort()).to.eql(["authorization_code", "refresh_token"]);
+        pm.expect(value.response_types).to.eql(["code"]);
+        pm.expect(value.scope.split(" ").sort()).to.eql(["email", "offline_access", "openid", "profile"]);
+        pm.expect(value.audience).to.eql([pm.variables.get("audience")]);
+        pm.expect(value.redirect_uris).to.eql([pm.variables.get("redirectUri")]);
+        pm.expect(value.token_endpoint_auth_method).to.eql("client_secret_basic");
+      });
+      // Never console.log or export the response: creation can echo credentials.

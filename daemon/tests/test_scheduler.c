@@ -61,8 +61,11 @@ int main(void) {
         CHECK(snprintf(key, sizeof(key), "cancel-%u", i) > 0);
         json_object_set_new(message, "idempotencyKey", json_string(key));
         CHECK(!gstd_request_parse(message, &cancel));
-        CHECK(gstd_accept(db, &cancel, NULL, NULL, id) ==
-              (i < 64 ? GSTD_ACCEPT_NEW : GSTD_ACCEPT_LIMIT));
+        gstd_accept_status accepted = gstd_accept(db, &cancel, NULL, NULL, id);
+        if (accepted != (i < 64 ? GSTD_ACCEPT_NEW : GSTD_ACCEPT_LIMIT))
+            fprintf(stderr, "control %u: acceptance=%d database=%s\n", i, accepted,
+                    sqlite3_errmsg(db));
+        CHECK(accepted == (i < 64 ? GSTD_ACCEPT_NEW : GSTD_ACCEPT_LIMIT));
     }
     CHECK(gstd_schedule_take(db, 1, id) == 1);
     CHECK(gstd_schedule_finish(db, first) != 0); /* Active work cannot free its own capacity. */

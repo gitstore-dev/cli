@@ -1,0 +1,147 @@
+{
+  "ociVersion": "1.0.2",
+  "hostname": "oidc-sqlite-fixture",
+  "process": {
+    "terminal": false,
+    "user": {
+      "uid": 0,
+      "gid": 0
+    },
+    "args": [
+      "/INVALID",
+      "migrate",
+      "sql",
+      "up",
+      "--yes",
+      "-e"
+    ],
+    "env": [
+      "PATH=/nonexistent",
+      "HOME=/tmp",
+      "DSN=sqlite:///work/provider.sqlite?_fk=true",
+      "GOMAXPROCS=1",
+      "GOMEMLIMIT=64MiB",
+      "LOG_LEVEL=error"
+    ],
+    "cwd": "/",
+    "noNewPrivileges": true,
+    "capabilities": {
+      "bounding": [],
+      "effective": [],
+      "inheritable": [],
+      "permitted": [],
+      "ambient": []
+    },
+    "rlimits": [
+      {
+        "type": "RLIMIT_AS",
+        "soft": 1099511627776,
+        "hard": 1099511627776
+      },
+      {
+        "type": "RLIMIT_CORE",
+        "soft": 0,
+        "hard": 0
+      }
+    ]
+  },
+  "root": {
+    "path": "/INVALID",
+    "readonly": true
+  },
+  "mounts": [
+    {
+      "destination": "/work",
+      "type": "bind",
+      "source": "/INVALID",
+      "options": [
+        "rbind",
+        "rw",
+        "nosuid",
+        "nodev",
+        "noexec"
+      ]
+    },
+    {
+      "destination": "/proc",
+      "type": "proc",
+      "source": "proc",
+      "options": [
+        "nosuid",
+        "nodev",
+        "noexec",
+        "ro"
+      ]
+    },
+    {
+      "destination": "/tmp",
+      "type": "tmpfs",
+      "source": "tmpfs",
+      "options": [
+        "nosuid",
+        "nodev",
+        "noexec",
+        "size=16777216,mode=1777"
+      ]
+    },
+    {
+      "destination": "/dev",
+      "type": "tmpfs",
+      "source": "tmpfs",
+      "options": [
+        "nosuid",
+        "noexec",
+        "mode=0755",
+        "size=4194304"
+      ]
+    }
+  ],
+  "linux": {
+    "namespaces": [
+      {
+        "type": "user"
+      },
+      {
+        "type": "pid"
+      },
+      {
+        "type": "mount"
+      },
+      {
+        "type": "uts"
+      },
+      {
+        "type": "ipc"
+      },
+      {
+        "type": "network"
+      }
+    ],
+    "uidMappings": [
+      {
+        "containerID": 0,
+        "hostID": 0,
+        "size": 1
+      }
+    ],
+    "gidMappings": [
+      {
+        "containerID": 0,
+        "hostID": 0,
+        "size": 1
+      }
+    ],
+    "resources": {
+      "memory": {
+        "limit": 134217728
+      },
+      "pids": {
+        "limit": 64
+      },
+      "cpu": {
+        "quota": 50000,
+        "period": 100000
+      }
+    }
+  }
+}

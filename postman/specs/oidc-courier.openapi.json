@@ -1,0 +1,324 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Owned OIDC courier fixture consumer",
+    "version": "1.0.0",
+    "description": "Narrow self-hosted disposable-fixture consumer contract. No production identity management or CLI login flow. Mutations are attempted once; provider responses and email tokens must not be logged or exported."
+  },
+  "x-source-evidence": {
+    "kratosRevision": "36e624c716e45ab405599c71b42c384dd45bdfbb",
+    "kratos": "https://github.com/ory/kratos/blob/36e624c716e45ab405599c71b42c384dd45bdfbb/spec/api.json",
+    "mailpitVersion": "v1.33.0",
+    "mailpit": "https://github.com/axllent/mailpit/blob/v1.33.0/server/apiv1/messages.go",
+    "mailpitStorage": "https://github.com/axllent/mailpit/blob/v1.33.0/internal/storage/structs.go",
+    "security": "Self-hosted private admin binding follows pinned cmd/daemon/serve.go; Ory cloud bearer-token annotations are not imported."
+  },
+  "security": [],
+  "paths": {
+    "/admin/identities": {
+      "post": {
+        "operationId": "createSyntheticFixtureIdentity",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:4434"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFixtureIdentity"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Synthetic identity created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixtureIdentity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "409": {
+            "description": "Conflict; do not retry or adopt"
+          }
+        }
+      }
+    },
+    "/self-service/verification/api": {
+      "get": {
+        "operationId": "createNativeFixtureVerificationFlow",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:24003"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fresh native API verification flow",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationFlow"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Provider rejected flow initialization"
+          }
+        }
+      }
+    },
+    "/self-service/verification": {
+      "post": {
+        "operationId": "submitFixtureVerificationOnce",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:24003"
+          }
+        ],
+        "parameters": [
+          {
+            "name": "flow",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitVerification"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification request accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationFlow"
+                }
+              }
+            }
+          },
+          "303": {
+            "description": "Unexpected flow redirect; do not follow"
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificationFlow"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Expired flow; fixture fails without retry"
+          }
+        }
+      }
+    },
+    "/api/v1/messages": {
+      "get": {
+        "operationId": "inspectOwnedFixtureMailbox",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:24005"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Local test mailbox metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Mailbox"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FixtureTraits": {
+        "type": "object",
+        "required": [
+          "email",
+          "username"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^[a-z0-9-]+@example\\.invalid$"
+          },
+          "username": {
+            "type": "string",
+            "pattern": "^gitstore-oidc-fixture-[a-z0-9-]+$"
+          }
+        }
+      },
+      "CreateFixtureIdentity": {
+        "type": "object",
+        "required": [
+          "schema_id",
+          "traits"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "schema_id": {
+            "const": "gitstore-user"
+          },
+          "traits": {
+            "$ref": "#/components/schemas/FixtureTraits"
+          }
+        }
+      },
+      "FixtureIdentity": {
+        "type": "object",
+        "required": [
+          "id",
+          "schema_id",
+          "traits"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schema_id": {
+            "const": "gitstore-user"
+          },
+          "traits": {
+            "$ref": "#/components/schemas/FixtureTraits"
+          }
+        }
+      },
+      "VerificationFlow": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "ui",
+          "state"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "const": "api"
+          },
+          "active": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "ui": {
+            "type": "object",
+            "required": [
+              "nodes"
+            ],
+            "properties": {
+              "nodes": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "SubmitVerification": {
+        "type": "object",
+        "required": [
+          "method",
+          "email"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "link",
+              "code"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^[a-z0-9-]+@example\\.invalid$"
+          }
+        }
+      },
+      "Mailbox": {
+        "type": "object",
+        "required": [
+          "total",
+          "messages"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "To": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "Address"
+                    ],
+                    "properties": {
+                      "Address": {
+                        "type": "string"
+                      },
+                      "Name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

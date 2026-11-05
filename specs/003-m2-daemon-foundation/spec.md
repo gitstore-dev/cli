@@ -439,11 +439,14 @@ No M0 row changes to implemented or supported until its evidence is recorded.
   unavailable with pinned inputs and observations; size/readiness budgets are
   established from measured builds, and unsupported combinations stay explicit.
 
-- **SC-013**: Each stripped release executable targets at most 5 MiB as the initial
-  engineering budget for the requested kilobyte-to-low-megabyte size range; report
-  measured bytes and any miss explicitly. Host-present, host-incompatible,
-  missing-dependency, denied-download and offline cases resolve consistently, and
-  no unused runtime dependency is downloaded by help or remote commands.
+- **SC-013**: Report stripped executable bytes and dependency/package footprint.
+  The original 5 MiB per-core engineering target remains a comparison point; the
+  user accepted the measured Linux arm64 baseline of 5,590,568 bytes (`gs`) and
+  5,723,600 bytes (`gitstored`) for this increment. Published-binary optimization
+  is deferred to a user-owned follow-up and does not block this increment.
+  Host-present, host-incompatible, missing-dependency, denied-download and offline
+  cases resolve consistently, and no unused runtime dependency is downloaded by
+  help or remote commands.
 
 ## Assumptions
 
@@ -457,7 +460,7 @@ No M0 row changes to implemented or supported until its evidence is recorded.
   neither establishes live compatibility with this CLI. Future profile execution
   must pin image digests and validate trusted sources independently of the release
   tag. Attestations apply to CLI-published artifacts, not upstream service images.
-- M1 has the development subset recorded in [M1 status](../../docs/m1-status.md);
+- M1 has the development subset recorded in [M1 status](../../docs/contributing/validation/remote-cli.md);
   its completed implementation tasks do not close outstanding upstream/release
   gates. Finishing those remote features is not a prerequisite for M2.
 - The existing [protocol](../../docs/contracts/daemon-protocol.md) supplies exact

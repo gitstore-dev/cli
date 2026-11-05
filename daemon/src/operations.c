@@ -2,6 +2,8 @@
 #define _POSIX_C_SOURCE 200809L
 #include "gitstored/operations.h"
 #include "gitstored/scheduler.h"
+#include "migration.h"
+#include "retention.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -148,8 +150,11 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
     const char *profile = json_string_value(json_object_get(intent, "profileId"));
     const char *version = json_string_value(json_object_get(intent, "profileVersion"));
     gstd_accept_status status = GSTD_ACCEPT_DATABASE;
-    if (execute(db, "BEGIN IMMEDIATE"))
+    if (execute(db, "BEGIN IMMEDIATE")) {
+        if (sqlite3_extended_errcode(db) == SQLITE_FULL)
+            status = GSTD_ACCEPT_LIMIT;
         goto done;
+    }
     sqlite3_stmt *s = prepare(db, "SELECT fingerprint,operation_id FROM dedupe WHERE caller_uid=? "
                                   "AND method=? AND idempotency_key=?");
     if (!s)
@@ -170,6 +175,18 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
     sqlite3_finalize(s);
     if (step != SQLITE_DONE)
         goto rollback;
+    if (r->method == GSTD_MIGRATE) {
+        status = gstd_migration_admit(db, r);
+        if (status != GSTD_ACCEPT_NEW)
+            goto rollback;
+        status = GSTD_ACCEPT_DATABASE;
+    }
+    int capacity = gstd_retention_admit(db, r->method == GSTD_CANCEL || r->method == GSTD_STOP,
+                                        strlen(encoded));
+    if (capacity) {
+        status = capacity > 0 ? GSTD_ACCEPT_LIMIT : GSTD_ACCEPT_DATABASE;
+        goto rollback;
+    }
     s = prepare(db, "SELECT (SELECT count(*) FROM operations),count(*) FROM operations WHERE state "
                     "IN ('accepted','running') AND method!='operation.cancel'");
     if (!s)
@@ -213,7 +230,8 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
         step = sqlite3_step(s);
         sqlite3_finalize(s);
         if (step == SQLITE_ROW) {
-            status = GSTD_ACCEPT_DEPLOYMENT_CONFLICT;
+            status = r->method == GSTD_MIGRATE ? GSTD_ACCEPT_MIGRATION_CONFLICT
+                                               : GSTD_ACCEPT_DEPLOYMENT_CONFLICT;
             goto rollback;
         }
         if (step != SQLITE_DONE)
@@ -245,6 +263,12 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
             goto rollback;
         if (generation > GSTD_SAFE_INTEGER) {
             status = GSTD_ACCEPT_LIMIT;
+            goto rollback;
+        }
+        int migration_ready = gstd_migration_start_allowed(db, deployment);
+        if (migration_ready != 1) {
+            status = migration_ready == 0 ? GSTD_ACCEPT_MIGRATION_PRECONDITION
+                                          : GSTD_ACCEPT_OWNERSHIP_UNCERTAIN;
             goto rollback;
         }
         if (volume) {
@@ -368,6 +392,8 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
         if (finish(s))
             goto rollback;
     }
+    if (r->method == GSTD_MIGRATE && gstd_migration_reserve(db, r, operation))
+        goto rollback;
     int reserved = gstd_schedule_reserve(db, operation, r->method == GSTD_CANCEL);
     if (reserved) {
         status = reserved > 0 ? GSTD_ACCEPT_LIMIT : GSTD_ACCEPT_DATABASE;

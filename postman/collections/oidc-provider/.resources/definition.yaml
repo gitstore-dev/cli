@@ -1,0 +1,39 @@
+$kind: collection
+name: oidc-provider
+description: Pinned private Hydra consumer requests; only explicitly selected disposable fixtures.
+variables:
+  - key: baseUrl
+    value: ''
+  - key: clientId
+    value: ''
+  - key: redirectUri
+    value: ''
+  - key: audience
+    value: ''
+scripts:
+  - type: http:beforeRequest
+    language: text/javascript
+    code: |-
+      if (pm.variables.get("ownedDisposableOidcFixture") !== "true") {
+        throw new Error("Select an explicitly owned disposable OIDC fixture");
+      }
+      const base = String(pm.variables.get("baseUrl") || "");
+      if (!/^http:\/\/127\.0\.0\.1:[1-9][0-9]{3,4}$/.test(base)) {
+        throw new Error("Select the owned numeric-loopback fixture port");
+      }
+      const port = Number(base.slice(base.lastIndexOf(":") + 1));
+      if (port < 1024 || port > 65535) {
+        throw new Error("Select an unprivileged bounded fixture port");
+      }
+      const clientId = String(pm.variables.get("clientId") || "");
+      if (clientId.length > 64 || !/^gitstore-oidc-fixture-[a-z0-9-]+$/.test(clientId)) {
+        throw new Error("Select a bounded disposable client identity");
+      }
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(pm.variables.get("audience") || ""))) {
+        throw new Error("Select the fixed fixture audience");
+      }
+      const callback = String(pm.variables.get("redirectUri") || "");
+      const match = /^http:\/\/127\.0\.0\.1:([1-9][0-9]{3,4})\/callback$/.exec(callback);
+      if (!match || Number(match[1]) < 1024 || Number(match[1]) > 65535) {
+        throw new Error("Select the registered numeric-loopback callback");
+      }

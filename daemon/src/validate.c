@@ -20,16 +20,6 @@ static json_t *empty(void) {
     return json_pack("{s:b,s:{},s:[],s:[],s:[]}", "valid", 0, "effectivePlan", "requiredAssets",
                      "hostRequirements", "diagnostics");
 }
-static int same(const json_t *value, const char *s) {
-    return json_is_string(value) && json_string_length(value) == strlen(s) &&
-           !memcmp(json_string_value(value), s, strlen(s));
-}
-static int selected(const json_t *components, const char *name) {
-    for (size_t i = 0; i < json_array_size(components); i++)
-        if (same(json_array_get(components, i), name))
-            return 1;
-    return 0;
-}
 json_t *gstd_validate(json_t *params) {
     json_t *result = empty(), *profile = NULL, *components = NULL, *envelope = NULL;
     if (!result)
@@ -148,7 +138,7 @@ json_t *gstd_validate(json_t *params) {
                             resolutions))
         goto fail;
     if (strcmp(architecture, "unknown")) {
-        json_t *manifest = gstd_asset_manifest(components, architecture);
+        json_t *manifest = gstd_asset_manifest_for_datastore(components, architecture, datastore);
         if (!manifest || gstd_asset_manifest_check(manifest)) {
             json_decref(manifest);
             goto fail;
@@ -161,25 +151,16 @@ json_t *gstd_validate(json_t *params) {
         if (json_object_set_new(plan, "assetManifest", manifest))
             goto fail;
     }
-    json_t *images = json_object_get(profile, "images");
+    json_t *images = json_object_get(json_object_get(plan, "assetManifest"), "images");
     for (size_t i = 0; i < json_array_size(images); i++) {
         json_t *image = json_array_get(images, i);
-        if (!selected(components, json_string_value(json_object_get(image, "component"))))
-            continue;
-        json_t *platforms = json_object_get(image, "platforms");
-        for (size_t j = 0; j < json_array_size(platforms); j++) {
-            json_t *platform = json_array_get(platforms, j);
-            if (!same(json_object_get(platform, "architecture"), architecture))
-                continue;
-            json_t *asset = json_pack("{s:O,s:O,s:O,s:O,s:s,s:s}", "component",
-                                      json_object_get(image, "component"), "source",
-                                      json_object_get(image, "repository"), "digest",
-                                      json_object_get(platform, "digest"), "architecture",
-                                      json_object_get(platform, "architecture"), "os", "linux",
-                                      "status", "verification-and-size-unperformed");
-            if (!asset || json_array_append_new(json_object_get(result, "requiredAssets"), asset))
-                goto fail;
-        }
+        json_t *asset =
+            json_pack("{s:O,s:O,s:O,s:s,s:s,s:s}", "component", json_object_get(image, "component"),
+                      "source", json_object_get(image, "source"), "digest",
+                      json_object_get(image, "digest"), "architecture", architecture, "os", "linux",
+                      "status", "verification-and-size-unperformed");
+        if (!asset || json_array_append_new(json_object_get(result, "requiredAssets"), asset))
+            goto fail;
     }
     if ((!gstd_native_backend_available() || !gstd_image_backend_available() ||
          !gstd_network_engine_available()) &&
@@ -193,11 +174,6 @@ json_t *gstd_validate(json_t *params) {
         diagnostic(result, "NATIVE_VALIDATION_UNPERFORMED",
                    "Image-native configuration/policy validation is not executed; no credentials "
                    "were generated or enrolled"))
-        goto fail;
-    if (!strcmp(datastore, "scylladb") &&
-        diagnostic(
-            result, "DATASTORE_PROFILE_UNAVAILABLE",
-            "Pinned Scylla image, keyspace and compatible migration target are not yet registered"))
         goto fail;
     if (json_object_get(params, "deploymentId") &&
         diagnostic(result, "OWNERSHIP_CHECK_UNPERFORMED",

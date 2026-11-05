@@ -111,8 +111,12 @@ fn worker_limits() -> Result<()> {
     if unsafe { libc::getrlimit(libc::RLIMIT_CORE, &mut core) } != 0 || core.rlim_cur != 0 {
         return Err(Status::Unavailable);
     }
+    #[cfg(feature = "instrumented-host")]
+    const MAXIMUM_ADDRESS_SPACE: u64 = 64u64 * 1024 * 1024 * 1024 * 1024;
+    #[cfg(not(feature = "instrumented-host"))]
+    const MAXIMUM_ADDRESS_SPACE: u64 = 1024u64 * 1024 * 1024;
     for (kind, maximum) in [
-        (libc::RLIMIT_AS, 1024u64 * 1024 * 1024),
+        (libc::RLIMIT_AS, MAXIMUM_ADDRESS_SPACE),
         (libc::RLIMIT_FSIZE, 8u64 * 1024 * 1024 * 1024),
     ] {
         let mut limit = libc::rlimit {
@@ -305,6 +309,46 @@ pub unsafe extern "C" fn gitstored_image_resume_v1(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn worker_address_bounds_are_finite_and_build_specific() {
+        if unsafe { libc::geteuid() } == 0 {
+            assert!(matches!(worker_limits(), Err(Status::Unavailable)));
+            return;
+        }
+        const GIB: u64 = 1024 * 1024 * 1024;
+        for (address_space, accepted) in [
+            (libc::RLIM_INFINITY, false),
+            (GIB, true),
+            (2 * GIB, cfg!(feature = "instrumented-host")),
+            (64 * 1024 * GIB, cfg!(feature = "instrumented-host")),
+            (64 * 1024 * GIB + 1, false),
+        ] {
+            // The child performs only limit syscalls and the allocation-free
+            // guard, preserving all limits of the parallel test runner.
+            let child = unsafe { libc::fork() };
+            assert!(child >= 0);
+            if child == 0 {
+                let mut valid = true;
+                for (kind, value) in [
+                    (libc::RLIMIT_CORE, 0),
+                    (libc::RLIMIT_FSIZE, 8 * GIB),
+                    (libc::RLIMIT_AS, address_space),
+                ] {
+                    let limit = libc::rlimit {
+                        rlim_cur: value,
+                        rlim_max: value,
+                    };
+                    valid &= unsafe { libc::setrlimit(kind, &limit) } == 0;
+                }
+                unsafe { libc::_exit(i32::from(!valid || worker_limits().is_ok() != accepted)) };
+            }
+            let mut status = 0;
+            assert_eq!(unsafe { libc::waitpid(child, &mut status, 0) }, child);
+            assert!(libc::WIFEXITED(status));
+            assert_eq!(libc::WEXITSTATUS(status), 0);
+        }
+    }
     #[test]
     fn ffi_rejects_invalid_before_files_or_network() {
         let mut result = Outcome {

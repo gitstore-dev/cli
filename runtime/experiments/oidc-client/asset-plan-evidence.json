@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private immutable OIDC image planning and cache-only materialization through production asset functions. Public optional profile lifecycle remains gated.",
+  "evidence": {
+    "root": "/home/gitstorefixture/experiments/oidc-owned-asset-plan-7jay3fwb",
+    "probeSha256": "5d2da8b0a3f7cb67227a48eedab26f7838263fea9343a63b3d7bca8095e695a2",
+    "networkUsed": false,
+    "rows": [
+      {
+        "component": "hydra",
+        "exitCode": 0,
+        "elapsedSeconds": 0.407,
+        "result": {
+          "imageStatus": 0,
+          "mode": "cache-materialize",
+          "compressedBytes": 18794488,
+          "mergedBytes": 49480704
+        },
+        "copiesRemoved": [
+          {
+            "tree": "rootfs",
+            "device": 65040,
+            "inode": 303306,
+            "audit": "result=0 bytes=48918539 digest=36b0a0fb53fff976dc73125c2385d704ba295b20421742ce244080a61abf31cb",
+            "status": "removed"
+          },
+          {
+            "tree": "blobs",
+            "device": 65040,
+            "inode": 125814,
+            "audit": "result=0 bytes=18792148 digest=421f1ea4f232c955f5302739819f5c92d5adbf4ce7fcfdae1a44938281891b82",
+            "status": "removed"
+          }
+        ]
+      },
+      {
+        "component": "kratos",
+        "exitCode": 0,
+        "elapsedSeconds": 0.453,
+        "result": {
+          "imageStatus": 0,
+          "mode": "cache-materialize",
+          "compressedBytes": 27656746,
+          "mergedBytes": 63164928
+        },
+        "copiesRemoved": [
+          {
+            "tree": "rootfs",
+            "device": 65040,
+            "inode": 125816,
+            "audit": "result=0 bytes=62603868 digest=67afbe61b174ed50dc4f6a2a2784c05ddfb9855bec36585a91ffaf6c11fb790c",
+            "status": "removed"
+          },
+          {
+            "tree": "blobs",
+            "device": 65040,
+            "inode": 125815,
+            "audit": "result=0 bytes=27653265 digest=b32cb1ab1de420578ff47a37684bfd1c6c12642cee96ff4ad95caa60c779052a",
+            "status": "removed"
+          }
+        ]
+      },
+      {
+        "component": "smtp",
+        "exitCode": 0,
+        "elapsedSeconds": 0.306,
+        "result": {
+          "imageStatus": 0,
+          "mode": "cache-materialize",
+          "compressedBytes": 14429631,
+          "mergedBytes": 35398656
+        },
+        "copiesRemoved": [
+          {
+            "tree": "rootfs",
+            "device": 65040,
+            "inode": 125817,
+            "audit": "result=0 bytes=34985882 digest=b1ae570dcd1da38127948fb2682e7516f9977e323c76f40d514c47c14ff74689",
+            "status": "removed"
+          },
+          {
+            "tree": "blobs",
+            "device": 65040,
+            "inode": 125816,
+            "audit": "result=0 bytes=14426857 digest=d07fdb9d3148b3ced2a557cc0f1eba82a1a56f5176be6dba510185330df2cf0b",
+            "status": "removed"
+          }
+        ]
+      },
+      {
+        "component": "ui",
+        "exitCode": 0,
+        "elapsedSeconds": 6.073,
+        "result": {
+          "imageStatus": 0,
+          "mode": "cache-materialize",
+          "compressedBytes": 315410777,
+          "mergedBytes": 801400320
+        },
+        "copiesRemoved": [
+          {
+            "tree": "rootfs",
+            "device": 65040,
+            "inode": 125818,
+            "audit": "result=0 bytes=780306341 digest=ba93db4419f232b68d0374662fd4532830e13499ecf0dea0800c764d4caf8f5c",
+            "status": "removed"
+          },
+          {
+            "tree": "blobs",
+            "device": 65040,
+            "inode": 125817,
+            "audit": "result=0 bytes=315402393 digest=d727ba34682f16d58ac08a9c1676a340267851a76764559cf44a0f554788f9ee",
+            "status": "removed"
+          }
+        ]
+      },
+      {
+        "component": "bridge",
+        "exitCode": 0,
+        "elapsedSeconds": 0.29,
+        "result": {
+          "imageStatus": 0,
+          "mode": "cache-materialize",
+          "compressedBytes": 16777470,
+          "mergedBytes": 33763840
+        },
+        "copiesRemoved": [
+          {
+            "tree": "rootfs",
+            "device": 65040,
+            "inode": 125819,
+            "audit": "result=0 bytes=33260426 digest=4f540d32c4113c78ec3125e0849e18f17621465699566f568ccb2d49b9e74698",
+            "status": "removed"
+          },
+          {
+            "tree": "blobs",
+            "device": 65040,
+            "inode": 125818,
+            "audit": "result=0 bytes=16775374 digest=d97b5227a9e8220e465c886b216f018362f76dd4febea7371ace1cbea57835d2",
+            "status": "removed"
+          }
+        ]
+      }
+    ]
+  },
+  "sourceSha256": {
+    "daemon/src/assets.c": "70312de02cbbb74bd0009a43ebb32a6b17cf72eaaa33bc3435f6cecd2c862918",
+    "daemon/src/oidc_profile.c": "a7247839257f471b17088e9cc429502fbaeb6fefd545318fbcb753588364cb18",
+    "daemon/tests/oidc_image_probe.c": "f4e9c28c89ef66ebf4b821f67f9b4af51658e936629e44a89e6620ae52c9e170"
+  },
+  "diskPolicy": "Materialize one image at a time. Audit and retire its rootfs/blob copies before the next image. Retain cached input blobs and small evidence. No network acquisition or native execution."
+}

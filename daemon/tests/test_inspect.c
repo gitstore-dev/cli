@@ -1,3 +1,5 @@
+#include "../src/migration.h"
+#include "gitstored/assets.h"
 #include "gitstored/inspect.h"
 #include "gitstored/protocol.h"
 #include "gitstored/state.h"
@@ -140,6 +142,38 @@ int main(void) {
     json_decref(params);
     params = json_pack("{s:i}", "limit", 101);
     CHECK(gstd_inspect(db, GSTD_LIST, params, &answer) == GSTD_QUERY_INVALID);
+    json_t *target = gstd_migration_target("gitstore-06152d-schema-012");
+    char target_digest[65];
+    CHECK(target && !gstd_fingerprint(target, target_digest));
+    json_decref(target);
+    char *migration_sql = sqlite3_mprintf(
+        "INSERT INTO operations VALUES('migration-test',1,'migration.start','d1',NULL,"
+        "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa','{}',"
+        "'2026-11-03T00:00:00Z','2026-11-03T00:00:00Z','succeeded','normal',"
+        "json_object('migrationCompleted',json('true'),'targetVersion',"
+        "'gitstore-06152d-schema-012','targetDigest',%Q,'private','synthetic-secret'),NULL)",
+        target_digest);
+    CHECK(migration_sql);
+    int updated = sqlite3_exec(db, migration_sql, NULL, NULL, NULL);
+    sqlite3_free(migration_sql);
+    CHECK(updated == SQLITE_OK);
+    CHECK(gstd_wait_poll(db, "migration-test", "terminal", &answer) == GSTD_QUERY_OK);
+    json_t *migration_result = json_object_get(answer, "result");
+    CHECK(json_is_true(json_object_get(migration_result, "migrationCompleted")));
+    CHECK(!strcmp(json_string_value(json_object_get(migration_result, "targetDigest")),
+                  target_digest));
+    CHECK(json_object_size(migration_result) == 3);
+    json_decref(answer);
+    answer = NULL;
+    CHECK(sqlite3_exec(
+              db,
+              "INSERT INTO operations SELECT 'migration-bad',caller_uid,method,deployment_id,"
+              "target_operation_id,intent_fingerprint,intent,accepted_at,updated_at,state,recovery,"
+              "json_set(result,'$.targetDigest','synthetic-secret'),error FROM operations "
+              "WHERE operation_id='migration-test'",
+              NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_wait_poll(db, "migration-bad", "terminal", &answer) == GSTD_QUERY_OK);
+    CHECK(json_object_size(json_object_get(answer, "result")) == 0);
 done:
     json_decref(answer);
     json_decref(cursor);

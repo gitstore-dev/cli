@@ -3,16 +3,22 @@
 #include "gitstored/asset_records.h"
 #include "gitstored/protocol.h"
 #include "native_exit.h"
+#include "termination.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-enum { NEXT = 1, TERM, EXIT, DELETE_NATIVE, WRITER, NETWORK, DONE };
 static int64_t now_ms(void) {
     struct timespec t;
     return clock_gettime(CLOCK_MONOTONIC, &t) ? -1 : (int64_t)t.tv_sec * 1000 + t.tv_nsec / 1000000;
 }
 static sqlite3 *database(gstd_cleanup *c) { return c->deployment->environment->database; }
+static gstd_deployment_workload *workload(gstd_cleanup *c) {
+    gstd_deployment *d = c->deployment;
+    if (c->index >= 0 && (unsigned)c->index < d->count)
+        return &d->workloads[c->index];
+    return d->persistent && c->index == (int)d->count ? &d->datastore.workloads[0] : NULL;
+}
 static int sql(gstd_cleanup *c, const char *s) {
     return sqlite3_exec(database(c), s, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
 }
@@ -33,6 +39,12 @@ static int commit(gstd_cleanup *c, int failure) {
 static int stage_record(gstd_cleanup *c, const char *id, const char *stage) {
     if (sql(c, "BEGIN IMMEDIATE"))
         return -1;
+    if (!strcmp(stage, "retained") && *c->operation_id) {
+        gstd_deployment_workload *w = workload(c);
+        int failed = !w || strcmp(id, w->resource) ||
+                     gstd_termination_record(c->deployment, w, c->operation_id, c->generation);
+        return commit(c, failed);
+    }
     sqlite3_stmt *s =
         prepare(c, "UPDATE resource_ownership SET "
                    "lifecycle_stage=?,observed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE "
@@ -48,13 +60,15 @@ static int stage_record(gstd_cleanup *c, const char *id, const char *stage) {
     return commit(c, !ok);
 }
 static int finish(gstd_cleanup *c, int uncertain) {
-    c->stage = DONE;
+    c->stage = GSTD_CLEANUP_DONE;
     c->outcome = uncertain ? -2 : 0;
+    c->final_uncertain = uncertain;
     if (!*c->operation_id)
         return 1;
+    c->finalizing = 1;
     if (sql(c, "BEGIN IMMEDIATE")) {
         c->outcome = -2;
-        return 1;
+        return 0;
     }
     gstd_deployment *d = c->deployment;
     int ok = 1;
@@ -73,20 +87,22 @@ static int finish(gstd_cleanup *c, int uncertain) {
             ok = sqlite3_step(s) == SQLITE_DONE;
         }
         sqlite3_finalize(s);
-        for (unsigned i = 0; ok && i < d->count; i++) {
+        for (unsigned i = 0; ok && i < d->count + (d->persistent ? 3u : 0u); i++) {
+            gstd_deployment_workload *w =
+                i < d->count ? &d->workloads[i] : &d->datastore.workloads[i - d->count];
             /* There may be no reference when a known early start failed. */
             s = prepare(c, "SELECT 1 FROM asset_refs WHERE resource_id=?");
             int exists = 0;
             ok = s != NULL;
             if (ok) {
-                bind(s, 1, d->workloads[i].asset_resource);
+                bind(s, 1, w->asset_resource);
                 int n = sqlite3_step(s);
                 exists = n == SQLITE_ROW;
                 ok = exists || n == SQLITE_DONE;
             }
             sqlite3_finalize(s);
             if (ok && exists)
-                ok = !gstd_asset_record_unpin(database(c), d->workloads[i].asset_resource);
+                ok = !gstd_asset_record_unpin(database(c), w->asset_resource);
         }
         s = ok ? prepare(c,
                          "UPDATE components SET "
@@ -139,8 +155,11 @@ static int finish(gstd_cleanup *c, int uncertain) {
         ok = sqlite3_step(s) == SQLITE_DONE && sqlite3_changes(database(c)) == 1;
     }
     sqlite3_finalize(s);
-    if (commit(c, !ok))
+    if (commit(c, !ok)) {
         c->outcome = -2;
+        return 0;
+    }
+    c->finalizing = 0;
     /* Close only our now-proven free writer; durable data remains unchanged. */
     if (!c->outcome && d->volume.writer_fd >= 3) {
         close(d->volume.writer_fd);
@@ -149,12 +168,21 @@ static int finish(gstd_cleanup *c, int uncertain) {
     return 1;
 }
 int gstd_cleanup_begin(gstd_deployment *d, const char *operation, gstd_cleanup *c) {
-    if (!d || !c || c->stage || (d->recovered && !d->recovery_proven) || d->filesystem.worker ||
+    /* Unknown persistent startup still needs complete discovery/reconciliation.
+     * In particular, never stop a datastore beneath an unresolved mutator. */
+    if (!d ||
+        (d->persistent && (d->datastore.helper.stage || d->datastore.service_job.worker ||
+                           (d->datastore.service_stage && !d->datastore.workloads[0].launched) ||
+                           d->datastore.filesystem.worker || d->datastore.asset.worker.worker ||
+                           d->datastore.allocation.worker.worker)) ||
+        !c || c->stage || (d->recovered && !d->recovery_proven) || d->filesystem.worker ||
         d->bootstrap.worker || d->native_job.worker || d->asset.worker.worker ||
         gstd_deployment_poll(d, -1) != 1 || !sqlite3_get_autocommit(d->environment->database))
         return -1;
-    uint64_t current_generation = d->recovered ? d->recovery_generation : d->target.generation;
-    const char *current_operation = d->recovered ? d->recovery_operation : d->target.operation_id;
+    uint64_t current_generation =
+        d->recovery_generation ? d->recovery_generation : d->target.generation;
+    const char *current_operation =
+        d->recovery_generation ? d->recovery_operation : d->target.operation_id;
     if (!current_generation || current_generation >= GSTD_SAFE_INTEGER ||
         !gstd_identifier(current_operation, strnlen(current_operation, 65)))
         return -1;
@@ -202,25 +230,58 @@ int gstd_cleanup_begin(gstd_deployment *d, const char *operation, gstd_cleanup *
         if (commit(c, !ok))
             return -1;
         memcpy(c->operation_id, operation, strlen(operation) + 1);
-        if (d->recovered) {
-            d->recovery_generation = c->generation;
-            memcpy(d->recovery_operation, operation, strlen(operation) + 1);
-        }
+        d->recovery_generation = c->generation;
+        memcpy(d->recovery_operation, operation, strlen(operation) + 1);
     }
-    c->stage = NEXT;
+    c->stage = GSTD_CLEANUP_NEXT;
+    return 0;
+}
+int gstd_cleanup_retry_begin(gstd_cleanup *c, const char *operation) {
+    if (!c || c->stage != GSTD_CLEANUP_DONE || c->finalizing || c->outcome != -2 ||
+        !c->deployment || !*c->operation_id || c->native.worker || c->filesystem.worker ||
+        c->deployment->monitor.running)
+        return -1;
+    /* Retry is a new accepted operation. The previous immutable failed outcome
+     * remains inspectable; retained capability handles and proven stage progress
+     * are reused. A second attempt never treats a forgotten PID as termination. */
+    sqlite3_stmt *s =
+        prepare(c, "SELECT 1 FROM operations WHERE operation_id=? AND state='failed'");
+    if (!s)
+        return -1;
+    bind(s, 1, c->operation_id);
+    int valid = sqlite3_step(s) == SQLITE_ROW;
+    sqlite3_finalize(s);
+    if (!valid)
+        return -1;
+    gstd_cleanup next = {0};
+    if (gstd_cleanup_begin(c->deployment, operation, &next))
+        return -1;
+    *c = next;
     return 0;
 }
 int gstd_cleanup_poll(gstd_cleanup *c) {
     if (!c || !c->stage)
         return -1;
-    if (c->stage == DONE)
-        return 1;
+    if (c->stage == GSTD_CLEANUP_DONE)
+        return c->finalizing ? finish(c, c->final_uncertain) : 1;
     gstd_deployment *d = c->deployment;
+    /* A worker launched near expiry cannot extend the overall stop budget.
+     * Its timeout reaps only that private helper and never proves termination
+     * of the workload or releases a repository writer. */
+    if (c->native.worker && c->native.deadline_ms > c->deadline_ms)
+        c->native.deadline_ms = c->deadline_ms;
+    if (c->filesystem.worker && c->filesystem.deadline_ms > c->deadline_ms)
+        c->filesystem.deadline_ms = c->deadline_ms;
     if (now_ms() >= c->deadline_ms && !c->native.worker && !c->filesystem.worker)
         return finish(c, 1);
-    if (c->stage == NEXT) {
-        while (c->index >= 0 && !d->workloads[c->index].launched)
+    if (c->stage == GSTD_CLEANUP_NEXT) {
+        while (c->index >= 0 && !workload(c)->launched)
             c->index--;
+        if (c->index < 0 && d->persistent && !c->datastore_selected) {
+            c->datastore_selected = 1;
+            if (d->datastore.workloads[0].launched)
+                c->index = (int)d->count;
+        }
         if (c->index < 0) {
             if (d->volume.data_fd >= 3) {
                 gstd_filesystem_input input = {.action = GSTD_FS_VOLUME,
@@ -239,28 +300,37 @@ int gstd_cleanup_poll(gstd_cleanup *c) {
                 }
                 if (gstd_filesystem_launch(&input, 5000, &c->filesystem))
                     return finish(c, 1);
-                c->stage = WRITER;
+                c->stage = GSTD_CLEANUP_WRITER;
                 return 0;
             }
-            c->stage = NETWORK;
+            c->stage = d->persistent ? GSTD_CLEANUP_DATASTORE_WRITER : GSTD_CLEANUP_NETWORK;
         } else {
-            gstd_deployment_workload *w = &d->workloads[c->index];
+            gstd_deployment_workload *w = workload(c);
             if (stage_record(c, w->resource, "stopping"))
                 return finish(c, 1);
-            int dead = w->death_fd >= 3 ? gstd_native_watch_poll(w->death_fd) : 0;
+            int dead = w->recovered_stopped && w->exited && w->observed.stopped
+                           ? (gstd_native_population_empty(&w->population) == 1 ? 1 : -1)
+                       : w->death_fd >= 3 ? gstd_native_watch_poll(w->death_fd)
+                                          : 0;
             if (dead < 0)
                 return finish(c, 1);
             if (dead == 1) {
-                c->stage = EXIT;
+                c->stage = GSTD_CLEANUP_EXIT;
                 return 0;
             }
-            if (gstd_native_launch(&w->native, GSTD_NATIVE_TERM, 5000, &c->native))
+            /* A created init is still waiting for OCI START and may ignore
+             * SIGTERM. Never start an application merely to stop it. Only the
+             * verified created identity uses KILL; running services keep the
+             * graceful path. Exit/cgroup/delete/writer proofs still follow. */
+            gstd_native_action action =
+                w->observed.created && !w->observed.running ? GSTD_NATIVE_KILL : GSTD_NATIVE_TERM;
+            if (gstd_native_launch(&w->native, action, 5000, &c->native))
                 return finish(c, 1);
-            c->stage = TERM;
+            c->stage = GSTD_CLEANUP_TERM;
             return 0;
         }
     }
-    if (c->stage == TERM || c->stage == DELETE_NATIVE) {
+    if (c->stage == GSTD_CLEANUP_TERM || c->stage == GSTD_CLEANUP_DELETE_NATIVE) {
         gstd_native_status status;
         gstd_native_observation observation;
         int ready = gstd_native_poll(&c->native, -1, &status, &observation);
@@ -270,21 +340,24 @@ int gstd_cleanup_poll(gstd_cleanup *c) {
             return 0;
         if (status != GSTD_NATIVE_OK)
             return finish(c, 1);
-        if (c->stage == TERM) {
-            c->stage = EXIT;
+        if (c->stage == GSTD_CLEANUP_TERM) {
+            c->stage = GSTD_CLEANUP_EXIT;
             return 0;
         }
-        gstd_deployment_workload *w = &d->workloads[c->index];
+        gstd_deployment_workload *w = workload(c);
         if (stage_record(c, w->resource, "retained"))
             return finish(c, 1);
-        gstd_native_population_close(&w->population);
         w->launched = 0;
+        if (d->persistent && c->index == (int)d->count &&
+            gstd_datastore_service_retire(&d->datastore))
+            return finish(c, 1);
+        gstd_native_population_close(&w->population);
         c->index--;
-        c->stage = NEXT;
+        c->stage = GSTD_CLEANUP_NEXT;
         return 0;
     }
-    if (c->stage == EXIT) {
-        gstd_deployment_workload *w = &d->workloads[c->index];
+    if (c->stage == GSTD_CLEANUP_EXIT) {
+        gstd_deployment_workload *w = workload(c);
         if (!w->exited) {
             gstd_native_exit result;
             int exited = w->death_fd >= 3
@@ -307,10 +380,10 @@ int gstd_cleanup_poll(gstd_cleanup *c) {
             return 0;
         if (gstd_native_launch(&w->native, GSTD_NATIVE_DELETE, 5000, &c->native))
             return finish(c, 1);
-        c->stage = DELETE_NATIVE;
+        c->stage = GSTD_CLEANUP_DELETE_NATIVE;
         return 0;
     }
-    if (c->stage == WRITER) {
+    if (c->stage == GSTD_CLEANUP_WRITER) {
         gstd_filesystem_reply reply = {0};
         int ready = gstd_filesystem_poll(&c->filesystem, -1, &reply);
         if (ready < 0)
@@ -325,9 +398,46 @@ int gstd_cleanup_poll(gstd_cleanup *c) {
         d->volume = (gstd_volume_handle){.data_fd = reply.descriptors[0],
                                          .writer_fd = reply.descriptors[1],
                                          .identity = reply.volume};
-        c->stage = NETWORK;
+        c->stage = d->persistent ? GSTD_CLEANUP_DATASTORE_WRITER : GSTD_CLEANUP_NETWORK;
     }
-    if (c->stage == NETWORK) {
+    if (c->stage == GSTD_CLEANUP_DATASTORE_WRITER) {
+        gstd_datastore *store = &d->datastore;
+        if (!c->filesystem.worker && store->volume.data_fd >= 3) {
+            gstd_filesystem_input input = {.action = GSTD_FS_DATASTORE_VOLUME,
+                                           .manifest = d->target.manifest,
+                                           .volume_root = d->environment->volume_root,
+                                           .volume_id = store->volume_id,
+                                           .producer_id = store->producer_id,
+                                           .volume_existing = 1,
+                                           .volume_expected = store->volume.identity,
+                                           .descriptors = {d->environment->volume_root.root_fd,
+                                                           d->environment->volume_root.lock_fd,
+                                                           -1}};
+            if (store->volume.writer_fd >= 3) {
+                close(store->volume.writer_fd);
+                store->volume.writer_fd = -1;
+            }
+            if (gstd_filesystem_launch(&input, 5000, &c->filesystem))
+                return finish(c, 1);
+            return 0;
+        }
+        if (c->filesystem.worker) {
+            gstd_filesystem_reply reply = {0};
+            int ready = gstd_filesystem_poll(&c->filesystem, -1, &reply);
+            if (ready != 1)
+                return ready;
+            if (reply.status) {
+                gstd_filesystem_reply_close(&reply);
+                return finish(c, 1);
+            }
+            gstd_volume_handle_close(&store->volume);
+            store->volume = (gstd_volume_handle){.data_fd = reply.descriptors[0],
+                                                 .writer_fd = reply.descriptors[1],
+                                                 .identity = reply.volume};
+        }
+        c->stage = GSTD_CLEANUP_NETWORK;
+    }
+    if (c->stage == GSTD_CLEANUP_NETWORK) {
         if (d->network.pid > 0) {
             if (!c->started) {
                 int dead = d->network.pid_fd >= 3 ? gstd_native_watch_poll(d->network.pid_fd) : 0;
@@ -361,7 +471,8 @@ int gstd_cleanup_poll(gstd_cleanup *c) {
     return 0;
 }
 int gstd_cleanup_dispose(gstd_cleanup *c) {
-    if (!c || c->stage != DONE || c->outcome || c->native.worker || c->filesystem.worker)
+    if (!c || c->stage != GSTD_CLEANUP_DONE || c->finalizing || c->outcome || c->native.worker ||
+        c->filesystem.worker)
         return -1;
     gstd_deployment *d = c->deployment;
     if (d->filesystem.worker || d->bootstrap.worker || d->native_job.worker ||
@@ -370,6 +481,8 @@ int gstd_cleanup_dispose(gstd_cleanup *c) {
     for (unsigned i = 0; i < d->count; i++)
         if (d->workloads[i].launched)
             return -1;
+    if (d->persistent && d->datastore.workloads[0].launched)
+        return -1;
     if (gstd_deployment_observers_close(d))
         return -1;
     memset(c, 0, sizeof(*c));

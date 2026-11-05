@@ -56,7 +56,12 @@ class Fixture:
             "kind": "protected-directory", "path": str(self.root / "credentials")}}
         self.offline_layouts = settings.get("offlineLayouts")
         self.wrong_platform_layouts = settings.get("wrongPlatformLayouts")
-        if offline == "verified" and self.offline_layouts:
+        if offline == "persistent":
+            self.settings["offlineLayouts"] = {
+                name: settings[key] for name, key in
+                (("api", "offlineApiLayout"), ("git", "offlineGitLayout"),
+                 ("controller", "offlineControllerLayout"), ("scylladb", "offlineScyllaLayout"))}
+        elif offline == "verified" and self.offline_layouts:
             self.settings["offlineLayouts"] = self.offline_layouts
         elif offline == "wrong-platform" and self.wrong_platform_layouts:
             self.settings["offlineLayouts"] = self.wrong_platform_layouts
@@ -148,9 +153,9 @@ class Fixture:
         except ValueError:
             raise AssertionError("Public command did not return exactly one JSON document") from None
 
-    def start(self, name, *, provision=True, key=None):
+    def start(self, name, *, provision=True, key=None, datastore="memdb"):
         self.deployments.add(name)
-        arguments = ["--non-interactive", "serve", "--deployment", name, "--datastore", "memdb",
+        arguments = ["--non-interactive", "serve", "--deployment", name, "--datastore", datastore,
                      "--detach", "--idempotency-key", key or f"start-{name}"]
         if provision:
             arguments.append("--allow-provision")

@@ -1,4 +1,6 @@
 #include "gitstored/inspect.h"
+#include "gitstored/assets.h"
+#include "migration.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -116,6 +118,42 @@ static json_t *operation(sqlite3_stmt *s) {
             }
         }
         if (i == 8) {
+            const char *method = json_string_value(json_object_get(record, "method")),
+                       *state = json_string_value(json_object_get(record, "state"));
+            json_t *version = json_object_get(source, "targetVersion"),
+                   *digest = json_object_get(source, "targetDigest");
+            if (method && !strcmp(method, "migration.start") && state &&
+                !strcmp(state, "succeeded") &&
+                json_is_true(json_object_get(source, "migrationCompleted")) &&
+                json_is_string(version) &&
+                json_string_length(version) == strlen(json_string_value(version))) {
+                json_t *target = gstd_migration_target(json_string_value(version));
+                char expected[65];
+                int valid = target && !gstd_fingerprint(target, expected) &&
+                            json_is_string(digest) && json_string_length(digest) == 64 &&
+                            !memcmp(json_string_value(digest), expected, 64);
+                json_decref(target);
+                if (valid && (json_object_set(safe, "targetVersion", version) ||
+                              json_object_set(safe, "targetDigest", digest) ||
+                              json_object_set_new(safe, "migrationCompleted", json_true()))) {
+                    json_decref(source);
+                    json_decref(safe);
+                    goto fail;
+                }
+            }
+            json_t *target_state = json_object_get(source, "targetState");
+            if (json_is_string(target_state)) {
+                const char *name = json_string_value(target_state);
+                if ((!strcmp(name, "accepted") || !strcmp(name, "running") ||
+                     !strcmp(name, "succeeded") || !strcmp(name, "failed") ||
+                     !strcmp(name, "cancelled")) &&
+                    json_string_length(target_state) == strlen(name) &&
+                    json_object_set(safe, "targetState", target_state)) {
+                    json_decref(source);
+                    json_decref(safe);
+                    goto fail;
+                }
+            }
             const char *boolean_fields[] = {"cancelled", "noOp", "stopped", "alreadyStopped"};
             for (unsigned k = 0; k < 4; k++) {
                 json_t *v = json_object_get(source, boolean_fields[k]);

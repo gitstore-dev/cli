@@ -1,214 +1,258 @@
-# Local runtime development status
+# Run GitStore locally
 
-M2 is in development. Control-only builds provide owner-authenticated inspection
-and read-only assessment. Fully linked native Linux builds now run the registered
-core memdb profile through `gs serve`, with explicit provisioning consent, current
-readiness and owned stop/interrupt cleanup. The selected Linux arm64 fixture has
-real CLI evidence; broad host support, full manager recovery, logs, migrations and
-publication remain gated. See [the evidence record](m2-status.md). Remote catalogue
-and Git commands remain independent of this daemon and runtime downloads.
+The local core profile runs the API, Git service and controller. Its default
+catalogue is in memory. Select Scylla explicitly to retain catalogue data across
+restarts. Repository data and deployment credentials survive ordinary stops in
+both modes. Remote GraphQL/Git commands are independent of local execution.
 
-## Build and start control
+The current managed profile pins GitStore alpha.8. Alpha.9 changes API endpoints,
+listener configuration and stored-data layout; it has not been validated by this
+runtime profile. Existing deployments retain their pinned images and data format.
 
-Use the pinned Rust toolchain and CMake >=3.28/C17 compiler. Native builds fetch
-Jansson/SQLite source archives with the hashes in
-[the dependency lock](../runtime/dependencies.lock.json); an explicit
-`GITSTORED_SOURCE_CACHE` can supply those same archives offline. Build tools and
-source archives are development inputs, not bundled runtime executables.
+## Before you start
 
-```sh
-cargo build --workspace --locked
-cmake -S daemon -B build/daemon -DGITSTORED_TESTING=ON
-cmake --build build/daemon
-```
+Local execution is a source preview, exercised on a Linux arm64 development host.
+Use matching native `gs` and `gitstored` builds installed in the same trusted
+directory; see [building from source](contributing/building.md). A control-only
+daemon build cannot start workloads. Broader Linux host support and native macOS
+execution have not been established.
 
-Create a private, absolute runtime directory without symlink path components, then
-start the control process as the invoking user:
+The Linux host needs user namespaces, cgroup v2 with delegated CPU/memory/PID
+controllers, a working systemd user session and bus, accessible TUN, and the pidfd
+and openat2 kernel interfaces. Native library dependencies must be available.
+The CLI reports missing capabilities; it does not invoke sudo or change host
+security settings. Docker and Compose are not required.
 
-```sh
-mkdir -m 700 "$XDG_RUNTIME_DIR/gitstore"
-build/daemon/gitstored --runtime-dir "$XDG_RUNTIME_DIR/gitstore"
-```
+The default credential backend uses your OS secret store. Headless hosts without
+a usable store need an explicit [protected-directory configuration](local-runtime-configuration.md#credentials).
+Service images are verified before execution. First-use downloads need interactive
+consent or `--allow-provision`; [offline inputs](local-runtime-configuration.md#offline-images)
+can authorize already available image data.
 
-Existing directories must be owned by the invoking UID with mode 0700. The socket
-is `gitstored.sock`, mode 0600. A lifetime lock excludes a second manager. An
-explicit `--daemon-socket /absolute/path/gitstored.sock` or
-`GITSTORE_DAEMON_SOCKET` selects another owned fixture. The default is
-`$XDG_RUNTIME_DIR/gitstore/gitstored.sock`. The standard Linux serve path can start
-a matching installed `gitstored` sibling, using a private readiness channel and an
-authenticated version handshake. Other commands and explicit socket selections are
-connect-only. State is `$XDG_STATE_HOME/gitstore` or `$HOME/.local/state/gitstore`.
-See [candidate user-service packaging](../runtime/packaging/README.md); building
-does not enable a service or install privileged session settings.
-macOS supports these portable control checks; native workload execution is unverified.
+## Start a deployment
 
-## Read-only assessment
+Select an explicit deployment name:
 
 ```sh
-target/debug/gs api config validate --profile core --profile-version 1 -o json
-target/debug/gs controller config validate --profile core --profile-version 1 -o yaml
+gs serve --deployment dev --allow-provision
 ```
 
-The immutable `core` / `1` metadata maps the recorded alpha.8 server revision and
-Linux amd64/arm64 image digests. This is a metadata registration, not a runnable
-profile claim. API/Git have mutual prerequisites; controller adds separate signing
-record preparation, enrollment and launch stages. Optional OIDC/Admin/Storefront
-mappings are unavailable. `scylladb` maps to upstream `scylla`, but its pinned
-runtime/migration profile is not registered yet.
+This starts the per-user daemon if needed, prepares the selected images, starts
+the services and waits for current-generation readiness. It prints progress to
+stderr and the requested result to stdout. Foreground mode stays attached after
+readiness. Ctrl-C requests cancellation while startup is active, or an owned stop
+of that start's generation after it has completed. Cleanup can remain uncertain;
+inspect the reported identity rather than assuming rollback.
 
-Results contain the effective non-secret plan, configuration source roles, image
-sources/digests, host requirements and exact unavailable/unperformed checks.
-Image sizes and cache verification are unperformed. API/controller configuration
-planning permits additive overlays; Git permits one file. Native TOML/environment
-and RBAC validation has not run. The removed-key checks operate on internal
-normalized metadata, not arbitrary user-provided service TOML files. There is no
-caller-controlled service configuration path on the wire. No raw configuration
-values or credentials are returned.
-
-Table, JSON and YAML are supported. An unmet plan is printed to stdout, with a
-safe diagnostic on stderr and exit 8. Markdown is rejected. `--non-interactive`
-never prompts. Local timeouts accept 1 ms through one hour and bound observation,
-not workload lifetime. Validation remains read-only even if the protocol request
-has `allowProvision: true`.
-
-## Separate local selection
-
-Selection precedence is flags, `GITSTORE_DEPLOYMENT` / `GITSTORE_PROFILE` /
-`GITSTORE_PROFILE_VERSION`, optional local selection configuration, then the single
-registered defaults (`core`, `1`, `memdb`). Remote context/account/endpoint never
-select a deployment. Local commands reject remote credential file/stdin flags.
-
-The optional selection file is `$XDG_CONFIG_HOME/gitstore/local.toml`. Without
-XDG_CONFIG_HOME it is under `~/Library/Application Support/gitstore` on macOS,
-or `~/.config/gitstore` on Linux. It must be an owned regular 0600 file in an owned
-0700 directory; symlink components and hard links are rejected. The CLI does not
-create or change it during assessment. It accepts only this versioned structure:
-
-```toml
-version = 1
-[selection]
-profile = "core"
-profile_version = "1"
-datastore = "memdb"
-# deployment = "my-local-deployment"
-```
-
-Service configuration, passwords, tokens, executable paths and registry credentials
-are not accepted in this file. Unknown/duplicate fields fail before connecting.
-
-## Remaining command gates
-
-`serve`, verified core component `serve`, detached acceptance, foreground current
-readiness and owned stop/interrupt cleanup are implemented for fully linked native
-Linux builds. Select an explicit deployment or configure local selection; no default
-deployment is fabricated. Missing assets need displayed interactive consent,
-`--allow-provision`, a cache candidate or explicit offline input. Every candidate
-is verified before execution. Optional components, logs and `migrate` retain named
-gates. Local operation waits remain separate from remote correlated waits (DEP-004).
-
-No `gh`, Git executable, container engine, image/network/VM helper bundle or runtime
-library loader has been added. Jansson/SQLite are ordinary native code dependencies.
-Later runtime implementation will prefer maintained library APIs; compatible
-remaining host dependencies or verified consented downloads must be assessed
-before use. The <=5 MiB core executable target remains unmeasured for the completed
-runtime. CLI-published artifact attestations are separate from upstream image
-source/platform/digest validation.
-
-## Deployment and operation observation
-
-To enable persistent control-record queries in this development build, select a
-separate private state directory explicitly:
+To return after durable acceptance:
 
 ```sh
-build/daemon/gitstored --runtime-dir "$XDG_RUNTIME_DIR/gitstore" --state-dir /absolute/owned/state
+gs serve --deployment dev --allow-provision --detach --idempotency-key dev-start-1 -o json
 ```
 
-The directory must be owned, 0700 and free of symlink components. `state.db` and
-its lifetime state lock are mode 0600. A second manager cannot open this state
-through another runtime directory. The build refuses incompatible/corrupt schema
-rather than silently upgrading or downgrading it. Installed platform state-path
-selection is part of the unfinished manager packaging work.
-
-With state configured, the daemon also advertises `deployment.read` and
-`operation.read`. Without it, these capabilities are unavailable. Examples:
+Save the returned `operationId` and key. Detached success means accepted; check
+readiness using that operation ID:
 
 ```sh
-target/debug/gs deployment list --limit 100 -o json
-target/debug/gs deployment inspect my-deployment -o yaml
-target/debug/gs deployment inspect my-deployment --operation my-operation --wait terminal --timeout 60s -o json
+gs deployment inspect dev --operation OPERATION_ID --wait ready --timeout 120s -o json
 ```
 
-List/inspect support table/JSON/YAML. Inspect requires an explicit deployment ID;
-there is no remote-context inference. An operation selector must belong to that
-deployment. Inspection with an operation returns separate `deployment` and
-`operation` records; it is not an atomic snapshot across observations. After a wait,
-the CLI refreshes the deployment record. Failed/cancelled terminal waits emit the
-observed records and exit nonzero. Standalone inspection can successfully report
-a failed operation without claiming that it succeeded.
+Replace `OPERATION_ID` with the returned ID. A timeout ends observation and leaves
+the deployment running. Repeating a submission after a lost response must use
+the same key and parameters; a new key does not recover an unknown outcome.
+Different parameters with the original key produce `IDEMPOTENCY_CONFLICT`.
 
-Pages cap at 100. Opaque cursors are bound to the store, visible-record generation
-and last position, retained for five minutes, and capped at 4096 stored cursors.
-A foreign, expired or stale cursor produces `CURSOR_EXPIRED` (exit 8); restart the
-listing. Any visible deployment/component/resource change invalidates prior
-cursors. This is not a stable snapshot guarantee. A missing operation/deployment,
-including a record that has expired from retention, produces `NOT_FOUND` (exit 4).
-Accepted-history retention/eviction remains unfinished; the protocol's seven-day
-minimum and 100,000-operation/256 MiB bounds are not replaced by cursor retention.
+## Inspect services and endpoints
 
-`--wait accepted|terminal|ready` uses local operation observation. The default wait
-timeout is 60 seconds, while other exchanges default to 30 seconds. Ready applies
-only to start operations and the current observed generation/last operation.
-Failed/cancelled starts never satisfy readiness. Deadline expiry (exit 7) retains
-known operation/deployment identity and does not cancel work. The server polls
-wait conditions independently of other connections. Unknown IDs and operation
-mismatches never select or cancel another deployment.
+```sh
+gs deployment list
+gs deployment inspect dev -o json
+gs deployment inspect dev --operation OPERATION_ID -o json
+```
 
-Public operation outcomes currently expose the stable non-secret identity/state
-projection and safe error code/retryability with withheld raw backend messages.
-Other backend result details are not exposed yet. Control-only tests use seeded
-records; they do not establish native execution. Fully linked Linux builds run
-the registered real core subset, with its separate evidence and remaining gates
-recorded in [the implementation status](m2-status.md).
+A ready deployment exposes `endpoints.api` and `endpoints.git` as high loopback
+HTTP ports. Use the reported URLs; ports are selected separately for each
+deployment. Controller and internal RPC ports are not published.
 
+Readiness describes the current generation. A successful historical start result
+can remain successful after a service fails. Health checks invalidate current
+readiness when a process exits or a service stops responding. A temporarily
+stalled service can regain readiness without being replaced.
 
-The explicit-state manager now reads an optional owner-only `settings.json` from
-its state directory at startup. Schema version 1 selects `bootstrapCredentialSource`
-(`os-store` by default, or explicit `protected-directory` with a private absolute directory path)
-and optional `offlineLayouts` paths for registered core components. Unknown fields,
-unsafe file/parent ownership, modes or links fail before state DB/credential effects.
-Offline input authorizes only its verified bytes and never fallback downloads.
-Settings are a stable startup snapshot and are not lifecycle request parameters.
-The real public core path is verified within its recorded Linux fixture scope. Under memdb,
-catalogue identities and controller checkpoints are ephemeral; repository objects
-and private key material are retained. Retained Git objects alone do not restore
-the catalogue automatically. A new API instance needs a newly assigned controller
-UID while reusing the same existing private signing key.
+After observing an actual owned workload or network-worker exit, the current
+manager can stop the whole deployment and start a replacement. It waits for
+observed cleanup and released writers first. Each stop/start has its own operation
+ID; the original successful start result stays unchanged. Replacement uses existing
+verified assets with downloads disabled. Inspect the deployment again for its
+current operation, generation and endpoints.
 
-The explicit directory fallback derives separate protected files from the full
-installation/issuer/deployment/purpose identity. It never shares one global file
-between deployments. Files remain add-only and owner-only; ordinary restart
-reuses the existing deployment material. The pinned directory must retain its
-identity. Older unreleased prototype state schemas are refused after adding
-reserved configuration resources; use fresh test state instead of modifying old
-fixture databases.
+One supervision chain permits at most four replacements, delayed by 250, 500,
+1,000 and 2,000 milliseconds after successful cleanup. The normal stop/start
+deadlines still apply. A failed stop, failed replacement, uncertain ownership,
+new operator intent or manager loss ends retries. Recovered deployments require
+explicit owned stop/start. A new explicit start begins a new supervision chain.
 
+Replacement restarts all selected services. Memdb catalogue state resets; named
+repository and Scylla data remain retained. This behavior has native source-preview
+evidence on the named Linux arm64 fixture, not other hosts or published releases.
 
-After manager loss, old readiness becomes pending/uncertain. A replacement
-manager can stop the recorded core resources when their filesystem, process,
-namespace and cgroup identities can be verified. Stop retains volume contents and
-existing credentials. Missing or substituted recovery roots are refused without
-creation or repair; incomplete receipts remain uncertain. Reconnecting with the
-same idempotency key returns the original operation rather than repeating its
-bootstrap. Partial-stage reconciliation and automatic workload restart remain
-unfinished.
+Lists return up to 100 deployments per page. Use `--limit` and the returned
+`nextCursor` with `--cursor`. If a cursor expires or the visible state changes,
+start the listing again. JSON and YAML are available for inspection; Markdown is
+not supported for local commands.
 
-Successful running core deployments retain exact process watches and perform
-read-only health checks through the shared eight-worker budget. API, Git and
-controller checks rotate at five-second intervals; health proof expires after
-30 seconds without refresh. A process exit or failed health check invalidates
-readiness while preserving the completed start operation. A temporarily stalled
-service can regain readiness from successful checks without changing generation,
-process identity or credentials. Stops wait for an in-flight bounded observation
-worker; observations never enroll clients, generate keys or provision images.
-These behaviors have scoped Linux arm64 development evidence, including a stalled
-live API and manager loss. They do not establish broader release support.
+## Stop and restart
+
+```sh
+gs deployment stop dev --idempotency-key dev-stop-1
+```
+
+Stop waits for observed workload termination and writer release. Repository
+volumes and credentials remain. Stopping the manager process alone does not stop
+a deployment. Manager exit leaves recorded ownership available for recovery; it
+is not evidence that a repository writer has stopped.
+
+If a stop times out, ownership remains held or uncertain. Replay the same key to
+inspect that attempt; use a new stop key for a new attempt once the reason for the
+timeout is resolved. Inspect the deployment and its previous operation first.
+The stop budget is 30 seconds. If state storage becomes unwritable, the operation
+can remain pending until its outcome can be recorded. Restore disk headroom;
+repeating the same key recovers that attempt without repeating completed effects.
+
+Start the same deployment again with a new start key:
+
+```sh
+gs serve --deployment dev --detach --idempotency-key dev-start-2
+```
+
+Verified cached images can be reused without new download consent. Existing
+credentials and repository storage are reused. **The memdb catalogue resets when
+the API restarts.** Retained Git objects do not restore catalogue identities or
+admission state. Use the explicit Scylla selection below for a retained catalogue.
+
+## Retain the catalogue with Scylla
+
+Matching Linux source builds can run the registered Scylla profile:
+
+```sh
+gs serve --deployment persistent --datastore scylladb --allow-provision --detach --idempotency-key persistent-start-1
+gs deployment inspect persistent --operation OPERATION_ID --wait ready --timeout 180s -o json
+```
+
+Scylla needs additional disk and memory: its image expands to roughly 636 MiB,
+its service uses a 1.5 GiB memory setting, and startup creates private execution
+copies for the service and helpers. Allow several GiB of free disk space beyond
+the retained datastore and repository volumes. Cache limits do not bound the
+total footprint; automatic collection of retired execution copies is pending.
+The native execution evidence is Linux arm64; amd64 metadata alone does not
+establish equivalent runtime support.
+
+Fresh datastore startup creates the registered keyspace and runs the compatible
+image-native schema helper before API startup. Retained startup checks the
+existing schema and runs the API with automatic migration disabled. Stop retains
+both volumes. Restart with the same deployment name and `--datastore scylladb`;
+selecting memdb does not convert or restore a retained catalogue.
+
+To run the registered schema migration separately, stop the deployment first and
+have a backup available:
+
+```sh
+gs deployment stop persistent --idempotency-key before-migration-1
+gs migrate --deployment persistent --target gitstore-06152d-schema-012 --backup-acknowledged --idempotency-key migration-1 --timeout 180s -o json
+```
+
+`--backup-acknowledged` records your acknowledgment; it does not create a backup.
+This preview has no user-facing backup or restore command. Migration requires an
+existing keyspace and the registered API/Scylla images in verified cache or
+[offline inputs](local-runtime-configuration.md#offline-images). It cannot download
+missing images, run arbitrary scripts, downgrade the datastore or start the API.
+A successful result includes `migrationCompleted`, `targetVersion` and
+`targetDigest`, after schema verification and observed cleanup. A failed or
+uncertain migration blocks dependent startup; inspect its operation before retrying.
+
+A timeout or disconnection leaves accepted migration running. Replay the same
+key and parameters to recover its identity. Queued migration intent can be
+cancelled before execution starts; running migration cancellation returns
+`UNSAFE_CANCELLATION`. No running schema helper is killed to satisfy cancellation.
+
+## Manager loss and recovery
+
+After manager loss, reconnect with a matching daemon and inspect the deployment.
+The replacement manager invalidates old readiness. It can stop a fully recorded
+core graph, recover a created container after a lost creation reply when its exact
+identity can be verified, and resume a partial stop when committed termination
+receipts and all remaining resource identities can be verified.
+
+Incomplete startup records, lost native replies or missing/replaced resource
+identities can still leave ownership uncertain. Keep the state, volumes and
+credentials. A different key, deleting a lock or removing the state directory is
+not a safe recovery method for a surviving writer. There is no general repair or
+force-takeover command in this preview.
+
+A separate stop can reconcile an interrupted migration when the original native,
+cgroup, volume and network identities remain verifiable. It waits for a surviving
+schema helper to finish naturally, within the stop budget. Cleanup success does
+not turn the original failed migration into a successful migration. Missing
+cgroup receipts or an unresolved helper leave ownership uncertain.
+
+## Troubleshooting
+
+| Result | Action |
+| --- | --- |
+| `PROVISIONING_REQUIRED` | Authorize the selected downloads, or configure verified offline inputs. |
+| `UNSUPPORTED_HOST` / `UNSUPPORTED_CAPABILITY` | Check native build capabilities and the host prerequisites above. |
+| `DEPLOYMENT_CONFLICT` | Inspect the active mutation before submitting another start/stop. |
+| `IDEMPOTENCY_CONFLICT` | Recover the original parameters; the key already identifies different intent. |
+| `DEADLINE_EXCEEDED` | Inspect the known operation; the timeout did not cancel detached work. |
+| `OWNERSHIP_UNCERTAIN` | Preserve state and data; resolve the unavailable resource proof before retrying cleanup. |
+| `RESOURCE_LIMIT` | Wait for work to complete or restore disk headroom. Do not delete active history or ownership records. |
+
+If the manager cannot persist a health observation, inspection reports failed
+readiness and uncertain recovery and withholds endpoints. Historical operation
+results remain unchanged. Ready waits cannot succeed using the old cached row.
+
+## Read deployment logs
+
+Follow retained and new output from a deployment, optionally selecting a component:
+
+```sh
+gs deployment logs dev --component api
+gs deployment logs dev --component api -o json
+```
+
+Text is the default. JSON emits one event per line, including its subscription
+identity, sequence and opaque `payload.cursor`. Resume after a retained record:
+
+```sh
+gs deployment logs dev --component api --cursor '<payload.cursor>' -o json
+```
+
+Ctrl-C closes this observation and leaves the deployment running. Foreground
+`serve` sends logs to stderr while its requested result stays on stdout; its
+Ctrl-C behavior still requests owned cleanup. Table and YAML are not log formats.
+The command timeout bounds setup and individual protocol requests; quiet periods
+in an established observation do not become a new workload operation.
+
+Logs are redacted before storage and retained for at most seven days, with
+64 MiB per-deployment and 1 GiB global ceilings. Storage pressure may expire
+history earlier. `CURSOR_EXPIRED` means the selected record is no longer retained;
+start a new observation without its cursor. `STREAM_OVERFLOW` ends only the slow
+subscription; reconnect using a retained cursor. A full worker budget reports
+`RESOURCE_LIMIT`; retry later. Neither log expiry nor observation failure stops
+workloads or removes operation history. Logging is available from matching Linux
+source builds that advertise `stream.read`.
+
+## Networking and unavailable features
+
+The current backend uses libslirp for rootless outbound connectivity and loopback
+API/Git forwarding. It does not load CNI configurations or execute CNI plugins.
+CNI integration would need a separate adapter and its own rootless, cleanup and
+isolation validation; selecting libslirp does not provide CNI compatibility.
+
+OIDC, Admin UI and Storefront remain unavailable in this preview. OIDC still needs
+managed deployment lifecycle, API issuer integration and recovery. Admin UI needs
+a published reference image and verified authentication/startup/readiness mapping.
+Storefront needs a verified reference runtime, publication reads and trusted target
+selection; alpha.9's dedicated API boundary intentionally returns unavailable.
+Component selection reports
+the missing prerequisite before provisioning or credential creation.

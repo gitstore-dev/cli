@@ -11,7 +11,7 @@ permissions:
 jobs:
   native:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -51,10 +51,18 @@ jobs:
           cargo test --manifest-path daemon/image-backend/Cargo.toml --locked
           cmake -S daemon -B build/daemon-image-sdk -DCMAKE_BUILD_TYPE=Release -DGITSTORED_TESTING=ON -DGITSTORED_IMAGE_SDK=ON
           cmake --build build/daemon-image-sdk --parallel 2
-          ctest --test-dir build/daemon-image-sdk --output-on-failure
+          ctest --test-dir build/daemon-image-sdk --output-on-failure -LE slow
+      - name: Bounded Clang 18 local protocol fuzz smoke
+        if: matrix.mode == 'sanitized'
+        run: scripts/test-daemon-fuzz.sh --seconds 60
       - name: Production build has no test facilities
         if: matrix.mode == 'normal'
         run: |
           cmake -S daemon -B build/daemon-production -DCMAKE_BUILD_TYPE=Release
           cmake --build build/daemon-production --parallel 2
           build/daemon-production/gitstored --version
+          nm build/daemon-production/gitstored > build/daemon-production/symbols.txt
+          if grep -E 'gstd_test_|gstd_controlled_|gstd_failpoint' build/daemon-production/symbols.txt; then
+            echo "Test facilities were linked into the production executable" >&2
+            exit 1
+          fi

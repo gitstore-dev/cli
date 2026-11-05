@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private registered five-service graph on Linux arm64. Fresh migrations, shared owned namespace, protected shared material, real client creation, readiness, reverse-order observed deletion and retained SQLite integrity. Courier delivery, API issuer integration and public parent-ledger lifecycle/recovery remain incomplete.",
+  "evidence": {
+    "run": {
+      "root": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr",
+      "probeSha256": "c2b0ae0a85090f55dfaf7a8bad7ae04900b9f7a4aa28e5383318631b51983b7b",
+      "assets": [
+        {
+          "component": "hydra",
+          "exitCode": 0,
+          "result": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+          "diagnostic": ""
+        },
+        {
+          "component": "kratos",
+          "exitCode": 0,
+          "result": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+          "diagnostic": ""
+        },
+        {
+          "component": "smtp",
+          "exitCode": 0,
+          "result": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":14429631,\"mergedBytes\":35398656}\n",
+          "diagnostic": ""
+        },
+        {
+          "component": "ui",
+          "exitCode": 0,
+          "result": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":315410777,\"mergedBytes\":801400320}\n",
+          "diagnostic": ""
+        },
+        {
+          "component": "bridge",
+          "exitCode": 0,
+          "result": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":16777470,\"mergedBytes\":33763840}\n",
+          "diagnostic": ""
+        }
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 9.92,
+      "result": "{\"servicesReady\":5,\"clientCreated\":true,\"servicesDeleted\":5,\"sharedNamespaceClosed\":true,\"dataRetained\":true}\n",
+      "diagnostic": "",
+      "sqliteIntegrity": {
+        "hydra": "ok",
+        "kratos": "ok"
+      }
+    },
+    "ready": {
+      "clientCreated": true,
+      "providerMigrationsDeleted": true,
+      "servicesReady": 5,
+      "sharedOwnedNamespace": true
+    },
+    "completed": {
+      "dataRetained": true,
+      "namespaceKeeperExited": true,
+      "servicesDeleted": 5
+    },
+    "services": {
+      "smtp": {
+        "health": {
+          "lastHealth": 0,
+          "ready": true,
+          "writerInherited": false,
+          "writerRequired": false
+        },
+        "completed": {
+          "exitCode": 0,
+          "exitObserved": true,
+          "nativeDeleted": true,
+          "populationEmpty": true
+        }
+      },
+      "hydra": {
+        "health": {
+          "lastHealth": 0,
+          "ready": true,
+          "writerInherited": true,
+          "writerRequired": true
+        },
+        "completed": {
+          "exitCode": 0,
+          "exitObserved": true,
+          "nativeDeleted": true,
+          "populationEmpty": true
+        }
+      },
+      "kratos": {
+        "health": {
+          "lastHealth": 0,
+          "ready": true,
+          "writerInherited": true,
+          "writerRequired": true
+        },
+        "completed": {
+          "exitCode": 0,
+          "exitObserved": true,
+          "nativeDeleted": true,
+          "populationEmpty": true
+        }
+      },
+      "ui": {
+        "health": {
+          "lastHealth": 0,
+          "ready": true,
+          "writerInherited": false,
+          "writerRequired": false
+        },
+        "completed": {
+          "exitCode": 0,
+          "exitObserved": true,
+          "nativeDeleted": true,
+          "populationEmpty": true
+        }
+      },
+      "bridge": {
+        "health": {
+          "lastHealth": 0,
+          "ready": true,
+          "writerInherited": false,
+          "writerRequired": false
+        },
+        "completed": {
+          "exitCode": 0,
+          "exitObserved": true,
+          "nativeDeleted": true,
+          "populationEmpty": true
+        }
+      }
+    }
+  },
+  "executionCopyCleanup": {
+    "retained": "Databases, credentials, config, cached image inputs, logs and all evidence",
+    "removed": [
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/hydra/execution/rootfs",
+        "device": 65040,
+        "inode": 125787,
+        "logicalBytes": 48918539,
+        "audit": "result=0 bytes=48918539 digest=d8fa85a068ea875275453fe15de9d784a24188555a0d20b1cb42f3c5dbf47d45",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/hydra/execution/blobs",
+        "device": 65040,
+        "inode": 125786,
+        "logicalBytes": 18792148,
+        "audit": "result=0 bytes=18792148 digest=421f1ea4f232c955f5302739819f5c92d5adbf4ce7fcfdae1a44938281891b82",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/kratos/execution/rootfs",
+        "device": 65040,
+        "inode": 286922,
+        "logicalBytes": 62603868,
+        "audit": "result=0 bytes=62603868 digest=f4c28c13f1bebbc9ec5d48e654f813950766da2cac37f5f0650ccb57fb64f64c",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/kratos/execution/blobs",
+        "device": 65040,
+        "inode": 125888,
+        "logicalBytes": 27653265,
+        "audit": "result=0 bytes=27653265 digest=b32cb1ab1de420578ff47a37684bfd1c6c12642cee96ff4ad95caa60c779052a",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/smtp/execution/rootfs",
+        "device": 65040,
+        "inode": 125984,
+        "logicalBytes": 34985882,
+        "audit": "result=0 bytes=34985882 digest=aaf6e8c20b8b93f72e02063a1f9f846f1d519ed15821fa4566e3c21c55352e85",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/smtp/execution/blobs",
+        "device": 65040,
+        "inode": 125983,
+        "logicalBytes": 14426857,
+        "audit": "result=0 bytes=14426857 digest=d07fdb9d3148b3ced2a557cc0f1eba82a1a56f5176be6dba510185330df2cf0b",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/ui/execution/rootfs",
+        "device": 65040,
+        "inode": 126086,
+        "logicalBytes": 780306341,
+        "audit": "result=0 bytes=780306341 digest=c82602b900a97cbf6a246addbf98fb6ddbd3b6de85161f83aaafb7b99fc932ef",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/ui/execution/blobs",
+        "device": 65040,
+        "inode": 126085,
+        "logicalBytes": 315402393,
+        "audit": "result=0 bytes=315402393 digest=d727ba34682f16d58ac08a9c1676a340267851a76764559cf44a0f554788f9ee",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/bridge/execution/rootfs",
+        "device": 65040,
+        "inode": 418001,
+        "logicalBytes": 33260426,
+        "audit": "result=0 bytes=33260426 digest=09b68e68742fdc23e3b042c33074852fcbf2208807688346565174bb117c5401",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-x7t6lfyr/bridge/execution/blobs",
+        "device": 65040,
+        "inode": 130329,
+        "logicalBytes": 16775374,
+        "audit": "result=0 bytes=16775374 digest=d97b5227a9e8220e465c886b216f018362f76dd4febea7371ace1cbea57835d2",
+        "status": "removed"
+      }
+    ]
+  }
+}

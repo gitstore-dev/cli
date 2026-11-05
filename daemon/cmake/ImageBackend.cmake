@@ -7,10 +7,14 @@ if(GITSTORED_IMAGE_SDK)
   find_package(OpenSSL 3 REQUIRED COMPONENTS SSL Crypto)
   set(image_manifest "${CMAKE_CURRENT_SOURCE_DIR}/image-backend/Cargo.toml")
   set(image_archive "${CMAKE_CURRENT_BINARY_DIR}/image-sdk/release/libgitstored_image.a")
+  set(image_features)
+  if(GITSTORED_SANITIZERS)
+    list(APPEND image_features --features instrumented-host)
+  endif()
   file(GLOB image_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/image-backend/src/*.rs")
   add_custom_command(OUTPUT "${image_archive}"
     COMMAND "${CMAKE_COMMAND}" -E env CARGO_BUILD_JOBS=2 "${GITSTORED_CARGO}" build
-      --manifest-path "${image_manifest}" --locked --release
+      --manifest-path "${image_manifest}" --locked --release ${image_features}
       --target-dir "${CMAKE_CURRENT_BINARY_DIR}/image-sdk"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     DEPENDS ${image_sources} "${image_manifest}" "${CMAKE_CURRENT_SOURCE_DIR}/image-backend/Cargo.lock"

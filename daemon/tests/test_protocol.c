@@ -15,7 +15,27 @@ static int valid(const char *s) {
     json_decref(v);
     return result;
 }
+void gstd_test_json_fail_after(size_t);
 int main(void) {
+    /* Regression: token-buffer growth failure must refuse parsing, never assert
+     * in Jansson's lex_unget_unsave or poison the following independent parse. */
+    const char *faults[] = {"{\"x\":9999999999999999999999999999999999999}",
+                            "{\"x\":\"abcdefghijklmnopqrstuvwxyz0123456789\"}",
+                            "{\"abcdefghijklmnopqrstuvwxyz0123456789\":true}"};
+    for (size_t n = 0; n < 32; n++) {
+        for (size_t i = 0; i < sizeof(faults) / sizeof(*faults); i++) {
+            gstd_test_json_fail_after(n);
+            json_t *v = gstd_json_parse((const unsigned char *)faults[i], strlen(faults[i]));
+            gstd_test_json_fail_after(SIZE_MAX);
+            json_t *reference =
+                gstd_json_parse((const unsigned char *)faults[i], strlen(faults[i]));
+            CHECK(!v || (reference && json_equal(v, reference)));
+            json_decref(reference);
+            json_decref(v);
+            CHECK(valid("{\"recovered\":true}"));
+        }
+    }
+
     CHECK(valid("{\"n\":9007199254740991,\"s\":\"hello\\u0000world\"}"));
     CHECK(valid("{\"n\":-9007199254740991}"));
     CHECK(valid("{\"a\\u0000b\":1}"));
@@ -75,6 +95,19 @@ int main(void) {
     CHECK(!gstd_identifier("../a", 4));
     CHECK(!gstd_identifier("", 0));
     CHECK(!gstd_identifier("a\0b", 3));
+    json_t *subscription =
+        json_pack("{s:{s:i,s:i},s:s,s:s,s:{s:s,s:s,s:s}}", "version", "major", 1, "minor", 0,
+                  "requestId", "datastore-log", "method", "stream.subscribe", "params",
+                  "deploymentId", "local", "kind", "logs", "component", "scylladb");
+    gstd_request request;
+    CHECK(subscription && !gstd_request_parse(subscription, &request));
+    CHECK(request.method == GSTD_SUBSCRIBE);
+    CHECK(!json_object_set_new(subscription, "method", json_string("deployment.validate")));
+    CHECK(!json_object_set_new(subscription, "params",
+                               json_pack("{s:s,s:s,s:[s]}", "profileId", "core", "profileVersion",
+                                         "1", "components", "scylladb")));
+    CHECK(gstd_request_parse(subscription, &request) == -1);
+    json_decref(subscription);
     gstd_frame f = {0};
     size_t consumed;
     unsigned char bytes[] = {0, 0, 0, 2, '{', '}', 0, 0, 0, 2, '{', '}'};

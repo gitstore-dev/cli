@@ -5,9 +5,11 @@
 **Status**: M0 design/source review complete. [Acceptance evidence](acceptance.md)
 records the actual review outcomes and untested release gates.
 
-This package specifies the future `gs` client and `gitstored` daemon. Neither is
-implemented or released here. A supported upstream contract is not a supported CLI
-command or proof that a deployment passes its release gates.
+This package preserves the M0 design/source baseline. At that review neither
+executable existed. The current repository contains `gs` and `gitstored` source;
+[EVD-024](#evd-024) records the later scoped native validation. No binary release
+is established here. A supported upstream contract alone does not establish an
+implemented command or a passed release gate.
 
 ## Documents
 
@@ -232,3 +234,22 @@ covers file/offline release verification and negative cases; OCI applies only to
 images published by this CLI repository. Upstream GitStore service images need
 trusted-source/digest checks, not attestations (scope clarified 2026-11-03). It is not-run. This is a release-design amendment,
 not an attestation-generation result or a new M0 CI workflow.
+
+### EVD-024
+
+**Level**: live-validated, dedicated disposable Linux arm64 fixture (not release
+evidence). **Reviewed**: 2026-11-05. **CLI source**: implementation working tree
+based on `77ed18d36ea89668418f06110f3c7154b7b8944a`; exact executable hashes
+are preserved in the validation/measurement records rather than attributed to a
+nonexistent clean source commit. **Upstream**:
+`06152d193e854bc643fa884daa8b9f30b0d75d0f`.
+
+The [runtime validation record](../contributing/validation/local-runtime.md) maps
+real authenticated CLI/daemon start, list/inspect, stop, logs, persistent Scylla,
+registered migration, retained writers and manager recovery to exact fixtures.
+The [user guide](../local-runtime.md) states current commands and prerequisites.
+[Current artifacts](../contributing/binary-sizes.md) identify the separately
+measured production build; the [publication policy](../../runtime/packaging/release-policy.md)
+keeps unsigned candidates and external signed controls distinct from a GitStore
+release. OIDC/Admin/Storefront, amd64 native acceptance, native macOS/guest control
+and hosted publication remain named separate gates.

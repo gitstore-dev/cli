@@ -3,6 +3,7 @@
 #include "scope_recovery.h"
 #include "gitstored/assets.h"
 #include "gitstored/protocol.h"
+#include "network_worker.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -80,11 +81,26 @@ int gstd_scope_reopen(int parent, const gstd_filesystem_input *input,
             equal(expected, "operationId", input->operation_id) &&
             json_equal(json_object_get(expected, "profileDigest"),
                        json_object_get(input->manifest, "profileDigest"));
+    if (!network && (json_object_get(input->manifest, "datastore") ||
+                     json_object_get(input->manifest, "baseProfileDigest")))
+        valid =
+            valid && json_equal(json_object_get(expected, "executionManifest"), input->manifest);
     if (network) {
         /* Network ledger binds the actual data inode and worker identity. This
          * action returns only that data FD; it grants no wrapper cleanup or
          * process control. RECOVER_NETWORK separately proves the live owner. */
-        valid = valid && json_object_size(expected) == 11 &&
+        gstd_oidc_ports ports = {0};
+        const json_t *selected = json_object_get(expected, "oidcPorts");
+        gstd_network_worker_request request = {.manifest = input->manifest};
+        unsigned roles = 0;
+        if (selected) {
+            valid = valid && !gstd_network_oidc_ports_parse(selected, &ports);
+            request.oidc_ports = &ports;
+        }
+        valid = valid && !gstd_network_request_roles(&request, &roles) &&
+                json_is_integer(json_object_get(expected, "roles")) &&
+                json_integer_value(json_object_get(expected, "roles")) == roles &&
+                json_object_size(expected) == (selected ? 12 : 11) &&
                 equal(expected, "resourceId", input->resource_id) &&
                 number(expected, "scopeDevice", data.st_dev) &&
                 number(expected, "scopeInode", data.st_ino);

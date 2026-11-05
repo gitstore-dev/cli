@@ -2,7 +2,16 @@
 #define GSTD_NETWORKING_H
 #include <stdint.h>
 typedef struct gstd_network_engine gstd_network_engine;
-typedef enum { GSTD_FORWARD_API, GSTD_FORWARD_GIT } gstd_forward_role;
+typedef enum {
+    GSTD_FORWARD_API,
+    GSTD_FORWARD_GIT,
+    GSTD_FORWARD_OIDC_ISSUER,
+    GSTD_FORWARD_OIDC_BRIDGE,
+    GSTD_FORWARD_OIDC_IDENTITY,
+    GSTD_FORWARD_OIDC_UI,
+    GSTD_FORWARD_MAIL_UI,
+    GSTD_FORWARD_ROLE_COUNT
+} gstd_forward_role;
 typedef enum {
     GSTD_NETWORK_OK,
     GSTD_NETWORK_CONTROL,
@@ -20,6 +29,13 @@ typedef enum {
 int gstd_network_engine_available(void);
 gstd_network_status gstd_network_open(int tap_fd, gstd_network_engine **);
 gstd_network_status gstd_network_forward(gstd_network_engine *, gstd_forward_role, uint16_t *port);
+/* Private optional-profile worker only. Fixed public OIDC roles use the same
+ * selected unprivileged port on host and guest so issuer/browser URLs match.
+ * Core and private admin/SMTP ports are rejected. A bind conflict fails; it
+ * never substitutes a new issuer port or destination. No arbitrary IP input.
+ * The profile worker must journal all resulting listener identities before use. */
+gstd_network_status gstd_network_forward_bound(gstd_network_engine *, gstd_forward_role,
+                                               uint16_t selected_port, uint16_t *port);
 /* Private borrowed descriptor identity for the durable owner snapshot. Never
  * close/transfer this library-owned listener or expose it through the wire API. */
 int gstd_network_listener(gstd_network_engine *, gstd_forward_role, int *descriptor,

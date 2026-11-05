@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "profileId": "reference-oidc",
+  "profileVersion": "1",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "executionPolicy": "rootless-single-uid-sqlite-v1",
+  "availability": "private adapter integration only; public profile not enabled",
+  "components": [
+    "oidc-hydra",
+    "oidc-kratos",
+    "oidc-bridge",
+    "oidc-ui",
+    "oidc-smtp"
+  ],
+  "images": [
+    {
+      "component": "oidc-hydra",
+      "repository": "docker.io/oryd/hydra",
+      "indexDigest": "sha256:b94007e19a1f7f78157e7f4ea340da8a55b5f104a0f1198755c256f38ef32b4b",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:38bbfe332099e9214b8041dffe5e3eaa271140993f148d3c8a5f7af825013097",
+          "configDigest": "sha256:f116c8174bd68d953e094eae204c143515cca04f8bafe1c02911ee989cb5df4f"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:8da222f6374ade339e6a578f9ca9e34ad7af6a6168e4501f3f68b1f01b3c242d",
+          "configDigest": "sha256:ea2db2f9dc090250f1579731ffe541eef5d05bc9645899dbac7f5305086a23e1"
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [
+          "https://auth.docker.io"
+        ],
+        "blobOrigins": [
+          "https://production.cloudfront.docker.com"
+        ]
+      }
+    },
+    {
+      "component": "oidc-kratos",
+      "repository": "docker.io/oryd/kratos",
+      "indexDigest": "sha256:fe2428f103a6240c064b6ea77d3088610865c55fcebccb30355857eccdc25b4b",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:c47903ba278bbcb330b5af4ce43d33dc17adacc1d40456b8e2a235add8ababa5",
+          "configDigest": "sha256:0a3ac92960bcff42da933bdb4232f1040be0921a389573b9b31e73f5b24fd633"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:dae4fe524d9559fd4bd41d756d47f45d2e61d8f0c22de0fd116687a4b0f7cc7e",
+          "configDigest": "sha256:21a041195fb71062ee87f7fa3ec53f798c4bae7fa0bb045e65de32c1a03f2b9b"
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [
+          "https://auth.docker.io"
+        ],
+        "blobOrigins": [
+          "https://production.cloudfront.docker.com"
+        ]
+      }
+    },
+    {
+      "component": "oidc-bridge",
+      "repository": "ghcr.io/gitstore-dev/oidc-bridge",
+      "indexDigest": "sha256:2b53cd68392f0280a32f500cea96f2b06b0305b0647bfada2b61d8c214e2b8cf",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:aaa98321b67686c9a34e8d345b3ccddf4256431a3ded76770aec974d7c5738be",
+          "configDigest": "sha256:9b588743c9a6fa7a025cfddc12e1e4597f68cd5d01e4f33fffdb39026f00a711"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:c0dd139d8462be03cb9dee8bf6a5b2751f920af0ad7242e24c1fd084d9ef8206",
+          "configDigest": "sha256:e7861581e2b9902f3c683f760cee67b918d8d50b5abba4494d4d70c7f3d2e3ab"
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [],
+        "blobOrigins": [
+          "https://pkg-containers.githubusercontent.com"
+        ]
+      }
+    },
+    {
+      "component": "oidc-ui",
+      "repository": "docker.io/oryd/kratos-selfservice-ui-node",
+      "indexDigest": "sha256:2d6f9a84456c0e6797664e65f2a743f695794788f1e276f915d247f9e35684a3",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:7cd546cd5c0de9bb14b5c04ffa87800bc74315d6047e9be6c09d3de325071b89",
+          "configDigest": "sha256:12512fb1c25434417c47b04b5d44aa45703139ce90f8c03078f6144519d243bf"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:6982d56d099de2d58de4993ce4ae1d46fde3ba85c2ec4102d6d15248ad42a15b",
+          "configDigest": "sha256:215521c1a54224bb335db2868e711a588bdee91c11db5558bb6496a9988f0a1f"
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [
+          "https://auth.docker.io"
+        ],
+        "blobOrigins": [
+          "https://production.cloudfront.docker.com"
+        ]
+      }
+    },
+    {
+      "component": "oidc-smtp",
+      "repository": "docker.io/axllent/mailpit",
+      "indexDigest": "sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231",
+      "platforms": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:18156f9ee243aa339170ac33d09d6d5a80b10d9e06b265f90f223a777a8f4b73",
+          "configDigest": "sha256:580a202b5088e9c651a8e8b4e461e3213fbd3a3aacaa3d2251892a546a734116"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:e5bf699db0edd1a813496f7a49e546d328e3484cd4d35bc4e3e29b403405715c",
+          "configDigest": "sha256:245e558b2e440962f2d646b6415fbb99b38761dc8a170e6646edf1113779965f"
+        }
+      ],
+      "transportPolicy": {
+        "tokenOrigins": [
+          "https://auth.docker.io"
+        ],
+        "blobOrigins": [
+          "https://production.cloudfront.docker.com"
+        ]
+      }
+    }
+  ]
+}

@@ -32,6 +32,7 @@ static json_t *start(const char *name) {
                      "params", "deploymentId", name, "profileId", "core", "profileVersion", "v1");
 }
 int main(void) {
+    gstd_json_initialize();
     int result = 1;
     char *root = gstd_test_dir(), path[512], ids[9][65], id[65], taken[65];
     sqlite3 *db = NULL;
@@ -97,7 +98,18 @@ int main(void) {
     observed.network.pid_fd = -1;
     CHECK(!gstd_native_watch_open(getpid(), birth, boot, &observed.network.pid_fd));
     CHECK(!gstd_native_watch_open(getpid(), birth, boot, &observed.keeper_death_fd));
+    /* A real SQLite write denial must gate public readiness while the old
+     * durable ready row is still present. Successful persistence clears the gate. */
+    CHECK(sqlite3_exec(db, "PRAGMA query_only=ON", NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_deployment_monitor_poll(&observed) == -1);
+    CHECK(gstd_deployment_monitor_observation_blocked(&observed, "deployment-8", NULL));
+    CHECK(gstd_deployment_monitor_observation_blocked(&observed, NULL, ids[8]));
+    CHECK(!gstd_deployment_monitor_observation_blocked(&observed, "foreign", NULL));
+    CHECK(scalar(db, ids[8],
+                 "SELECT readiness='ready' FROM deployments WHERE last_operation_id=?") == 1);
+    CHECK(sqlite3_exec(db, "PRAGMA query_only=OFF", NULL, NULL, NULL) == SQLITE_OK);
     CHECK(!gstd_deployment_monitor_poll(&observed) && !observed.monitor.running);
+    CHECK(!gstd_deployment_monitor_observation_blocked(&observed, NULL, NULL));
     CHECK(scalar(db, ids[8],
                  "SELECT readiness='failed' FROM deployments WHERE last_operation_id=?") == 1);
     CHECK(scalar(db, ids[8],

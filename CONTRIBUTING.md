@@ -1,11 +1,9 @@
 # Contributing
 
-The repository has a development implementation of the unblocked M1 Rust CLI.
-Start with the [PRD](docs/prd.md), [M1 plan](specs/002-m1-remote-cli/plan.md) and
-[task list](specs/002-m1-remote-cli/tasks.md). The [M0 contract baseline](docs/contracts/README.md)
-remains authoritative for public operation boundaries and open dependency gates.
-See [M1 status](docs/m1-status.md) for evidence; implemented source is not a published
-or fully validated product release.
+User-facing setup and command documentation is in [docs/README.md](docs/README.md).
+Source builds, runtime internals, contracts and validation archives are indexed in
+[docs/contributing/](docs/contributing/README.md). The CLI and native runtime are
+in development; implemented source is not a published or fully validated release.
 
 ## Development checks
 
@@ -43,20 +41,29 @@ the Rust workspace on Linux x86_64 and macOS arm64, with controlled HTTP simulat
 on Linux. Hosted results remain unverified until the workflow runs. Local inspection
 does not establish a GitHub-hosted pass.
 
-Extend CI alongside executable changes. Add C build/behavior/sanitizer checks when
-daemon targets exist, reusing applicable GitStore conventions. Each job must validate
-implemented behavior or a concrete release requirement.
+The daemon workflow builds normal/sanitized C targets, runs Rust/C socket contracts,
+checks the image code library and fuzzes bounded protocol inputs. Extend these
+checks alongside executable changes. Each job must validate implemented behavior
+or a concrete release requirement; local passes do not establish hosted execution.
 
 When build/release targets exist, add artifact provenance generation and verification
 alongside publication. Follow [ADR 0003](docs/ADRs/0003-runtime-assets-packaging.md)
 for trusted build identities, digest binding, first-use/offline verification and the
-attestation release gate. No attestation-only workflow is needed before artifacts exist.
+attestation release gate. The [release policy](runtime/packaging/release-policy.md) and maintainer-only
+offline verifier reject unsigned development candidates. Its fixture tests require
+installed developer `gh`; no verifier or helper executable is bundled with the
+product. Hosted signing/promotion has not been verified.
 
 Before advertising runtime support, add C address/undefined-behavior sanitizer and
 protocol fuzz/resource-bound tests, plus identity isolation, recovery, retained-data,
 single-writer and host/backend compatibility checks appropriate to the implementation.
 Use the [M1 validation guide](specs/002-m1-remote-cli/quickstart.md) for executable
-checks; M2 runtime commands remain unimplemented.
+checks. Native core, retained Scylla, registered migration and owned recovery have
+scoped Linux arm64 validation; broader runtime and platform gates remain open.
+Run `scripts/test-runtime.sh --scenario persistent-scylla --fixture /absolute/owned.json`
+only with dedicated disposable inputs. Its independent restore proof is private
+backend verification, not a public backup/restore command. Developer experiments
+and probes under `runtime/experiments/` are not installed product binaries.
 
 Published-image compatibility CI uses a separate
 [Compose target](tests/integration/README.md). Run `cargo build --locked -p gs`, then

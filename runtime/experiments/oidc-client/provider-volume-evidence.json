@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private production filesystem and parent-transaction primitives for separate Hydra/Kratos volumes; public OIDC lifecycle actor and recovery integration remain incomplete.",
+  "sourceSha256": {
+    "daemon/src/volumes.c": "8f899cc73b1590666ab284fc466fcfc63330875cf88ed4f87fbd03d2ee2601f7",
+    "daemon/src/volumes.h": "af9d5f63f3625ae4dd76dc43b4dce72e45f6363a638e2f0b2430b242820d95d4",
+    "daemon/src/volume_records.c": "f94458060150179a4ceb8ca7a8c53fd2f358127638eed315f0d6a3d8a8c438fd",
+    "daemon/src/volume_records.h": "f26f18453399636d0e82e9d100185bc9227f9a46f502bc7758652f2b8e165ba8",
+    "daemon/src/oidc_volume_schema.sql": "c173c7ff915834c173fff5ba14c21b48646405f41ceeadeaf79306333ba24588",
+    "daemon/src/records.c": "c0e66fe3dd1533795ae86a233bfa40285ddbe7b90655d8aa51a474827859aeba",
+    "daemon/src/state.c": "4b67110dac514f674d995ba530eb4f3eab041a0db1f3dbdebd9cfde37eabd7ee",
+    "daemon/tests/test_oidc_volume_records.c": "9c752ad2b2e143b59074bc461a75ae4121bd8522e063e39378594084af54b705",
+    "daemon/tests/test_state_migration.c": "a8b0937502e96afd5a35cc005877598d432d6b286ab844a549546168f13d7382"
+  },
+  "verification": {
+    "nativeFocusedVolumeAndSchema": {
+      "passed": 5,
+      "failed": 0
+    },
+    "nativeBroaderRegression": {
+      "passed": 66,
+      "skipped": 1,
+      "failed": 0,
+      "exclusion": "separately covered long production connection-deadline test"
+    },
+    "nativeSanitizerFocused": {
+      "passed": 12,
+      "failed": 0
+    },
+    "hostBroaderRegression": {
+      "passedAfterIsolatedSocketRerun": 55,
+      "note": "Sandbox blocked server_security socket bind with EPERM; isolated synthetic-config rerun with socket access passed."
+    },
+    "legacyVersions": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "currentMetadataVersion": 5,
+    "unknownFutureVersionRejected": 6,
+    "immutableProducerPreservedAcrossRestart": true,
+    "distinctProviderCanonicalIds": true,
+    "crossProviderAndCoreReceiptOverlapRejected": true,
+    "liveInheritedWriterPreventsSecondWriter": true,
+    "recoveryObservationDoesNotClaimWriter": true,
+    "metadataDeletionAndAllocatedReceiptMutationRejected": true,
+    "damagedLegacyUpgradeRollsBack": true,
+    "expressionDepthLimitUnchanged": 32
+  }
+}

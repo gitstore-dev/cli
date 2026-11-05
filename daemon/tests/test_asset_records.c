@@ -27,7 +27,7 @@ int main(void) {
     sqlite3 *db = NULL;
     char *root = gstd_test_dir(), path[1024], operation[65], key[65], name[138], again_key[65],
          again_name[138];
-    json_t *components = NULL, *manifest = NULL, *message = NULL;
+    json_t *components = NULL, *manifest = NULL, *message = NULL, *persistent = NULL;
     gstd_cache_owner owner = {.lock_fd = -1}, expected;
     gstd_json_initialize();
     CHECK(root);
@@ -233,6 +233,51 @@ int main(void) {
                        "UPDATE assets SET acquisition_mode='registry',source_device=NULL,"
                        "source_inode=NULL WHERE acquisition_mode='offline'",
                        NULL, NULL, NULL) != SQLITE_OK);
+    persistent = gstd_asset_manifest_for_datastore(components, "arm64", "scylladb");
+    CHECK(persistent);
+    /* A datastore image is implicit in persistent core, never authorized merely
+     * because a caller supplies a valid registered image descriptor. */
+    SQL("BEGIN IMMEDIATE");
+    CHECK(gstd_asset_record_begin(db, persistent, "scylladb", operation, "cold-asset", 1024, 1024,
+                                  UINT64_C(8) * 1024 * 1024, again_key,
+                                  again_name) == GSTD_ASSET_RECORD_ERROR);
+    SQL("ROLLBACK");
+    json_object_set_new(message, "idempotencyKey", json_string("persistent-start"));
+    json_object_set_new(params, "deploymentId", json_string("persistent"));
+    json_object_set_new(params, "datastore", json_string("scylladb"));
+    json_object_set_new(params, "allowProvision", json_true());
+    CHECK(!gstd_request_parse(message, &request));
+    CHECK(gstd_accept(db, &request, components, "repository-persistent", operation) ==
+          GSTD_ACCEPT_NEW);
+    CHECK(sqlite3_prepare_v2(db,
+                             "INSERT INTO resource_ownership "
+                             "VALUES('scylla-asset','asset-root','persistent',?,'reserved',NULL,"
+                             "'held','2026-11-03T00:00:00Z')",
+                             -1, &s, NULL) == SQLITE_OK);
+    sqlite3_bind_text(s, 1, operation, -1, SQLITE_TRANSIENT);
+    inserted = sqlite3_step(s);
+    sqlite3_finalize(s);
+    CHECK(inserted == SQLITE_DONE);
+    SQL("BEGIN IMMEDIATE");
+    CHECK(gstd_asset_record_begin(db, manifest, "scylladb", operation, "scylla-asset", 1024, 1024,
+                                  UINT64_C(8) * 1024 * 1024, again_key,
+                                  again_name) == GSTD_ASSET_RECORD_ERROR);
+    SQL("ROLLBACK");
+    SQL("BEGIN IMMEDIATE");
+    CHECK(gstd_asset_record_begin(db, persistent, "scylladb", operation, "scylla-asset", 1024, 1024,
+                                  UINT64_C(8) * 1024 * 1024, again_key,
+                                  again_name) == GSTD_ASSET_RECORD_NEW);
+    SQL("COMMIT");
+    CHECK(*again_key && *again_name && !gstd_asset_record_refcount(db, again_key, &count) &&
+          count == 1);
+    char datastore_key[65];
+    memcpy(datastore_key, again_key, sizeof(datastore_key));
+    SQL("BEGIN IMMEDIATE");
+    CHECK(gstd_asset_record_begin(db, persistent, "scylladb", operation, "scylla-asset", 1024, 1024,
+                                  UINT64_C(8) * 1024 * 1024, again_key,
+                                  again_name) == GSTD_ASSET_RECORD_HELD);
+    SQL("COMMIT");
+    CHECK(!strcmp(datastore_key, again_key) && !*again_name);
     SQL("DROP TRIGGER asset_ref_release");
     CHECK(sqlite3_close(db) == SQLITE_OK);
     db = NULL;
@@ -247,6 +292,7 @@ done:
         close(rootfd);
     json_decref(message);
     json_decref(manifest);
+    json_decref(persistent);
     json_decref(components);
     if (db)
         sqlite3_close(db);

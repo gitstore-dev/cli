@@ -153,6 +153,128 @@ int gstd_native_population_empty(const gstd_native_population *group) {
     return -1;
 #endif
 }
+#ifdef __linux__
+static int group_path(const char *path, const char *id) {
+    if (!path || !id || !*id || strnlen(id, 65) > 64 || strncmp(path, "/sys/fs/cgroup/", 15) ||
+        strnlen(path, 4096) >= 4096 || strstr(path, "//") || strstr(path, "/./") ||
+        strstr(path, "/../") || strstr(path, " (deleted)") || path[strlen(path) - 1] == '/' ||
+        !strcmp(strrchr(path, '/'), "/.") || !strcmp(strrchr(path, '/'), "/.."))
+        return 0;
+    for (const char *p = id; *p; p++)
+        if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '-' || *p == '_'))
+            return 0;
+    for (const unsigned char *p = (const unsigned char *)path; *p; p++)
+        if (*p < 32 || *p >= 127)
+            return 0;
+    char scope[96];
+    snprintf(scope, sizeof(scope), "/crun-%s.scope/", id);
+    return strstr(path, scope) != NULL;
+}
+static int decimal(const json_t *value, uint64_t *output) {
+    const char *bytes = json_string_value(value);
+    size_t size = json_string_length(value);
+    if (!bytes || !size || size > 20 || bytes[0] == '0')
+        return -1;
+    uint64_t result = 0;
+    for (size_t i = 0; i < size; i++) {
+        if (bytes[i] < '0' || bytes[i] > '9' ||
+            result > (UINT64_MAX - (unsigned)(bytes[i] - '0')) / 10)
+            return -1;
+        result = result * 10 + (unsigned)(bytes[i] - '0');
+    }
+    *output = result;
+    return 0;
+}
+#endif
+int gstd_native_population_reopen(const json_t *value, const char *id, const char *boot,
+                                  gstd_native_population *output) {
+#ifdef __linux__
+    const char *path = json_string_value(json_object_get(value, "scopePath")),
+               *stored_boot = json_string_value(json_object_get(value, "bootId"));
+    char current[37];
+    uint64_t device, inode, events_inode;
+    if (!output || output->directory_fd != -1 || output->events_fd != -1 || !boot ||
+        strlen(boot) != 36 || !json_is_object(value) || json_object_size(value) != 6 ||
+        !json_is_integer(json_object_get(value, "schemaVersion")) ||
+        json_integer_value(json_object_get(value, "schemaVersion")) != 1 || !stored_boot ||
+        json_string_length(json_object_get(value, "bootId")) != 36 || strcmp(stored_boot, boot) ||
+        gstd_native_boot_id(current) || strcmp(current, boot) || !group_path(path, id) ||
+        json_string_length(json_object_get(value, "scopePath")) != strlen(path) ||
+        decimal(json_object_get(value, "cgroupDevice"), &device) ||
+        decimal(json_object_get(value, "cgroupInode"), &inode) ||
+        decimal(json_object_get(value, "eventsInode"), &events_inode))
+        return -1;
+    int root = open("/sys/fs/cgroup", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+    struct stat directory, event;
+    if (!kernel_group(root, &directory)) {
+        if (root >= 0)
+            close(root);
+        return -1;
+    }
+    struct open_how how = {.flags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW,
+                           .resolve = RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS |
+                                      RESOLVE_NO_MAGICLINKS | RESOLVE_NO_XDEV};
+    int fd = (int)syscall(SYS_openat2, root, path + 15, &how, sizeof(how));
+    close(root);
+    int events =
+        fd >= 3 ? openat(fd, "cgroup.events", O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK) : -1;
+    gstd_native_population candidate = {.directory_fd = fd,
+                                        .events_fd = events,
+                                        .device = device,
+                                        .inode = inode,
+                                        .events_inode = events_inode};
+    int valid = events >= 3 && kernel_group(fd, &directory) && directory.st_nlink &&
+                !fstat(events, &event) && S_ISREG(event.st_mode) &&
+                event.st_dev == directory.st_dev && (uint64_t)directory.st_dev == device &&
+                (uint64_t)directory.st_ino == inode && (uint64_t)event.st_ino == events_inode &&
+                gstd_native_population_empty(&candidate) >= 0;
+    if (!valid) {
+        gstd_native_population_close(&candidate);
+        return -1;
+    }
+    *output = candidate;
+    return 0;
+#else
+    (void)value;
+    (void)id;
+    (void)boot;
+    (void)output;
+    return -1;
+#endif
+}
+json_t *gstd_native_population_identity(const gstd_native_population *group, const char *id,
+                                        const char *boot) {
+#ifdef __linux__
+    if (!group || !boot || strlen(boot) != 36 || gstd_native_population_empty(group) < 0)
+        return NULL;
+    char link[64], path[4096], device[32], inode[32], events[32];
+    snprintf(link, sizeof(link), "/proc/self/fd/%d", group->directory_fd);
+    ssize_t n = readlink(link, path, sizeof(path) - 1);
+    if (n < 1 || n >= (ssize_t)sizeof(path) - 1)
+        return NULL;
+    path[n] = 0;
+    if (!group_path(path, id))
+        return NULL;
+    snprintf(device, sizeof(device), "%llu", (unsigned long long)group->device);
+    snprintf(inode, sizeof(inode), "%llu", (unsigned long long)group->inode);
+    snprintf(events, sizeof(events), "%llu", (unsigned long long)group->events_inode);
+    json_t *value =
+        json_pack("{s:i,s:s,s:s,s:s,s:s,s:s}", "schemaVersion", 1, "bootId", boot, "scopePath",
+                  path, "cgroupDevice", device, "cgroupInode", inode, "eventsInode", events);
+    gstd_native_population reopened = GSTD_NATIVE_POPULATION_INITIAL;
+    if (!value || gstd_native_population_reopen(value, id, boot, &reopened)) {
+        json_decref(value);
+        value = NULL;
+    }
+    gstd_native_population_close(&reopened);
+    return value;
+#else
+    (void)group;
+    (void)id;
+    (void)boot;
+    return NULL;
+#endif
+}
 int gstd_native_population_matches(const gstd_native_population *group, const char *id, pid_t pid,
                                    uint64_t start, const char *boot) {
     if (!group)

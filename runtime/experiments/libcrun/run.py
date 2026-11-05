@@ -107,7 +107,12 @@ for scenario in ('normal', 'start-crash'):
             env[name] = os.environ[name]
     command = [str(probe), str(root)] + (['registered'] if args.registered else []) + (['network'] if args.network else []) + (['start-crash'] if scenario == 'start-crash' else [])
     result = subprocess.run(command, env=env, timeout=30, capture_output=True, text=True)
-    print(json.dumps({'scenario': scenario, 'mode': 'registered-synthetic-git' if args.registered else (('delegated-core-policy' if policy else 'delegated') if delegated else 'namespace-only'), 'root': str(root), 'exit': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr}))
+    diagnostic = root / 'adapter.stderr'
+    descriptor = os.open(diagnostic, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, 'w') as stream:
+        stream.write(result.stderr)
+    excerpt = result.stderr if len(result.stderr) <= 8192 else result.stderr[:4096] + result.stderr[-4096:]
+    print(json.dumps({'scenario': scenario, 'mode': 'registered-synthetic-git' if args.registered else (('delegated-core-policy' if policy else 'delegated') if delegated else 'namespace-only'), 'root': str(root), 'exit': result.returncode, 'stdout': result.stdout[-16384:], 'stderr': excerpt, 'diagnosticFile': str(diagnostic), 'diagnosticCharacters': len(result.stderr)}))
     if result.returncode:
         # A failed probe may have a surviving native workload. Retain its owned
         # root/state for explicit backend observation; never assume termination.

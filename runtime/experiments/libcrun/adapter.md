@@ -60,8 +60,10 @@ consuming its cancellation byte, then observes/stops the surviving workload and
 collects its real exit 0 through the PID/start-time collector before native delete.
 
 The same scenarios pass with Clang 18 ASan/UBSan in the caller and the exact static
-libcrun build. Use `ASAN_OPTIONS=handle_segv=0:detect_leaks=1` for the intentional
-SIGSEGV, and `UBSAN_OPTIONS=halt_on_error=1`. The payload remains plain static ELF.
+libcrun build. Use `ASAN_OPTIONS=detect_leaks=1` and `UBSAN_OPTIONS=halt_on_error=1`.
+The deliberate crash failpoint uses SIGKILL so ASan keeps its actual fault
+handler enabled. Select the matching build's `native_registered_payload`; its
+static code checks the instrumented or ordinary address-limit expectations.
 ASan reserves many TiB before payload exec, so this instrumented build explicitly
 omits worker/workload RLIMIT_AS. Ordinary runs prove those address bounds;
 physical cgroup, file, descriptor and core bounds remain in the instrumented lane.

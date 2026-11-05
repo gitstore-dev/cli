@@ -147,4 +147,4 @@ uses its maintained underlying `dbus-secret-service` APIs directly to refuse loc
 matches and never display a prompt. macOS disables user interaction before Keychain
 access. RustSec review prompted replacing the initial zbus stack; the resolved stack
 has no reported vulnerabilities or maintenance warnings at the recorded audit time.
-Actual checks and unverified environments are recorded in `docs/m1-status.md`.
+Actual checks and unverified environments are recorded in `docs/contributing/validation/remote-cli.md`.

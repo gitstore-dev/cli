@@ -1,4 +1,6 @@
 #define _GNU_SOURCE 1
+#include "datastore.h"
+#include "datastore_start.h"
 #include "deployment_records.h"
 #include "filesystem_job.h"
 #include "gitstored/asset_records.h"
@@ -40,16 +42,17 @@ static int run(const gstd_filesystem_input *input, gstd_filesystem_reply *reply)
 }
 static int reserve(sqlite3 *db, const char *id, const char *kind, const char *operation) {
     sqlite3_stmt *s = NULL;
-    if (sqlite3_prepare_v2(
-            db,
-            "INSERT INTO resource_ownership "
-            "VALUES(?,?,'one',?,'reserved',NULL,'held',strftime('%Y-%m-%dT%H:%M:%SZ','now'))",
-            -1, &s, NULL) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db,
+                           "INSERT INTO resource_ownership "
+                           "SELECT "
+                           "?,?,deployment_id,operation_id,'reserved',NULL,'held',strftime('%Y-%m-%"
+                           "dT%H:%M:%SZ','now') FROM operations WHERE operation_id=?",
+                           -1, &s, NULL) != SQLITE_OK)
         return -1;
     sqlite3_bind_text(s, 1, id, -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(s, 2, kind, -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(s, 3, operation, -1, SQLITE_TRANSIENT);
-    int ok = sqlite3_step(s) == SQLITE_DONE;
+    int ok = sqlite3_step(s) == SQLITE_DONE && sqlite3_changes(db) == 1;
     sqlite3_finalize(s);
     return ok ? 0 : -1;
 }
@@ -292,6 +295,151 @@ int main(void) {
     char bytes[16];
     CHECK(data >= 3 && read(data, bytes, sizeof(bytes)) == 8 && !memcmp(bytes, "retained", 8) &&
           !close(data));
+    json_t *datastore_manifest =
+        gstd_asset_manifest_for_datastore(components, architecture, "scylladb");
+    json_t *datastore_message =
+        json_pack("{s:{s:i,s:i},s:s,s:s,s:s,s:{s:s,s:s,s:s,s:s}}", "version", "major", 1, "minor",
+                  0, "requestId", "datastore", "method", "deployment.start", "idempotencyKey",
+                  "datastore-worker", "params", "deploymentId", "persistent", "profileId", "core",
+                  "profileVersion", "1", "datastore", "scylladb");
+    gstd_request datastore_request;
+    char datastore_operation[65], datastore_producer[65], datastore_id[65];
+    CHECK(datastore_manifest && datastore_message &&
+          !gstd_request_parse(datastore_message, &datastore_request));
+    CHECK(gstd_accept(db, &datastore_request, components, NULL, datastore_operation) ==
+          GSTD_ACCEPT_NEW);
+    gstd_deployment_target persistent_target = {0};
+    CHECK(!gstd_deployment_target_read(db, datastore_operation, &persistent_target));
+    CHECK(json_equal(persistent_target.manifest, datastore_manifest));
+    CHECK(!reserve(db, "datastore-configuration", "configuration", datastore_operation));
+    input = (gstd_filesystem_input){.action = GSTD_FS_SCOPE,
+                                    .store_id = expected.store_id,
+                                    .operation_id = datastore_operation,
+                                    .deployment_id = "persistent",
+                                    .generation = 1,
+                                    .resource_id = "datastore-configuration",
+                                    .resource_kind = "configuration",
+                                    .descriptors = {initialized.descriptors[4], -1, -1}};
+    gstd_filesystem_reply datastore_configuration = {0};
+    CHECK(!run(&input, &datastore_configuration) && !datastore_configuration.status);
+    CHECK(sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) == SQLITE_OK &&
+          !gstd_deployment_scope_record(db, &persistent_target, "datastore-configuration",
+                                        &datastore_configuration) &&
+          sqlite3_exec(db, "COMMIT", NULL, NULL, NULL) == SQLITE_OK);
+    gstd_datastore_start prefix = {0}, refused_prefix = {0};
+    CHECK(!gstd_datastore_start_begin(db, &persistent_target, &volume_owner,
+                                      "datastore-configuration", &prefix));
+    CHECK(prefix.graph.persistent && prefix.graph.fresh_datastore && prefix.worker.worker &&
+          sqlite3_get_autocommit(db));
+    CHECK(gstd_datastore_start_begin(db, &persistent_target, &volume_owner,
+                                     "datastore-configuration", &refused_prefix) == -1 &&
+          !refused_prefix.worker.worker && sqlite3_get_autocommit(db));
+    int prefix_ready = 0;
+    for (unsigned n = 0; n < 6000 && !prefix_ready; n++) {
+        prefix_ready = gstd_datastore_start_poll(&prefix, -1);
+        if (!prefix_ready) {
+            struct timespec pause = {0, 1000000};
+            nanosleep(&pause, NULL);
+        }
+    }
+    CHECK(prefix_ready == 1 && !prefix.outcome && prefix.volume.data_fd >= 3 &&
+          prefix.volume.writer_fd >= 3);
+    memcpy(datastore_id, prefix.volume_id, sizeof(datastore_id));
+    memcpy(datastore_producer, prefix.producer_id, sizeof(datastore_producer));
+    gstd_filesystem_reply datastore = {
+        .descriptor_count = 2,
+        .descriptors = {prefix.volume.data_fd, prefix.volume.writer_fd},
+        .volume = prefix.volume.identity};
+    prefix.volume.data_fd = prefix.volume.writer_fd = -1;
+    CHECK(!gstd_datastore_start_close(&prefix));
+    input = (gstd_filesystem_input){.action = GSTD_FS_DATASTORE_VOLUME,
+                                    .manifest = manifest,
+                                    .descriptors = {volume_owner.root_fd, volume_owner.lock_fd, -1},
+                                    .volume_root = volume_owner,
+                                    .volume_id = datastore_id,
+                                    .producer_id = datastore_producer};
+    gstd_filesystem_job refused = {0};
+    CHECK(gstd_filesystem_launch(&input, 5000, &refused) == -1 && !refused.worker);
+    input.manifest = datastore_manifest;
+    gstd_volume_handle datastore_handle = {.data_fd = datastore.descriptors[0],
+                                           .writer_fd = datastore.descriptors[1],
+                                           .identity = datastore.volume};
+    CHECK(sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) == SQLITE_OK &&
+          !gstd_scylla_volume_record_ready(db, &volume_owner, datastore_id, datastore_operation,
+                                           &datastore_handle) &&
+          sqlite3_exec(db, "COMMIT", NULL, NULL, NULL) == SQLITE_OK);
+    input.volume_existing = 1;
+    input.volume_expected = datastore.volume;
+    CHECK(!run(&input, &again) && again.status == -1 && again.detail == GSTD_VOLUME_HELD &&
+          !again.descriptor_count);
+    input.action = GSTD_FS_OBSERVE_DATASTORE;
+    CHECK(!run(&input, &again) && !again.status && again.descriptor_count == 1 &&
+          again.volume.data_inode == input.volume_expected.data_inode);
+    gstd_filesystem_reply_close(&again);
+    data =
+        openat(datastore_handle.data_fd, "retained", O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
+    CHECK(data >= 3 && write(data, "scylla-retained", 15) == 15 && !close(data));
+    gstd_filesystem_reply_close(&datastore);
+    gstd_filesystem_reply_close(&datastore_configuration);
+    gstd_deployment_target_clear(&persistent_target);
+    input.action = GSTD_FS_DATASTORE_VOLUME;
+    CHECK(!run(&input, &datastore) && !datastore.status && datastore.descriptor_count == 2);
+    data = openat(datastore.descriptors[0], "retained", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    CHECK(data >= 3 && read(data, bytes, sizeof(bytes)) == 15 &&
+          !memcmp(bytes, "scylla-retained", 15) && !close(data));
+    gstd_filesystem_reply_close(&datastore);
+    json_decref(datastore_manifest);
+    json_decref(datastore_message);
+    /* Actual asynchronous persistent preparation with consent withheld. It
+     * must reserve/retain owned state, then fail before any image transfer. */
+    datastore_message =
+        json_pack("{s:{s:i,s:i},s:s,s:s,s:s,s:{s:s,s:s,s:s,s:s}}", "version", "major", 1, "minor",
+                  0, "requestId", "preparation", "method", "deployment.start", "idempotencyKey",
+                  "datastore-preparation", "params", "deploymentId", "preparation", "profileId",
+                  "core", "profileVersion", "1", "datastore", "scylladb");
+    CHECK(datastore_message && !gstd_request_parse(datastore_message, &datastore_request));
+    CHECK(gstd_accept(db, &datastore_request, components, NULL, datastore_operation) ==
+          GSTD_ACCEPT_NEW);
+    CHECK(!gstd_deployment_target_read(db, datastore_operation, &persistent_target));
+    CHECK(!reserve(db, "preparation-configuration", "configuration", datastore_operation));
+    input = (gstd_filesystem_input){.action = GSTD_FS_SCOPE,
+                                    .store_id = expected.store_id,
+                                    .operation_id = datastore_operation,
+                                    .deployment_id = "preparation",
+                                    .generation = 1,
+                                    .resource_id = "preparation-configuration",
+                                    .resource_kind = "configuration",
+                                    .descriptors = {initialized.descriptors[4], -1, -1}};
+    CHECK(!run(&input, &datastore_configuration) && !datastore_configuration.status);
+    CHECK(sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) == SQLITE_OK &&
+          !gstd_deployment_scope_record(db, &persistent_target, "preparation-configuration",
+                                        &datastore_configuration) &&
+          sqlite3_exec(db, "COMMIT", NULL, NULL, NULL) == SQLITE_OK);
+    gstd_runtime_settings settings = GSTD_RUNTIME_SETTINGS_INITIAL;
+    gstd_deployment_environment preparation_environment = {.database = db,
+                                                           .settings = &settings,
+                                                           .cache_fd = initialized.descriptors[0],
+                                                           .resource_fd =
+                                                               initialized.descriptors[4],
+                                                           .volume_root = volume_owner};
+    gstd_datastore preparation = {0};
+    CHECK(!gstd_datastore_prepare_begin(&preparation_environment, &persistent_target,
+                                        "preparation-configuration", &preparation));
+    int prepared = 0;
+    for (unsigned n = 0; n < 6000 && !prepared; n++) {
+        prepared = gstd_datastore_prepare_poll(&preparation, -1);
+        if (!prepared) {
+            struct timespec pause = {0, 1000000};
+            nanosleep(&pause, NULL);
+        }
+    }
+    CHECK(prepared == 1 && preparation.outcome == -1 &&
+          preparation.detail == GSTD_ASSET_RECORD_CONSENT && preparation.graph.fresh_datastore &&
+          preparation.volume.data_fd >= 3 && !preparation.workloads[0].launched);
+    CHECK(!gstd_datastore_observers_close(&preparation));
+    gstd_filesystem_reply_close(&datastore_configuration);
+    gstd_deployment_target_clear(&persistent_target);
+    json_decref(datastore_message);
     input = (gstd_filesystem_input){.action = GSTD_FS_IMAGE_VERIFY,
                                     .descriptors = {scope.descriptors[1], -1, -1}};
     struct stat directory;

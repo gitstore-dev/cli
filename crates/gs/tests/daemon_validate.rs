@@ -151,10 +151,11 @@ fn local_config_precedence_and_secret_safe_errors() {
         "scylla"
     );
     assert!(
-        plan["diagnostics"]
+        !plan["diagnostics"]
             .to_string()
             .contains("DATASTORE_PROFILE_UNAVAILABLE")
     );
+    assert_eq!(plan["requiredAssets"].as_array().unwrap().len(), 4);
     assert_eq!(fs::read_to_string(&file).unwrap(), text);
     fs::write(
         &file,

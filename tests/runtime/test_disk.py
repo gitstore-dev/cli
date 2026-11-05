@@ -15,8 +15,13 @@ class Disk(unittest.TestCase):
         print(f"Retained disk-probe root: {root}", flush=True)
         # Probe mounts only a 1 MiB private tmpfs. It never fills the host disk;
         # mount and synthetic data cease to exist with its private namespace.
-        subprocess.run([settings["volumeDiskProbe"], str(root)], check=True,
-                       timeout=30, env={"PATH": "/nonexistent"})
+        result = subprocess.run([settings["volumeDiskProbe"], str(root)], check=True,
+                                capture_output=True, timeout=30, env={"PATH": "/nonexistent"})
+        evidence = json.loads(result.stdout)
+        self.assertEqual(evidence["volumeFull"], "allocation-rejected")
+        self.assertEqual(evidence["retainedBytes"], "preserved")
+        self.assertEqual(evidence["datastoreFull"], "allocation-rejected")
+        self.assertEqual(evidence["datastoreRetainedBytes"], "preserved")
 
 
 if __name__ == "__main__":

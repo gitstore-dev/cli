@@ -36,6 +36,63 @@ int main(void) {
     gstd_volume_root rival = {.lock_fd = -1};
     CHECK(gstd_volume_root_lock(directory, store, &rival) == GSTD_VOLUME_HELD);
     CHECK(gstd_volume_root_reopen(directory, store, &rival) == GSTD_VOLUME_HELD);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla", "persistent-producer", 1, NULL,
+                                     &first) == GSTD_VOLUME_OK);
+    gstd_volume_identity scylla_receipt = first.identity;
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla", "persistent-producer", 0,
+                                     &scylla_receipt, &second) == GSTD_VOLUME_HELD);
+    CHECK(gstd_volume_acquire(directory, &owner, "scylla", "persistent-producer", 0,
+                              &scylla_receipt, &second) == GSTD_VOLUME_INTEGRITY);
+    CHECK(gstd_scylla_volume_observe_open(directory, &owner, "scylla", "persistent-producer",
+                                          &scylla_receipt, &second) == GSTD_VOLUME_OK);
+    CHECK(second.writer_fd == -1);
+    gstd_volume_handle_close(&second);
+    gstd_volume_handle_close(&first);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla", "different-producer", 0,
+                                     &scylla_receipt, &first) == GSTD_VOLUME_INTEGRITY);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla", "persistent-producer", 0,
+                                     &scylla_receipt, &first) == GSTD_VOLUME_OK);
+    gstd_volume_handle_close(&first);
+    /* Provider roles never adopt each other's SQLite file or existing core data,
+     * even with a valid inode receipt and the same immutable producer. */
+    CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)99, "invalid-oidc",
+                                   "oidc-producer", 1, NULL, &first) == GSTD_VOLUME_INVALID);
+    CHECK(faccessat(directory, "volume-invalid-oidc", F_OK, AT_SYMLINK_NOFOLLOW) < 0);
+    for (int role = GSTD_OIDC_VOLUME_HYDRA; role <= GSTD_OIDC_VOLUME_KRATOS; role++) {
+        const char *id = role == GSTD_OIDC_VOLUME_HYDRA ? "hydra" : "kratos";
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)role, id,
+                                       "oidc-producer", 1, NULL, &first) == GSTD_VOLUME_OK);
+        gstd_volume_identity provider_receipt = first.identity;
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)role, id,
+                                       "oidc-producer", 0, &provider_receipt,
+                                       &second) == GSTD_VOLUME_HELD);
+        CHECK(gstd_oidc_volume_observe_open(directory, &owner, (gstd_oidc_volume_role)role, id,
+                                            "oidc-producer", &provider_receipt,
+                                            &second) == GSTD_VOLUME_OK);
+        CHECK(second.writer_fd == -1);
+        gstd_volume_handle_close(&second);
+        CHECK(gstd_oidc_volume_observe_open(directory, &owner, (gstd_oidc_volume_role)(1 - role),
+                                            id, "oidc-producer", &provider_receipt,
+                                            &second) == GSTD_VOLUME_INTEGRITY);
+        CHECK(gstd_volume_acquire(directory, &owner, id, "oidc-producer", 0, &provider_receipt,
+                                  &second) == GSTD_VOLUME_INTEGRITY);
+        CHECK(gstd_scylla_volume_acquire(directory, &owner, id, "oidc-producer", 0,
+                                         &provider_receipt, &second) == GSTD_VOLUME_INTEGRITY);
+        gstd_volume_handle_close(&first);
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)role, id,
+                                       "changed-producer", 0, &provider_receipt,
+                                       &first) == GSTD_VOLUME_INTEGRITY);
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)role, id,
+                                       "oidc-producer", 0, &provider_receipt,
+                                       &first) == GSTD_VOLUME_OK);
+        gstd_volume_handle_close(&first);
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)(1 - role), id,
+                                       "oidc-producer", 1, &provider_receipt,
+                                       &first) == GSTD_VOLUME_INTEGRITY);
+        CHECK(gstd_oidc_volume_acquire(directory, &owner, (gstd_oidc_volume_role)role, "scylla",
+                                       "persistent-producer", 0, &scylla_receipt,
+                                       &first) == GSTD_VOLUME_INTEGRITY);
+    }
     CHECK(gstd_volume_acquire(directory, &owner, "repositories", "initial-operation", 0, NULL,
                               &first) == GSTD_VOLUME_MISSING);
     CHECK(gstd_volume_acquire(directory, &owner, "../escape", "initial-operation", 1, NULL,
@@ -43,6 +100,8 @@ int main(void) {
     CHECK(gstd_volume_acquire(directory, &owner, "repositories", "initial-operation", 1, NULL,
                               &first) == GSTD_VOLUME_OK);
     receipt = first.identity;
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "repositories", "initial-operation", 0,
+                                     &receipt, &second) == GSTD_VOLUME_INTEGRITY);
     data = openat(first.data_fd, "retained", O_CREAT | O_WRONLY | O_EXCL | O_CLOEXEC, 0600);
     CHECK(data >= 3 && write(data, "retained-bytes", 14) == 14 && !fsync(data));
     close(data);

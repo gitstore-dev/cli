@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+_Static_assert(JSON_PARSER_MAX_DEPTH == 33, "The private Jansson decoder depth must stay bounded");
+
 #define JSON_LIVE_BUDGET (64u * 1024u * 1024u)
 #define JSON_PARSE_BUDGET (16u * 1024u * 1024u)
 typedef union {
@@ -11,7 +13,18 @@ typedef union {
 } allocation_header;
 static size_t live_bytes, parse_bytes;
 static int parsing, initialized;
+#ifdef GITSTORED_TESTING
+static size_t allocation_remaining = SIZE_MAX;
+void gstd_test_json_fail_after(size_t count) { allocation_remaining = count; }
+#endif
 static void *bounded_allocate(size_t bytes) {
+#ifdef GITSTORED_TESTING
+    if (parsing && allocation_remaining != SIZE_MAX) {
+        if (!allocation_remaining)
+            return NULL;
+        allocation_remaining--;
+    }
+#endif
     if (bytes > JSON_LIVE_BUDGET - live_bytes ||
         (parsing && bytes > JSON_PARSE_BUDGET - parse_bytes))
         return NULL;
@@ -260,7 +273,7 @@ static int valid_param(const char *key, size_t len, json_t *v) {
     if (field_allowed(key, len, "datastore"))
         return one_of(v, "memdb scylladb");
     if (field_allowed(key, len, "component"))
-        return one_of(v, "api git controller oidc admin storefront");
+        return one_of(v, "api git controller oidc admin storefront scylladb");
     if (field_allowed(key, len, "until"))
         return one_of(v, "accepted terminal ready");
     if (field_allowed(key, len, "kind"))

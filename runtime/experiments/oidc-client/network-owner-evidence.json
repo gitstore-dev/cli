@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private production network worker fixed OIDC listener ownership/recovery, not public optional-profile activation. Positive unprivileged port tuple must be committed before permit; no replacement tuple on bind conflict.",
+  "normal": {
+    "root": "/home/gitstorefixture/experiments/oidc-owned-network-w5qvbonj",
+    "probeSha256": "83369628c84cd5a53ac2899bda67b41222cbf7f51a111477e63347abb9ea3a4e",
+    "exitCode": 0,
+    "elapsedSeconds": 0.147,
+    "result": "{\"fixedPublicForwards\":5,\"samePortsAfterRestart\":true,\"lostAckRecovered\":true,\"bindConflictNoFallback\":true,\"forgedPortOwnershipRejected\":true,\"workersReaped\":3}\n",
+    "diagnostic": ""
+  },
+  "sanitizer": {
+    "root": "/home/gitstorefixture/experiments/oidc-owned-network-sanitized-z50bdi6o",
+    "probeSha256": "d100083c90c95b2e184b0ba411a9f7485b9cda494a6b889f3de5fb52e0b15005",
+    "exitCode": 0,
+    "elapsedSeconds": 0.412,
+    "result": "{\"fixedPublicForwards\":5,\"samePortsAfterRestart\":true,\"lostAckRecovered\":true,\"bindConflictNoFallback\":true,\"forgedPortOwnershipRejected\":true,\"workersReaped\":3}\n",
+    "diagnostic": ""
+  },
+  "coreRegression": [
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-core-owner-regression-mu8gr1hy",
+      "mode": [],
+      "probeSha256": "0d00421379b6794d69ed1900937ac4ee5dd8380ab00df7f597b112c93f87df02",
+      "exitCode": 0,
+      "elapsedSeconds": 0.271,
+      "result": "persistent network worker: durable permit, isolation, DNS, forwarding, reopen, fixed stop pass\n",
+      "diagnostic": ""
+    },
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-core-owner-regression-6faonf1h",
+      "mode": [
+        "lost-ack"
+      ],
+      "probeSha256": "0d00421379b6794d69ed1900937ac4ee5dd8380ab00df7f597b112c93f87df02",
+      "exitCode": 0,
+      "elapsedSeconds": 0.233,
+      "result": "persistent network worker: durable permit, isolation, DNS, forwarding, reopen, fixed stop pass\n",
+      "diagnostic": ""
+    }
+  ],
+  "sourceSha256": {
+    "daemon/src/network_worker.c": "505b3bd40014eff161d21ba0751c3d7c8883bad73237ffe0ff71b1c8e24198f3",
+    "daemon/src/network_worker.h": "eeb2b0f4de285bcfeca2bd148cd31303da381dd54be374123779ec1b5ef98353",
+    "daemon/src/network_recovery.c": "b94cb027a79fcd59710460ca30793e1badf03c5e8c0008c06dc7d44be782277c",
+    "daemon/src/network_records.c": "1cad5efb4d3fb92546fd327090252361b6bd39587c5df41aa6478fba1446f934",
+    "daemon/src/network_restore.c": "87224a443805ce640926ac50143a3e4c714f7609b5f7fe9f8b0d46538f75593a",
+    "daemon/src/scope_recovery.c": "6ad5ff420bf332eba37fe9e26367c18380b41798a01ee060ddbcf55c3f91cebe",
+    "daemon/tests/oidc_network_worker_probe.c": "d7c90d0a14b401352ca688b5a7fae74054187fe7daf34b95ec183fd7f11417d2"
+  },
+  "coreOwnerRecordShapeUnchanged": true,
+  "fullProfileLifecycleActorIntegrated": false,
+  "core2SanitizerChecks": [
+    {
+      "combined": false,
+      "root": "/home/gitstorefixture/experiments/oidc-core2-network-sanitized-i5nvsup4",
+      "probeSha256": "5e5e95e4ae37f37a046243a39586a7c696bfd5725404664e0e488d8b0851d9e6",
+      "exitCode": 0,
+      "elapsedSeconds": 0.376,
+      "result": "{\"fixedPublicForwards\":5,\"samePortsAfterRestart\":true,\"lostAckRecovered\":true,\"bindConflictNoFallback\":true,\"forgedPortOwnershipRejected\":true,\"workersReaped\":3}\n",
+      "diagnostic": ""
+    },
+    {
+      "combined": true,
+      "root": "/home/gitstorefixture/experiments/oidc-core2-network-sanitized-pxm1lllx",
+      "probeSha256": "5e5e95e4ae37f37a046243a39586a7c696bfd5725404664e0e488d8b0851d9e6",
+      "exitCode": 0,
+      "elapsedSeconds": 0.383,
+      "result": "{\"fixedPublicForwards\":5,\"samePortsAfterRestart\":true,\"lostAckRecovered\":true,\"bindConflictNoFallback\":true,\"forgedPortOwnershipRejected\":true,\"workersReaped\":3}\n",
+      "diagnostic": ""
+    }
+  ],
+  "core2SanitizerScope": "Standalone OIDC and core plus OIDC use the same fixed five public ports; native ownership/recovery checks run without service image copies."
+}

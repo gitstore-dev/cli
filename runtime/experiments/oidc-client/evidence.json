@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "scope": "Controlled HTTP and private worker only; OIDC profile remains disabled",
+  "inputs": {
+    "oidcHttpProbe": {
+      "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/oidc_http_probe",
+      "sha256": "e974bc9ea063b043469a293d9f7d4509022b5b6f32b41b8c6d83ffca9639d593"
+    },
+    "postman": {
+      "path": "/home/gitstorefixture/.local/opt/postman-m2/postman-cli",
+      "sha256": "02571047b4a10900c6bcb51414ea3462644edf10dd33e95493e41afda5ef6ab0"
+    }
+  },
+  "uid": 11000,
+  "status": "passed",
+  "cases": [
+    {
+      "action": "ready",
+      "case": "ready",
+      "expectedStatus": 1,
+      "status": 1,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "ready",
+      "case": "unready",
+      "expectedStatus": 0,
+      "status": 0,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "ready",
+      "case": "not-ready-body",
+      "expectedStatus": -1,
+      "status": -1,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "success",
+      "expectedStatus": 2,
+      "status": 2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "inspect",
+      "case": "success",
+      "expectedStatus": 3,
+      "status": 3,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "disconnect",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "delay",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "redirect",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "bad-json",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "oversized",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "wrong-client",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "wrong-secret",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "bad-type",
+      "expectedStatus": -2,
+      "status": -2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "inspect",
+      "case": "disconnect",
+      "expectedStatus": 3,
+      "status": 3,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "wrong-scope",
+      "expectedStatus": 2,
+      "status": 2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "inspect",
+      "case": "wrong-scope",
+      "expectedStatus": -1,
+      "status": -1,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "expose-secret",
+      "expectedStatus": 2,
+      "status": 2,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "inspect",
+      "case": "expose-secret",
+      "expectedStatus": -1,
+      "status": -1,
+      "typedReceiptOnly": true
+    },
+    {
+      "action": "create",
+      "case": "invalid-callback",
+      "expectedStatus": -1,
+      "status": -1,
+      "typedReceiptOnly": true
+    }
+  ],
+  "mutationAttempts": 11,
+  "redirectAndProxyTrapRequests": 0,
+  "savedCollection": {
+    "exitCode": 0,
+    "requests": 3,
+    "assertionBlocks": 3,
+    "target": "controlled Postman mock"
+  },
+  "elapsedSeconds": 4.734,
+  "upstreamRevision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
+  "source": "https://github.com/ory/hydra/blob/ee8c339ddada3a42529c0416897abc32bad03bbb/client/handler.go",
+  "postmanSyntaxLint": "Linux 1.86.0 --issueType syntax --no-report-events: exit 0, No issues found",
+  "limitations": [
+    "No real Hydra/Kratos/native provider graph run",
+    "No durable enrollment coordinator or public OIDC capability",
+    "Cloud governance not run; signed-out CLI",
+    "Mac spec commands still fail credential initialization",
+    "The earlier 2em3roxb stale-probe and weqqm5yo mock-state readiness failures remain preserved"
+  ]
+}

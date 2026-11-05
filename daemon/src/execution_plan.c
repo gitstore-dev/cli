@@ -3,6 +3,8 @@
 #include "gitstored/assets.h"
 #include "gitstored/execution.h"
 #include "namespace_owner.h"
+#include "oidc_execution.h"
+#include "oidc_profile.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +37,10 @@ static int mount_add(json_t *mounts, const char *destination, const char *type, 
 }
 #endif
 json_t *gstd_execution_build(const gstd_execution_inputs *input) {
-    if (!input || !input->component || gstd_asset_manifest_check(input->manifest))
+    if (input && gstd_oidc_component(input->component))
+        return gstd_oidc_execution_build(input);
+    if (!input || !input->component || input->purpose < GSTD_EXEC_SERVICE ||
+        input->purpose > GSTD_EXEC_SCHEMA_HISTORY || gstd_asset_manifest_check(input->manifest))
         return NULL;
 #ifdef __linux__
 #if defined(__aarch64__)
@@ -51,7 +56,18 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
         return NULL;
     const char *component = input->component, *command = NULL;
     unsigned roles = 0;
-    if (!strcmp(component, "api")) {
+    int scylla = !strcmp(component, "scylladb") && input->purpose == GSTD_EXEC_SERVICE;
+    int cql =
+        input->purpose == GSTD_EXEC_SCYLLA_READY || input->purpose == GSTD_EXEC_SCYLLA_KEYSPACE ||
+        input->purpose == GSTD_EXEC_SCHEMA_INSPECT || input->purpose == GSTD_EXEC_SCHEMA_HISTORY;
+    int migration = input->purpose == GSTD_EXEC_SCHEMA_MIGRATE;
+    const char *datastore = json_string_value(json_object_get(input->manifest, "datastore"));
+    if (input->purpose != GSTD_EXEC_SERVICE) {
+        if (!datastore || strcmp(datastore, "scylladb") ||
+            (migration ? strcmp(component, "api") : strcmp(component, "scylladb")))
+            return NULL;
+        command = migration ? "/app/gitctl" : "/usr/bin/cqlsh";
+    } else if (!strcmp(component, "api")) {
         command = "/app/api";
         roles = (1u << GSTD_MOUNT_BASE) | (1u << GSTD_MOUNT_OVERLAY) | (1u << GSTD_MOUNT_POLICY) |
                 (1u << GSTD_MOUNT_USERS);
@@ -62,6 +78,11 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
         command = "/app/controller-manager";
         roles = (1u << GSTD_MOUNT_BASE) | (1u << GSTD_MOUNT_OVERLAY) |
                 (1u << GSTD_MOUNT_SIGNING_RECORD);
+    } else if (scylla) {
+        command = "/usr/bin/scylla";
+        if (!datastore || strcmp(datastore, "scylladb"))
+            return NULL;
+        roles = 1u << GSTD_MOUNT_DATASTORE;
     } else
         return NULL;
     if (input->network) {
@@ -78,18 +99,24 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
             registered = 1;
     }
     char root[4096], sources[GSTD_MOUNT_COUNT][4096];
-    struct stat identities[GSTD_MOUNT_COUNT];
-    if (!registered || descriptor_path(input->rootfs_fd, 1, root))
+    struct stat identities[GSTD_MOUNT_COUNT], root_identity;
+    if (!registered || descriptor_path(input->rootfs_fd, 1, root) ||
+        fstat(input->rootfs_fd, &root_identity))
         return NULL;
     for (unsigned i = 0; i < GSTD_MOUNT_COUNT; i++) {
         if (!(roles & (1u << i))) {
             if (input->role_fds[i] != -1)
                 return NULL;
-        } else if (descriptor_path(input->role_fds[i], i == GSTD_MOUNT_REPOSITORIES, sources[i]))
+        } else if (descriptor_path(input->role_fds[i],
+                                   i == GSTD_MOUNT_REPOSITORIES || i == GSTD_MOUNT_DATASTORE,
+                                   sources[i]))
             return NULL;
         else {
             if (fstat(input->role_fds[i], &identities[i]) ||
-                (i == GSTD_MOUNT_REPOSITORIES && (identities[i].st_mode & 07777) != 0700))
+                ((i == GSTD_MOUNT_REPOSITORIES || i == GSTD_MOUNT_DATASTORE) &&
+                 ((identities[i].st_mode & 07777) != 0700 ||
+                  (identities[i].st_dev == root_identity.st_dev &&
+                   identities[i].st_ino == root_identity.st_ino))))
                 return NULL;
             for (unsigned j = 0; j < i; j++)
                 if ((roles & (1u << j)) && identities[j].st_dev == identities[i].st_dev &&
@@ -108,8 +135,36 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
     }
     json_t *spec = json_object(), *process = json_object(), *linux = json_object(),
            *mounts = json_array(), *caps = json_object(), *namespaces = json_array(),
-           *policy = gstd_execution_policy(),
-           *args = json_pack("[s,s,s]", command, "--config-file", "/etc/gitstore/gitstore.toml");
+           *policy = gstd_execution_policy(), *args = NULL;
+    if (migration)
+        args = json_pack("[s,s,s,s,s,s]", command, "migrate", "--hosts=127.0.0.1:9042",
+                         "--keyspace=gitstore", "--disable-shard-aware-port", "--timeout=60s");
+    else if (cql)
+        args = json_pack("[s,s,s,s,s,s,s,s,s]", command, "127.0.0.1", "9042", "--connect-timeout",
+                         "5", "--request-timeout", "10", "-e",
+                         input->purpose == GSTD_EXEC_SCYLLA_READY
+                             ? "SELECT release_version FROM system.local;"
+                         : input->purpose == GSTD_EXEC_SCHEMA_INSPECT
+                             ? "SELECT JSON keyspace_name FROM system_schema.keyspaces WHERE "
+                               "keyspace_name = 'gitstore'; "
+                               "SELECT JSON table_name FROM system_schema.tables WHERE "
+                               "keyspace_name = 'gitstore' "
+                               "AND table_name = 'gocqlx_migrate';"
+                         : input->purpose == GSTD_EXEC_SCHEMA_HISTORY
+                             ? "SELECT JSON name, checksum, done, end_time FROM "
+                               "gitstore.gocqlx_migrate LIMIT 13;"
+                             : "CREATE KEYSPACE IF NOT EXISTS gitstore WITH replication = "
+                               "{'class': 'NetworkTopologyStrategy', 'replication_factor': '1'} "
+                               "AND durable_writes = true;");
+    else if (scylla)
+        args = json_pack("[s,s,s,s,s,s,s,s,s,s,s,s,s,s]", command, "--developer-mode=1",
+                         "--options-file=/etc/scylla/scylla.yaml", "--overprovisioned", "--smp=1",
+                         "--memory=1536M", "--listen-address=127.0.0.1", "--rpc-address=127.0.0.1",
+                         "--broadcast-address=127.0.0.1", "--broadcast-rpc-address=127.0.0.1",
+                         "--workdir=/var/lib/scylla", "--api-address=127.0.0.1",
+                         "--log-to-stdout=1", "--log-to-syslog=0");
+    else
+        args = json_pack("[s,s,s]", command, "--config-file", "/etc/gitstore/gitstore.toml");
     if (!spec || !process || !linux || !mounts || !caps || !namespaces || !policy || !args)
         goto fail;
     if ((roles & (1u << GSTD_MOUNT_OVERLAY)) &&
@@ -141,12 +196,19 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
                                   "/etc/gitstore/users.yaml",
                                   "/run/gitstore/controller-signing.json",
                                   "/var/lib/gitstore/repositories",
-                                  "/etc/resolv.conf"};
+                                  "/etc/resolv.conf",
+                                  "/var/lib/scylla"};
     for (unsigned i = 0; i < GSTD_MOUNT_COUNT; i++)
         if ((roles & (1u << i)) &&
             mount_add(mounts, destinations[i], "bind", sources[i],
-                      i == GSTD_MOUNT_REPOSITORIES ? "rw" : "ro", i == GSTD_MOUNT_REPOSITORIES))
+                      (i == GSTD_MOUNT_REPOSITORIES || i == GSTD_MOUNT_DATASTORE) ? "rw" : "ro",
+                      i == GSTD_MOUNT_REPOSITORIES || i == GSTD_MOUNT_DATASTORE))
             goto fail;
+    if (scylla &&
+        json_array_append_new(
+            json_object_get(json_array_get(mounts, json_array_size(mounts) - 1), "options"),
+            json_string("noexec")))
+        goto fail;
     if (json_array_append_new(mounts, json_pack("{s:s,s:s,s:s,s:[s,s,s]}", "destination", "/proc",
                                                 "type", "proc", "source", "proc", "options",
                                                 "nosuid", "nodev", "noexec")))
@@ -173,19 +235,19 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
     if (json_object_set_new(process, "terminal", json_false()) ||
         json_object_set_new(process, "user", json_pack("{s:i,s:i}", "uid", 0, "gid", 0)) ||
         json_object_set(process, "args", args) ||
-        json_object_set_new(process, "cwd", json_string("/app")) ||
+        json_object_set_new(process, "cwd", json_string((scylla || cql) ? "/" : "/app")) ||
         json_object_set_new(
             process, "env",
             json_pack("[s,s]", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                       "HOME=/tmp")) ||
         json_object_set_new(process, "noNewPrivileges", json_true()) ||
         json_object_set(process, "capabilities", caps) ||
-        json_object_set_new(process, "rlimits",
-                            json_pack("[{s:s,s:I,s:I},{s:s,s:i,s:i},{s:s,s:i,s:i}]", "type",
-                                      "RLIMIT_AS", "soft", (json_int_t)(UINT64_C(1) << 40), "hard",
-                                      (json_int_t)(UINT64_C(1) << 40), "type", "RLIMIT_CORE",
-                                      "soft", 0, "hard", 0, "type", "RLIMIT_NOFILE", "soft", 1024,
-                                      "hard", 1024)) ||
+        json_object_set_new(
+            process, "rlimits",
+            json_pack("[{s:s,s:I,s:I},{s:s,s:i,s:i},{s:s,s:i,s:i}]", "type", "RLIMIT_AS", "soft",
+                      (json_int_t)(UINT64_C(1) << (scylla ? 46 : 40)), "hard",
+                      (json_int_t)(UINT64_C(1) << (scylla ? 46 : 40)), "type", "RLIMIT_CORE",
+                      "soft", 0, "hard", 0, "type", "RLIMIT_NOFILE", "soft", 1024, "hard", 1024)) ||
         json_object_set(linux, "namespaces", namespaces) ||
         json_object_set(linux, "seccomp", policy) ||
         json_object_set_new(linux, "uidMappings",
@@ -194,10 +256,11 @@ json_t *gstd_execution_build(const gstd_execution_inputs *input) {
         json_object_set_new(linux, "gidMappings",
                             json_pack("[{s:i,s:I,s:i}]", "containerID", 0, "hostID",
                                       (json_int_t)getegid(), "size", 1)) ||
-        json_object_set_new(linux, "resources",
-                            json_pack("{s:{s:I},s:{s:i},s:{s:i,s:i}}", "memory", "limit",
-                                      (json_int_t)536870912, "pids", "limit", 256, "cpu", "quota",
-                                      100000, "period", 100000)) ||
+        json_object_set_new(
+            linux, "resources",
+            json_pack("{s:{s:I},s:{s:i},s:{s:i,s:i}}", "memory", "limit",
+                      (json_int_t)(scylla ? UINT64_C(2147483648) : UINT64_C(536870912)), "pids",
+                      "limit", 256, "cpu", "quota", 100000, "period", 100000)) ||
         json_object_set_new(linux, "maskedPaths",
                             json_pack("[s,s,s,s,s]", "/proc/kcore", "/proc/keys",
                                       "/proc/timer_list", "/proc/sched_debug", "/sys/firmware")) ||

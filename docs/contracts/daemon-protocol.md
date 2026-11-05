@@ -82,7 +82,9 @@ host path, OCI hooks, raw runtime flags, arbitrary mount or privileged mode.
 | stream.unsubscribe | stream.read | subscriptionId | closed bool; already-closed false | unknown connection subscription |
 
 Profile datastores are `memdb` or `scylladb`; components are `api`, `git`, `controller`,
-`oidc`, `admin`, `storefront`. A profile constrains allowed combinations and dependency
+`oidc`, `admin`, `storefront`. Log component selectors additionally accept
+`scylladb` for the profile-owned datastore. It is an implicit datastore dependency,
+not an allowed item in the caller's `components` selection. A profile constrains allowed combinations and dependency
 readiness graph. Server-resolved profile metadata, not caller-supplied paths, controls
 images, volumes, mount policy and entrypoints. `targetVersion` identifies a registered
 migration target, not an arbitrary script. `allowProvision` grants only the plan's verified
@@ -98,7 +100,8 @@ Validate all params and normalize defaults before computing the semantic fingerp
 Operation record: operationId, method, deploymentId when applicable, acceptedAt/updatedAt
 (UTC RFC3339), state accepted/running/succeeded/failed/cancelled, recovery enum
 normal/reconciling/uncertain, result? or error? only at terminal state, targetOperationId?
-for cancellation. Deployment record: deploymentId, profileId/version, desiredState
+for cancellation. A no-op cancellation result includes `cancelled: false`, `noOp: true` and
+`targetState`, preserving the target's existing terminal state. Deployment record: deploymentId, profileId/version, desiredState
 running/stopped, component identities/states, readiness pending/ready/failed, retained
 volume/network identities, writerOwnership held/released/uncertain, lastOperationId?,
 generation, observedGeneration, recovery, observedAt. Redact configuration and backend diagnostics. Readiness belongs
@@ -108,6 +111,13 @@ When real public forwards are verified, inspection additionally exposes
 Never expose private RPC/controller ports or embed credentials. This projection
 is implemented for verified current native core generations; control-only or
 unready generations do not advertise it.
+
+If a current health observation cannot be persisted, the running manager must not
+expose the cached durable `ready` row as live proof. Inspection reports best-known
+`failed` readiness and `uncertain` recovery without endpoints; immutable operation
+inspection remains available. Ready waits remain pending. Listing may fail with
+`OWNERSHIP_UNCERTAIN` until a fresh observation is committed, preserving cursor
+consistency. This guard clears only after successful observation persistence.
 
 ## Idempotency, deadlines, cancellation and recovery
 
@@ -172,10 +182,16 @@ generation. This avoids both cancellation deadlock and stale-ready success.
 | Per-deployment logs | 64 MiB, maximum age 7 days | Evict oldest; expire cursors explicitly. |
 | Global retained logs | 1 GiB | Evict oldest eligible logs; operation metadata retained separately. |
 | Worker / per-deployment mutation | 8 workers / 1 mutation | Queue within cap; reject if full. |
+| Log replay workers | At most 2 of the shared 8 worker slots | Reject with RESOURCE_LIMIT while busy; release only after the private reader is reaped. |
 | Pending worker jobs | 64 | RESOURCE_LIMIT before acceptance if intent cannot be scheduled durably. |
 | Partial-frame / idle connection | 10 seconds / 5 minutes without frames | Close connection; accepted work survives. |
 | Graceful stop / daemon shutdown | 30 seconds each | Record deadline, leave ownership held/uncertain until termination proven. |
 | Operation metadata / retention | 256 MiB or 100,000 records / ≥7 days terminal | Safe eviction only; refuse new mutation if full. |
+
+The current server admits one request at a time per connection and applies
+backpressure while its response or wait is outstanding. Coalesced frames remain
+ordered in the socket; this stays below the maximum of 16 admitted unresolved
+requests and does not reserve additional mutation workers.
 
 Idle timeout is refreshed by valid request/response/event traffic; client can query
 capabilities as keepalive for silent streams. Limits are returned by negotiate/capabilities.

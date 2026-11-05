@@ -2,6 +2,7 @@
 #define GSTD_BOOTSTRAP_HTTP_H
 #include "bootstrap_material.h"
 #include "namespace_owner.h"
+#include "oidc_client.h"
 typedef enum {
     GSTD_BOOT_API_READY,
     GSTD_BOOT_GIT_READY,
@@ -28,4 +29,26 @@ typedef enum {
 gstd_bootstrap_http_status gstd_bootstrap_http(const gstd_bootstrap_http_context *,
                                                gstd_bootstrap_http_action, const gstd_credential *,
                                                char uid[129]);
+typedef enum {
+    GSTD_OIDC_HTTP_READY,
+    GSTD_OIDC_HTTP_CREATE,
+    GSTD_OIDC_HTTP_INSPECT
+} gstd_oidc_http_action;
+typedef enum {
+    GSTD_OIDC_UNCERTAIN = -2,
+    GSTD_OIDC_REJECTED = -1,
+    GSTD_OIDC_PENDING = 0,
+    GSTD_OIDC_PROVIDER_READY = 1,
+    GSTD_OIDC_CLIENT_CREATED = 2,
+    GSTD_OIDC_PUBLIC_MATCH = 3
+} gstd_oidc_http_status;
+/* T050 private worker building block, not an enabled optional profile. Fixed
+ * Hydra admin loopback endpoint inside the owned namespace, no proxy/redirect.
+ * Parent must journal dispatch before CREATE; one attempt, no automatic retry.
+ * Only a matching 201 acknowledges CREATE; any other dispatched result remains
+ * uncertain. INSPECT only matches public fields and is never proof of secret
+ * ownership after a lost CREATE reply. No raw response or secret enters IPC. */
+gstd_oidc_http_status gstd_oidc_http(const gstd_bootstrap_http_context *, gstd_oidc_http_action,
+                                     const gstd_oidc_client *,
+                                     const gstd_credential *creation_secret);
 #endif

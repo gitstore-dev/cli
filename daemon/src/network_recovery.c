@@ -127,7 +127,7 @@ static int observations(const json_t *proof, const gstd_network_worker *worker,
                                         "networkDevice", "networkInode", "apiPort",    "gitPort",
                                         "apiInode",      "gitInode"};
     uint64_t numbers[10];
-    if (!json_is_object(proof) || json_object_size(proof) != 12)
+    if (!json_is_object(proof) || json_object_size(proof) != ((worker->roles & 124) ? 13 : 12))
         return -1;
     for (size_t i = 0; i < 10; i++)
         if (integer(proof, names[i],
@@ -161,6 +161,32 @@ static int observations(const json_t *proof, const gstd_network_worker *worker,
                    : !output->git_port && output->git_descriptor == -1 && !output->git_inode) ||
         (have_api && have_git && output->api_port == output->git_port))
         return -1;
+    if (worker->roles & 124) {
+        const json_t *listeners = json_object_get(proof, "oidcListeners");
+        if (!json_is_array(listeners) || json_array_size(listeners) != 5)
+            return -1;
+        const uint16_t ports[] = {worker->oidc_ports.issuer, worker->oidc_ports.bridge,
+                                  worker->oidc_ports.identity, worker->oidc_ports.ui,
+                                  worker->oidc_ports.mail};
+        for (size_t i = 0; i < 5; i++) {
+            const json_t *item = json_array_get(listeners, i);
+            uint64_t port, descriptor, inode;
+            if (!json_is_object(item) || json_object_size(item) != 3 ||
+                integer(item, "port", UINT16_MAX, &port) || port != ports[i] ||
+                integer(item, "descriptor", 1023, &descriptor) || descriptor < 3 ||
+                integer(item, "inode", INT64_MAX, &inode) || !inode || port == output->api_port ||
+                port == output->git_port ||
+                !listener(worker->pid, (int)descriptor, inode, (uint16_t)port))
+                return -1;
+            output->oidc_descriptors[i] = (int)descriptor;
+            output->oidc_inodes[i] = inode;
+            for (size_t j = 0; j < i; j++)
+                if (output->oidc_descriptors[j] == (int)descriptor ||
+                    output->oidc_inodes[j] == inode)
+                    return -1;
+        }
+        output->oidc_ports = worker->oidc_ports;
+    }
     output->pid = worker->pid;
     output->start = worker->start;
     gstd_network_namespace *network = &output->network;
@@ -183,7 +209,7 @@ int gstd_network_worker_reopen(const gstd_network_worker_request *request, const
     if (!request || !output || !observation || output->pid || output->pid_fd != -1 ||
         output->scope_fd != -1 || output->channel != -1 || observation->network.user_fd != -1 ||
         observation->network.network_fd != -1 || !json_is_object(expected) ||
-        json_object_size(expected) != 11 || gstd_asset_manifest_check(request->manifest))
+        gstd_asset_manifest_check(request->manifest))
         return -1;
     gstd_network_worker worker = GSTD_NETWORK_WORKER_INITIAL;
     gstd_network_worker_observation actual = GSTD_NETWORK_OBSERVATION_INITIAL;
@@ -192,14 +218,20 @@ int gstd_network_worker_reopen(const gstd_network_worker_request *request, const
     uint64_t version, pid, roles;
     json_t *owner = NULL, *ready = NULL;
     unsigned required = 0;
-    json_t *images = json_object_get(request->manifest, "images");
-    for (size_t i = 0; i < json_array_size(images); i++) {
-        const char *name =
-            json_string_value(json_object_get(json_array_get(images, i), "component"));
-        if (!strcmp(name, "api"))
-            required |= 1;
-        if (!strcmp(name, "git"))
-            required |= 2;
+    if (gstd_network_request_roles(request, &required) ||
+        json_object_size(expected) != ((required & 124) ? 12 : 11))
+        goto fail;
+    if (required & 124) {
+        if (gstd_network_oidc_ports_parse(json_object_get(expected, "oidcPorts"),
+                                          &worker.oidc_ports))
+            goto fail;
+        json_t *wanted = gstd_network_oidc_ports_json(request->oidc_ports),
+               *recorded = gstd_network_oidc_ports_json(&worker.oidc_ports);
+        int same = wanted && recorded && json_equal(wanted, recorded);
+        json_decref(wanted);
+        json_decref(recorded);
+        if (!same)
+            goto fail;
     }
     if (!request->store_id || !request->resource_id || !request->operation_id ||
         gstd_native_boot_id(boot) || !string(expected, "bootId", boot) ||
@@ -211,7 +243,7 @@ int gstd_network_worker_reopen(const gstd_network_worker_request *request, const
         integer(expected, "schemaVersion", 1, &version) || version != 1 ||
         integer(expected, "pid", INT_MAX, &pid) || !pid ||
         integer(expected, "startTime", INT64_MAX, &worker.start) || !worker.start ||
-        integer(expected, "roles", 3, &roles) || roles != required ||
+        integer(expected, "roles", 127, &roles) || roles != required ||
         decimal(expected, "scopeDevice", &worker.scope_device) ||
         decimal(expected, "scopeInode", &worker.scope_inode) || !worker.scope_inode ||
         request->scope_fd < 3 || fstat(request->scope_fd, &scope) || !S_ISDIR(scope.st_mode) ||
@@ -233,7 +265,7 @@ int gstd_network_worker_reopen(const gstd_network_worker_request *request, const
     owner = record(request->scope_fd, "owner.json");
     ready = record(request->scope_fd, "ready.json");
     if (!owner || !ready || !json_equal(owner, expected) || !json_is_object(ready) ||
-        json_object_size(ready) != 12)
+        json_object_size(ready) != ((required & 124) ? 13 : 12))
         goto fail;
     json_t *proof = json_object_get(ready, "observed");
     if (!proof || observations(proof, &worker, &actual))

@@ -123,16 +123,25 @@ pub fn preflight(cli: &Cli) -> Result<()> {
                     identifier(key)?;
                 }
             }
-            DeploymentCommand::Logs { id, .. } => {
+            DeploymentCommand::Logs { id, cursor, .. } => {
                 identifier(id)?;
                 if cli.output.is_some() && cli.output != Some(Format::Json) {
                     return Err(Error::usage("Logs accept text by default or JSON output"));
+                }
+                if cursor
+                    .as_ref()
+                    .is_some_and(|v| v.is_empty() || v.len() > 64)
+                {
+                    return Err(Error::usage("Log cursors must contain 1 through 64 bytes"));
                 }
             }
             DeploymentCommand::List { .. } => {}
         },
         Command::Migrate(a) => {
             identifier(&a.target)?;
+            if !a.backup_acknowledged {
+                return Err(Error::usage("Migration requires --backup-acknowledged"));
+            }
             if let Some(key) = &a.idempotency_key {
                 identifier(key)?;
             }
@@ -173,13 +182,13 @@ pub fn preflight(cli: &Cli) -> Result<()> {
 fn optional_prerequisite(component: &str) -> Error {
     Error::unsupported(match component {
         "oidc" => {
-            "OIDC requires a verified native provider graph: the reference SMTP image has no linux/arm64 payload; amd64 provider lifecycle, private client enrollment and readiness remain unverified"
+            "OIDC serving is not enabled yet: managed deployment lifecycle, API issuer integration and recovery are still incomplete"
         }
         "admin" => {
-            "Admin requires a published image and verified configuration, enrollment and readiness mapping at the selected GitStore revision"
+            "Admin UI serving requires a published image with verified authentication, startup configuration and readiness"
         }
         "storefront" => {
-            "Storefront requires a published image and verified configuration, enrollment and readiness mapping at the selected GitStore revision"
+            "Storefront serving requires a verified reference runtime, publication reads and trusted target selection"
         }
         _ => "Selected component has no registered startup mapping",
     })
@@ -228,12 +237,17 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
         Some(validation_params(cli)?)
     } else if required == "deployment.start" {
         Some(start_params(cli)?)
+    } else if required == "migration.start" {
+        Some(migration_params(cli)?)
     } else {
         None
     };
     let mut capabilities = vec![required];
     if required == "deployment.start" || required == "deployment.stop" {
         capabilities.extend(["deployment.validate", "operation.read", "deployment.read"]);
+    }
+    if matches!(&cli.command, Command::Migrate(args) if !args.detach) {
+        capabilities.push("operation.read");
     }
     if required == "deployment.start" && serve_args(&cli.command).is_some_and(|args| !args.detach) {
         capabilities.push("operation.cancel");
@@ -330,6 +344,19 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
                 }
                 return output::emit(&deployment, cli.format());
             }
+            DeploymentCommand::Logs {
+                id,
+                component,
+                cursor,
+            } => {
+                return observe_logs(
+                    cli,
+                    &mut client,
+                    id,
+                    component.as_deref(),
+                    cursor.as_deref(),
+                );
+            }
             DeploymentCommand::Stop {
                 id,
                 idempotency_key,
@@ -367,11 +394,50 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
                 output::emit(&record, cli.format())?;
                 return terminal_success(&record, id, &key);
             }
-            _ => {}
         }
     }
     if required == "deployment.start" {
         return start(cli, &mut client, params.expect("start parameters prepared"));
+    }
+    if let Command::Migrate(args) = &cli.command {
+        let params = params.expect("migration parameters prepared");
+        let id = params["deploymentId"]
+            .as_str()
+            .expect("deployment selected");
+        let key = mutation_key(args.idempotency_key.as_deref())?;
+        eprintln!("Deployment {id}; idempotency key {key}");
+        let mut accepted = client
+            .call("migration.start", params.clone(), Some(&key), cli.timeout())
+            .map_err(|error| mutation_error(&error, id, &key))?;
+        accepted["idempotencyKey"] = json!(key);
+        if args.detach {
+            return output::emit(&accepted, cli.format());
+        }
+        let operation = accepted["operationId"].as_str().ok_or_else(|| {
+            Error::new(
+                1,
+                "LOCAL_FAILURE",
+                "Manager omitted accepted migration identity",
+            )
+        })?;
+        eprintln!("Migration operation {operation}");
+        let record = client
+            .call(
+                "operation.wait",
+                json!({"operationId":operation,"until":"terminal"}),
+                None,
+                cli.timeout(),
+            )
+            .map_err(|error| {
+                let mut failure = observe_error(&error, Some(operation), id);
+                failure
+                    .local_identity
+                    .get_or_insert_with(Default::default)
+                    .idempotency_key = Some(key.clone());
+                failure
+            })?;
+        output::emit(&record, cli.format())?;
+        return terminal_success(&record, id, &key);
     }
     if let Some(params) = params {
         let result = client
@@ -647,10 +713,8 @@ fn start_params(cli: &Cli) -> Result<Value> {
     for value in [id.as_str(), profile, version] {
         identifier(value)?;
     }
-    if datastore != "memdb" {
-        return Err(Error::unsupported(
-            "Selected datastore image and migration graph are unavailable",
-        ));
+    if !matches!(datastore, "memdb" | "scylladb") {
+        return Err(Error::usage("Local datastore must be memdb or scylladb"));
     }
     let mut params = json!({"deploymentId":id,"profileId":profile,"profileVersion":version,"datastore":datastore});
     let name = match cli.command {
@@ -663,6 +727,45 @@ fn start_params(cli: &Cli) -> Result<Value> {
         params["components"] = json!([name]);
     }
     Ok(params)
+}
+fn migration_params(cli: &Cli) -> Result<Value> {
+    let Command::Migrate(args) = &cli.command else {
+        return Err(Error::usage("Migration selection missing"));
+    };
+    let fallback = defaults()?;
+    let id = args
+        .selection
+        .deployment
+        .as_ref()
+        .or(fallback.deployment.as_ref())
+        .ok_or_else(|| {
+            Error::usage("Select --deployment or configure an explicit local deployment")
+        })?;
+    identifier(id)?;
+    // The existing daemon deployment owns profile/datastore identity. Optional
+    // local selections cannot silently redirect a migration to another graph.
+    for (selected, default, expected) in [
+        (&args.selection.profile, &fallback.profile, "core"),
+        (
+            &args.selection.profile_version,
+            &fallback.profile_version,
+            "1",
+        ),
+        (&args.selection.datastore, &fallback.datastore, "scylladb"),
+    ] {
+        if selected
+            .as_ref()
+            .or(default.as_ref())
+            .is_some_and(|value| value != expected)
+        {
+            return Err(Error::usage(
+                "Migration requires the core/1 Scylla deployment profile",
+            ));
+        }
+    }
+    Ok(
+        json!({"deploymentId":id,"targetVersion":args.target,"backupAcknowledged":args.backup_acknowledged}),
+    )
 }
 fn mutation_key(explicit: Option<&str>) -> Result<String> {
     use std::io::Read;
@@ -701,6 +804,8 @@ fn terminal_success(record: &Value, deployment: &str, key: &str) -> Result<()> {
     let code = match record["error"]["code"].as_str() {
         Some("OWNERSHIP_UNCERTAIN") => "OWNERSHIP_UNCERTAIN",
         Some("UNSAFE_CANCELLATION") => "UNSAFE_CANCELLATION",
+        Some("MIGRATION_PRECONDITION") => "MIGRATION_PRECONDITION",
+        Some("MIGRATION_CONFLICT") => "MIGRATION_CONFLICT",
         Some("PROVISIONING_REQUIRED") => "PROVISIONING_REQUIRED",
         _ => "OPERATION_FAILED",
     };
@@ -823,6 +928,158 @@ fn start(cli: &Cli, client: &mut Client, mut params: Value) -> Result<()> {
     output::emit(&accepted, cli.format())
 }
 
+fn subscribe_logs(
+    cli: &Cli,
+    client: &mut Client,
+    id: &str,
+    component: Option<&str>,
+    cursor: Option<&str>,
+) -> Result<String> {
+    let mut params = json!({"deploymentId":id,"kind":"logs"});
+    if let Some(component) = component {
+        params["component"] = json!(component);
+    }
+    if let Some(cursor) = cursor {
+        params["cursor"] = json!(cursor);
+    }
+    let result = client
+        .observe_interruptible(
+            "stream.subscribe",
+            params,
+            cli.timeout(),
+            &FOREGROUND_INTERRUPTED,
+        )
+        .map_err(|e| local_error(&e))?;
+    result["subscriptionId"]
+        .as_str()
+        .map(str::to_owned)
+        .ok_or_else(|| {
+            Error::new(
+                2,
+                "INVALID_ARGUMENT",
+                "Manager omitted subscription identity",
+            )
+        })
+}
+fn unsubscribe_logs(cli: &Cli, client: &mut Client, subscription: &str) {
+    // Dropping this connection is also observation-only if acknowledgment fails.
+    let _ = client.call(
+        "stream.unsubscribe",
+        json!({"subscriptionId":subscription}),
+        None,
+        cli.timeout().min(Duration::from_secs(2)),
+    );
+}
+fn emit_log(event: &Value, fd: libc::c_int, json_output: bool) -> Result<bool> {
+    let text = if json_output {
+        serde_json::to_string(event)
+            .map_err(|_| Error::new(1, "OUTPUT", "Cannot encode log event"))?
+    } else if event["type"] == "gap" {
+        format!(
+            "Log observation ended: {}",
+            event["payload"]["code"].as_str().unwrap_or("INTERNAL")
+        )
+    } else {
+        event["payload"]["text"]
+            .as_str()
+            .ok_or_else(|| Error::new(2, "INVALID_ARGUMENT", "Invalid log text payload"))?
+            .to_owned()
+    } + "\n";
+    let mut remaining = text.as_bytes();
+    while !remaining.is_empty() {
+        if FOREGROUND_INTERRUPTED.load(std::sync::atomic::Ordering::Relaxed) {
+            return Ok(false);
+        }
+        let mut poll = libc::pollfd {
+            fd,
+            events: libc::POLLOUT,
+            revents: 0,
+        };
+        let ready = unsafe { libc::poll(&mut poll, 1, 100) };
+        if ready < 0 {
+            if std::io::Error::last_os_error().kind() == std::io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(Error::new(1, "OUTPUT", "Cannot poll log output"));
+        }
+        if ready == 0 {
+            continue;
+        }
+        // Small pipe writes after POLLOUT preserve interruption responsiveness
+        // without changing the inherited descriptor's blocking mode.
+        let count = remaining.len().min(512);
+        let written = unsafe { libc::write(fd, remaining.as_ptr().cast(), count) };
+        if written < 0 {
+            if matches!(
+                std::io::Error::last_os_error().kind(),
+                std::io::ErrorKind::Interrupted | std::io::ErrorKind::WouldBlock
+            ) {
+                continue;
+            }
+            return Err(Error::new(1, "OUTPUT", "Cannot write log output"));
+        }
+        if written == 0 {
+            return Err(Error::new(1, "OUTPUT", "Cannot write log output"));
+        }
+        remaining = &remaining[written as usize..];
+    }
+    Ok(true)
+}
+fn observe_logs(
+    cli: &Cli,
+    client: &mut Client,
+    id: &str,
+    component: Option<&str>,
+    cursor: Option<&str>,
+) -> Result<()> {
+    let _signals = ForegroundSignals::install()?;
+    let subscription = match subscribe_logs(cli, client, id, component, cursor) {
+        Ok(subscription) => subscription,
+        Err(_) if FOREGROUND_INTERRUPTED.load(std::sync::atomic::Ordering::Relaxed) => {
+            return Ok(());
+        }
+        Err(error) => return Err(error),
+    };
+    loop {
+        if FOREGROUND_INTERRUPTED.load(std::sync::atomic::Ordering::Relaxed) {
+            unsubscribe_logs(cli, client, &subscription);
+            return Ok(());
+        }
+        let Some(event) = client
+            .poll_event(Duration::from_millis(100))
+            .map_err(|e| local_error(&e))?
+        else {
+            continue;
+        };
+        if event["subscriptionId"] != subscription {
+            return Err(Error::new(
+                2,
+                "INVALID_ARGUMENT",
+                "Foreign log subscription event",
+            ));
+        }
+        let written = emit_log(
+            &event,
+            libc::STDOUT_FILENO,
+            cli.output == Some(Format::Json),
+        )?;
+        if !written {
+            continue;
+        }
+        if event["type"] == "gap" {
+            let code = match event["payload"]["code"].as_str() {
+                Some("CURSOR_EXPIRED") => "CURSOR_EXPIRED",
+                Some("STREAM_OVERFLOW") => "STREAM_OVERFLOW",
+                _ => "INTERNAL",
+            };
+            return Err(Error::new(
+                8,
+                code,
+                "Log observation ended; workload state is unchanged",
+            ));
+        }
+    }
+}
 static FOREGROUND_INTERRUPTED: std::sync::atomic::AtomicBool =
     std::sync::atomic::AtomicBool::new(false);
 extern "C" fn foreground_signal(_: libc::c_int) {
@@ -933,10 +1190,50 @@ fn foreground_start(
         )
     })?;
     eprintln!("Operation {operation} accepted; waiting for current-generation readiness");
+    let mut log_subscription = if client.supports("stream.read") {
+        match subscribe_logs(cli, client, id, None, None) {
+            Ok(subscription) => Some(subscription),
+            Err(error) => {
+                eprintln!("Log observation unavailable: {}", error.message);
+                None
+            }
+        }
+    } else {
+        None
+    };
     let mut emitted = false;
     let mut progress = String::new();
     let mut progress_count = 0;
     loop {
+        if let Some(subscription) = log_subscription.clone() {
+            for _ in 0..32 {
+                match client.poll_event(Duration::from_millis(1)) {
+                    Ok(Some(event)) => {
+                        if event["subscriptionId"] != subscription {
+                            return Err(Error::new(
+                                2,
+                                "INVALID_ARGUMENT",
+                                "Foreign foreground log subscription",
+                            ));
+                        }
+                        let written = emit_log(
+                            &event,
+                            libc::STDERR_FILENO,
+                            cli.output == Some(Format::Json),
+                        )?;
+                        if !written {
+                            break;
+                        }
+                        if event["type"] == "gap" {
+                            log_subscription = None;
+                            break;
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(error) => return Err(local_error(&error)),
+                }
+            }
+        }
         let record = client
             .call(
                 "operation.inspect",

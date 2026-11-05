@@ -51,6 +51,33 @@ gstd_volume_status gstd_volume_observe_open(int root_fd, const gstd_volume_root 
                                             const char *volume_id,
                                             const char *producer_operation_id,
                                             const gstd_volume_identity *, gstd_volume_handle *);
+/* Private persistent-profile filesystem primitives. These require a separately
+ * committed datastore-volume reservation and immutable producer/receipt; they do
+ * not enable a profile or grant native execution. The fixed Scylla disk/schema
+ * marker is distinct from repository markers. Inherited writer, moved-root and
+ * inode checks are identical; unknown format upgrades are rejected, not adopted.
+ * The persistent datastore ledger/bootstrap integration remains separately gated. */
+gstd_volume_status gstd_scylla_volume_acquire(int, const gstd_volume_root *, const char *,
+                                              const char *, int, const gstd_volume_identity *,
+                                              gstd_volume_handle *);
+gstd_volume_status gstd_scylla_volume_observe_open(int, const gstd_volume_root *, const char *,
+                                                   const char *, const gstd_volume_identity *,
+                                                   gstd_volume_handle *);
+/* Private provider-volume roles for the immutable reference OIDC mapping.
+ * Each marker pins its provider image/schema family; neither provider may open
+ * repository, Scylla or the other provider's data. Callers still require a
+ * separately committed reservation and durable writer/producer ownership.
+ * These primitives alone do not activate the public optional profile. */
+typedef enum { GSTD_OIDC_VOLUME_HYDRA, GSTD_OIDC_VOLUME_KRATOS } gstd_oidc_volume_role;
+/* Fixed internal compatibility identity; NULL for an unknown role. */
+const char *gstd_oidc_volume_compatibility(gstd_oidc_volume_role);
+gstd_volume_status gstd_oidc_volume_acquire(int, const gstd_volume_root *, gstd_oidc_volume_role,
+                                            const char *, const char *, int,
+                                            const gstd_volume_identity *, gstd_volume_handle *);
+gstd_volume_status gstd_oidc_volume_observe_open(int, const gstd_volume_root *,
+                                                 gstd_oidc_volume_role, const char *, const char *,
+                                                 const gstd_volume_identity *,
+                                                 gstd_volume_handle *);
 /* Closes this process's handles only. Never deletes data or releases a DB owner. */
 void gstd_volume_handle_close(gstd_volume_handle *);
 #endif

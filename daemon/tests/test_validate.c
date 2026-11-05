@@ -95,7 +95,8 @@ int main(void) {
     CHECK(!gstd_config_merge("api", layers));
     CHECK(!json_object_set_new(params, "datastore", json_string("scylladb")));
     answer = gstd_validate(params);
-    CHECK(answer && diagnostic(answer, "DATASTORE_PROFILE_UNAVAILABLE"));
+    CHECK(answer && !diagnostic(answer, "DATASTORE_PROFILE_UNAVAILABLE"));
+    CHECK(json_array_size(json_object_get(answer, "requiredAssets")) == 3);
     json_t *configuration =
         json_object_get(json_object_get(answer, "effectivePlan"), "configuration");
     CHECK(!strcmp(

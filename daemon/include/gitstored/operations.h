@@ -11,7 +11,10 @@ typedef enum {
     GSTD_ACCEPT_LIMIT,
     GSTD_ACCEPT_DEPLOYMENT_CONFLICT,
     GSTD_ACCEPT_NOT_FOUND,
-    GSTD_ACCEPT_OWNERSHIP_UNCERTAIN
+    GSTD_ACCEPT_OWNERSHIP_UNCERTAIN,
+    GSTD_ACCEPT_MIGRATION_PRECONDITION,
+    GSTD_ACCEPT_MIGRATION_CONFLICT,
+    GSTD_ACCEPT_UNSUPPORTED_DATASTORE
 } gstd_accept_status;
 int gstd_fingerprint(const json_t *intent, char output[65]);
 /* Resolved registered profile defaults are supplied by trusted profile validation.

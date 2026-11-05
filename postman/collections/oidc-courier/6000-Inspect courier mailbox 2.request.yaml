@@ -1,0 +1,28 @@
+$kind: http-request
+name: Inspect courier mailbox 2
+order: 6000
+method: GET
+url: '{{mailboxUrl}}/api/v1/messages'
+headers:
+- key: Accept
+  value: application/json
+settings:
+  followRedirects: false
+scripts:
+- type: beforeRequest
+  language: text/javascript
+  code: if(pm.variables.get("verificationAccepted")!=="true") throw new Error("Verification acknowledgement
+    required");
+- type: afterResponse
+  language: text/javascript
+  code: 'try {
+
+    pm.response.to.have.status(200); const b=pm.response.json(); if(!Array.isArray(b.messages)) throw
+    new Error();
+
+    const delivered=b.messages.some(m=>Array.isArray(m.To) && m.To.some(a=>a.Address===pm.variables.get("fixtureEmail")));
+
+    if(delivered) pm.collectionVariables.set("courierDelivered","true");
+
+    } catch (_) { pm.execution.setNextRequest(null); throw new Error("Disposable courier fixture assertion
+    failed"); }'

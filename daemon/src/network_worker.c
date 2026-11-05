@@ -4,15 +4,66 @@
 #include "gitstored/protocol.h"
 #include "native_exit.h"
 #include "network_sandbox.h"
+#include "oidc_profile.h"
 #include <stdio.h>
 #include <string.h>
+json_t *gstd_network_oidc_ports_json(const gstd_oidc_ports *ports) {
+    return ports && !gstd_oidc_ports_check(ports)
+               ? json_pack("[i,i,i,i,i]", (int)ports->issuer, (int)ports->bridge,
+                           (int)ports->identity, (int)ports->ui, (int)ports->mail)
+               : NULL;
+}
+int gstd_network_oidc_ports_parse(const json_t *value, gstd_oidc_ports *output) {
+    if (!output || !json_is_array(value) || json_array_size(value) != 5)
+        return -1;
+    uint16_t ports[5];
+    for (size_t i = 0; i < 5; i++) {
+        const json_t *port = json_array_get(value, i);
+        if (!json_is_integer(port) || json_integer_value(port) < 1024 ||
+            json_integer_value(port) > UINT16_MAX)
+            return -1;
+        ports[i] = (uint16_t)json_integer_value(port);
+    }
+    gstd_oidc_ports selected = {ports[0], ports[1], ports[2], ports[3], ports[4]};
+    if (gstd_oidc_ports_check(&selected))
+        return -1;
+    *output = selected;
+    return 0;
+}
+int gstd_network_request_roles(const gstd_network_worker_request *request, unsigned *roles) {
+    if (!request || !roles || gstd_asset_manifest_check(request->manifest))
+        return -1;
+    unsigned selected = 0, oidc = 0;
+    json_t *images = json_object_get(request->manifest, "images");
+    for (size_t i = 0; i < json_array_size(images); i++) {
+        const char *name =
+            json_string_value(json_object_get(json_array_get(images, i), "component"));
+        if (!name)
+            return -1;
+        if (!strcmp(name, "api"))
+            selected |= 1;
+        if (!strcmp(name, "git"))
+            selected |= 2;
+        if (gstd_oidc_component(name))
+            oidc++;
+    }
+    if (oidc) {
+        if (oidc != 5 || !request->oidc_ports || gstd_oidc_ports_check(request->oidc_ports))
+            return -1;
+        selected |= 124;
+    } else if (request->oidc_ports)
+        return -1;
+    *roles = selected;
+    return 0;
+}
 json_t *gstd_network_worker_identity(const gstd_network_worker *owner) {
     if (!owner || owner->pid <= 0 || !owner->start || owner->start > INT64_MAX ||
         !owner->scope_inode || strnlen(owner->store_id, 33) != 32 ||
         strnlen(owner->boot_id, 37) != 36 ||
         !gstd_identifier(owner->resource_id, strnlen(owner->resource_id, 65)) ||
         !gstd_identifier(owner->operation_id, strnlen(owner->operation_id, 65)) ||
-        strnlen(owner->profile_digest, 72) != 71 || owner->roles > 3)
+        strnlen(owner->profile_digest, 72) != 71 || owner->roles > 127 ||
+        (owner->roles > 3 && (owner->roles & 124) != 124))
         return NULL;
     json_t *value = json_pack("{s:i,s:s,s:s,s:s,s:s,s:i,s:I,s:s,s:s}", "schemaVersion", 1,
                               "storeId", owner->store_id, "resourceId", owner->resource_id,
@@ -25,6 +76,13 @@ json_t *gstd_network_worker_identity(const gstd_network_worker *owner) {
         json_object_set_new(value, "roles", json_integer(owner->roles))) {
         json_decref(value);
         return NULL;
+    }
+    if (owner->roles & 124) {
+        json_t *ports = gstd_network_oidc_ports_json(&owner->oidc_ports);
+        if (!ports || json_object_set_new(value, "oidcPorts", ports)) {
+            json_decref(value);
+            return NULL;
+        }
     }
     char device[32], inode[32];
     snprintf(device, sizeof(device), "%llu", (unsigned long long)owner->scope_device);
@@ -63,6 +121,9 @@ typedef struct {
     uint16_t api_port, git_port;
     int api_descriptor, git_descriptor;
     uint64_t api_inode, git_inode;
+    gstd_oidc_ports oidc_ports;
+    int oidc_descriptors[5];
+    uint64_t oidc_inodes[5];
 } ready_report;
 static volatile sig_atomic_t stopping;
 static void stop(int number) {
@@ -173,6 +234,24 @@ static int record(int directory, const char *name, const gstd_network_worker *ow
             (int)proof->git_port, "apiDescriptor", proof->api_descriptor, "gitDescriptor",
             proof->git_descriptor, "apiInode", (json_int_t)proof->api_inode, "gitInode",
             (json_int_t)proof->git_inode);
+        if (actual && (owner->roles & 124)) {
+            const uint16_t ports[] = {proof->oidc_ports.issuer, proof->oidc_ports.bridge,
+                                      proof->oidc_ports.identity, proof->oidc_ports.ui,
+                                      proof->oidc_ports.mail};
+            json_t *listeners = json_array();
+            for (size_t i = 0; listeners && i < 5; i++) {
+                json_t *listener = json_pack("{s:i,s:i,s:I}", "port", (int)ports[i], "descriptor",
+                                             proof->oidc_descriptors[i], "inode",
+                                             (json_int_t)proof->oidc_inodes[i]);
+                if (!listener || json_array_append_new(listeners, listener)) {
+                    json_decref(listeners);
+                    listeners = NULL;
+                    break;
+                }
+            }
+            if (!listeners || json_object_set_new(actual, "oidcListeners", listeners))
+                failed = 1;
+        }
         if (!actual || json_object_set_new(value, "observed", actual))
             failed = 1;
     }
@@ -256,6 +335,8 @@ static void run(const gstd_network_worker *expected, int channel, int scope, int
                           .start = owner.start,
                           .api_descriptor = -1,
                           .git_descriptor = -1};
+    for (size_t i = 0; i < 5; i++)
+        reply.oidc_descriptors[i] = -1;
     gstd_network_namespace network = GSTD_NETWORK_NAMESPACE_INITIAL;
     gstd_network_engine *engine = NULL;
     memcpy(reply.boot_id, owner.boot_id, 37);
@@ -274,6 +355,21 @@ static void run(const gstd_network_worker *expected, int channel, int scope, int
     if (write_bytes(4, "resolver.conf", resolver, sizeof(resolver) - 1) || stopping ||
         gstd_network_open(network.tap_fd, &engine) != GSTD_NETWORK_OK)
         goto done;
+    if (roles & 124) {
+        const uint16_t ports[] = {owner.oidc_ports.issuer, owner.oidc_ports.bridge,
+                                  owner.oidc_ports.identity, owner.oidc_ports.ui,
+                                  owner.oidc_ports.mail};
+        for (size_t i = 0; i < 5; i++) {
+            uint16_t actual = 0;
+            gstd_forward_role role = (gstd_forward_role)(GSTD_FORWARD_OIDC_ISSUER + i);
+            if (gstd_network_forward_bound(engine, role, ports[i], &actual) != GSTD_NETWORK_OK ||
+                actual != ports[i] ||
+                gstd_network_listener(engine, role, &reply.oidc_descriptors[i],
+                                      &reply.oidc_inodes[i]))
+                goto done;
+        }
+        reply.oidc_ports = owner.oidc_ports;
+    }
     if ((roles & 1) &&
         gstd_network_forward(engine, GSTD_FORWARD_API, &reply.api_port) != GSTD_NETWORK_OK)
         goto done;
@@ -343,15 +439,8 @@ gstd_network_status gstd_network_worker_prepare(const gstd_network_worker_reques
         gstd_native_boot_id(boot))
         return GSTD_NETWORK_HOST_UNMET;
     unsigned roles = 0;
-    json_t *images = json_object_get(request->manifest, "images");
-    for (size_t i = 0; i < json_array_size(images); i++) {
-        const char *name =
-            json_string_value(json_object_get(json_array_get(images, i), "component"));
-        if (!strcmp(name, "api"))
-            roles |= 1;
-        if (!strcmp(name, "git"))
-            roles |= 2;
-    }
+    if (gstd_network_request_roles(request, &roles))
+        return GSTD_NETWORK_INVALID;
     int lock = openat(request->scope_fd, "worker.lock",
                       O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK, 0600);
     if (lock < 0)
@@ -371,6 +460,8 @@ gstd_network_status gstd_network_worker_prepare(const gstd_network_worker_reques
     }
     *output = (gstd_network_worker)GSTD_NETWORK_WORKER_INITIAL;
     output->roles = roles;
+    if (roles & 124)
+        output->oidc_ports = *request->oidc_ports;
     memcpy(output->boot_id, boot, 37);
     output->scope_fd = held_scope;
     output->scope_device = (uint64_t)scope.st_dev;
@@ -482,6 +573,28 @@ int gstd_network_worker_ready(gstd_network_worker *worker,
                 (git ? reply.git_port >= 1024 && reply.git_descriptor >= 3 && reply.git_inode
                      : !reply.git_port && reply.git_descriptor == -1 && !reply.git_inode) &&
                 (!api || !git || reply.api_port != reply.git_port);
+        const uint16_t ports[] = {reply.oidc_ports.issuer, reply.oidc_ports.bridge,
+                                  reply.oidc_ports.identity, reply.oidc_ports.ui,
+                                  reply.oidc_ports.mail};
+        if (worker->roles & 124) {
+            json_t *expected = gstd_network_oidc_ports_json(&worker->oidc_ports),
+                   *actual = gstd_network_oidc_ports_json(&reply.oidc_ports);
+            valid = valid && expected && actual && json_equal(expected, actual);
+            json_decref(expected);
+            json_decref(actual);
+        }
+        for (size_t i = 0; i < 5; i++) {
+            if (worker->roles & 124) {
+                valid = valid && reply.oidc_descriptors[i] >= 3 &&
+                        reply.oidc_descriptors[i] < 1024 && reply.oidc_inodes[i] &&
+                        ports[i] != reply.api_port && ports[i] != reply.git_port;
+                for (size_t j = 0; j < i; j++)
+                    valid = valid && reply.oidc_descriptors[i] != reply.oidc_descriptors[j] &&
+                            reply.oidc_inodes[i] != reply.oidc_inodes[j];
+            } else
+                valid =
+                    valid && !ports[i] && reply.oidc_descriptors[i] == -1 && !reply.oidc_inodes[i];
+        }
         struct pollfd exited = {worker->pid_fd, POLLIN, 0};
         if (poll(&exited, 1, 0) != 0)
             valid = 0;
@@ -508,7 +621,10 @@ int gstd_network_worker_ready(gstd_network_worker *worker,
                                                     .api_descriptor = reply.api_descriptor,
                                                     .git_descriptor = reply.git_descriptor,
                                                     .api_inode = reply.api_inode,
-                                                    .git_inode = reply.git_inode};
+                                                    .git_inode = reply.git_inode,
+                                                    .oidc_ports = reply.oidc_ports};
+        memcpy(output->oidc_descriptors, reply.oidc_descriptors, sizeof(reply.oidc_descriptors));
+        memcpy(output->oidc_inodes, reply.oidc_inodes, sizeof(reply.oidc_inodes));
     } else
         for (size_t i = 0; i < 2; i++)
             if (fds[i] >= 0)

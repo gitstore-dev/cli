@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "scope": "maintainer offline verification experiment; no GitStore release verified",
+  "upstream": "cli/cli",
+  "revision": "4f2cfe92e3499f8581bf39db77e0a1431fa7b55c",
+  "inputs": {
+    "sigstore-js-2.1.0.tgz": "f0c641fce0310cb43208f4272dc1423153630e44ba8cdc0b5ce8466f724e0eed",
+    "sigstore-js-2.1.0-bundle.json": "cfadddd579b9fb45947530cd0e860986ec610a28f7fa6de3ef31cc051f07f761",
+    "trusted_root.json": "455b3fe53e2678889f093d66ebbfda5f12ebb9d682b146c3535fa04e97689787"
+  },
+  "ghVersion": "gh version 2.103.2 (2026-10-23)",
+  "cases": {
+    "signed-positive-control": {
+      "accepted": true,
+      "passed": true
+    },
+    "wrong-producer": {
+      "accepted": false,
+      "passed": true
+    },
+    "wrong-workflow": {
+      "accepted": false,
+      "passed": true
+    },
+    "wrong-source-ref": {
+      "accepted": false,
+      "passed": true
+    },
+    "wrong-source-revision": {
+      "accepted": false,
+      "passed": true
+    },
+    "wrong-issuer": {
+      "accepted": false,
+      "passed": true
+    },
+    "tampered-artifact": {
+      "accepted": false,
+      "passed": true
+    },
+    "tampered-signature": {
+      "accepted": false,
+      "passed": true
+    },
+    "missing-bundle": {
+      "accepted": false,
+      "passed": true
+    },
+    "unsigned-own-cli": {
+      "accepted": false,
+      "passed": true
+    }
+  },
+  "positiveRepositoryId": "495574555",
+  "unsignedCliSha256": "78719af13f8fa0cb7b588615cea0a66b5d95b65d5d5316239ee461bd62981894",
+  "passed": true,
+  "elapsedSeconds": 0.319
+}

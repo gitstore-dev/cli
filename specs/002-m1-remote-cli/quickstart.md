@@ -1,7 +1,7 @@
 # M1 Validation Guide
 
 **Status**: Development validation guide. The workspace and commands now exist;
-[the evidence record](../../docs/m1-status.md) distinguishes actual local/controlled
+[the evidence record](../../docs/contributing/validation/remote-cli.md) distinguishes actual local/controlled
 checks from unverified native, live, hosted and release behavior.
 
 ## Prerequisites
@@ -98,7 +98,7 @@ A simulated server cannot establish live admission, real provider compatibility 
 native credential-store support. Record live checks as not-run when access is absent.
 
 Record compiler/git2/libgit2/TLS versions, host/architecture, profile/schema evidence, native-store
-results, simulated request traces and live results in `docs/m1-status.md`. The initial
+results, simulated request traces and live results in `docs/contributing/validation/remote-cli.md`. The initial
 host matrix is Linux x86_64 and macOS arm64; other architectures remain unadvertised.
 
 Do not publish binaries until DEP-013/ADR 0003 evidence verifies exact digest,

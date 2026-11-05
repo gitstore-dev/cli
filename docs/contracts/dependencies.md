@@ -78,7 +78,11 @@ Specify publish/release public operations, revisions, readiness and failure/roll
 
 ## DEP-012
 
-Prove C/Rust wire round trips, peer auth, parser bounds/fuzz/sanitizers, durable dedupe, crash/stop/migration safety and no overlapping writers. Until implementation/release gates pass, daemon command rows remain blocked.
+C/Rust wire round trips, UID peer authentication, parser bounds/fuzz/sanitizers,
+durable dedupe, native retained-writer recovery and registered Scylla migration
+have scoped implementation evidence in EVD-024. The corresponding source subset
+is usable; this dependency remains open for the full host/release matrix.
+Unavailable optional profiles or macOS do not disable verified Linux core commands.
 
 ## DEP-013
 
@@ -90,15 +94,33 @@ exact subject/producer/workflow/source identities and negative cases before CLI
 publication. An OCI case applies only if this repository publishes OCI artifacts.
 Upstream GitStore service images do not require attestations; use trusted-source,
 pinned-platform/digest validation online and offline. Their lack of attestations
-is not a runtime blocker. All three experiments remain not-run.
+is not a runtime blocker. EXP-003A/B now have linking/image/auth/offline/integrity
+source and native evidence; EXP-003C has ten real offline cryptographic controls
+and three policy tests in [the publication experiment](../../runtime/experiments/cli-provenance/README.md).
+Unsigned own candidates are rejected. No published GitStore artifact or hosted
+release signing run is verified; DEP-013 remains open for distribution/promotion,
+not as a blanket gate on source-preview service startup.
 
 ## DEP-014
 
-Execute EXP-004A/B against chosen host matrix, DNS/ports/isolation/restart cleanup and retained volumes. CSI needs separate privileged/driver evidence and cannot become a default prerequisite.
+EXP-004A/B have actual Linux arm64 libslirp/TAP/DNS/loopback isolation,
+retained volume, writer, bounded ENOSPC and independent restore evidence in
+EVD-024 and the networking/volume experiment records. The broader host matrix
+remains open. CNI is a separate future adapter ([issue 7](https://github.com/gitstore-dev/cli/issues/7));
+libslirp is not itself CNI. CSI needs separate privileged/driver evidence and
+cannot become a default prerequisite.
 
 ## DEP-015
 
 Execute EXP-005A/B for Apple/container and managed-VM path; publish supported hosts only after startup/private image/network/volume/log/stop/recovery and installation privilege tests. Linux-only operation must not be advertised as native macOS.
+
+The 2026-11-05 [Apple](../../runtime/experiments/apple.md) and
+[managed guest](../../runtime/experiments/macos-vm.md) reports record actual ordinary
+library control of an existing owned arm64 guest, private-image checks, offline
+core lifecycle and guest daemon recovery. Clean disposable Mac installation,
+host endpoint projection, public host/guest control and VM interruption remain
+unavailable/unimplemented; Lima and amd64 Mac were not run. Both production paths
+remain unselected and local macOS unsupported. This does not close DEP-015.
 
 ## DEP-016
 
@@ -120,7 +142,9 @@ does not promise that an existing server supports arbitrary authoring bodies or 
 
 EXP-003A/B, EXP-004A/B and EXP-005A/B are specified in ADRs 0003–0005 with owner,
 candidates, bounded scope, required observations and reject/pass criteria. Their status
-is not-run. Accepting evaluation plans leaves DEP-013–DEP-015 open. Protocol/ownership
+was not-run at the M0 baseline. EVD-024 and the later ADR checkpoints record the
+scoped source experiments now run; unavailable architectures, clean host delivery
+and own signed CLI release evidence still leave DEP-013–DEP-015 open. Protocol/ownership
 references remain available to every daemon row; none is reclassified as executable
 support because DEP-008 is resolved. Live compatibility and release claims require
 new evidence before changing command support classifications.

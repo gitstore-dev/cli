@@ -1,0 +1,32 @@
+$kind: http-request
+name: Create native verification flow
+order: 3000
+method: GET
+url: '{{identityPublicUrl}}/self-service/verification/api'
+headers:
+- key: Accept
+  value: application/json
+settings:
+  followRedirects: false
+scripts:
+- type: beforeRequest
+  language: text/javascript
+  code: if(pm.variables.get("identityCreated")!=="true") throw new Error("Identity acknowledgement required");
+- type: afterResponse
+  language: text/javascript
+  code: 'try {
+
+    const b=pm.response.json(); const methods=(b.ui && b.ui.nodes || []).map(n=>n.attributes).filter(a=>a
+    && a.name==="method").map(a=>a.value);
+
+    const method=methods.find(m=>m==="link"||m==="code") || b.active;
+
+    const valid=pm.response.code===200 && b.type==="api" && /^[0-9a-f-]{36}$/.test(b.id) && ["link","code"].includes(method);
+
+    pm.test("Native flow supplies its supported verification method",()=>pm.expect(valid).to.eql(true));
+    if(!valid) throw new Error();
+
+    pm.collectionVariables.set("flowId",b.id); pm.collectionVariables.set("verificationMethod",method);
+
+    } catch (_) { pm.execution.setNextRequest(null); throw new Error("Disposable courier fixture assertion
+    failed"); }'

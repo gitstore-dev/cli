@@ -1,0 +1,28 @@
+$kind: collection
+name: oidc-courier
+description: Owned disposable namespace only. Single identity/verification submissions; bounded read-only
+  mailbox polls. Never export responses or mail tokens.
+auth:
+  type: noauth
+variables:
+- key: ownedDisposableOidcFixture
+  value: ''
+- key: identityAdminUrl
+  value: ''
+- key: identityPublicUrl
+  value: ''
+- key: mailboxUrl
+  value: ''
+- key: fixtureEmail
+  value: ''
+- key: fixtureUsername
+  value: ''
+scripts:
+- type: http:beforeRequest
+  language: text/javascript
+  code: "if (pm.variables.get(\"ownedDisposableOidcFixture\") !== \"true\") throw new Error(\"Select an\
+    \ owned disposable fixture\");\nfor (const [key, expected] of [[\"identityAdminUrl\",4434],[\"identityPublicUrl\"\
+    ,24003],[\"mailboxUrl\",24005]]) {\n if (pm.variables.get(key) !== `http://127.0.0.1:${expected}`)\
+    \ throw new Error(\"Select the fixed owned namespace endpoints\");\n}\nif (!/^[a-z0-9-]{1,48}@example\\\
+    .invalid$/.test(String(pm.variables.get(\"fixtureEmail\") || \"\")) ||\n !/^gitstore-oidc-fixture-[a-z0-9-]{1,24}$/.test(String(pm.variables.get(\"\
+    fixtureUsername\") || \"\"))) throw new Error(\"Select synthetic fixture traits\");"

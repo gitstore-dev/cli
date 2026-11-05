@@ -31,6 +31,8 @@ type optionalPlatform struct {
 
 func optionalEvidence(reference, output string) error {
 	allowed := map[string]bool{
+		// Persistent-profile candidate; resolved digests remain disabled until native checks.
+		"scylladb/scylla:2026.1":                         true,
 		"ghcr.io/gitstore-dev/oidc-bridge:0.1.0-alpha.8": true,
 		"ghcr.io/gitstore-dev/oidc-bridge:latest":        true,
 		"postgres:16-alpine":                             true, "oryd/hydra:v2.3.0": true,
@@ -40,7 +42,7 @@ func optionalEvidence(reference, output string) error {
 		"axllent/mailpit:v1.33.0": true,
 	}
 	if !allowed[reference] {
-		return fmt.Errorf("select a committed optional-reference image")
+		return fmt.Errorf("select a committed profile-candidate image")
 	}
 	tag, err := name.NewTag(reference)
 	if err != nil {

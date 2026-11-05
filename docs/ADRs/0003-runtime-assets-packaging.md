@@ -18,6 +18,9 @@ provisioning are separate problems. Source availability is not tested packaging 
 Keep core gs/gitstored executables in the kilobyte-to-low-megabyte range; the
 initial M2 engineering target is <=5 MiB each for stripped release builds. Record
 actual measurements and any miss rather than claiming this target has been met.
+The user has accepted the current stripped Linux arm64 baseline (5,590,568-byte
+gs; 5,723,600-byte gitstored) for this increment. Published-binary optimization
+is deferred to their follow-up; the original size target is not a blocker here.
 Avoid bundling additional executables by default. Prefer maintained code dependencies called through library APIs. For external
 runtime requirements that remain, reuse validated compatible host dependencies
 and acquire missing selected-profile components on demand. Downloads require the same verification, consent, cache
@@ -122,7 +125,8 @@ EXP-003C, owned by distribution maintainers, validates a CLI-published file rele
 and offline release-verification bundle. Add an OCI attestation case only if
 `gitstore-dev/cli` itself builds and publishes an OCI artifact. Check valid evidence,
 tampered bytes, wrong producer/workflow/ref, missing required CLI evidence and
-untrusted root material before promotion. Status: not-run. This experiment is a
+untrusted root material before promotion. The bounded offline cryptographic controls
+have run; an own signed CLI release positive remains unavailable. This experiment is a
 CLI publication gate, independent of ordinary upstream service-image startup.
 
 The 2026-11-03 clarification narrows the earlier ambiguous “GitStore-built” wording
@@ -186,6 +190,29 @@ measurement of the completed gitstored executable.
 The Go library/C-archive probe exceeds the core budget with its runtime and test
 harness. Maintained Rust transfer/unpack APIs are under comparison; none is selected
 or bundled based on library branding alone. The current stripped gs baseline also
-misses the initial budget, so T079 must measure real optimization results and keep
-that miss visible. These experiments do not add an upstream image-attestation gate
+missed the initial budget. T079 retains footprint measurement; later user acceptance
+defers published-binary optimization while keeping the measured baseline visible. These experiments do not add an upstream image-attestation gate
 or a default helper bundle.
+
+## 2026-11-05 source selection and publication checkpoint
+
+The [image selection](../../runtime/experiments/image-library.md) now uses the
+maintained Rust oci-client/ocirender integration through
+the pinned image backend described there. Consult that report and the dependency
+lock for exact crate names and revisions; the earlier Go comparison is historical.
+The production core uses ordinary library calls, not bundled registry/unpack tools.
+Private auth, offline verification, hostile inputs and bounded staging have native
+evidence in the [validation record](../contributing/validation/local-runtime.md).
+
+[Current size measurements](../contributing/binary-sizes.md) separate exact core
+bytes, package bytes and reused host libraries. Retired private execution copies
+are additional disk usage; the configured shared-cache budget does not bound all
+deployment storage. Automatic reclamation of those copies is not implemented.
+
+[EXP-003C](../../runtime/experiments/cli-provenance/README.md) exercised the actual
+maintainer-installed `gh` verifier offline with a public signed control and
+wrong/missing/tampered controls. The [release policy](../../runtime/packaging/release-policy.md)
+pins repository identity, workflow, source and digest and rejects the unsigned
+development `gs`. No own signed release positive or trusted release workflow has
+run. This is policy verification, not publication approval, and adds no runtime
+dependency on `gh` or upstream image attestations.

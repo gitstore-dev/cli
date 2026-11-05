@@ -16,6 +16,8 @@ int gstd_runtime_manager_assess(gstd_runtime_manager *, json_t *assessment);
  * committed before returning; work continues independently of the connection. */
 json_t *gstd_runtime_manager_submit(gstd_runtime_manager *, const gstd_request *, int *error);
 void gstd_runtime_manager_poll(gstd_runtime_manager *);
+int gstd_runtime_manager_observation_blocked(const gstd_runtime_manager *, const char *deployment,
+                                             const char *operation);
 /* Manager shutdown closes only parent capabilities; never claims owned stop or
  * releases a surviving writer. Running resource recovery remains durable. */
 void gstd_runtime_manager_close(gstd_runtime_manager *);

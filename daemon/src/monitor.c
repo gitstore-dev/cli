@@ -2,6 +2,7 @@
 #include "monitor.h"
 #include "gitstored/scheduler.h"
 #include "native_exit.h"
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 static int64_t now_ms(void) {
@@ -19,6 +20,12 @@ static int kernel(gstd_deployment *d, int *component) {
                 return -1;
             status = 1;
         }
+    }
+    if (d->persistent) {
+        int dead = gstd_native_watch_poll(d->datastore.workloads[0].death_fd);
+        if (dead < 0 || (!dead && gstd_datastore_service_live(&d->datastore)))
+            return -1;
+        status = status || dead;
     }
     int network = gstd_native_watch_poll(d->network.pid_fd),
         keeper = gstd_native_watch_poll(d->keeper_death_fd);
@@ -79,6 +86,7 @@ static int observation(gstd_deployment *d, int ready, int uncertain, int compone
         return -1;
     }
     d->monitor.reported_ready = ready;
+    d->monitor.observation_failed = 0;
     return 0;
 }
 static int fresh(gstd_deployment *d, int64_t now) {
@@ -87,7 +95,7 @@ static int fresh(gstd_deployment *d, int64_t now) {
             return 0;
     return 1;
 }
-int gstd_deployment_monitor_poll(gstd_deployment *d) {
+static int monitor_poll(gstd_deployment *d) {
     if (!d || d->recovered || d->outcome || !d->stage || !d->environment || !d->credential_source ||
         d->ready_at_ms <= 0)
         return -1;
@@ -103,6 +111,10 @@ int gstd_deployment_monitor_poll(gstd_deployment *d) {
     }
     int failed_component = -1;
     int alive = kernel(d, &failed_component);
+    /* Only a positive held native death observation can request supervision.
+     * HTTP health loss and inaccessible kernel observations never authorize it. */
+    if (alive > 0)
+        d->monitor.exit_observed = 1;
     if (alive && failed_component >= 0)
         d->monitor.last_ready[failed_component] = 0;
     if (alive && d->monitor.reported_ready && observation(d, 0, alive < 0, failed_component))
@@ -160,4 +172,17 @@ int gstd_deployment_monitor_poll(gstd_deployment *d) {
         d->monitor.status = GSTD_BOOT_HTTP_UNCERTAIN;
     }
     return 0;
+}
+
+int gstd_deployment_monitor_poll(gstd_deployment *d) {
+    int result = monitor_poll(d);
+    if (result < 0 && d)
+        d->monitor.observation_failed = 1;
+    return result;
+}
+int gstd_deployment_monitor_observation_blocked(const gstd_deployment *d, const char *deployment,
+                                                const char *operation) {
+    return d && d->stage && (d->monitor.observation_failed || d->finalizing) &&
+           (!deployment || !strcmp(deployment, d->target.deployment_id)) &&
+           (!operation || !strcmp(operation, d->target.operation_id));
 }

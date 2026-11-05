@@ -49,8 +49,14 @@ func (t *routingTransport) RoundTrip(request *http.Request) (*http.Response, err
 }
 func routingEvidence(reference, output string) error {
 	ref, err := name.NewDigest(reference, name.StrictValidation)
-	if err != nil || ref.RegistryStr() != "ghcr.io" {
-		return errors.New("immutable public GHCR reference required")
+	if err != nil {
+		return errors.New("immutable registered public reference required")
+	}
+	scylla := ref.RegistryStr() == "index.docker.io" && ref.RepositoryStr() == "scylladb/scylla" &&
+		(ref.DigestStr() == "sha256:e65d9d7113cb5b324baa4cf982ab27f9ace4a2f11666942bd9a8c09293297768" ||
+			ref.DigestStr() == "sha256:474d2cd76dc7d2edd6754ce82fd372a8bf8cce9de4bef000c55bcc843e3761a6")
+	if ref.RegistryStr() != "ghcr.io" && !scylla {
+		return errors.New("immutable GHCR or registered Scylla reference required")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()

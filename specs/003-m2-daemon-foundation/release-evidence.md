@@ -1,11 +1,12 @@
 # Shipped GitStore Inputs for M2
 
 **Reviewed**: 2026-11-03
+**Latest release supplement**: alpha.9, checked 2026-11-05; see the source review below.
 **Purpose**: Reconcile the M2 implementation specification with shipped server features.
 **Evidence level**: Release metadata and selected committed sources reviewed;
 no binaries, images, credentials, containers or live endpoints exercised.
 
-## Release identity
+## Alpha.8 baseline identity
 
 The [release listing](https://github.com/gitstore-dev/GitStore/releases) reports
 [v0.1.0-alpha.8](https://github.com/gitstore-dev/GitStore/releases/tag/v0.1.0-alpha.8)
@@ -74,3 +75,24 @@ image tags return 404; no `latest` substitution was used. This is source/registr
 metadata only, not executed runtime support or build attestation. Optional mappings
 remain unverified. `scripts/record-runtime-upstream.py` reproduces the read-only
 record with bounded requests and no authorization forwarded across host redirects.
+
+## Alpha.9 source supplement
+
+[Alpha.9](https://github.com/gitstore-dev/GitStore/releases/tag/v0.1.0-alpha.9)
+was published on 2026-11-05 at 18:31:43 UTC. Its tag resolves to
+[`68f8471edc947e417c98b6e8299a1367ab6b20da`](https://github.com/gitstore-dev/GitStore/commit/68f8471edc947e417c98b6e8299a1367ab6b20da).
+The [source receipt](../../runtime/profiles/alpha9-evidence.json) records the
+reviewed Git blob identities. This review acquires no service layers and claims
+no alpha.9 native execution or retained-data upgrade.
+
+| Shipped input | Verified committed mapping | Consequence |
+| --- | --- | --- |
+| Admin/Storefront API split | [Router](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/app/graphql.go) and [listener defaults](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/config/endpoints.go): `/admin/graphql` on `api.admin_port` (4000), `/storefront/graphql` on `api.storefront_port` (4001), both in `gitstore-api`; no legacy `/graphql` alias | ADR 0012 is now Accepted. A future alpha.9 profile must update listener configuration, public URLs and internal clients together. The optional `gs admin serve` command is for the Admin UI, whose reference runtime mapping remains unverified. |
+| Storefront unavailable boundary | [Handler](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/storefront/handler.go) returns HTTP 503 `STOREFRONT_UNAVAILABLE` with `Cache-Control: no-store` after admission | Publication reads and trusted target binding remain external prerequisites. A bound listener or healthy core API cannot establish Storefront catalogue readiness. |
+| Normalized File selector | [Schema](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/shared/schemas/admin/file.graphqls) and [resolver](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/admin/graph/resolver/file.resolvers.go): `file(by: FileBy!)`, exactly one `id` or `namespacePath:{namespace,name}` | The upstream normalization gate is now satisfied for alpha.9. Existing baseline client queries still require compatibility work before claiming alpha.9 high-level File support. This does not establish list, upload or payload readiness. |
+| Scylla partition/fence changes | Existing `002_namespace.cql` and `005_product.cql` changed. The [upstream history policy](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/.claude/rules/scylla-migrations.md) records migration names/checksums and rejects mismatched history | Preserve the alpha.8 volume and migration-target identities. An alpha.9 transition needs its own compatibility evidence; a breaking baseline reset requires a fresh keyspace and explicit reseeding. Never modify the recorded ledger or delete retained data implicitly. |
+| Reference OIDC composition | `compose.oidc.yml` has the same Git blob (`ae97eab75bdb16729d5a22465e56326f175c32bc`) in alpha.8 and alpha.9 | Existing provider mapping evidence remains relevant. Production daemon enrollment/lifecycle/recovery and API issuer integration remain local implementation work. |
+
+The executable core/1 and private core/2 profiles retain their original alpha.8
+source/image pins. This supplement does not reinterpret an existing deployment,
+retarget a migration or change the historical M0/M1 baseline.

@@ -1,10 +1,13 @@
 # M2 Validation Guide
 
-**Status**: Implementation in progress. Rust/control-plane checks and private
-Linux core bootstrap probes have recorded results in [M2 status](../../docs/m2-status.md).
-Broader public lifecycle, packaging, recovery and migration scenarios below remain
-validation targets. Their presence is not a claim they passed. Daemon build/control
-targets exist; the public runtime dispatcher and runner remain in progress.
+**Status**: Source implementation with scoped Linux arm64 native evidence. See
+[the validation record](../../docs/contributing/validation/local-runtime.md) for
+actual results, failed cases and unavailable lanes. Public core and persistent
+start/stop/migration, streams and owned recovery have run on the named fixture;
+this is not published release or cross-platform support. Optional provider graphs,
+clean macOS delivery and own signed release evidence
+remain incomplete.
+
 Run from the repository root. Never use the user's real config, credential store,
 existing deployment or retained volumes as fixtures.
 
@@ -16,7 +19,7 @@ Ubuntu 24.04 amd64/arm64 hosts with recorded user namespace/mapping, cgroup and
 filesystem capabilities. Distribution users must need only GitStore and documented
 host capabilities. No Docker/Compose prerequisite is allowed for runtime acceptance.
 
-The planned runners create mode-0700 temporary configuration/state/runtime/cache
+The runtime runners create mode-0700 temporary configuration/state/runtime/cache
 roots, synthetic credentials, unoccupied loopback ports and owned volumes, then
 clean only their transient resources. They print root/fixture identities and
 preserve redacted failure evidence. Tests that need peer UIDs, registries, Scylla,
@@ -43,7 +46,7 @@ evidence and cannot prove the new default runtime installation path.
 
 ## 2. Native build, protocol and controlled recovery
 
-Planned CMake options and test labels must be created with executable targets:
+The CMake control and test targets are executable:
 
 ```sh
 cmake -S daemon -B build/daemon -DCMAKE_BUILD_TYPE=Debug -DGITSTORED_TESTING=ON
@@ -82,15 +85,19 @@ exhaustive security verification. Production binaries cannot select test backend
 
 ## 4. Runtime selection and trust experiments
 
-Planned experiment entry point (each invocation uses explicit disposable fixtures):
+Runtime scenarios use explicit disposable fixture manifests. The experiment names
+below identify evidence groups; consult each experiment README for its executable
+probe command. Do not pass an unsupported alias to the scenario runner.
 
 ```sh
-scripts/test-runtime.sh --experiment EXP-003A
-scripts/test-runtime.sh --experiment EXP-003B
-scripts/test-runtime.sh --experiment EXP-003C
-scripts/test-runtime.sh --experiment EXP-004A
-scripts/test-runtime.sh --experiment EXP-004B-local
+scripts/test-runtime.sh --help
 ```
+
+Historical experiment groups:
+
+EXP-003A (libcrun), EXP-003B (image library), EXP-003C (CLI provenance),
+EXP-004A (network library), and EXP-004B-local (local volumes).
+See [the evidence index](../../runtime/experiments/README.md).
 
 Before execution, lock dependency source/build identities and resolve real image
 manifest/per-platform digests. Record trusted upstream sources and platform/digest
@@ -119,12 +126,12 @@ scripts/test-runtime.sh --scenario clean-install
 ```
 
 Each runner provisions its own registered profile, credentials and retained volumes,
-then invokes the proposed [CLI](contracts/cli.md). Example commands inside that
+then invokes the [CLI](contracts/cli.md). Example commands inside that
 owned fixture environment are:
 
 ```sh
-gs api config validate --deployment m2-fixture --profile core --profile-version m2-alpha8
-gs serve --deployment m2-fixture --profile core --profile-version m2-alpha8 \
+gs api config validate --deployment m2-fixture --profile core --profile-version 1
+gs serve --deployment m2-fixture --profile core --profile-version 1 \
   --datastore memdb --allow-provision --detach --idempotency-key m2-fixture-start
 gs deployment inspect m2-fixture
 gs deployment inspect m2-fixture --operation OPERATION_ID --wait=ready
@@ -132,8 +139,8 @@ gs deployment logs m2-fixture --component api -o json
 gs deployment stop m2-fixture --idempotency-key m2-fixture-stop
 ```
 
-`OPERATION_ID` is the actual returned ID. Profile/version names are proposed fixture
-registrations, not current installed profiles. The logs subscription is bounded
+`OPERATION_ID` is the actual returned ID. The current registered core profile version is `1`; the runner selects its
+verified fixture assets before invoking the commands. The logs subscription is bounded
 by the runner and explicitly interrupted/unsubscribed. Scylla migration uses the
 runner's registered target and backup acknowledgment; never guess an image schema
 version or run against an existing datastore.
@@ -158,10 +165,9 @@ code dependencies do not require runtime discovery or downloads. Establish remai
 
 ## 6. macOS feasibility and support reconciliation
 
-```sh
-scripts/test-runtime.sh --experiment EXP-005A
-scripts/test-runtime.sh --experiment EXP-005B
-```
+Follow the executable [Apple probe guide](../../runtime/experiments/apple/README.md)
+and [managed guest report](../../runtime/experiments/macos-vm.md). The generic runtime
+runner does not provision a Mac backend.
 
 Run only on explicitly selected disposable compatible Mac/guest fixtures. Record
 hardware/OS/framework/backend/kernel identities and any installation elevation.
@@ -172,10 +178,22 @@ container support or install an unapproved fallback automatically.
 
 ## Evidence required before completion
 
-Map SC-001–013 and FR-001–031 to actual checks in planned `docs/m2-status.md`.
+Map SC-001–013 and FR-001–031 to actual checks in `docs/contributing/validation/local-runtime.md`.
 Record command subsets, test commands/results, exact dependency/server/image pins,
 not-run lanes, experiment outcomes and release exclusions. Update matrix/dependency
 rows only from that evidence; partial passes do not close all DEP-012–015. Keep
 source review, controlled workloads, native backend and published release results
 separate. Publishing is outside this planning operation; final trusted packages
 still require ADR 0003 provenance gates.
+
+
+## Bounded protocol fuzzing
+
+Run `scripts/test-daemon-fuzz.sh --seconds 60` on a selected Linux development
+fixture with Clang 18. Compilation is additional; the execution budget is divided
+between JSON/request and incremental-framer harnesses. Deterministic corpus inputs
+come from all saved M0 messages and malformed/limit cases. ASan/UBSan, allocation
+denial, fixed seed and explicit input/RSS/time limits are enabled. See
+[the harness guide](../../daemon/fuzz/README.md) for exact settings and the separate
+opt-in cross-UID kernel check. Findings and generated corpora stay under ignored
+`build/daemon-fuzz`, not in Git.

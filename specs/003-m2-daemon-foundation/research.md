@@ -279,12 +279,11 @@ external dependency, resolve its identity/version safely and preserve unrelated
 help/remote/control functionality when that optional dependency is unavailable.
 
 **Size objective**: Kilobytes to low megabytes per stripped release executable.
-Use 5 MiB per executable as the initial engineering target, not a measured result
-or a reason to drop required behavior. Measure existing release gs first, optimize
-size (release stripping/LTO/features/linking), and report any target miss with the
-actual dependency contributors. Report uncompressed executable, mandatory shared
-libraries, initial package, first-use download, installed/cache and resident-memory
-costs independently; moving code to a shared library does not erase its footprint.
+The original 5 MiB reference has measured misses. The user accepted 5,590,568-byte
+`gs` and 5,723,600-byte `gitstored` for this increment, deferring published-binary
+optimization to their follow-up. Continue reporting uncompressed executable,
+mandatory shared libraries, package, downloads, cache and resident-memory costs
+independently; moving code to a shared library does not erase its footprint.
 
 **Rationale**: Calling maintained code dependencies avoids wrapping separate tools.
 Binary size is an independent optimization/measurement requirement, not a mandate

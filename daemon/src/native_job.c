@@ -61,7 +61,7 @@ static void worker(gstd_native_context context, gstd_native_action action, int w
     gstd_execution_inputs registered;
     gstd_network_namespace network = GSTD_NETWORK_NAMESPACE_INITIAL;
     size_t network_index = 0;
-    int original[7 + GSTD_MOUNT_COUNT];
+    int original[9 + GSTD_MOUNT_COUNT];
     size_t offset = context.writer_lease_fd >= 3 ? 1 : 0;
     if (offset)
         original[0] = context.writer_lease_fd;
@@ -81,7 +81,10 @@ static void worker(gstd_native_context context, gstd_native_action action, int w
             original[count++] = network.network_fd;
         }
     }
-    int copied[7 + GSTD_MOUNT_COUNT];
+    size_t log_index = count;
+    original[count++] = context.stdout_fd >= 3 ? context.stdout_fd : -1;
+    original[count++] = context.stderr_fd >= 3 ? context.stderr_fd : -1;
+    int copied[9 + GSTD_MOUNT_COUNT];
     for (size_t i = 0; i < count; i++)
         if (original[i] < 0)
             copied[i] = -1;
@@ -119,6 +122,11 @@ static void worker(gstd_native_context context, gstd_native_action action, int w
             _exit(126);
     if (null >= 3)
         close(null);
+    for (unsigned i = 0; i < 2; i++) {
+        if (original[log_index + i] >= 3 &&
+            (dup2(3 + (int)log_index + (int)i, 1 + (int)i) < 0 || fcntl(1 + (int)i, F_SETFD, 0)))
+            _exit(126);
+    }
 #ifdef SYS_close_range
     if (syscall(SYS_close_range, 3u + (unsigned)count, UINT_MAX, 0u))
 #endif

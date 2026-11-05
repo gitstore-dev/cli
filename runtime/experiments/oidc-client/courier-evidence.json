@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private registered Linux arm64 graph. Real Kratos native verification-to-Mailpit delivery in owned namespace; not public daemon OIDC activation, browser sign-in or GitStore issuer integration.",
+  "run": {
+    "root": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u",
+    "probeSha256": "a8e66c5170aa7c73e19612d776c0283444d868c85ed0235b21c962affba4fbf8",
+    "exitCode": 0,
+    "elapsedSeconds": 29.947,
+    "sqliteIntegrity": {
+      "hydra": "ok",
+      "kratos": "ok"
+    }
+  },
+  "contractSha256": "8412109902a8f1722d3ac8e53d7370a7a877edebe8d3793838da0be80b6ce4f1",
+  "collectionFiles": {
+    "postman/collections/oidc-courier/.resources/definition.yaml": "488b07c7c47890934a3b9538c15967db5c7f4faaf7f514d4b3ee257ddfe26cb8",
+    "postman/collections/oidc-courier/1000-Fresh mailbox.request.yaml": "6b1cefdaa17a23f2bda9119b088e65653a4350fcc2571efb1f1e4125d444b49f",
+    "postman/collections/oidc-courier/2000-Create synthetic identity once.request.yaml": "90a50f08cfb434cba74de7ae6668702d110b03d1f129b9c197f98612cb8827ea",
+    "postman/collections/oidc-courier/3000-Create native verification flow.request.yaml": "4654714069807daa10d956fe61d9ad70ad7c2a39f0477a8c752cb2682ab265be",
+    "postman/collections/oidc-courier/4000-Submit verification once.request.yaml": "9ae41189288859f8e4ce6a3db83f9e56c34c3dbf673d5858af1355003e9368ba",
+    "postman/collections/oidc-courier/5000-Inspect courier mailbox 1.request.yaml": "2361baefdad9462ca23f39224758646219c2d858044061e00e7c361aa0a6d135",
+    "postman/collections/oidc-courier/6000-Inspect courier mailbox 2.request.yaml": "04b1157958657e2a07d053cd58c80db791956b85dad4563219e817bca69af477",
+    "postman/collections/oidc-courier/7000-Inspect courier mailbox 3.request.yaml": "ac6b753c01320515c1214d155e887051fe7be5996fdcef0210d3a24fbe46c709",
+    "postman/collections/oidc-courier/8000-Inspect courier mailbox 4.request.yaml": "18fc9a5457dc34f020cb01f5a1d719f851afaffac347055d45fd8a9506db75ab"
+  },
+  "validation": {
+    "contractSyntaxLint": "No issues found.",
+    "collectionLint": "No issues found. Scanned: 8 | Errors: 0 | Warnings: 0 | 14ms",
+    "runnerExitCode": 0,
+    "requests": 8,
+    "scriptedAssertions": 5,
+    "identitySubmissions": 1,
+    "verificationSubmissions": 1,
+    "mailboxPollsAfterSubmission": 4,
+    "mailRecipient": "synthetic@example.invalid",
+    "rawResponsesExported": false,
+    "cloudEventsEnabled": false,
+    "hostAdminForwarding": false,
+    "allFiveServicesDeleted": true,
+    "note": "Assertion count follows saved collection scripts; raw runner log retained privately, never printed or exported."
+  },
+  "executionCopyCleanup": {
+    "retained": "Databases, credentials, config, cached image inputs, logs and all evidence",
+    "removed": [
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/hydra/execution/rootfs",
+        "device": 65040,
+        "inode": 125802,
+        "logicalBytes": 48918539,
+        "audit": "result=0 bytes=48918539 digest=d8fa85a068ea875275453fe15de9d784a24188555a0d20b1cb42f3c5dbf47d45",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/hydra/execution/blobs",
+        "device": 65040,
+        "inode": 125801,
+        "logicalBytes": 18792148,
+        "audit": "result=0 bytes=18792148 digest=421f1ea4f232c955f5302739819f5c92d5adbf4ce7fcfdae1a44938281891b82",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/kratos/execution/rootfs",
+        "device": 65040,
+        "inode": 344266,
+        "logicalBytes": 62603868,
+        "audit": "result=0 bytes=62603868 digest=f4c28c13f1bebbc9ec5d48e654f813950766da2cac37f5f0650ccb57fb64f64c",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/kratos/execution/blobs",
+        "device": 65040,
+        "inode": 125899,
+        "logicalBytes": 27653265,
+        "audit": "result=0 bytes=27653265 digest=b32cb1ab1de420578ff47a37684bfd1c6c12642cee96ff4ad95caa60c779052a",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/smtp/execution/rootfs",
+        "device": 65040,
+        "inode": 125996,
+        "logicalBytes": 34985882,
+        "audit": "result=0 bytes=34985882 digest=aaf6e8c20b8b93f72e02063a1f9f846f1d519ed15821fa4566e3c21c55352e85",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/smtp/execution/blobs",
+        "device": 65040,
+        "inode": 125995,
+        "logicalBytes": 14426857,
+        "audit": "result=0 bytes=14426857 digest=d07fdb9d3148b3ced2a557cc0f1eba82a1a56f5176be6dba510185330df2cf0b",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/ui/execution/rootfs",
+        "device": 65040,
+        "inode": 126104,
+        "logicalBytes": 780306341,
+        "audit": "result=0 bytes=780306341 digest=c82602b900a97cbf6a246addbf98fb6ddbd3b6de85161f83aaafb7b99fc932ef",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/ui/execution/blobs",
+        "device": 65040,
+        "inode": 126103,
+        "logicalBytes": 315402393,
+        "audit": "result=0 bytes=315402393 digest=d727ba34682f16d58ac08a9c1676a340267851a76764559cf44a0f554788f9ee",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/bridge/execution/rootfs",
+        "device": 65040,
+        "inode": 540881,
+        "logicalBytes": 33260426,
+        "audit": "result=0 bytes=33260426 digest=09b68e68742fdc23e3b042c33074852fcbf2208807688346565174bb117c5401",
+        "status": "removed"
+      },
+      {
+        "path": "/home/gitstorefixture/experiments/oidc-combined-graph-gh039p5u/bridge/execution/blobs",
+        "device": 65040,
+        "inode": 532689,
+        "logicalBytes": 16775374,
+        "audit": "result=0 bytes=16775374 digest=d97b5227a9e8220e465c886b216f018362f76dd4febea7371ace1cbea57835d2",
+        "status": "removed"
+      }
+    ]
+  }
+}

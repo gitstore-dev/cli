@@ -31,7 +31,8 @@ typedef struct {
     const char *component;
     const char *boot_id; /* creator boot; never substitute current during recovery */
     int state_fd, bundle_fd, rootfs_fd;
-    int writer_lease_fd; /* CREATE: Git writer lease deliberately preserved at FD 3 */
+    int stdout_fd, stderr_fd; /* optional private collector pipes; never wire input */
+    int writer_lease_fd;      /* CREATE: Git/Scylla service writer preserved at FD 3 */
     pid_t control_owner;
     pid_t expected_pid;
     uint64_t expected_start_time;

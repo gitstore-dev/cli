@@ -1,63 +1,108 @@
-# Remote CLI development implementation
+# Work with a remote GitStore
 
-Build with `cargo build --locked -p gs`; the executable is `target/debug/gs`.
-See [configuration](configuration.md) for existing-credential bootstrap. No daemon,
-runtime download, browser login or Git executable is required.
+[Configure your installation and credentials](configuration.md), then run `gs`
+against its public GraphQL and Git endpoints. A local daemon, runtime download,
+browser login and separately installed Git executable are not required.
 
-Implemented command subsets:
-
-- Context list/show/use, configuration validation, local auth status/logout/switch
-  and deliberate raw token output.
-- Direct GraphQL using literal `-f`, typed/file-backed `-F`, or a complete JSON
-  envelope through `--input`. GraphQL responses retain data/errors/extensions;
-  HTTP 200 with errors still exits nonzero. Subscriptions are gated.
-- Read/list Namespace, Repository, Product, CategoryTaxonomy (`category`) and
-  Collection; File metadata read retains `file(namespace,name)` pending the
-  upstream File lifecycle specification. There is no File list command.
-- Product/CategoryTaxonomy create from one Markdown document per repeated `-f`.
-  Validate the whole batch before writing, preserve raw body bytes/newlines,
-  submit in order, stop after failure and report every unsubmitted remainder.
-- Namespace/Repository/Product/CategoryTaxonomy delete by resolved opaque ID.
-  Deletion starts termination; it does not prove controller cleanup completed.
-- Repository clone with default remote `gitstore` or `--remote <name>`, plus
-  submission-only sync using libgit2. Sync preserves local branch/worktree and
-  accepts only an existing remote branch, clean worktree and fast-forward history.
+## Inspect resources
 
 ```sh
 gs context show -o json
+gs list repository --first 25
+gs read product summer-shirt -o json
+```
+
+Read/list are available for Namespace, Repository, Product, CategoryTaxonomy
+(`category`) and Collection. File metadata can be read by namespace and name;
+File listing is not available.
+
+List returns one page of 1–100 objects with an opaque continuation cursor. Use
+JSON for structured resource inspection. Table is the default; resource YAML,
+Markdown and lossless authoring export are not available yet.
+
+## Supply credentials for one command
+
+If credentials are not in your configured OS secret store:
+
+```sh
 gs --credential-file /protected/token read product summer-shirt -o json
-gs --credential-file /protected/token list repository --first 25
+```
+
+The file must be owned, regular, non-symlink and mode 0600 or stricter, containing
+a raw single-line token. This override is not saved. See
+[configuration](configuration.md) for stdin, OS-store and separate Git credentials.
+
+## Submit GraphQL
+
+```sh
 gs --credential-file /protected/token api graphql -F query=@query.graphql
+```
+
+`-f key=value` supplies a string; `-F` recognizes booleans, null, safe integers and
+`@file` text. Use `--input` for a complete JSON request envelope. Direct GraphQL
+outputs JSON and preserves `data`, `errors` and `extensions`. HTTP 200 with GraphQL
+errors still exits nonzero. Subscriptions are not available.
+
+## Create and delete resources
+
+Product and CategoryTaxonomy creation accept Markdown documents:
+
+```sh
 gs --credential-file /protected/token create -f product.md -f category.md
-gs repository clone catalog --remote gitstore
-# Make a commit with a Git-compatible editor/client, then submit it:
+```
+
+The CLI validates the whole batch first, preserves document bodies and submits in
+order. If a submission fails, later documents remain unsubmitted; inspect the
+reported per-document outcomes before retrying. Batches accept at most 100 documents
+and 16 MiB total input.
+
+Namespace, Repository, Product and CategoryTaxonomy deletion resolve the selected
+resource before requesting deletion. A successful deletion request starts
+termination; it does not prove that controller cleanup has finished.
+
+Namespace/Repository creation, safe updates and Collection mutations are not
+available as high-level commands in this preview.
+
+## Clone and sync repositories
+
+```sh
+gs repository clone catalog
+# Or choose the saved remote name:
+gs repository clone catalog --remote origin
+```
+
+Clone defaults to a remote named `gitstore` and tracks the checked-out branch when
+one exists. The destination defaults to the repository name.
+
+Make commits using your Git-compatible editor/client, then submit them:
+
+```sh
 gs repository sync --remote gitstore --ref main
 ```
 
-Git uses separately configured credentials with the proven Basic or Bearer mechanism;
-a GraphQL session token is not a Basic password. Git target resolution checks public
-URLs and installation prefixes, including push URLs. A remote name supplies no trust
-or ambiguity priority. External credential helpers, filters and inherited auth/TLS
-configuration are not used. TLS verification stays enabled. Unsupported local URL
-rewrites/extensions fail explicitly rather than changing the network target.
+Sync requires a clean worktree, an existing remote branch and fast-forward history.
+It does not commit, merge, rebase, reset or force-push. A remote name alone does not
+identify the installation: selection uses the configured public URLs. Ambiguous
+targets need an explicit repository or remote.
 
-Table is the default for resource/local/Git commands; inspection JSON is available.
-Local/Git summaries also support YAML. Resource YAML/Markdown and authoring export
-remain gated by DEP-005; JSON inspection is not advertised as lossless export.
-Direct GraphQL is JSON-only; `auth token` is raw-only. Progress/diagnostics go to
-stderr; machine-mode diagnostics are JSON. Known waits fail before submission.
+Git credentials are separate from GraphQL credentials. Configure the supported
+Basic username/password or Bearer mechanism in [configuration](configuration.md).
+The CLI does not use external credential helpers, filters or inherited auth/TLS
+settings; TLS verification stays enabled.
 
-Default remote deadline is 30 seconds, adjustable with `--timeout 5s`. List commands
-return one page (1–100 objects), with opaque continuation cursors. Input, expanded
-batch content and HTTP responses are bounded; author batches accept at most 100
-documents and 16 MiB total input. Transient reads retry at most twice within the
-same deadline; mutations and pushes are never blindly retried. Lost responses retain
-known identity and report uncertainty; transport acceptance never proves readiness.
+## Outcomes and limits
 
-Login/refresh/remote invalidation, discovery, Namespace/Repository authoring, safe
-updates, watches, Collection mutations, verified waits and hydrated exports retain
-the [M0 dependency gates](contracts/dependencies.md). File selector normalization is
-a future upstream contract change, not permission to invent lifecycle operations.
+Progress and diagnostics use stderr; requested results use stdout. Local selection,
+auth and Git summaries also support YAML. `auth token` deliberately prints a raw
+token and accepts no output-format option.
 
-See [M1 evidence and limitations](m1-status.md) for actual validation. This is a
-source implementation, not a published or provenance-verified product release.
+Remote requests default to a 30-second deadline; use `--timeout 5s` to change it.
+Transient reads retry at most twice within that deadline. Mutations and pushes are
+not blindly retried. A lost response retains known identity and reports uncertain
+submission. Accepted transport does not prove server admission or readiness.
+
+Browser login, refresh, remote credential invalidation, discovery, watches,
+correlated remote waits and hydrated exports are not available yet. `auth status`
+reports local credential presence; logout reports when remote invalidation is
+unsupported. Use the installation's supported account tooling to obtain existing
+credentials before configuring this source preview.

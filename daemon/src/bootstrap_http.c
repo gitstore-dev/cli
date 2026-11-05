@@ -405,6 +405,64 @@ done:
     curl_global_cleanup();
     return result;
 }
+gstd_oidc_http_status gstd_oidc_http(const gstd_bootstrap_http_context *context,
+                                     gstd_oidc_http_action action, const gstd_oidc_client *client,
+                                     const gstd_credential *secret) {
+    if (action < GSTD_OIDC_HTTP_READY || action > GSTD_OIDC_HTTP_INSPECT ||
+        (action == GSTD_OIDC_HTTP_READY && (client || secret)) ||
+        (action != GSTD_OIDC_HTTP_READY && gstd_oidc_client_check(client)) ||
+        (action == GSTD_OIDC_HTTP_INSPECT && secret))
+        return GSTD_OIDC_REJECTED;
+    json_t *request =
+        action == GSTD_OIDC_HTTP_CREATE ? gstd_oidc_client_request(client, secret) : NULL;
+    char *body = request ? gstd_json_dump(request) : NULL;
+    json_decref(request);
+    gstd_oidc_http_status result = GSTD_OIDC_REJECTED;
+    response reply = {0};
+    json_t *value = NULL;
+    int initialized = 0;
+    if ((action == GSTD_OIDC_HTTP_CREATE && !body) || worker(context))
+        goto finish;
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
+        goto finish;
+    initialized = 1;
+    char url[160];
+    int length = action == GSTD_OIDC_HTTP_INSPECT
+                     ? snprintf(url, sizeof(url), "http://127.0.0.1:4445/admin/clients/%s",
+                                client->client_id)
+                     : snprintf(url, sizeof(url), "http://127.0.0.1:4445/%s",
+                                action == GSTD_OIDC_HTTP_CREATE ? "admin/clients" : "health/ready");
+    if (length < 1 || (size_t)length >= sizeof(url))
+        goto finish;
+    result = action == GSTD_OIDC_HTTP_CREATE ? GSTD_OIDC_UNCERTAIN : GSTD_OIDC_PENDING;
+    int received = transport(url, body, NULL, NULL, NULL, &reply);
+    if (action == GSTD_OIDC_HTTP_CREATE) {
+        if (!received && reply.code == 201 && (value = json_response(&reply)) &&
+            gstd_oidc_client_matches(client, value, secret))
+            result = GSTD_OIDC_CLIENT_CREATED;
+        goto finish;
+    }
+    if (received || reply.code == 503) {
+        if (received == -2)
+            result = GSTD_OIDC_REJECTED;
+        goto finish;
+    }
+    result = GSTD_OIDC_REJECTED;
+    if (reply.code != 200 || !(value = json_response(&reply)))
+        goto finish;
+    if (action == GSTD_OIDC_HTTP_READY ? text(value, "status", "ok")
+                                       : gstd_oidc_client_matches(client, value, NULL))
+        result = action == GSTD_OIDC_HTTP_READY ? GSTD_OIDC_PROVIDER_READY : GSTD_OIDC_PUBLIC_MATCH;
+finish:
+    json_decref(value);
+    if (body)
+        OPENSSL_cleanse(body, strlen(body));
+    free(body);
+    clear_response(&reply);
+    if (initialized)
+        curl_global_cleanup();
+    return result;
+}
 #else
 gstd_bootstrap_http_status gstd_bootstrap_http(const gstd_bootstrap_http_context *context,
                                                gstd_bootstrap_http_action action,
@@ -414,5 +472,14 @@ gstd_bootstrap_http_status gstd_bootstrap_http(const gstd_bootstrap_http_context
     (void)material;
     (void)uid;
     return GSTD_BOOT_HTTP_REJECTED;
+}
+gstd_oidc_http_status gstd_oidc_http(const gstd_bootstrap_http_context *context,
+                                     gstd_oidc_http_action action, const gstd_oidc_client *client,
+                                     const gstd_credential *secret) {
+    (void)context;
+    (void)action;
+    (void)client;
+    (void)secret;
+    return GSTD_OIDC_REJECTED;
 }
 #endif

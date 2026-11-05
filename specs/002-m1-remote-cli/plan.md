@@ -14,7 +14,7 @@ no open upstream dependency is silently closed. Full M1 and release publication 
 subject to their existing gates.
 
 This plan was prepared before implementation. The unblocked development subset now
-has executable code; task state and `docs/m1-status.md` record actual evidence.
+has executable code; task state and `docs/contributing/validation/remote-cli.md` record actual evidence.
 
 ## Technical Context
 

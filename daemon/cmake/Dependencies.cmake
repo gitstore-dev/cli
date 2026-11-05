@@ -20,13 +20,22 @@ FetchContent_MakeAvailable(jansson)
 # static Jansson symbols hidden so ELF cannot interpose them into json-c.
 set_target_properties(jansson PROPERTIES C_VISIBILITY_PRESET hidden)
 include("${CMAKE_CURRENT_LIST_DIR}/PatchJansson.cmake")
-# Restrict the generated private copy, never the downloaded source archive.
+# Shadow the upstream-generated configuration with a private copy. Editing the
+# upstream output in place makes configure_file restore 2048 on every configure,
+# which then forces all consumers to rebuild when we change it back to 33.
 set(config "${jansson_BINARY_DIR}/include/jansson_config.h")
 file(READ "${config}" original_config)
-string(REPLACE "#define JSON_PARSER_MAX_DEPTH 2048" "#define JSON_PARSER_MAX_DEPTH 33" config_content "${original_config}")
-if(NOT config_content STREQUAL original_config)
-  file(WRITE "${config}" "${config_content}")
+if(NOT original_config MATCHES "#define JSON_PARSER_MAX_DEPTH 2048")
+  message(FATAL_ERROR "Pinned Jansson depth configuration changed; audit the private override")
 endif()
+string(REPLACE "#define JSON_PARSER_MAX_DEPTH 2048" "#define JSON_PARSER_MAX_DEPTH 33" config_content "${original_config}")
+set(private_config "${CMAKE_CURRENT_BINARY_DIR}/jansson-private-config")
+file(MAKE_DIRECTORY "${private_config}")
+file(CONFIGURE OUTPUT "${private_config}/jansson_config.h" CONTENT "${config_content}" @ONLY)
+# The generated public header uses a quoted include, so keep it beside the
+# private config too; otherwise its adjacent upstream config wins lookup.
+configure_file("${jansson_BINARY_DIR}/include/jansson.h" "${private_config}/jansson.h" COPYONLY)
+target_include_directories(jansson BEFORE PUBLIC "$<BUILD_INTERFACE:${private_config}>")
 FetchContent_Declare(sqlite_source URL "${sqlite_url}" URL_HASH "SHA256=${sqlite_sha256}" DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(sqlite_source)
 add_library(gitstored_sqlite STATIC "${sqlite_source_SOURCE_DIR}/sqlite3.c")

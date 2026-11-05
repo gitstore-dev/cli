@@ -4,9 +4,9 @@ use std::process::Command;
 fn optional_prerequisites_fail_before_manager_discovery() {
     let root = tempfile::tempdir().unwrap();
     for (component, prerequisite) in [
-        ("oidc", "SMTP"),
-        ("admin", "published image"),
-        ("storefront", "published image"),
+        ("oidc", "API issuer integration"),
+        ("admin", "Admin UI"),
+        ("storefront", "publication reads"),
     ] {
         for args in [vec![component, "serve"], vec!["serve", "--add", component]] {
             let output = Command::new(env!("CARGO_BIN_EXE_gs"))

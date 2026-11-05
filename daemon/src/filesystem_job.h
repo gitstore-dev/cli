@@ -21,7 +21,12 @@ typedef enum {
     GSTD_FS_REOPEN_SCOPE,
     GSTD_FS_OBSERVE_VOLUME,
     GSTD_FS_RECOVER_NETWORK,
-    GSTD_FS_REOPEN_ROOTS
+    GSTD_FS_REOPEN_ROOTS,
+    GSTD_FS_DATASTORE_VOLUME,
+    GSTD_FS_OBSERVE_DATASTORE,
+    GSTD_FS_OIDC_VOLUME,
+    GSTD_FS_OBSERVE_OIDC_VOLUME,
+    GSTD_FS_OIDC_PREPARE
 } gstd_filesystem_action;
 typedef struct {
     gstd_filesystem_action action;
@@ -35,6 +40,11 @@ typedef struct {
     gstd_volume_root volume_root;
     gstd_volume_identity volume_expected;
     int volume_existing;
+    gstd_oidc_ports oidc_ports;
+    const json_t *credential_source;        /* explicit owner settings, never wire paths */
+    int credential_prior_required;          /* retained prepared family must match descriptor 2 */
+    int credential_initial;                 /* one-shot committed parent reservation */
+    gstd_oidc_volume_role oidc_volume_role; /* fixed provider role; OIDC volume actions only */
     gstd_provision_result proof;
     uint64_t download_limit, merge_limit;
     unsigned image_timeout_ms;
@@ -54,7 +64,8 @@ typedef struct {
 } gstd_filesystem_reply;
 /* Descriptor order: INITIALIZE cache/cache-lock/volume-root/volume-lock/resource-
  * root/native-state; SCOPE wrapper/data[/bundle]; REOPEN_SCOPE wrapper/data[/bundle/rootfs];
- * VOLUME data/writer; OBSERVE_VOLUME data (no writer authority);
+ * VOLUME/DATASTORE_VOLUME data/writer;
+ * OBSERVE_VOLUME/OBSERVE_DATASTORE data (no writer authority);
  * STAGE_DIRECTORY new staging directory; OPEN_ACTIVE freshly verified active
  * directory. Owner FD
  * fields are -1; adopt actual received handles explicitly. Other actions return

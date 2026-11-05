@@ -6,10 +6,16 @@
 #include <string.h>
 int gstd_bootstrap_graph_begin(const json_t *manifest, const char *datastore, uint64_t generation,
                                gstd_bootstrap_graph *graph) {
-    if (!graph || !datastore || strcmp(datastore, "memdb") || !generation ||
-        generation > UINT64_C(9007199254740991) || gstd_asset_manifest_check(manifest))
+    int persistent = datastore && !strcmp(datastore, "scylladb");
+    const char *manifest_datastore =
+        manifest ? json_string_value(json_object_get(manifest, "datastore")) : NULL;
+    if (!graph || !datastore || (!persistent && strcmp(datastore, "memdb")) ||
+        (persistent ? (!manifest_datastore || strcmp(manifest_datastore, "scylladb"))
+                    : manifest_datastore != NULL) ||
+        !generation || generation > UINT64_C(9007199254740991) ||
+        gstd_asset_manifest_check(manifest))
         return -1;
-    unsigned api = 0, git = 0, controller = 0;
+    unsigned api = 0, git = 0, controller = 0, datastore_image = 0;
     json_t *images = json_object_get(manifest, "images");
     for (size_t i = 0; i < json_array_size(images); i++) {
         const char *component =
@@ -20,23 +26,38 @@ int gstd_bootstrap_graph_begin(const json_t *manifest, const char *datastore, ui
             git = 1;
         else if (!strcmp(component, "controller"))
             controller = 1;
+        else if (!strcmp(component, "scylladb") && persistent)
+            datastore_image = 1;
         else
             return -1;
     }
-    if (!api || !git)
+    if (!api || !git || datastore_image != (unsigned)persistent)
         return -1;
-    *graph = (gstd_bootstrap_graph){
-        .generation = generation, .stage = GSTD_BOOT_PREPARE, .controller = controller};
+    *graph = (gstd_bootstrap_graph){.generation = generation,
+                                    .stage = GSTD_BOOT_PREPARE,
+                                    .controller = controller,
+                                    .persistent = (unsigned)persistent};
+    return 0;
+}
+int gstd_bootstrap_graph_persistent_begin(const json_t *manifest, uint64_t generation, int fresh,
+                                          gstd_bootstrap_graph *graph) {
+    if ((fresh != 0 && fresh != 1) ||
+        gstd_bootstrap_graph_begin(manifest, "scylladb", generation, graph))
+        return -1;
+    graph->fresh_datastore = (unsigned)fresh;
     return 0;
 }
 int gstd_bootstrap_graph_observe(gstd_bootstrap_graph *graph, uint64_t generation,
                                  gstd_bootstrap_stage stage, int result, const char *uid) {
     if (!graph || generation != graph->generation || !generation || graph->outcome ||
-        graph->stage != stage || stage < GSTD_BOOT_PREPARE || stage >= GSTD_BOOT_COMPLETE ||
-        result < -2 || result > 1 ||
+        graph->stage != stage || stage < GSTD_BOOT_PREPARE || stage >= GSTD_BOOT_STAGE_COUNT ||
+        stage == GSTD_BOOT_COMPLETE ||
+        (stage >= GSTD_BOOT_LAUNCH_DATASTORE && !graph->persistent) || result < -2 || result > 1 ||
         (result == 1 && stage != GSTD_BOOT_WAIT_API && stage != GSTD_BOOT_WAIT_GIT &&
-         stage != GSTD_BOOT_WAIT_CONTROLLER) ||
+         stage != GSTD_BOOT_WAIT_CONTROLLER && stage != GSTD_BOOT_WAIT_DATASTORE) ||
         (uid && *uid && (stage != GSTD_BOOT_ENROLL || strnlen(uid, 129) > 128)) ||
+        (stage == GSTD_BOOT_ENROLL && graph->controller_uid[0] && uid &&
+         strcmp(graph->controller_uid, uid)) ||
         (stage == GSTD_BOOT_ENROLL && result == 0 && (!uid || !*uid)))
         return -1;
     if (uid)
@@ -45,15 +66,26 @@ int gstd_bootstrap_graph_observe(gstd_bootstrap_graph *graph, uint64_t generatio
                   (*p >= '0' && *p <= '9') || *p == '-'))
                 return -1;
     if (stage == GSTD_BOOT_ENROLL && uid && *uid)
-        memcpy(graph->controller_uid, uid, strlen(uid) + 1);
+        memmove(graph->controller_uid, uid, strlen(uid) + 1);
     if (result < 0) {
         graph->outcome = result;
         return 0;
     }
     if (result == 1)
         return 0;
-    graph->stage =
-        stage == GSTD_BOOT_WAIT_GIT && !graph->controller ? GSTD_BOOT_COMPLETE : stage + 1;
+    if (stage == GSTD_BOOT_PREPARE && graph->persistent)
+        graph->stage = GSTD_BOOT_LAUNCH_DATASTORE;
+    else if (stage == GSTD_BOOT_LAUNCH_DATASTORE)
+        graph->stage = GSTD_BOOT_WAIT_DATASTORE;
+    else if (stage == GSTD_BOOT_WAIT_DATASTORE)
+        graph->stage = graph->fresh_datastore ? GSTD_BOOT_PREPARE_KEYSPACE : GSTD_BOOT_LAUNCH_GIT;
+    else if (stage == GSTD_BOOT_PREPARE_KEYSPACE)
+        graph->stage = GSTD_BOOT_MIGRATE_SCHEMA;
+    else if (stage == GSTD_BOOT_MIGRATE_SCHEMA)
+        graph->stage = GSTD_BOOT_LAUNCH_GIT;
+    else
+        graph->stage =
+            stage == GSTD_BOOT_WAIT_GIT && !graph->controller ? GSTD_BOOT_COMPLETE : stage + 1;
     return 0;
 }
 #include "native_exit.h"
@@ -70,9 +102,8 @@ int gstd_bootstrap_graph_observe(gstd_bootstrap_graph *graph, uint64_t generatio
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <unistd.h>
-static const char api_base[] =
-    "[api]\nport = 4000\ngit_port = 9000\ngrpc_port = 6000\n"
-    "[api.datastore]\nbackend = \"memdb\"\n"
+static const char api_ports[] = "[api]\nport = 4000\ngit_port = 9000\ngrpc_port = 6000\n";
+static const char api_common[] =
     "[api.git_service]\nuri = \"dns:///127.0.0.1:50051\"\n"
     "[api.auth.static_users]\nusers_file = \"/etc/gitstore/users.yaml\"\n"
     "[api.auth.authn]\nchain = [\"static-users\", \"serviceaccount-assertion\", "
@@ -252,6 +283,14 @@ static int store_id(const char *text) {
             return 0;
     return 1;
 }
+static int datastore_matches(const gstd_bootstrap_request *request) {
+    if (!request || !request->datastore)
+        return 0;
+    const char *registered = json_string_value(json_object_get(request->manifest, "datastore"));
+    return !strcmp(request->datastore, "memdb") ? registered == NULL
+                                                : !strcmp(request->datastore, "scylladb") &&
+                                                      registered && !strcmp(registered, "scylladb");
+}
 static int host_platform(const json_t *manifest) {
 #if defined(__aarch64__)
     const char *expected = "arm64";
@@ -270,14 +309,14 @@ static int host_platform(const json_t *manifest) {
 int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_credential *material) {
     struct stat root, lock_info, marker;
     struct rlimit limit;
-    if (!request || !request->datastore || strcmp(request->datastore, "memdb") ||
-        !store_id(request->store_id) || !identifier(request->deployment_id) ||
-        !identifier(request->operation_id) || !request->generation ||
-        request->generation > UINT64_C(9007199254740991) || request->control_owner <= 0 ||
-        request->control_owner == getpid() || !geteuid() || getrlimit(RLIMIT_CORE, &limit) ||
-        limit.rlim_cur || gstd_asset_manifest_check(request->manifest) ||
-        !host_platform(request->manifest) || !scope(request->scope_fd, &root) ||
-        inventory(request->scope_fd, 0) || gstd_bootstrap_material_check(material))
+    if (!datastore_matches(request) || !store_id(request->store_id) ||
+        !identifier(request->deployment_id) || !identifier(request->operation_id) ||
+        !request->generation || request->generation > UINT64_C(9007199254740991) ||
+        request->control_owner <= 0 || request->control_owner == getpid() || !geteuid() ||
+        getrlimit(RLIMIT_CORE, &limit) || limit.rlim_cur ||
+        gstd_asset_manifest_check(request->manifest) || !host_platform(request->manifest) ||
+        !scope(request->scope_fd, &root) || inventory(request->scope_fd, 0) ||
+        gstd_bootstrap_material_check(material))
         return -1;
     int has_api = 0, has_git = 0, has_controller = 0;
     json_t *images = json_object_get(request->manifest, "images");
@@ -319,7 +358,7 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
     }
     int result = -1;
     char *owner_bytes = NULL, *api = NULL, *git = NULL, *users = NULL, *signing = NULL,
-         *validator = NULL;
+         *validator = NULL, *api_base = NULL;
     char *jwt = NULL, *hmac = NULL, *issuer = NULL, *hash = NULL, *key = NULL, *key_id = NULL;
     json_t *value = gstd_json_parse(material->bytes, material->length), *owner = NULL,
            *record = NULL;
@@ -344,6 +383,19 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
                       json_string_value(json_object_get(request->manifest, "profileDigest")),
                       "materialDigest", seed, "rootDevice", root_device, "rootInode", root_inode,
                       "lockDevice", lock_device, "lockInode", lock_inode);
+    int persistent = !strcmp(request->datastore, "scylladb");
+    if (persistent && owner &&
+        json_object_set(owner, "manifestDigest",
+                        json_object_get(request->manifest, "manifestDigest")))
+        goto done;
+    const char *datastore_config =
+        persistent ? "[api.datastore]\nbackend = \"scylla\"\n[api.datastore.scylla]\nauto_migrate "
+                     "= false\n"
+                     "hosts = [\"127.0.0.1:9042\"]\nkeyspace = "
+                     "\"gitstore\"\ndisable_shard_aware_port = true\n"
+                   : "[api.datastore]\nbackend = \"memdb\"\n";
+    if (asprintf(&api_base, "%s%s%s", api_ports, datastore_config, api_common) < 0)
+        goto done;
     owner_bytes = owner ? gstd_json_dump(owner) : NULL;
     jwt = quote(json_string_value(json_object_get(value, "jwtSecret")));
     hmac = quote(json_string_value(json_object_get(value, "hmacSecret")));
@@ -397,7 +449,8 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
         goto done;
     result = 0;
 done: {
-    char *sensitive[] = {api, git, users, signing, validator, jwt, hmac, issuer, hash, key, key_id};
+    char *sensitive[] = {api,  git,    users, signing, validator, jwt,
+                         hmac, issuer, hash,  key,     key_id,    api_base};
     for (size_t i = 0; i < sizeof(sensitive) / sizeof(sensitive[0]); i++)
         if (sensitive[i]) {
             OPENSSL_cleanse(sensitive[i], strlen(sensitive[i]));
@@ -481,12 +534,12 @@ int gstd_bootstrap_provision(const gstd_bootstrap_request *request, int broker,
                              const json_t *source, int initial) {
     struct stat root;
     struct rlimit limit;
-    if (!request || !request->datastore || strcmp(request->datastore, "memdb") || broker < 3 ||
-        (initial != 0 && initial != 1) || request->control_owner <= 0 ||
-        request->control_owner == getpid() || !geteuid() || getrlimit(RLIMIT_CORE, &limit) ||
-        limit.rlim_cur || !store_id(request->store_id) || !identifier(request->deployment_id) ||
-        !identifier(request->operation_id) || !scope(request->scope_fd, &root) ||
-        gstd_asset_manifest_check(request->manifest) || !host_platform(request->manifest))
+    if (!datastore_matches(request) || broker < 3 || (initial != 0 && initial != 1) ||
+        request->control_owner <= 0 || request->control_owner == getpid() || !geteuid() ||
+        getrlimit(RLIMIT_CORE, &limit) || limit.rlim_cur || !store_id(request->store_id) ||
+        !identifier(request->deployment_id) || !identifier(request->operation_id) ||
+        !scope(request->scope_fd, &root) || gstd_asset_manifest_check(request->manifest) ||
+        !host_platform(request->manifest))
         return -1;
     if (!request->generation || request->generation > UINT64_C(9007199254740991) ||
         inventory(request->scope_fd, 0))

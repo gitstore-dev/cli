@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "scope": "One real pinned Hydra creation in an owned native namespace. Test-only durable dispatch file; production enrollment coordinator and combined OIDC graph remain unimplemented.",
+  "evidence": {
+    "run": {
+      "provider": "hydra",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-hydra-uva2tx5e",
+      "probeSha256": "8eb9af430f04059f58d999c11af2bbc414cf469614b486c0105eb95f19ed08b5",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+      "exitCode": 0,
+      "elapsedSeconds": 0.217,
+      "result": "{\"ready\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+      "diagnostic": ""
+    },
+    "dispatch": {
+      "clientId": "gs-oidc-fixture-native",
+      "pid": 124275,
+      "startTime": 5535283,
+      "state": "dispatched"
+    },
+    "result": {
+      "created": true,
+      "status": 2
+    },
+    "termination": {
+      "deleted": true,
+      "exitCode": 0,
+      "exitObserved": true,
+      "populationEmpty": true
+    }
+  }
+}

@@ -1,18 +1,23 @@
-# M1 Development Implementation and Evidence
+# Remote CLI validation archive
+
+Historical implementation checkpoints for contributors. For usage, read the
+[user guide](../../remote-cli.md). For current build instructions and limitations,
+see [contributor documentation](../README.md). Older measurements and claims below
+apply to their recorded checkpoints, not automatically to the current build.
 
 **Recorded**: 2026-10-29. **Scope**: the unblocked increment in
-[specs/002-m1-remote-cli](../specs/002-m1-remote-cli/spec.md), not full PRD M1 release.
+[specs/002-m1-remote-cli](../../../specs/002-m1-remote-cli/spec.md), not full PRD M1 release.
 
 The 30 command records/restricted subsets have development implementations in the
-Rust workspace. [Tasks](../specs/002-m1-remote-cli/tasks.md) track code and applicable
-checks. [Remote command documentation](remote-cli.md) lists supported behavior;
-[configuration](configuration.md) supplies existing-credential bootstrap.
+Rust workspace. [Tasks](../../../specs/002-m1-remote-cli/tasks.md) track code and applicable
+checks. [Remote command documentation](../../remote-cli.md) lists supported behavior;
+[configuration](../../configuration.md) supplies existing-credential bootstrap.
 
 ## Checks and environment
 
 Local host: macOS 26.6.1, arm64. Rust 1.96.0, git2 0.21.0, libgit2 1.9.7,
 reqwest 0.13.5 with rustls, Postman CLI 1.75.0. The exact dependency resolution is
-`Cargo.lock`; [license inventory](dependencies.json) covers all resolved platforms.
+`Cargo.lock`; [license inventory](../../dependencies.json) covers all resolved platforms.
 No server working-tree changes or production credentials were used.
 
 | Check | Evidence / result |
@@ -116,7 +121,7 @@ ignored image test passed, including a library-seeded Git repository, default/ov
 remote names, branch tracking, no-op sync, accepted push, and reclone verification.
 Compose removed all project containers, volumes and its network after the run.
 
-[Run instructions and coverage](../tests/integration/README.md) distinguish this local
+[Run instructions and coverage](../../../tests/integration/README.md) distinguish this local
 image evidence from the Ubuntu GitHub-hosted workflow, which has not run in this session.
 The image source revision differs from the M0 source baseline; this records exercised
 compatibility and does not rebaseline the public contract or close release gates.
@@ -124,7 +129,7 @@ compatibility and does not rebaseline the public contract or close release gates
 
 The published-image suite now reports six independent Git scenarios and 30 named
 command cases rather than one combined Git test and an aggregated live script.
-[The coverage table](../tests/integration/README.md) records which other CLI commands
+[The coverage table](../../../tests/integration/README.md) records which other CLI commands
 run against images and which remain covered by controlled/local/native-store suites.
 Each Git case owns a distinct server repository; command cases isolate configuration
 and authored resources. A failure does not stop remaining cases or the other suite.
