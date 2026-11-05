@@ -107,6 +107,12 @@ static int prepared_files(int root, const char *id, gstd_filesystem_reply *reply
  * disposable Linux fixtures. No provider or HTTP mutation executes here. */
 static int provider_records(sqlite3 *db, const gstd_deployment_target *target, int root) {
     char volume[65], provider[65];
+    const char prefix[] = "run-oidc-hydra-";
+    size_t length = strnlen(target->operation_id, sizeof(target->operation_id));
+    if (length >= sizeof(provider) - (sizeof(prefix) - 1))
+        return -1;
+    memcpy(provider, prefix, sizeof(prefix) - 1);
+    memcpy(provider + sizeof(prefix) - 1, target->operation_id, length + 1);
     gstd_accept_status accepted =
         gstd_oidc_volume_reserve(db, GSTD_OIDC_VOLUME_HYDRA, target->operation_id, volume);
     if (accepted != GSTD_ACCEPT_NEW && accepted != GSTD_ACCEPT_REPLAY)
@@ -124,9 +130,7 @@ static int provider_records(sqlite3 *db, const gstd_deployment_target *target, i
         gstd_oidc_volume_compatibility(GSTD_OIDC_VOLUME_HYDRA), volume, volume, volume);
     int valid = sql && sqlite3_exec(db, sql, NULL, NULL, NULL) == SQLITE_OK;
     sqlite3_free(sql);
-    int n = snprintf(provider, sizeof(provider), "run-oidc-hydra-%s", target->operation_id);
-    if (!valid || n < 1 || n >= (int)sizeof(provider) ||
-        gstd_deployment_resource_reserve(db, target, provider, "workload") ||
+    if (!valid || gstd_deployment_resource_reserve(db, target, provider, "workload") ||
         mkdirat(root, provider, 0700))
         return -1;
     int wrapper = openat(root, provider, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);

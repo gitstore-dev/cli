@@ -99,11 +99,12 @@ int main(void) {
         }
     }
     closedir(fds);
-    if (getenv("GSTD_FIXTURE_REQUIRE_SECURITY")
 #ifdef GSTD_REGISTERED_PAYLOAD
-        || 1
+    const int require_security = 1;
+#else
+    const int require_security = getenv("GSTD_FIXTURE_REQUIRE_SECURITY") != NULL;
 #endif
-    ) {
+    if (require_security) {
         FILE *status = fopen("/proc/self/status", "r");
         char line[256];
         int nnp = 0, seccomp = 0, capabilities = 0;
