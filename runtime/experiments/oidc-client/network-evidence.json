@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private library forwarding only; the durable optional-profile network owner is not yet integrated.",
+  "tests": [
+    {
+      "build": "daemon-native",
+      "probe": "oidc_network_probe",
+      "sha256": "3197b67243578dff339393eb8b6add9672d744b846f879aa6bbda085cabc1446",
+      "exitCode": 0,
+      "elapsedSeconds": 0.036,
+      "stdout": "{\"forwards\":7,\"samePortOidcRoles\":5,\"loopbackOnly\":true,\"privatePortsRejected\":true,\"payloadRolesMatched\":true,\"listenersReleased\":true,\"stablePortsRebound\":true}\n",
+      "stderr": ""
+    },
+    {
+      "build": "daemon-native",
+      "probe": "network_engine_probe",
+      "sha256": "b123e303d1ca580d9a983aaf67abcc34847c150b1dfb7f8df7746734daada04b",
+      "exitCode": 0,
+      "elapsedSeconds": 0.056,
+      "stdout": "daemon network engine: owned TAP, DNS, fixed loopback role, independent control and cleanup pass\n",
+      "stderr": ""
+    },
+    {
+      "build": "daemon-native-sanitized",
+      "probe": "oidc_network_probe",
+      "sha256": "fd6bc08920f0844000f738a7d482a7e493619b7610fca8f9154ccd7c90d4431e",
+      "exitCode": 0,
+      "elapsedSeconds": 0.073,
+      "stdout": "{\"forwards\":7,\"samePortOidcRoles\":5,\"loopbackOnly\":true,\"privatePortsRejected\":true,\"payloadRolesMatched\":true,\"listenersReleased\":true,\"stablePortsRebound\":true}\n",
+      "stderr": ""
+    },
+    {
+      "build": "daemon-native-sanitized",
+      "probe": "network_engine_probe",
+      "sha256": "1eec7e6d4bce1ba56b7697e9aa236fca6f26f26d3a1143c2f94ae68a697c5d4e",
+      "exitCode": 0,
+      "elapsedSeconds": 0.067,
+      "stdout": "daemon network engine: owned TAP, DNS, fixed loopback role, independent control and cleanup pass\n",
+      "stderr": ""
+    }
+  ]
+}

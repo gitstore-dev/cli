@@ -12,7 +12,7 @@
 
 This repository defines the GitStore CLI (`gs`) and its future local runtime daemon
 (`gitstored`). M0 contracts are documented. M1 has an executable development subset and implementation tasks. Check
-[the evidence record](docs/m1-status.md), working tree and task state before claiming
+[the evidence record](docs/contributing/validation/remote-cli.md), working tree and task state before claiming
 completion, live compatibility or release support.
 
 Read the relevant sources before changing behavior:

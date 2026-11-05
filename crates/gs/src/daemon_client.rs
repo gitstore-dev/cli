@@ -246,6 +246,7 @@ struct Pending {
     method: String,
     deadline: Instant,
     key: Option<String>,
+    subscription: Option<String>,
     result: Option<Result<Value, Box<ClientError>>>,
 }
 pub struct Client {
@@ -258,6 +259,8 @@ pub struct Client {
     subscriptions: BTreeMap<String, Option<u64>>,
     frame_max: usize,
     pending_limit: usize,
+    input: Vec<u8>,
+    frame_started: Option<Instant>,
 }
 impl Client {
     pub fn connect(
@@ -294,6 +297,8 @@ impl Client {
             subscriptions: BTreeMap::new(),
             frame_max: wire::FRAME_MAX,
             pending_limit: 16,
+            input: Vec::new(),
+            frame_started: None,
         };
         let id = client.submit_unchecked(
             "system.negotiate",
@@ -372,6 +377,9 @@ impl Client {
             ));
         }
         Ok(client)
+    }
+    pub fn supports(&self, capability: &str) -> bool {
+        self.capabilities.contains(capability)
     }
     pub fn submit(
         &mut self,
@@ -454,6 +462,9 @@ impl Client {
                 method: method.into(),
                 deadline,
                 key: key.map(str::to_owned),
+                subscription: value["params"]["subscriptionId"]
+                    .as_str()
+                    .map(str::to_owned),
                 result: None,
             },
         );
@@ -461,125 +472,228 @@ impl Client {
     }
     pub fn receive(&mut self, wanted: &str) -> Result<Value, Box<ClientError>> {
         let key = self.pending.get(wanted).and_then(|p| p.key.clone());
-        self.receive_inner(wanted).map_err(|mut error| {
+        self.receive_inner(wanted, None).map_err(|mut error| {
             if error.idempotency_key.is_none() {
                 error.idempotency_key = key;
             }
             error
         })
     }
-    fn receive_inner(&mut self, wanted: &str) -> Result<Value, Box<ClientError>> {
+    fn receive_inner(
+        &mut self,
+        wanted: &str,
+        interrupted: Option<&std::sync::atomic::AtomicBool>,
+    ) -> Result<Value, Box<ClientError>> {
         loop {
+            if interrupted.is_some_and(|flag| flag.load(std::sync::atomic::Ordering::Relaxed)) {
+                return Err(failure(
+                    "OBSERVATION_INTERRUPTED",
+                    "observe",
+                    "Local observation interrupted",
+                    130,
+                ));
+            }
             let pending = self.pending.get_mut(wanted).ok_or_else(invalid)?;
             if let Some(result) = pending.result.take() {
                 self.pending.remove(wanted);
                 return result;
             }
             let deadline = pending.deadline;
-            let response = match wire::read_frame(&mut DeadlineIo {
-                stream: &mut self.stream,
-                deadline,
-            }) {
-                Ok(Some(value)) => value,
-                Ok(None) => {
-                    let mut error = transport(io::Error::from(io::ErrorKind::UnexpectedEof));
-                    error.idempotency_key = pending.key.clone();
-                    return Err(error);
-                }
-                Err(e) => {
-                    let mut error = transport(e);
-                    error.idempotency_key = pending.key.clone();
-                    return Err(error);
-                }
+            let poll_until = if interrupted.is_some() {
+                deadline.min(Instant::now() + Duration::from_millis(100))
+            } else {
+                deadline
             };
-            if response["version"] != json!({"major":1,"minor":0}) {
-                return Err(invalid());
-            }
-            if let Some(subscription) = response.get("subscriptionId") {
-                let subscription = subscription.as_str().ok_or_else(invalid)?;
-                let previous = self
-                    .subscriptions
-                    .get_mut(subscription)
-                    .ok_or_else(invalid)?;
-                let sequence = response["sequence"].as_u64().ok_or_else(invalid)?;
-                if response.get("requestId").is_some()
-                    || response.get("result").is_some()
-                    || response.get("error").is_some()
-                    || response.get("operationId").is_some()
-                        == response.get("deploymentId").is_some()
-                    || !response["payload"].is_object()
-                    || response["type"].as_str().is_none_or(str::is_empty)
-                    || previous.is_some_and(|n| sequence <= n)
-                {
-                    return Err(invalid());
+            let Some(response) = self.read_message(poll_until)? else {
+                if Instant::now() < deadline {
+                    continue;
                 }
-                for name in ["deploymentId", "operationId"] {
-                    if let Some(value) = response.get(name) {
-                        Identifier::try_from(value.as_str().ok_or_else(invalid)?.to_owned())
-                            .map_err(|_| invalid())?;
-                    }
-                }
-                let bytes = serde_json::to_vec(&response).map_err(|_| invalid())?.len();
-                if self.events.len() >= 256 || self.event_bytes + bytes > 4 * 1024 * 1024 {
-                    return Err(failure(
-                        "STREAM_OVERFLOW",
-                        "stream",
-                        "Local observation queue exceeded its bound",
-                        8,
-                    ));
-                }
-                *previous = Some(sequence);
-                self.event_bytes += bytes;
-                self.events.push_back((response, bytes));
-                continue;
-            }
-            let id = response["requestId"].as_str().ok_or_else(invalid)?;
-            let item = self.pending.get_mut(id).ok_or_else(invalid)?;
-            if item.result.is_some()
-                || response.get("result").is_some() == response.get("error").is_some()
+                return Err(failure(
+                    "DEADLINE_EXCEEDED",
+                    "transport",
+                    "Local observation deadline exceeded",
+                    7,
+                ));
+            };
+            self.ingest(response)?;
+        }
+    }
+    fn ingest(&mut self, response: Value) -> Result<(), Box<ClientError>> {
+        if response["version"] != json!({"major":1,"minor":0}) {
+            return Err(invalid());
+        }
+        if let Some(subscription) = response.get("subscriptionId") {
+            let subscription = subscription.as_str().ok_or_else(invalid)?;
+            let previous = self
+                .subscriptions
+                .get_mut(subscription)
+                .ok_or_else(invalid)?;
+            let sequence = response["sequence"].as_u64().ok_or_else(invalid)?;
+            if response.get("requestId").is_some()
+                || response.get("result").is_some()
+                || response.get("error").is_some()
+                || response.get("operationId").is_some() == response.get("deploymentId").is_some()
+                || !response["payload"].is_object()
+                || response["type"].as_str().is_none_or(str::is_empty)
+                || previous.is_some_and(|n| sequence <= n)
             {
                 return Err(invalid());
             }
-            if item.method == "stream.subscribe" && response.get("error").is_none() {
-                let subscription = response["result"]["subscriptionId"]
-                    .as_str()
-                    .ok_or_else(invalid)?
-                    .to_owned();
-                Identifier::try_from(subscription.clone()).map_err(|_| invalid())?;
-                if self.subscriptions.len() >= 8
-                    || self.subscriptions.insert(subscription, None).is_some()
-                {
-                    return Err(invalid());
+            for name in ["deploymentId", "operationId"] {
+                if let Some(value) = response.get(name) {
+                    Identifier::try_from(value.as_str().ok_or_else(invalid)?.to_owned())
+                        .map_err(|_| invalid())?;
                 }
             }
-            let result = if let Some(error) = response.get("error") {
-                let error: ProtocolError =
-                    serde_json::from_value(error.clone()).map_err(|_| invalid())?;
-                let exit = error.exit_category();
-                if Identifier::try_from(error.code.clone()).is_err()
-                    || Identifier::try_from(error.stage.clone()).is_err()
-                {
+            let bytes = serde_json::to_vec(&response).map_err(|_| invalid())?.len();
+            if self.events.len() >= 256 || self.event_bytes + bytes > 4 * 1024 * 1024 {
+                return Err(failure(
+                    "STREAM_OVERFLOW",
+                    "stream",
+                    "Local observation queue exceeded its bound",
+                    8,
+                ));
+            }
+            *previous = Some(sequence);
+            self.event_bytes += bytes;
+            self.events.push_back((response, bytes));
+            return Ok(());
+        }
+        let id = response["requestId"].as_str().ok_or_else(invalid)?;
+        let item = self.pending.get_mut(id).ok_or_else(invalid)?;
+        if item.result.is_some()
+            || response.get("result").is_some() == response.get("error").is_some()
+        {
+            return Err(invalid());
+        }
+        if item.method == "stream.subscribe" && response.get("error").is_none() {
+            let subscription = response["result"]["subscriptionId"]
+                .as_str()
+                .ok_or_else(invalid)?
+                .to_owned();
+            Identifier::try_from(subscription.clone()).map_err(|_| invalid())?;
+            if self.subscriptions.len() >= 8
+                || self.subscriptions.insert(subscription, None).is_some()
+            {
+                return Err(invalid());
+            }
+        }
+        let result = if let Some(error) = response.get("error") {
+            let error: ProtocolError =
+                serde_json::from_value(error.clone()).map_err(|_| invalid())?;
+            let exit = error.exit_category();
+            if Identifier::try_from(error.code.clone()).is_err()
+                || Identifier::try_from(error.stage.clone()).is_err()
+            {
+                return Err(invalid());
+            }
+            Err(Box::new(ClientError {
+                code: error.code,
+                stage: error.stage,
+                message: error.message,
+                exit,
+                retryable: error.retryable,
+                operation_id: error.operation_id.map(|i| i.0),
+                deployment_id: error.deployment_id.map(|i| i.0),
+                idempotency_key: item.key.clone(),
+            }))
+        } else {
+            Ok(response["result"].clone())
+        };
+        if item.method == "stream.unsubscribe"
+            && result.is_ok()
+            && let Some(subscription) = &item.subscription
+        {
+            self.subscriptions.remove(subscription);
+        }
+        item.result = Some(result);
+        Ok(())
+    }
+    /// Retains a partial frame across short polling windows. A single partial
+    /// frame still has a ten-second wall deadline; silence has no cursor effect.
+    fn read_message(&mut self, deadline: Instant) -> Result<Option<Value>, Box<ClientError>> {
+        loop {
+            if self
+                .frame_started
+                .is_some_and(|at| at.elapsed() >= Duration::from_secs(10))
+            {
+                return Err(failure(
+                    "DEADLINE_EXCEEDED",
+                    "transport",
+                    "Partial local frame timed out",
+                    7,
+                ));
+            }
+            let expected = if self.input.len() >= 4 {
+                let size =
+                    u32::from_be_bytes(self.input[..4].try_into().map_err(|_| invalid())?) as usize;
+                if size == 0 || size > self.frame_max {
                     return Err(invalid());
                 }
-                Err(Box::new(ClientError {
-                    code: error.code,
-                    stage: error.stage,
-                    message: error.message,
-                    exit,
-                    retryable: error.retryable,
-                    operation_id: error.operation_id.map(|i| i.0),
-                    deployment_id: error.deployment_id.map(|i| i.0),
-                    idempotency_key: item.key.clone(),
-                }))
+                size + 4
             } else {
-                Ok(response["result"].clone())
+                4
             };
-            item.result = Some(result);
+            if self.input.len() == expected && expected > 4 {
+                let value = wire::decode(&self.input[4..]).map_err(|_| invalid())?;
+                self.input.clear();
+                self.frame_started = None;
+                return Ok(Some(value));
+            }
+            let frame_deadline = self.frame_started.map(|at| at + Duration::from_secs(10));
+            let until = frame_deadline.map_or(deadline, |at| at.min(deadline));
+            let io = DeadlineIo {
+                stream: &mut self.stream,
+                deadline: until,
+            };
+            if let Err(error) = io.wait(libc::POLLIN) {
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::TimedOut | io::ErrorKind::WouldBlock
+                ) {
+                    return Ok(None);
+                }
+                return Err(transport(error));
+            }
+            let mut bytes = [0u8; 8192];
+            let count = (expected - self.input.len()).min(bytes.len());
+            match io.stream.read(&mut bytes[..count]) {
+                Ok(0) => return Err(transport(io::Error::from(io::ErrorKind::UnexpectedEof))),
+                Ok(n) => {
+                    self.frame_started.get_or_insert_with(Instant::now);
+                    self.input.extend_from_slice(&bytes[..n]);
+                }
+                Err(error)
+                    if matches!(
+                        error.kind(),
+                        io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
+                    ) => {}
+                Err(error) => return Err(transport(error)),
+            }
         }
     }
+    pub fn poll_event(&mut self, timeout: Duration) -> Result<Option<Value>, Box<ClientError>> {
+        if let Some(event) = self.next_event() {
+            return Ok(Some(event));
+        }
+        let deadline = Instant::now() + timeout;
+        while let Some(value) = self.read_message(deadline)? {
+            self.ingest(value)?;
+            if let Some(event) = self.next_event() {
+                return Ok(Some(event));
+            }
+        }
+        Ok(None)
+    }
+
     pub fn next_event(&mut self) -> Option<Value> {
         let (event, bytes) = self.events.pop_front()?;
         self.event_bytes -= bytes;
+        if event["type"] == "gap"
+            && let Some(id) = event["subscriptionId"].as_str()
+        {
+            self.subscriptions.remove(id);
+        }
         Some(event)
     }
     pub fn call(
@@ -591,6 +705,21 @@ impl Client {
     ) -> Result<Value, Box<ClientError>> {
         let id = self.submit(method, params, key, timeout)?;
         self.receive(&id)
+    }
+    /// Interruption ends observation on the caller's connection. It never
+    /// submits an operation cancellation or guesses an unacknowledged identity.
+    pub fn observe_interruptible(
+        &mut self,
+        method: &str,
+        params: Value,
+        timeout: Duration,
+        interrupted: &std::sync::atomic::AtomicBool,
+    ) -> Result<Value, Box<ClientError>> {
+        if method != "stream.subscribe" {
+            return Err(invalid());
+        }
+        let id = self.submit(method, params, None, timeout)?;
+        self.receive_inner(&id, Some(interrupted))
     }
     /// Retry only a caller-selected operation with its original key on a fresh
     /// authenticated connection. No fresh mutation identity is generated here.

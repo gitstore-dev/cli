@@ -25,6 +25,7 @@ pub enum Purpose {
     ControllerEnrollment,
     ControllerSigning,
     BootstrapMaterial,
+    OidcProviderMaterial,
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -49,6 +50,7 @@ impl Identity {
             Purpose::ControllerEnrollment => "controller-enrollment",
             Purpose::ControllerSigning => "controller-signing",
             Purpose::BootstrapMaterial => "bootstrap-material",
+            Purpose::OidcProviderMaterial => "oidc-provider-material",
         };
         if matches!(self.purpose, Purpose::RegistryPull) {
             let origin = self.registry.as_deref().ok_or_else(denied)?;
@@ -121,8 +123,10 @@ impl Request {
         let request: Self = serde_json::from_slice(bytes).map_err(|_| denied())?;
         request.identity.key()?;
         if let Some(value) = &request.create_if_absent
-            && (!matches!(request.identity.purpose, Purpose::BootstrapMaterial)
-                || value.is_empty()
+            && (!matches!(
+                request.identity.purpose,
+                Purpose::BootstrapMaterial | Purpose::OidcProviderMaterial
+            ) || value.is_empty()
                 || value.len() > SECRET_LIMIT
                 || value.chars().any(char::is_control))
         {
@@ -162,7 +166,10 @@ pub fn resolve(request: &Request, store: &impl Store) -> Result<Option<Secret>> 
                 Ok(file) => file,
                 Err(error)
                     if error.kind() == std::io::ErrorKind::NotFound
-                        && matches!(request.identity.purpose, Purpose::BootstrapMaterial) =>
+                        && matches!(
+                            request.identity.purpose,
+                            Purpose::BootstrapMaterial | Purpose::OidcProviderMaterial
+                        ) =>
                 {
                     bootstrap_parent(path)?;
                     return Ok(None);

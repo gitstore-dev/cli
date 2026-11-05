@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private parent orchestration over actual protected-file credential workers and separate Linux provider volumes. Two prepared generations and cancellation; no runtime image acquisition, native service, enrollment HTTP or deployment readiness is claimed.",
+  "normal": {
+    "variant": "daemon-native",
+    "root": "/home/gitstorefixture/experiments/oidc-parent-setup-t0wa_kct",
+    "probeSha256": "49e3b3b2c2b706782420671ba30e982314d2d543639e6e2c9b20cc58fa83bba6",
+    "brokerSha256": "ec028d5635e124716b53f5418806be602a35c132d6b39c40c79dfce6bcdd06aa",
+    "exitCode": 0,
+    "elapsedSeconds": 0.296,
+    "result": {
+      "preparedGenerations": 2,
+      "privateConfigDescriptors": 4,
+      "providerVolumes": 2,
+      "retainedProducerAndInodes": true,
+      "previousPreparationReopenedReadOnly": true,
+      "cancellationRetainsOwners": true,
+      "cancelMarkerUnconsumed": true,
+      "secretsReadByControlOwner": false,
+      "serviceReadinessClaimed": false
+    },
+    "diagnostic": ""
+  },
+  "sanitizer": {
+    "variant": "daemon-native-sanitized",
+    "root": "/home/gitstorefixture/experiments/oidc-parent-setup-8ij79tpr",
+    "probeSha256": "5c764184496424962ba3b8d15c8e0cf9733532d8815a8fcbbc4f8d6314e783c0",
+    "brokerSha256": "ec028d5635e124716b53f5418806be602a35c132d6b39c40c79dfce6bcdd06aa",
+    "exitCode": 0,
+    "elapsedSeconds": 0.405,
+    "result": {
+      "preparedGenerations": 2,
+      "privateConfigDescriptors": 4,
+      "providerVolumes": 2,
+      "retainedProducerAndInodes": true,
+      "previousPreparationReopenedReadOnly": true,
+      "cancellationRetainsOwners": true,
+      "cancelMarkerUnconsumed": true,
+      "secretsReadByControlOwner": false,
+      "serviceReadinessClaimed": false
+    },
+    "diagnostic": ""
+  },
+  "journalPolicyChecks": {
+    "hostMacArm64": "one_attempt_oidc_enrollment and one_attempt_oidc_material_reservation: 2/2 passed, 0.93 seconds",
+    "normalLinuxArm64": "2/2 passed, 0.09 seconds",
+    "sanitizerLinuxArm64": "2/2 passed, 0.36 seconds",
+    "scope": "Synthetic parent-ledger policy receipts, not kernel/native authority. Committed prepare/dispatch, repeated-dispatch refusal, uncertain recovery, no adoption after public match, known ACK retained across changed STOP/uncertain ownership, idempotent ACK metadata replay, and retained creation without a new POST.",
+    "nativeProviderToParentJournalIntegrationVerified": false
+  },
+  "sourceSha256": {
+    "daemon/src/oidc_setup.c": "553002d168ebd2c8c9559ea446972fb5ddad8147f4072611b24cb76973795d70",
+    "daemon/src/oidc_setup.h": "a77e7374b02572ca3c68375bac77a799bd81cebb4fd94acd8740c076260e9b15",
+    "daemon/src/deployment_records.c": "28e07c34b54bf959ffdac8c5aabcfcd4d759df650365d99f57bdea078575d5b8",
+    "daemon/src/deployment_records.h": "21553f795ac40fd9d2bb41e58eb9578baa6fc437c0d1852e1acca296a6638c39",
+    "daemon/src/oidc_enrollment.c": "ab16eb2ed97be6a45731a5de73cd4e92d22e64b56cb6c505793acccd65b2dd05",
+    "daemon/src/oidc_enrollment.h": "3a3479a4a45c07250a7f4f2d687a3cbb23ff532a8f9b56774355f071b7b53c4e",
+    "daemon/tests/oidc_setup_probe.c": "78459c3e008989ea405ac756d24d08c42e1fc669fdaad2128af95f1fce14c332",
+    "daemon/tests/test_oidc_credential_records.c": "6fa69fb8287dba6b31cb46c82fecf60bd532249e111e6f96d0d97df4ffeb7139",
+    "daemon/tests/test_oidc_enrollment.c": "dabc7dff43a486a9778b1488a2e2503b2929efad82c7caca16045d8422659829",
+    "daemon/CMakeLists.txt": "0c0d07487ef49bbf2a954e6adcce582ce506887b7b111a8e72a15d269443539b",
+    "daemon/cmake/Bootstrap.cmake": "b3f570d8ada5e7f9be6b24e2421cd357b28cbe0a63ca968654a8b57e1ac4cad5"
+  },
+  "publicOptionalLifecycleEnabled": false
+}

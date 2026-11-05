@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "profileId": "core",
+  "profileVersion": "1",
+  "executionEnabled": true,
+  "status": "Linux arm64 native persistent execution, schema, retained volumes and private restore verified; public lifecycle validation in progress",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "datastore": "scylladb",
+  "serverBackend": "scylla",
+  "image": {
+    "repository": "docker.io/scylladb/scylla",
+    "indexDigest": "sha256:e15660595e31d7391ad62930096f837010a68512bf238140b74b113b187191fb",
+    "platforms": [
+      {
+        "architecture": "amd64",
+        "actualPlatform": "linux/amd64",
+        "digest": "sha256:474d2cd76dc7d2edd6754ce82fd372a8bf8cce9de4bef000c55bcc843e3761a6",
+        "configDigest": "sha256:1dafda4ad7bf9e1257b57e51eb7a35c18598ed227ead3508cd09b5270a4a6c20",
+        "sourceRevision": "84687598811e20f52a46b476c889a722893da6fd",
+        "user": "scylla:scylla",
+        "entrypoint": "/docker-entrypoint.py",
+        "status": "metadata-verified"
+      },
+      {
+        "architecture": "arm64",
+        "actualPlatform": "linux/arm64",
+        "digest": "sha256:e65d9d7113cb5b324baa4cf982ab27f9ace4a2f11666942bd9a8c09293297768",
+        "configDigest": "sha256:7eb8c9cef67abe8d5d15cbb2e29cfdb64551e256e00acd1d0e33067feb8bbbba",
+        "sourceRevision": "84687598811e20f52a46b476c889a722893da6fd",
+        "user": "scylla:scylla",
+        "entrypoint": "/docker-entrypoint.py",
+        "status": "arm64-manifest-config-layers-native-cql-keyspace-verified"
+      }
+    ],
+    "transportPolicy": {
+      "tokenOrigins": [
+        "https://auth.docker.io"
+      ],
+      "blobOrigins": [
+        "https://production.cloudfront.docker.com"
+      ],
+      "evidence": "anonymous pinned arm64 metadata and origin probe plus full production-library acquisition (273983661 bytes); amd64 metadata only"
+    }
+  },
+  "metadataReference": "scylladb/scylla:2026.1",
+  "keyspace": {
+    "name": "gitstore",
+    "preparation": "verified arm64 image-native /usr/bin/cqlsh on owned private namespace, fixed statement and read-only root",
+    "statement": "CREATE KEYSPACE IF NOT EXISTS gitstore WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1'} AND durable_writes = true",
+    "source": {
+      "path": "gitstore-api/tests/contract/datastore/scylla_test.go",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/tests/contract/datastore/scylla_test.go",
+      "sha256": "4e54f8d5c1e00ed329ec2b66f6967101104e02b962a07debd1e2a40f22df9120"
+    }
+  },
+  "migrationTarget": "gitstore-06152d-schema-012",
+  "persistentMount": "/var/lib/scylla",
+  "developmentResourceCandidate": {
+    "cpuCount": 1,
+    "scyllaMemoryMiB": 1536,
+    "cgroupMemoryBytes": 2147483648,
+    "flags": [
+      "--developer-mode=1",
+      "--options-file=/etc/scylla/scylla.yaml",
+      "--overprovisioned",
+      "--smp=1",
+      "--memory=1536M"
+    ],
+    "scope": "disposable single-node source preview; not production tuning",
+    "virtualAddressBytes": 70368744177664,
+    "virtualAddressRationale": "Pinned binary reserves 32 TiB PROT_NONE/MAP_NORESERVE before --version; retain finite 64 TiB AS ceiling and separate 2 GiB physical cgroup limit",
+    "command": "/usr/bin/scylla"
+  },
+  "activationGates": [
+    "verify amd64 native image execution; arm64 SDK acquisition and single caller-mapped UID/GID override verified in disposable fixture",
+    "integrate verified arm64 native helper paths and owned writable mounts into registered persistent graph",
+    "verify keyspace preparation and exclusive migration using protected inputs",
+    "verify compatible API check mode and retained datastore/repository stop/restart",
+    "verify backup/restore, unsafe cancellation, disk failures and lost-helper recovery"
+  ],
+  "sources": [
+    "https://hub.docker.com/r/scylladb/scylla/tags",
+    "https://docs.scylladb.com/manual/stable/operating-scylla/procedures/tips/best-practices-scylla-on-docker.html",
+    "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/compose.scylla.yml"
+  ],
+  "imageUserPolicyCandidate": {
+    "imageUid": 998,
+    "imageGid": 1000,
+    "namespaceUid": 0,
+    "namespaceGid": 0,
+    "hostIdentity": "single invoking UID/GID, capabilities dropped",
+    "reason": "pinned libcrun requires mapped namespace UID 0 when joining owned user namespace; image default override remains subject to native profile verification"
+  },
+  "datastoreProfile": "scylladb"
+}

@@ -2,6 +2,7 @@
 #include "bootstrap_job.h"
 #include "gitstored/assets.h"
 #include "gitstored/protocol.h"
+#include "oidc_profile.h"
 #include "support.h"
 #include <fcntl.h>
 #include <signal.h>
@@ -63,23 +64,50 @@ int main(void) {
     gstd_bootstrap_job_input invalid = input;
     invalid.preparation.control_owner++;
     CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
-    for (unsigned mode = 0; mode < 3; mode++) {
-        CHECK(!gstd_bootstrap_job_launch(&input, mode == 2 ? 1 : 5000, &job));
+    json_t *oidc_components = json_pack("[s]", "oidc");
+#if defined(__aarch64__)
+    json_t *oidc_manifest = gstd_oidc_core_manifest(oidc_components, "arm64", "memdb");
+#else
+    json_t *oidc_manifest = gstd_oidc_core_manifest(oidc_components, "amd64", "memdb");
+#endif
+    CHECK(oidc_manifest);
+    gstd_network_namespace network = GSTD_NETWORK_NAMESPACE_INITIAL;
+    for (unsigned mode = 0; mode < 6; mode++) {
+        if (mode == 3) {
+            input.kind = GSTD_BOOT_JOB_OIDC_HTTP;
+            input.preparation.manifest = oidc_manifest;
+            input.network = &network;
+            input.oidc_ports = (gstd_oidc_ports){24001, 24002, 24003, 24004, 24005};
+            invalid = input;
+            invalid.preparation.manifest = manifest;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+            invalid = input;
+            invalid.allow_initial = 1;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+            invalid = input;
+            invalid.oidc_ports.ui = 4445;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+            invalid = input;
+            invalid.oidc_action = GSTD_OIDC_HTTP_CREATE;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+        }
+        unsigned failure = mode % 3;
+        CHECK(!gstd_bootstrap_job_launch(&input, failure == 2 ? 1 : 5000, &job));
         int status;
         CHECK(waitpid(job.worker, &status, WUNTRACED) == job.worker && WIFSTOPPED(status));
         int pipes[2];
         CHECK(!pipe2(pipes, O_CLOEXEC));
-        if (mode == 0)
+        if (failure == 0)
             CHECK(write(pipes[1], "x", 1) == 1);
-        else if (mode == 1)
+        else if (failure == 1)
             CHECK(!kill(job.worker, SIGSEGV) && !kill(job.worker, SIGCONT));
         else {
             struct timespec pause = {0, 2000000};
             nanosleep(&pause, NULL);
         }
-        CHECK(finish(&job, mode == 0 ? pipes[0] : -1, &reply) == 1 &&
+        CHECK(finish(&job, failure == 0 ? pipes[0] : -1, &reply) == 1 &&
               reply.status == GSTD_BOOT_HTTP_UNCERTAIN && !*reply.uid);
-        if (mode == 0) {
+        if (failure == 0) {
             char marker;
             CHECK(read(pipes[0], &marker, 1) == 1 && marker == 'x');
         }
@@ -88,6 +116,13 @@ int main(void) {
         CHECK(!job.worker && job.descriptor == -1);
         CHECK(faccessat(directory, "owner.json", F_OK, 0) != 0);
     }
+    input.test_pause = 0;
+    CHECK(!gstd_bootstrap_job_launch(&input, 5000, &job));
+    CHECK(finish(&job, -1, &reply) == 1 && reply.status == GSTD_OIDC_REJECTED && !*reply.uid);
+    CHECK(faccessat(directory, "prepared.json", F_OK, 0) != 0 &&
+          faccessat(directory, "owner.json", F_OK, 0) != 0);
+    json_decref(oidc_components);
+    json_decref(oidc_manifest);
     json_decref(components);
     json_decref(manifest);
     json_decref(source);

@@ -202,7 +202,8 @@ void gstd_volume_handle_close(gstd_volume_handle *handle) {
 static gstd_volume_status volume_open(int directory, const gstd_volume_root *owner, const char *id,
                                       const char *producer, int create,
                                       const gstd_volume_identity *expected,
-                                      gstd_volume_handle *output, int claim_writer) {
+                                      gstd_volume_handle *output, int claim_writer,
+                                      const char *compatibility) {
     if (!output || output->data_fd != -1 || output->writer_fd != -1 || !id || !producer ||
         !gstd_identifier(id, strlen(id)) || !gstd_identifier(producer, strlen(producer)) ||
         (create != 0 && create != 1) || (!claim_writer && (create || !expected)))
@@ -254,12 +255,11 @@ static gstd_volume_status volume_open(int directory, const gstd_volume_root *own
                      identity.writer_inode != expected->writer_inode))
         goto done;
     char record[512];
-    snprintf(record, sizeof(record),
-             "gitstored-repository-volume-v1\n%s\n%s\n%s\n%llu:%llu\n%llu:%llu\n%llu:%llu\n",
-             owner->store_id, id, producer, (unsigned long long)identity.volume_device,
-             (unsigned long long)identity.volume_inode, (unsigned long long)identity.data_device,
-             (unsigned long long)identity.data_inode, (unsigned long long)identity.writer_device,
-             (unsigned long long)identity.writer_inode);
+    snprintf(record, sizeof(record), "%s\n%s\n%s\n%s\n%llu:%llu\n%llu:%llu\n%llu:%llu\n",
+             compatibility, owner->store_id, id, producer,
+             (unsigned long long)identity.volume_device, (unsigned long long)identity.volume_inode,
+             (unsigned long long)identity.data_device, (unsigned long long)identity.data_inode,
+             (unsigned long long)identity.writer_device, (unsigned long long)identity.writer_inode);
     if (marker(volume, ".gitstored-volume", record, created) ||
         (claim_writer && (fsync(data) || fsync(volume) || fsync(writer) || fsync(directory))))
         goto done;
@@ -285,6 +285,7 @@ done:
     (void)directory;
     (void)owner;
     (void)expected;
+    (void)compatibility;
     return GSTD_VOLUME_UNAVAILABLE;
 #endif
 }
@@ -293,11 +294,66 @@ gstd_volume_status gstd_volume_acquire(int root, const gstd_volume_root *owner, 
                                        const char *producer, int create,
                                        const gstd_volume_identity *expected,
                                        gstd_volume_handle *output) {
-    return volume_open(root, owner, id, producer, create, expected, output, 1);
+    return volume_open(root, owner, id, producer, create, expected, output, 1,
+                       "gitstored-repository-volume-v1");
 }
 gstd_volume_status gstd_volume_observe_open(int root, const gstd_volume_root *owner, const char *id,
                                             const char *producer,
                                             const gstd_volume_identity *expected,
                                             gstd_volume_handle *output) {
-    return volume_open(root, owner, id, producer, 0, expected, output, 0);
+    return volume_open(root, owner, id, producer, 0, expected, output, 0,
+                       "gitstored-repository-volume-v1");
+}
+
+/* Fixed disk compatibility, independent of mutable tags and caller strings.
+ * No existing repository marker or copied inode receipt can satisfy this role. */
+static const char scylla_compatibility[] =
+    "gitstored-scylla-volume-v1:scylla-2026.1:gitstore-06152d-schema-012";
+gstd_volume_status gstd_scylla_volume_acquire(int root, const gstd_volume_root *owner,
+                                              const char *id, const char *producer, int create,
+                                              const gstd_volume_identity *expected,
+                                              gstd_volume_handle *output) {
+    return volume_open(root, owner, id, producer, create, expected, output, 1,
+                       scylla_compatibility);
+}
+gstd_volume_status gstd_scylla_volume_observe_open(int root, const gstd_volume_root *owner,
+                                                   const char *id, const char *producer,
+                                                   const gstd_volume_identity *expected,
+                                                   gstd_volume_handle *output) {
+    return volume_open(root, owner, id, producer, 0, expected, output, 0, scylla_compatibility);
+}
+
+/* SQLite formats are bound to the exact immutable multi-architecture provider
+ * release. Future migrations must introduce an explicit compatibility mapping. */
+const char *gstd_oidc_volume_compatibility(gstd_oidc_volume_role role) {
+    switch (role) {
+    case GSTD_OIDC_VOLUME_HYDRA:
+        return "gitstored-oidc-hydra-sqlite-v1:"
+               "b94007e19a1f7f78157e7f4ea340da8a55b5f104a0f1198755c256f38ef32b4b";
+    case GSTD_OIDC_VOLUME_KRATOS:
+        return "gitstored-oidc-kratos-sqlite-v1:"
+               "fe2428f103a6240c064b6ea77d3088610865c55fcebccb30355857eccdc25b4b";
+    default:
+        return NULL;
+    }
+}
+gstd_volume_status gstd_oidc_volume_acquire(int root, const gstd_volume_root *owner,
+                                            gstd_oidc_volume_role role, const char *id,
+                                            const char *producer, int create,
+                                            const gstd_volume_identity *expected,
+                                            gstd_volume_handle *output) {
+    const char *compatibility = gstd_oidc_volume_compatibility(role);
+    return compatibility
+               ? volume_open(root, owner, id, producer, create, expected, output, 1, compatibility)
+               : GSTD_VOLUME_INVALID;
+}
+gstd_volume_status gstd_oidc_volume_observe_open(int root, const gstd_volume_root *owner,
+                                                 gstd_oidc_volume_role role, const char *id,
+                                                 const char *producer,
+                                                 const gstd_volume_identity *expected,
+                                                 gstd_volume_handle *output) {
+    const char *compatibility = gstd_oidc_volume_compatibility(role);
+    return compatibility
+               ? volume_open(root, owner, id, producer, 0, expected, output, 0, compatibility)
+               : GSTD_VOLUME_INVALID;
 }

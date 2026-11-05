@@ -1,10 +1,14 @@
 #include "gitstored/core.h"
 #include "gitstored/protocol.h"
 #include "gitstored/server.h"
+#include "owned_read.h"
 #include <stdio.h>
 #include <string.h>
 
 int main(int argc, char **argv) {
+    int internal = gstd_owned_read_entry(argc, argv);
+    if (internal >= 0)
+        return internal;
     gstd_json_initialize();
     if (argc == 3 && strcmp(argv[1], "--runtime-dir") == 0)
         return gstd_serve(argv[2], NULL, argv[0], -1);

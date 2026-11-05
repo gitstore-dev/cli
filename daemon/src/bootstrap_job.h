@@ -2,11 +2,13 @@
 #define GSTD_BOOTSTRAP_JOB_H
 #include "bootstrap.h"
 #include "bootstrap_http.h"
+#include "oidc_config.h"
 #include <stddef.h>
 typedef enum {
     GSTD_BOOT_JOB_PREPARE,
     GSTD_BOOT_JOB_BIND,
-    GSTD_BOOT_JOB_HTTP
+    GSTD_BOOT_JOB_HTTP,
+    GSTD_BOOT_JOB_OIDC_HTTP
 } gstd_bootstrap_job_kind;
 typedef struct {
     gstd_bootstrap_request preparation;
@@ -14,6 +16,9 @@ typedef struct {
     int broker_fd, allow_initial;
     const json_t *source;
     gstd_bootstrap_http_action action;
+    gstd_oidc_http_action oidc_action;
+    gstd_oidc_client oidc_client;
+    gstd_oidc_ports oidc_ports;
     const gstd_network_namespace *network;
     const char *uid, *api_boot;
     pid_t api_pid;
@@ -29,13 +34,19 @@ typedef struct {
     int descriptor, interrupted;
     int64_t deadline_ms;
     size_t received;
+    gstd_bootstrap_job_kind kind;
+    gstd_oidc_http_action oidc_action;
     unsigned char bytes[sizeof(gstd_bootstrap_job_reply)];
 } gstd_bootstrap_job;
 /* Threadless parent only; accepted intent/resource/credential reservation must
  * already be committed. Copies private capabilities into an isolated bounded
  * worker. No secret enters the reply, DB, parent heap, arguments or diagnostics.
  * Parent retains resources and dispatches the next graph stage only after its
- * nonblocking poll observes completion and the next receipt is committed. */
+ * nonblocking poll observes completion and the next receipt is committed.
+ * OIDC HTTP also requires committed prepared-file identities and a journaled
+ * dispatch before CREATE. It reads only the OIDC broker purpose, verifies the
+ * existing protected family/configuration, never creates missing preparation,
+ * and returns only its action-specific status with an empty UID. */
 int gstd_bootstrap_job_launch(const gstd_bootstrap_job_input *, unsigned timeout_ms,
                               gstd_bootstrap_job *);
 /* 0=pending, 1=reaped with reply, -1=invalid. Deadline/cancel/crash/missing reply

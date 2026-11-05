@@ -80,6 +80,7 @@ int main(int argc, char **argv) {
     gstd_volume_root owner = {.lock_fd = -1};
     gstd_volume_handle retained = {.data_fd = -1, .writer_fd = -1};
     gstd_volume_handle failed = {.data_fd = -1, .writer_fd = -1};
+    gstd_volume_handle datastore = {.data_fd = -1, .writer_fd = -1};
     CHECK(gstd_volume_root_lock(directory, "0123456789abcdef0123456789abcdef", &owner) ==
           GSTD_VOLUME_OK);
     CHECK(gstd_volume_acquire(directory, &owner, "retained", "disk-operation", 1, NULL,
@@ -88,6 +89,14 @@ int main(int argc, char **argv) {
     CHECK(marker >= 3 && write(marker, "preserve", 8) == 8 && !fsync(marker));
     gstd_volume_identity identity = retained.identity;
     gstd_volume_handle_close(&retained);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla-retained", "disk-operation", 1,
+                                     NULL, &datastore) == GSTD_VOLUME_OK);
+    int datastore_marker =
+        openat(datastore.data_fd, "retained", O_CREAT | O_EXCL | O_RDWR | O_CLOEXEC, 0600);
+    CHECK(datastore_marker >= 3 && write(datastore_marker, "database", 8) == 8 &&
+          !fsync(datastore_marker));
+    gstd_volume_identity datastore_identity = datastore.identity;
+    gstd_volume_handle_close(&datastore);
     int fill = open("limited/filler", O_CREAT | O_EXCL | O_WRONLY | O_CLOEXEC, 0600);
     CHECK(fill >= 3);
     char bytes[4096] = {0};
@@ -102,17 +111,31 @@ int main(int argc, char **argv) {
     CHECK(gstd_volume_acquire(directory, &owner, "new", "new-operation", 1, NULL, &failed) !=
           GSTD_VOLUME_OK);
     CHECK(failed.data_fd == -1 && failed.writer_fd == -1);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla-new", "new-operation", 1, NULL,
+                                     &failed) != GSTD_VOLUME_OK);
+    CHECK(failed.data_fd == -1 && failed.writer_fd == -1);
     CHECK(gstd_volume_acquire(directory, &owner, "retained", "disk-operation", 0, &identity,
                               &retained) == GSTD_VOLUME_OK);
     memset(bytes, 0, sizeof(bytes));
     CHECK(pread(marker, bytes, sizeof(bytes), 0) == 8 && !memcmp(bytes, "preserve", 8));
     CHECK(retained.identity.data_inode == identity.data_inode);
+    CHECK(gstd_scylla_volume_acquire(directory, &owner, "scylla-retained", "disk-operation", 0,
+                                     &datastore_identity, &datastore) == GSTD_VOLUME_OK);
+    CHECK(datastore.identity.data_inode == datastore_identity.data_inode &&
+          datastore.identity.writer_inode == datastore_identity.writer_inode);
+    int reopened = openat(datastore.data_fd, "retained", O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    CHECK(reopened >= 3 && pread(reopened, bytes, sizeof(bytes), 0) == 8 &&
+          !memcmp(bytes, "database", 8));
+    close(reopened);
+    close(datastore_marker);
+    gstd_volume_handle_close(&datastore);
     close(marker);
     gstd_volume_handle_close(&retained);
     gstd_volume_root_close(&owner);
     close(directory);
     puts("{\"assetCapacityPreflight\":\"quota-before-transfer\",\"volumeFull\":\"allocation-"
-         "rejected\",\"retainedBytes\":\"preserved\"}");
+         "rejected\",\"retainedBytes\":\"preserved\",\"datastoreFull\":\"allocation-rejected\","
+         "\"datastoreRetainedBytes\":\"preserved\"}");
     /* Mount belongs only to this short-lived user/mount namespace. */
     return 0;
 }

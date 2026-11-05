@@ -1,0 +1,197 @@
+name: Runtime reference hosts
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      native_fixture:
+        description: 'Owned mode-0600 fixture manifest on dedicated reference runners; empty skips workloads'
+        required: false
+        type: string
+      denied_fixture:
+        description: 'Separate disposable fixture with actual TUN denial; empty skips denial workloads'
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  libraries:
+    name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: amd64, runner: ubuntu-24.04, mode: normal}
+          - {arch: arm64, runner: ubuntu-24.04-arm, mode: normal}
+          - {arch: amd64, runner: ubuntu-24.04, mode: sanitized}
+          - {arch: arm64, runner: ubuntu-24.04-arm, mode: sanitized}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install build-time library headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 cmake make pkg-config meson ninja-build libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev libssl-dev libcurl4-openssl-dev libcrypt-dev
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$toolchain" --profile minimal
+      - name: Build ordinary native code dependencies
+        env:
+          MODE: ${{ matrix.mode }}
+        run: |
+          sanitizer=OFF
+          if [ "$MODE" = sanitized ]; then sanitizer=ON; fi
+          CC=clang-18 cmake -S daemon -B build/reference \
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGITSTORED_TESTING=ON \
+            -DGITSTORED_IMAGE_SDK=ON -DGITSTORED_LIBCRUN=ON \
+            -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON \
+            -DGITSTORED_SANITIZERS="$sanitizer"
+          cmake --build build/reference --parallel 2
+      - name: Native library, identity and controlled behavior checks
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: halt_on_error=1
+        run: ctest --test-dir build/reference --output-on-failure
+      - name: Production package and no test facilities
+        if: matrix.mode == 'normal'
+        run: |
+          cargo build --release --locked -p gs
+          cmake -S daemon -B build/production -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=ON \
+            -DGITSTORED_LIBCRUN=ON -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON
+          cmake --build build/production --parallel 2
+          nm build/production/gitstored > build/production/symbols.txt
+          if grep -E 'gstd_test_|gstd_controlled_|gstd_failpoint' build/production/symbols.txt; then exit 1; fi
+          scripts/measure-runtime-size.sh --gs "$PWD/target/release/gs" \
+            --daemon "$PWD/build/production/gitstored" --output-directory "$PWD/build/measurement"
+          python3 runtime/experiments/cli-provenance/test_policy.py
+      - name: Archive development measurement only
+        if: matrix.mode == 'normal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-measurement-${{ matrix.arch }}
+          path: build/measurement/measurement.json
+          if-no-files-found: error
+          retention-days: 7
+  native:
+    name: Dedicated native ${{ matrix.arch }}
+    # Never execute PR/fork code on persistent reference hosts. Only a maintainer
+    # dispatch of reviewed main may select these explicitly disposable fixtures.
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && github.ref == 'refs/heads/main' && inputs.native_fixture != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: [self-hosted, Linux, gitstore-runtime, '${{ matrix.arch }}']
+    timeout-minutes: 60
+    concurrency:
+      group: runtime-reference-${{ matrix.arch }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Build reviewed source for the selected disposable host
+        run: |
+          test "$(id -u)" != 0
+          cargo build --release --locked -p gs
+          cmake -S daemon -B build/reference-native -DCMAKE_BUILD_TYPE=Debug \
+            -DGITSTORED_TESTING=ON -DGITSTORED_IMAGE_SDK=ON -DGITSTORED_LIBCRUN=ON \
+            -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON
+          cmake --build build/reference-native --parallel 2
+          cmake -S daemon -B build/unsupported -DCMAKE_BUILD_TYPE=MinSizeRel -DGITSTORED_TESTING=OFF
+          cmake --build build/unsupported --parallel 2
+      - name: Bind fixture to this source's executable bytes
+        env:
+          FIXTURE: ${{ inputs.native_fixture }}
+        run: |
+          python3 - <<'PY'
+          import json, os, stat
+          from pathlib import Path
+          source = Path(os.environ['FIXTURE'])
+          info = source.lstat()
+          assert stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid()
+          assert stat.S_IMODE(info.st_mode) == 0o600 and info.st_nlink == 1 and 0 < info.st_size <= 65536
+          settings = json.loads(source.read_bytes())
+          assert settings['dedicatedTestAccount'] is True and settings['disposableUid'] == os.geteuid()
+          root = Path.cwd()
+          native = root / 'build/reference-native'
+          settings.update(gs=str(root / 'target/release/gs'), daemon=str(native / 'gitstored'),
+              unsupportedDaemon=str(root / 'build/unsupported/gitstored'),
+              migrationProbe=str(native / 'migration_probe'), datastoreProbe=str(native / 'deployment_probe'),
+              scyllaNativeProbe=str(native / 'scylla_native_probe'), scyllaBackupProbe=str(native / 'scylla_backup_probe'),
+              volumeDiskProbe=str(native / 'disk_probe'), sourceRevision=os.environ['GITHUB_SHA'])
+          destination = root / 'build' / ('qualified-' + os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT'] + '.json')
+          fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+          with os.fdopen(fd, 'w') as output:
+              json.dump(settings, output)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('QUALIFIED_FIXTURE=' + str(destination) + '\n')
+          PY
+      - name: Owned host, dependency, offline and lifecycle acceptance
+        env:
+          FIXTURE: ${{ env.QUALIFIED_FIXTURE }}
+        run: |
+          test "$(id -u)" != 0
+          scripts/test-runtime.sh --scenario core-offline --fixture "$FIXTURE"
+          scripts/test-runtime.sh --scenario clean-install --fixture "$FIXTURE"
+          scripts/test-runtime.sh --scenario recovery --fixture "$FIXTURE"
+          scripts/test-runtime.sh --scenario persistent-scylla --fixture "$FIXTURE"
+          scripts/test-runtime.sh --scenario optional --fixture "$FIXTURE"
+  denial:
+    name: Dedicated TUN denial ${{ matrix.arch }}
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && github.ref == 'refs/heads/main' && inputs.denied_fixture != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: [self-hosted, Linux, gitstore-runtime-denied, '${{ matrix.arch }}']
+    timeout-minutes: 45
+    concurrency:
+      group: runtime-denied-${{ matrix.arch }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Build the reviewed source on the denial host
+        run: |
+          test "$(id -u)" != 0
+          cargo build --release --locked -p gs
+          cmake -S daemon -B build/denied-native -DCMAKE_BUILD_TYPE=Debug \
+            -DGITSTORED_TESTING=ON -DGITSTORED_IMAGE_SDK=ON -DGITSTORED_LIBCRUN=ON \
+            -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON
+          cmake --build build/denied-native --parallel 2
+      - name: Qualify the explicitly denied fixture
+        env:
+          FIXTURE: ${{ inputs.denied_fixture }}
+        run: |
+          python3 - <<'PY'
+          import json, os, stat
+          from pathlib import Path
+          source = Path(os.environ['FIXTURE'])
+          info = source.lstat()
+          assert stat.S_ISREG(info.st_mode) and info.st_uid == os.geteuid()
+          assert stat.S_IMODE(info.st_mode) == 0o600 and info.st_nlink == 1 and 0 < info.st_size <= 65536
+          settings = json.loads(source.read_bytes())
+          assert settings['dedicatedTestAccount'] is True and settings['disposableUid'] == os.geteuid()
+          root = Path.cwd()
+          settings.update(gs=str(root / 'target/release/gs'), daemon=str(root / 'build/denied-native/gitstored'), sourceRevision=os.environ['GITHUB_SHA'])
+          destination = root / 'build' / ('denied-' + os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT'] + '.json')
+          fd = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+          with os.fdopen(fd, 'w') as output:
+              json.dump(settings, output)
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('QUALIFIED_DENIED_FIXTURE=' + str(destination) + '\n')
+          PY
+      - name: Observe actual TUN denial before provisioning
+        env:
+          FIXTURE: ${{ env.QUALIFIED_DENIED_FIXTURE }}
+          GITSTORE_EXPECT_MISSING_TUN: '1'
+        run: scripts/test-runtime.sh --scenario host-unmet --fixture "$FIXTURE"

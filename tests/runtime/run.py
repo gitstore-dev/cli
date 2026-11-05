@@ -17,12 +17,12 @@ import tempfile
 import time
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--scenario", required=True, choices=("core-memdb", "exp-003b", "exp-003b-sdk", "core-offline", "host-unmet", "exp-004b-local", "exp-004b-disk", "cli-tls", "clean-install", "optional", "recovery"))
+parser.add_argument("--scenario", required=True, choices=("core-memdb", "exp-003b", "exp-003b-sdk", "core-offline", "host-unmet", "exp-004b-local", "exp-004b-disk", "cli-tls", "clean-install", "optional", "recovery", "scylla-native", "persistent-scylla"))
 parser.add_argument("--fixture", required=True, type=Path)
 parser.add_argument("--case", help="One saved test method in the selected scenario")
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[2]
-scenarios = {"recovery": ("test_recovery.py", "Recovery"), "optional": ("test_optional.py", "Optional"),"core-memdb": ("test_core.py", "Core"),
+scenarios = {"persistent-scylla": ("test_scylla_public.py", "PersistentScylla"), "scylla-native": ("test_scylla.py", "ScyllaNative"), "recovery": ("test_recovery.py", "Recovery"), "optional": ("test_optional.py", "Optional"),"core-memdb": ("test_core.py", "Core"),
              "exp-003b": ("test_assets.py", "Assets"),
              "exp-003b-sdk": ("test_image_sdk.py", "ImageSdk"),
              "exp-004b-disk": ("test_disk.py", "Disk"),
@@ -75,10 +75,31 @@ if args.scenario == "core-offline":
     selected = selected or "test_offline_layouts_authorize_only_the_selected_verified_bytes"
 if selected and selected not in methods:
     parser.error("--case must name one saved method in this scenario")
-required = (["imageSdkTest", "registryFixture"] if args.scenario == "exp-003b-sdk"
+migration_preparation = args.scenario == "scylla-native" and selected == "test_private_standalone_migration_preparation"
+migration_execution = args.scenario == "scylla-native" and selected in ("test_private_standalone_migration_execution", "test_private_surviving_migration_helper_recovery")
+migration_recovery = args.scenario == "scylla-native" and selected == "test_private_migration_preparation_recovery"
+if migration_preparation or migration_execution or (args.scenario == "scylla-native" and not selected):
+    target_root = settings.get("persistentPreparationRoot")
+    if not isinstance(target_root, str) or not Path(target_root).is_absolute():
+        unavailable("Select an explicit stopped persistentPreparationRoot for private migration preparation")
+if migration_recovery:
+    recovery_root = settings.get("persistentRecoveryRoot")
+    if not isinstance(recovery_root, str) or not Path(recovery_root).is_absolute():
+        unavailable("Select an explicit interrupted persistentRecoveryRoot for observed cleanup")
+managed_scylla = args.scenario == "scylla-native" and selected in (
+    "test_private_journaled_persistent_bootstrap", "test_private_persistent_actor_retained_restart",
+    "test_private_persistent_observer_restoration", "test_private_persistent_manager_loss")
+required = (["migrationProbe"] if migration_preparation or migration_execution or migration_recovery
+            else ["gs", "datastoreProbe"] if managed_scylla
+            else ["scyllaNativeProbe", "scyllaBackupProbe"] if args.scenario == "scylla-native"
+            else ["imageSdkTest", "registryFixture"] if args.scenario == "exp-003b-sdk"
             else ["volumeDiskProbe"] if args.scenario == "exp-004b-disk"
             else ["gs", "registryFixture"] if args.scenario == "cli-tls"
             else ["gs", "daemon"])
+if args.scenario == "scylla-native" and not selected:
+    required.extend(["gs", "datastoreProbe", "migrationProbe"])
+if args.scenario == "persistent-scylla" and (not selected or selected == "test_private_backup_restore_and_unsafe_cancellation"):
+    required.extend(["scyllaNativeProbe", "scyllaBackupProbe"])
 if args.scenario == "core-memdb" and (not selected or selected == "test_missing_execution_capability_fails_before_effects"):
     required.append("unsupportedDaemon")
 if args.scenario == "clean-install":
@@ -142,7 +163,16 @@ with os.fdopen(snapshot_fd, "w") as stream:
     os.fsync(stream.fileno())
 fd, record_name = tempfile.mkstemp(prefix=f"runtime-run-{args.scenario}-", suffix=".json", dir=parent)
 record = {"schemaVersion": 1, "recordedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "scenario": args.scenario, "case": selected,
-          "adapter": ("maintained image code library with isolated synthetic registry"
+          "adapter": ("private standalone migration preparation; no native/schema dispatch"
+                      if migration_preparation else "private standalone image-native migration; not public migration execution"
+                      if migration_execution else "private interrupted migration preparation recovery; no CREATE/START"
+                      if migration_recovery else "private SQLite-journaled persistent bootstrap with real native workloads; not public deployment execution"
+                      if managed_scylla
+                      else "developer-only native pinned Scylla/CQL/migration probe; not public deployment execution"
+                      if args.scenario == "scylla-native"
+                      else "private schema/backup/restore/cancellation; not public restore support"
+                      if args.scenario == "persistent-scylla" and selected == "test_private_backup_restore_and_unsafe_cancellation"
+                      else "maintained image code library with isolated synthetic registry"
                       if args.scenario == "exp-003b-sdk"
                       else "actual tmpfs capacity/full-disk with native adapter primitives"
                       if args.scenario == "exp-004b-disk"

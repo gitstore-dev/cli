@@ -4,7 +4,7 @@
 [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md).
 
 **Status**: Unblocked development implementation complete. Source paths below are relative
-to repository root. See `docs/m1-status.md` for evidence and remaining release gates.
+to repository root. See `docs/contributing/validation/remote-cli.md` for evidence and remaining release gates.
 
 **Tests**: Required by FR-016/017 and the constitution. Write behavior scenarios before
 implementation; verify meaningful failures, then implement. Controlled HTTP tests run
@@ -97,10 +97,10 @@ use library APIs, and no external credential helper/filter/hook runs during Git 
 
 ## Phase 6 — Cross-cutting validation and documentation
 
-- [X] T036 [P] Update `README.md`, `CONTRIBUTING.md`, `docs/remote-cli.md` and `docs/m1-status.md` to distinguish implemented subsets, setup prerequisites, output restrictions and unresolved full-M1/release gates; do not relabel all M0 support records as implemented or advertise untested architectures/providers.
-- [X] T037 [P] Add an opt-in live compatibility harness in `scripts/test-live.sh` plus disposable-fixture instructions in `docs/m1-status.md`; require explicit test-installation/account selection, operate only on fixture-owned resources and record live checks as not-run when access is absent. Do not run against an unrelated deployment or treat simulated fixtures as live evidence.
-- [X] T038 Run locked build/test, format/lint and cross-story isolation/input/partial-outcome/Git scenarios from `specs/002-m1-remote-cli/quickstart.md`; record compiler/Git/host/native-store/simulated/live evidence and SC-001–006 outcomes in `docs/m1-status.md`, repair failures and remove any secret-bearing temporary output.
-- [X] T039 Reconcile requirements/tasks/evidence and remaining gates in `specs/002-m1-remote-cli/tasks.md` and `docs/m1-status.md`; record DEP-013 producer/workflow/source/digest and negative-case requirements as unresolved publication gates rather than adding an unverified release. Mark only completed work checked; full M1 remains pending upstream capabilities.
+- [X] T036 [P] Update `README.md`, `CONTRIBUTING.md`, `docs/remote-cli.md` and `docs/contributing/validation/remote-cli.md` to distinguish implemented subsets, setup prerequisites, output restrictions and unresolved full-M1/release gates; do not relabel all M0 support records as implemented or advertise untested architectures/providers.
+- [X] T037 [P] Add an opt-in live compatibility harness in `scripts/test-live.sh` plus disposable-fixture instructions in `docs/contributing/validation/remote-cli.md`; require explicit test-installation/account selection, operate only on fixture-owned resources and record live checks as not-run when access is absent. Do not run against an unrelated deployment or treat simulated fixtures as live evidence.
+- [X] T038 Run locked build/test, format/lint and cross-story isolation/input/partial-outcome/Git scenarios from `specs/002-m1-remote-cli/quickstart.md`; record compiler/Git/host/native-store/simulated/live evidence and SC-001–006 outcomes in `docs/contributing/validation/remote-cli.md`, repair failures and remove any secret-bearing temporary output.
+- [X] T039 Reconcile requirements/tasks/evidence and remaining gates in `specs/002-m1-remote-cli/tasks.md` and `docs/contributing/validation/remote-cli.md`; record DEP-013 producer/workflow/source/digest and negative-case requirements as unresolved publication gates rather than adding an unverified release. Mark only completed work checked; full M1 remains pending upstream capabilities.
 
 ## Dependencies & Execution Order
 

@@ -30,8 +30,8 @@ struct gstd_network_engine {
     Slirp *slirp;
     SlirpCb callbacks; /* libslirp borrows this table until slirp_cleanup */
     int tap, failed, count;
-    uint16_t ports[2];
-    int listeners[2];
+    uint16_t ports[GSTD_FORWARD_ROLE_COUNT];
+    int listeners[GSTD_FORWARD_ROLE_COUNT];
     uint64_t guest_errors;
     struct timer timers[TIMER_BOUND];
     struct pollfd descriptors[POLL_BOUND];
@@ -220,23 +220,28 @@ gstd_network_status gstd_network_open(int tap, gstd_network_engine **output) {
     return GSTD_NETWORK_UNAVAILABLE;
 #endif
 }
-gstd_network_status gstd_network_forward(gstd_network_engine *engine, gstd_forward_role role,
-                                         uint16_t *port) {
-    if (!engine || !port || role < GSTD_FORWARD_API || role > GSTD_FORWARD_GIT)
+static gstd_network_status forward(gstd_network_engine *engine, gstd_forward_role role,
+                                   uint16_t selected_port, uint16_t *port) {
+    (void)selected_port;
+    if (!engine || !port || role < GSTD_FORWARD_API || role >= GSTD_FORWARD_ROLE_COUNT)
         return GSTD_NETWORK_INVALID;
     *port = 0;
 #if defined(__linux__) && defined(GITSTORED_SLIRP)
     if (engine->failed)
         return GSTD_NETWORK_FAILED;
     if (engine->ports[role]) {
+        if (selected_port && selected_port != engine->ports[role])
+            return GSTD_NETWORK_INVALID;
         *port = engine->ports[role];
         return GSTD_NETWORK_OK;
     }
     struct in_addr host, guest;
     inet_pton(AF_INET, "127.0.0.1", &host);
     inet_pton(AF_INET, "10.0.2.15", &guest);
-    if (slirp_add_hostfwd(engine->slirp, 0, host, 0, guest,
-                          role == GSTD_FORWARD_API ? 4000 : 9000)) {
+    if (slirp_add_hostfwd(engine->slirp, 0, host, selected_port, guest,
+                          role == GSTD_FORWARD_API   ? 4000
+                          : role == GSTD_FORWARD_GIT ? 9000
+                                                     : selected_port)) {
         engine->failed = 1;
         return GSTD_NETWORK_FAILED;
     }
@@ -258,7 +263,10 @@ gstd_network_status gstd_network_forward(gstd_network_engine *engine, gstd_forwa
             size == sizeof(address) && address.sin_family == AF_INET &&
             address.sin_addr.s_addr == host.s_addr) {
             uint16_t value = ntohs(address.sin_port);
-            if (value >= 1024 && value != engine->ports[0] && value != engine->ports[1]) {
+            int existing = 0;
+            for (size_t n = 0; n < GSTD_FORWARD_ROLE_COUNT; n++)
+                existing |= value == engine->ports[n];
+            if (value >= 1024 && !existing && (!selected_port || value == selected_port)) {
                 found++;
                 candidate = value;
                 listener = engine->descriptors[i].fd;
@@ -277,9 +285,26 @@ gstd_network_status gstd_network_forward(gstd_network_engine *engine, gstd_forwa
     return GSTD_NETWORK_UNAVAILABLE;
 #endif
 }
+gstd_network_status gstd_network_forward(gstd_network_engine *engine, gstd_forward_role role,
+                                         uint16_t *port) {
+    if (role != GSTD_FORWARD_API && role != GSTD_FORWARD_GIT)
+        return GSTD_NETWORK_INVALID;
+    return forward(engine, role, 0, port);
+}
+gstd_network_status gstd_network_forward_bound(gstd_network_engine *engine, gstd_forward_role role,
+                                               uint16_t selected, uint16_t *port) {
+    if (role < GSTD_FORWARD_OIDC_ISSUER || role >= GSTD_FORWARD_ROLE_COUNT || selected < 1024)
+        return GSTD_NETWORK_INVALID;
+    const uint16_t reserved[] = {1025, 4000, 9000, 6000, 50051, 5001, 4445, 4434};
+    for (size_t i = 0; i < sizeof(reserved) / sizeof(*reserved); i++)
+        if (selected == reserved[i])
+            return GSTD_NETWORK_INVALID;
+    return forward(engine, role, selected, port);
+}
 int gstd_network_listener(gstd_network_engine *engine, gstd_forward_role role, int *descriptor,
                           uint64_t *inode) {
-    if (!engine || !descriptor || !inode || role < GSTD_FORWARD_API || role > GSTD_FORWARD_GIT)
+    if (!engine || !descriptor || !inode || role < GSTD_FORWARD_API ||
+        role >= GSTD_FORWARD_ROLE_COUNT)
         return -1;
 #if defined(__linux__) && defined(GITSTORED_SLIRP)
     struct stat info;
@@ -376,7 +401,7 @@ gstd_network_status gstd_network_close(gstd_network_engine *engine) {
     struct in_addr host;
     inet_pton(AF_INET, "127.0.0.1", &host);
     if (engine->slirp) {
-        for (size_t i = 0; i < 2; i++)
+        for (size_t i = 0; i < GSTD_FORWARD_ROLE_COUNT; i++)
             if (engine->ports[i] && slirp_remove_hostfwd(engine->slirp, 0, host, engine->ports[i]))
                 engine->failed = 1;
         slirp_cleanup(engine->slirp);

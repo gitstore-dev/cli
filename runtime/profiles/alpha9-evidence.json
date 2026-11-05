@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.1.0-alpha.9",
+  "serverRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+  "publishedAt": "2026-11-05T18:31:43Z",
+  "releaseUrl": "https://github.com/gitstore-dev/GitStore/releases/tag/v0.1.0-alpha.9",
+  "scope": "Published release and immutable committed source only. No alpha.9 service layers acquired, native execution, retained-data upgrade or published CLI compatibility is claimed.",
+  "sourceEvidence": [
+    {
+      "path": "gitstore-api/internal/app/server.go",
+      "gitBlobOid": "33f2075e598bb73850306bb87e64603c0b0db809",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/app/server.go"
+    },
+    {
+      "path": "gitstore-api/internal/app/graphql.go",
+      "gitBlobOid": "1e14caa2ab16127b2c4f6a5fd3a7c8db7a975d6a",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/app/graphql.go"
+    },
+    {
+      "path": "gitstore-api/internal/config/endpoints.go",
+      "gitBlobOid": "1b9eff2eb0e9f47261efbeb887d33d25990ca660",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/config/endpoints.go"
+    },
+    {
+      "path": "gitstore-api/internal/config/config.go",
+      "gitBlobOid": "968faab5cb7929135fc2a7fd0579fbc54ab4552a",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/config/config.go"
+    },
+    {
+      "path": "gitstore-api/internal/storefront/handler.go",
+      "gitBlobOid": "8d60eb8f98a48ccef62a62a092b8828448f55191",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/storefront/handler.go"
+    },
+    {
+      "path": "shared/schemas/admin/file.graphqls",
+      "gitBlobOid": "07b8ca37941a0f06f721f3127be10ea4b2e0b69c",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/shared/schemas/admin/file.graphqls"
+    },
+    {
+      "path": "gitstore-api/internal/admin/graph/resolver/file.resolvers.go",
+      "gitBlobOid": "fa266d25b0050c8cf326615e0c2ae0fabb89f5bb",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/admin/graph/resolver/file.resolvers.go"
+    },
+    {
+      "path": ".github/workflows/cd-optional.yml",
+      "gitBlobOid": "b5564fd53165469082e7de3069390c587f1123f3",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/.github/workflows/cd-optional.yml"
+    },
+    {
+      "path": "docs/ADRs/0012-admin-storefront-graphql-endpoints.md",
+      "gitBlobOid": "cee80fe9e2749130c31d3de587d0efceb5122633",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/docs/ADRs/0012-admin-storefront-graphql-endpoints.md"
+    },
+    {
+      "path": ".claude/rules/scylla-migrations.md",
+      "gitBlobOid": "c5ea95e5909517e1747a9e2a1e78844eeb478671",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/.claude/rules/scylla-migrations.md"
+    },
+    {
+      "path": "gitstore-api/internal/datastore/scylla/migrations/002_namespace.cql",
+      "gitBlobOid": "f75265e3e67408e692f87d9c76b81c0149cb5df1",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/datastore/scylla/migrations/002_namespace.cql"
+    },
+    {
+      "path": "gitstore-api/internal/datastore/scylla/migrations/005_product.cql",
+      "gitBlobOid": "05b7d29add0b92a8c660a93ce5c77d5a7b7655a8",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/gitstore-api/internal/datastore/scylla/migrations/005_product.cql"
+    },
+    {
+      "path": "compose.oidc.yml",
+      "gitBlobOid": "ae97eab75bdb16729d5a22465e56326f175c32bc",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/compose.oidc.yml"
+    }
+  ],
+  "verifiedSourceContracts": {
+    "administrativeApi": {
+      "binary": "gitstore-api",
+      "path": "/admin/graphql",
+      "portSetting": "api.admin_port",
+      "defaultPort": 4000,
+      "legacyGraphqlAlias": false,
+      "adminUiReference": false
+    },
+    "storefrontApi": {
+      "binary": "gitstore-api",
+      "path": "/storefront/graphql",
+      "portSetting": "api.storefront_port",
+      "defaultPort": 4001,
+      "acceptedRequestStatus": 503,
+      "errorCode": "STOREFRONT_UNAVAILABLE",
+      "cacheControl": "no-store",
+      "publicationReadsImplemented": false,
+      "trustedTargetBindingImplemented": false
+    },
+    "fileLookup": {
+      "shape": "file(by: FileBy!)",
+      "selectors": [
+        "id",
+        "namespacePath:{namespace,name}"
+      ],
+      "exactlyOneSelector": true,
+      "flatNamespaceNameArguments": false
+    },
+    "scylla": {
+      "changedAppliedFiles": [
+        "002_namespace.cql",
+        "005_product.cql"
+      ],
+      "historyPolicy": "gocqlx/migrate records names and checksums and refuses a changed recorded history",
+      "retainedAlpha8UpgradeVerified": false,
+      "requirement": "A changed baseline requires a fresh keyspace and explicit reseeding or a separately verified compatible transition. Never alter migration history or delete retained deployment data implicitly."
+    },
+    "oidcComposition": {
+      "unchangedFromAlpha8": true,
+      "gitBlobOid": "ae97eab75bdb16729d5a22465e56326f175c32bc",
+      "scope": "Exact committed compose.oidc.yml bytes match; this does not verify alpha.9 bridge image identity or native execution."
+    }
+  },
+  "remainingOptionalPrerequisites": {
+    "admin": "Published reference Admin UI image and verified authentication, startup configuration and readiness mapping. The shipped Admin GraphQL API is already part of gitstore-api.",
+    "storefront": "Authoritative publication reads and trusted target binding, plus a verified reference storefront runtime mapping; the shipped boundary intentionally returns unavailable.",
+    "oidc": "Production daemon lifecycle, durable enrollment and retained recovery, and current-generation API issuer integration remain CLI implementation work."
+  },
+  "runtimePinPolicy": "Existing executable core/1 and private core/2 alpha.8 profiles retain their immutable source/image and datastore compatibility identities. This supplemental source record does not retarget existing deployments or raise their claimed release support."
+}

@@ -13,6 +13,11 @@ publish = false
 [lib]
 crate-type = ["rlib", "staticlib"]
 
+[features]
+# Only for a C host built with ASan, whose shadow mapping exceeds 1 GiB.
+# Ordinary workers retain their strict 1 GiB address-space requirement.
+instrumented-host = []
+
 [dependencies]
 oci-client = { git = "https://github.com/oras-project/rust-oci-client", rev = "71c08729adeb88fbdda43966ece962d32b58fb8d", default-features = false }
 ocirender = "=0.2.3"

@@ -6,6 +6,8 @@
 #include "host_probe.h"
 #include "image_backend.h"
 #include "network_restore.h"
+#include "oidc_preparation.h"
+#include "oidc_profile.h"
 #include "scope_recovery.h"
 #include <string.h>
 #include <unistd.h>
@@ -319,25 +321,70 @@ static void worker(gstd_filesystem_input input, int channel, pid_t parent) {
             } else if (fd >= 0)
                 close(fd);
         }
-    } else if (input.action == GSTD_FS_VOLUME || input.action == GSTD_FS_OBSERVE_VOLUME) {
+    } else if (input.action == GSTD_FS_VOLUME || input.action == GSTD_FS_OBSERVE_VOLUME ||
+               input.action == GSTD_FS_DATASTORE_VOLUME ||
+               input.action == GSTD_FS_OBSERVE_DATASTORE) {
         gstd_volume_root owner = input.volume_root;
         owner.root_fd = 3;
         owner.lock_fd = 4;
         gstd_volume_handle handle = {.data_fd = -1, .writer_fd = -1};
+        int observed =
+            input.action == GSTD_FS_OBSERVE_VOLUME || input.action == GSTD_FS_OBSERVE_DATASTORE;
+        int scylla =
+            input.action == GSTD_FS_DATASTORE_VOLUME || input.action == GSTD_FS_OBSERVE_DATASTORE;
         reply.detail =
-            input.action == GSTD_FS_OBSERVE_VOLUME
-                ? gstd_volume_observe_open(3, &owner, input.volume_id, input.producer_id,
-                                           &input.volume_expected, &handle)
-                : gstd_volume_acquire(
-                      3, &owner, input.volume_id, input.producer_id, !input.volume_existing,
-                      input.volume_existing ? &input.volume_expected : NULL, &handle);
+            observed ? (scylla ? gstd_scylla_volume_observe_open : gstd_volume_observe_open)(
+                           3, &owner, input.volume_id, input.producer_id, &input.volume_expected,
+                           &handle)
+                     : (scylla ? gstd_scylla_volume_acquire : gstd_volume_acquire)(
+                           3, &owner, input.volume_id, input.producer_id, !input.volume_existing,
+                           input.volume_existing ? &input.volume_expected : NULL, &handle);
         if (reply.detail == GSTD_VOLUME_OK) {
             reply.status = 0;
             reply.volume = handle.identity;
-            reply.descriptor_count = input.action == GSTD_FS_OBSERVE_VOLUME ? 1 : 2;
+            reply.descriptor_count = observed ? 1 : 2;
             reply.descriptors[0] = handle.data_fd;
             if (reply.descriptor_count == 2)
                 reply.descriptors[1] = handle.writer_fd;
+        }
+    } else if (input.action == GSTD_FS_OIDC_VOLUME || input.action == GSTD_FS_OBSERVE_OIDC_VOLUME) {
+        gstd_volume_root owner = input.volume_root;
+        owner.root_fd = 3;
+        owner.lock_fd = 4;
+        gstd_volume_handle handle = {.data_fd = -1, .writer_fd = -1};
+        int observed = input.action == GSTD_FS_OBSERVE_OIDC_VOLUME;
+        reply.detail =
+            observed
+                ? gstd_oidc_volume_observe_open(3, &owner, input.oidc_volume_role, input.volume_id,
+                                                input.producer_id, &input.volume_expected, &handle)
+                : gstd_oidc_volume_acquire(3, &owner, input.oidc_volume_role, input.volume_id,
+                                           input.producer_id, !input.volume_existing,
+                                           input.volume_existing ? &input.volume_expected : NULL,
+                                           &handle);
+        if (reply.detail == GSTD_VOLUME_OK) {
+            reply.status = 0;
+            reply.volume = handle.identity;
+            reply.descriptor_count = observed ? 1 : 2;
+            reply.descriptors[0] = handle.data_fd;
+            if (!observed)
+                reply.descriptors[1] = handle.writer_fd;
+        }
+    } else if (input.action == GSTD_FS_OIDC_PREPARE) {
+        gstd_bootstrap_request request = {.manifest = input.manifest,
+                                          .store_id = input.store_id,
+                                          .deployment_id = input.deployment_id,
+                                          .operation_id = input.operation_id,
+                                          .generation = input.generation,
+                                          .control_owner = parent,
+                                          .scope_fd = 3};
+        int files[4] = {-1, -1, -1, -1};
+        reply.status = gstd_oidc_provision(&request, &input.oidc_ports, 4, input.credential_source,
+                                           input.credential_initial,
+                                           input.credential_prior_required ? 5 : -1, files);
+        if (!reply.status) {
+            reply.descriptor_count = 4;
+            for (size_t i = 0; i < 4; i++)
+                reply.descriptors[i] = files[i];
         }
     } else if (input.action == GSTD_FS_OPEN_ACTIVE) {
         char name[138];
@@ -446,25 +493,51 @@ int gstd_filesystem_launch(const gstd_filesystem_input *input, unsigned timeout,
                            gstd_filesystem_job *job) {
 #ifdef __linux__
     if (!input || !job || job->worker || !timeout || timeout > 600000 || !geteuid() ||
-        input->action < GSTD_FS_INITIALIZE || input->action > GSTD_FS_REOPEN_ROOTS ||
+        input->action < GSTD_FS_INITIALIZE || input->action > GSTD_FS_OIDC_PREPARE ||
         !private_directory(input->descriptors[0]) ||
         (input->action >= GSTD_FS_IMAGE_STAGE && input->action <= GSTD_FS_IMAGE_MATERIALIZE &&
          (gstd_asset_manifest_check(input->manifest) || !input->component ||
           !input->image_timeout_ms || input->image_timeout_ms > 600000)))
         return -1;
+    if (input->action == GSTD_FS_DATASTORE_VOLUME || input->action == GSTD_FS_OBSERVE_DATASTORE) {
+        const char *datastore = json_string_value(json_object_get(input->manifest, "datastore"));
+        if (!datastore || strcmp(datastore, "scylladb") ||
+            gstd_asset_manifest_check(input->manifest))
+            return -1;
+    }
+    if (input->action == GSTD_FS_OIDC_VOLUME || input->action == GSTD_FS_OBSERVE_OIDC_VOLUME) {
+        if (!gstd_oidc_volume_compatibility(input->oidc_volume_role) ||
+            gstd_oidc_core_manifest_check(input->manifest) ||
+            !json_object_get(input->manifest, "oidcProfileDigest"))
+            return -1;
+    }
+    if (input->action == GSTD_FS_OIDC_PREPARE &&
+        (gstd_oidc_core_manifest_check(input->manifest) ||
+         !json_object_get(input->manifest, "oidcProfileDigest") ||
+         gstd_oidc_ports_check(&input->oidc_ports) ||
+         (input->credential_initial != 0 && input->credential_initial != 1) ||
+         (input->credential_prior_required != 0 && input->credential_prior_required != 1) ||
+         (input->credential_prior_required ? input->descriptors[2] < 3
+                                           : input->descriptors[2] != -1) ||
+         (input->credential_source && !json_is_object(input->credential_source))))
+        return -1;
     for (unsigned i = 0; i < 3; i++)
         if (input->descriptors[i] != -1 && input->descriptors[i] < 3)
             return -1;
-    if (input->descriptors[2] != -1 || fcntl(0, F_GETFD) < 0 || fcntl(1, F_GETFD) < 0 ||
-        fcntl(2, F_GETFD) < 0)
+    if ((input->descriptors[2] != -1 && input->action != GSTD_FS_OIDC_PREPARE) ||
+        fcntl(0, F_GETFD) < 0 || fcntl(1, F_GETFD) < 0 || fcntl(2, F_GETFD) < 0)
         return -1;
-    int source = input->action == GSTD_FS_IMAGE_IMPORT ||
-                 input->action == GSTD_FS_IMAGE_MATERIALIZE || input->action == GSTD_FS_VOLUME ||
-                 input->action == GSTD_FS_OBSERVE_VOLUME;
+    int source =
+        input->action == GSTD_FS_IMAGE_IMPORT || input->action == GSTD_FS_IMAGE_MATERIALIZE ||
+        input->action == GSTD_FS_VOLUME || input->action == GSTD_FS_OBSERVE_VOLUME ||
+        input->action == GSTD_FS_DATASTORE_VOLUME || input->action == GSTD_FS_OBSERVE_DATASTORE ||
+        input->action == GSTD_FS_OIDC_VOLUME || input->action == GSTD_FS_OBSERVE_OIDC_VOLUME ||
+        input->action == GSTD_FS_OIDC_PREPARE;
     if (source ? input->descriptors[1] < 3 : input->descriptors[1] != -1)
         return -1;
-    if (input->action == GSTD_FS_VOLUME && input->volume_existing != 0 &&
-        input->volume_existing != 1)
+    if ((input->action == GSTD_FS_VOLUME || input->action == GSTD_FS_DATASTORE_VOLUME ||
+         input->action == GSTD_FS_OIDC_VOLUME) &&
+        input->volume_existing != 0 && input->volume_existing != 1)
         return -1;
     if (input->test_pause > 2)
         return -1;
@@ -509,9 +582,14 @@ int gstd_filesystem_launch(const gstd_filesystem_input *input, unsigned timeout,
                 ? (input->resource_kind && !strcmp(input->resource_kind, "network")    ? 1
                    : input->resource_kind && !strcmp(input->resource_kind, "workload") ? 4
                                                                                        : 2)
-            : input->action == GSTD_FS_RECOVER_NETWORK   ? 4
-            : input->action == GSTD_FS_OBSERVE_VOLUME    ? 1
-            : input->action == GSTD_FS_VOLUME            ? 2
+            : input->action == GSTD_FS_RECOVER_NETWORK || input->action == GSTD_FS_OIDC_PREPARE ? 4
+            : (input->action == GSTD_FS_OBSERVE_VOLUME ||
+               input->action == GSTD_FS_OBSERVE_DATASTORE ||
+               input->action == GSTD_FS_OBSERVE_OIDC_VOLUME)
+                ? 1
+            : (input->action == GSTD_FS_VOLUME || input->action == GSTD_FS_DATASTORE_VOLUME ||
+               input->action == GSTD_FS_OIDC_VOLUME)
+                ? 2
             : input->action == GSTD_FS_IMAGE_MATERIALIZE ? 1
             : input->action == GSTD_FS_STAGE_DIRECTORY || input->action == GSTD_FS_OPEN_ACTIVE ||
                     input->action == GSTD_FS_RESOLVER

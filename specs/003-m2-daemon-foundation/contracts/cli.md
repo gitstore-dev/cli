@@ -2,7 +2,7 @@
 
 **Status**: Design contract. Read-only component assessment and state-backed
 list/inspect/wait have development implementations; lifecycle and standalone logs
-remain planned. See [actual evidence](../../../docs/m2-status.md). Preserve M0
+remain planned. See [actual evidence](../../../docs/contributing/validation/local-runtime.md). Preserve M0
 command families; these refinements must be reconciled with CLI behavior/command
 matrix when implemented. Remote contexts/accounts are not deployment selection.
 
@@ -96,3 +96,11 @@ interruption uses an observed stop bound to that start's operation identity. It
 cannot cancel history or stop a later generation. Before terminal completion the
 CLI submits an explicit cancellation; rejected unsafe stages and uncertain cleanup
 retain identity and ownership and are reported without claiming rollback.
+
+The source implementation of standalone log observation follows until Ctrl-C.
+Its timeout bounds subscribe/unsubscribe and transport setup, not total follow
+duration. JSON is NDJSON with the complete event envelope. A pending subscribe
+can be interrupted by closing its observation connection without guessing an
+unacknowledged subscription identity. Foreground logs use stderr when the
+negotiated daemon supports `stream.read`; lifecycle cancellation/owned stop
+semantics remain independent of the log subscription.

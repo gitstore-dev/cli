@@ -35,17 +35,18 @@ control portability and Apple/managed-VM feasibility are separate evidence lanes
 Windows and CSI deferred. Current macOS developer host cannot prove Linux support.
 **Project Type**: CLI plus per-user, profile-scoped runtime daemon.
 **Performance Goals**: Enforce all M0 numeric bounds; preserve cancellation and
-inspection under worker saturation. Target 5 MiB or less per stripped release executable as an initial interpretation
-of the requested kilobyte-to-low-megabyte size range. Measure current release gs
-and size contributors before optimization; do not claim this target is achieved.
+inspection under worker saturation. Report actual executable sizes against the
+original 5 MiB reference. The user accepted the current stripped Linux arm64
+baseline (5,590,568-byte gs; 5,723,600-byte gitstored); published-binary optimization
+is a separate user-owned follow-up, not an implementation blocker here.
 Measure mandatory libraries, package/download/cache footprint, memory and cold/warm
-readiness separately; no hidden footprint reduction by moving bytes to a library.
+readiness separately; moving bytes to a library does not remove their cost.
 **Constraints**: No normal-operation sudo, root daemon, Docker/Compose/make/Git
 executable prerequisite; no arbitrary execution/mounts; exactly one repository
 writer; no implicit data deletion, trust downgrade, transport/backend fallback or
 runtime downloads for remote commands.
 **Scale/Scope**: M0 policy: 32 connections, 16 outstanding requests per connection,
-8 runtime workers, 64 pending jobs, 100,000/256 MiB operation metadata, one mutation
+8 shared lifecycle/replay worker slots (at most 2 used by log replay), 64 pending jobs, 100,000/256 MiB operation metadata, one mutation
 per deployment; other exact frame/stream/log/time bounds remain canonical in M0.
 Core memdb and persistent Scylla profiles first; optional components only where
 verified mappings exist. M2 experiments EXP-003A/B/C, EXP-004A/local-B, EXP-005A/B
@@ -191,7 +192,7 @@ own artifacts only; do not convert that release gate into a startup dependency. 
 | SC-001–008 | Validation guide control/automation/evidence cases |
 | SC-009–013 | Validation guide real runtime, migration, assets and host experiments |
 
-Before implementation completion, add `docs/m2-status.md` with exact command
+Before implementation completion, add `docs/contributing/validation/local-runtime.md` with exact command
 subsets, source/build/image identities, actual checks and not-run/unavailable lanes;
 reconcile M0 dependency/command records and CONTRIBUTING/README without rewriting
 historical evidence. Keep M1 status and gates independent. No claim that any

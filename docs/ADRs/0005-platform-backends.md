@@ -2,7 +2,7 @@
 
 **Status**: accepted (platform strategy and bounded evaluation plan).
 **Date**: 2026-10-27. **Owner**: CLI platform/distribution maintainers.
-**Evidence**: EVD-001, EVD-002, EVD-022 and primary sources below.
+**Evidence**: EVD-001, EVD-002, EVD-022, EVD-024 and primary sources below.
 **Dependencies**: DEP-012–DEP-015. No local backend is validated by M0.
 
 ## Context
@@ -74,3 +74,31 @@ are dated evaluation baselines, not claims that they are safe or compatible for 
 DEP-015 stays open until a complete host/backend report passes. If neither candidate
 meets the contract, publish remote-only macOS support and explicit local unsupported
 behavior rather than claim a seamless installation. No VM or Apple backend was run in M0.
+
+## 2026-11-05 feasibility outcome
+
+[EXP-005A](../../runtime/experiments/apple.md) built ordinary pinned
+ContainerAPIClient and Containerization library dependencies on the selected
+macOS 26.6.1 arm64 development host. The existing same-user Apple service
+controlled the explicitly selected disposable Ubuntu arm64 guest without wrapping
+the container executable. Private-image library checks, offline core lifecycle
+and manager-loss/retained-writer recovery passed inside the guest. The exact
+tested probe identity and results are recorded in its evidence receipt.
+
+The direct Containerization guard rejected the selected seccomp policy without
+its required guest OCI runtime adapter before boot. That is a provider-specific
+limitation, not a universal OCI executable API. The default path cannot be
+selected by weakening the policy.
+
+[EXP-005B](../../runtime/experiments/macos-vm.md) records the narrower managed-guest
+result and unavailable host lifecycle combinations. No clean disposable Mac,
+amd64 Mac or isolated Lima installation was available. Installation privilege,
+missing host service/kernel/rootfs delivery, host loopback endpoint projection,
+public authenticated GitStore host/guest control and VM interruption remain
+unqualified. SDK same-user XPC checks do not substitute for those product gates.
+No VM tool is bundled and no privileged fallback is installed automatically.
+
+Neither experiment qualifies a public macOS local backend. macOS remains remote
+only; Linux source-preview results apply only to the named arm64 fixture. DEP-015
+remains open until a complete clean-host report passes. Existing host/service
+availability is not evidence of GitStore delivering that service itself.

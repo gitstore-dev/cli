@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "executionEnabled": true,
+  "status": "Linux arm64 registered helper/schema/lock, standalone migration and restart recovery verified; public lifecycle validation in progress",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "targets": [
+    {
+      "targetVersion": "gitstore-06152d-schema-012",
+      "datastore": "scylladb",
+      "serverBackend": "scylla",
+      "apiImage": {
+        "component": "api",
+        "repository": "ghcr.io/gitstore-dev/api",
+        "indexDigest": "sha256:4dffb63e47fdb91238617d9e12bc919c4b3186e5d130c61e8360f67615972196",
+        "platforms": [
+          {
+            "os": "linux",
+            "architecture": "amd64",
+            "digest": "sha256:bb0767234c568b40a4eb1519b96a1f5989fe26139e218d2348fdf404e888d951",
+            "configDigest": "sha256:d8620f78fd28a0c95611d08c89f7d7e579341e5956afa96b7b9feec0579c6fc8",
+            "entrypoint": [],
+            "command": [
+              "/app/api"
+            ]
+          },
+          {
+            "os": "linux",
+            "architecture": "arm64",
+            "digest": "sha256:3c61f77edcbe719069d9173f1bad270cc46a81e97e756844cea3db8dcfb31172",
+            "configDigest": "sha256:02e6a37028739526ded8a55932bdfdafb5f814ecbafb0a139ac8b93d79379d4d",
+            "entrypoint": [],
+            "command": [
+              "/app/api"
+            ]
+          }
+        ],
+        "transportPolicy": {
+          "tokenOrigins": [],
+          "blobOrigins": [
+            "https://pkg-containers.githubusercontent.com"
+          ],
+          "evidence": "runtime/experiments/image-library/ghcr-routing*.json"
+        }
+      },
+      "helper": {
+        "path": "/app/gitctl",
+        "subcommand": "migrate",
+        "acceptedFlags": [
+          "--hosts",
+          "--keyspace",
+          "--username",
+          "--tls",
+          "--disable-shard-aware-port",
+          "--timeout"
+        ],
+        "protectedPasswordEnvironment": "GITSTORE_API__DATASTORE__SCYLLA__PASSWORD",
+        "supportsArbitraryTarget": false,
+        "timeoutSeconds": 60,
+        "timeoutPolicy": "keep managed helper timeout below the source migration lock TTL; still require observed helper termination"
+      },
+      "schema": {
+        "ledger": "gocqlx_migrate",
+        "bundleDigest": "sha256:6f347e8abd5b9848be131a73ea00e394ef9445f903d039453ec8c0c1b409b9cd",
+        "files": [
+          {
+            "name": "001_infra.cql",
+            "sha256": "cbf14a5ce51f240945d41536768def7cda9330616d95e93841bb9e91380b073e",
+            "ledgerMd5": "87c09fd8647e584fb46e86ea6255c27c",
+            "statementCount": 5
+          },
+          {
+            "name": "002_namespace.cql",
+            "sha256": "973d1b623dc1c55e5a6e9f48aa9be83c00f98947e8391b575ac164262d3109c6",
+            "ledgerMd5": "5f0d1a60d8b69c4ed56974107f86c46b",
+            "statementCount": 8
+          },
+          {
+            "name": "003_repository.cql",
+            "sha256": "ff2569276f3ae45a9e2713d5b1864388b8aba04adc53b795b770cfa6646be5cc",
+            "ledgerMd5": "40b220de61ea46228327b5f2ecebaffb",
+            "statementCount": 4
+          },
+          {
+            "name": "004_category_taxonomy.cql",
+            "sha256": "4ee55940575dd1ded5c70075110b2fa2f5caad75fc17d239da1a375a797cf38b",
+            "ledgerMd5": "8479cfa868861c6c49d945c9eef19b01",
+            "statementCount": 4
+          },
+          {
+            "name": "005_product.cql",
+            "sha256": "b19f30108aefe3087fa9470fb40db5f970ff3d5d23fb625b1256d022bbe9a581",
+            "ledgerMd5": "431f63e034643bb40a9e1148bbfacadf",
+            "statementCount": 4
+          },
+          {
+            "name": "006_product_variant.cql",
+            "sha256": "74e531ef7d707e1c9cf07a566a77004b3be561a263966a5ffaa7d5573a1ae4ab",
+            "ledgerMd5": "50d9636ac53846287f0383e8787bc78f",
+            "statementCount": 6
+          },
+          {
+            "name": "007_collection.cql",
+            "sha256": "8924b8795fa541f6f12331ff7274869f502ece1fe647167ee50f51f071ecf61a",
+            "ledgerMd5": "24cc0f6bb6183c607afb38180241f730",
+            "statementCount": 4
+          },
+          {
+            "name": "008_file.cql",
+            "sha256": "6e38d571e85c21fd7d781aa2c8859eb5b464151a3d50f435cd095c2db7c93506",
+            "ledgerMd5": "5137e1c589ee7b3a8130fc6ce8cb76b1",
+            "statementCount": 4
+          },
+          {
+            "name": "009_service_account.cql",
+            "sha256": "0be839c86baacf4ea4b7c7cb89c0c02c78e1e42b5b4c85547661fa3c86fed0c1",
+            "ledgerMd5": "8f5c18a929939b88278b98193ce9eb79",
+            "statementCount": 5
+          },
+          {
+            "name": "010_category_ancestor_index.cql",
+            "sha256": "c6299456e22828015cfff04830e23bcfd29454450a8a5db0fbd62a75e1667d00",
+            "ledgerMd5": "07ffb6d9b30077089abcc7e8335befd8",
+            "statementCount": 2
+          },
+          {
+            "name": "011_category_product_index.cql",
+            "sha256": "902f7bd987786372861a0cc7d38d4546897d66f9456dd4d11aabf26a35e2bc75",
+            "ledgerMd5": "ab5d4ae66e573d2e85241b4659aeb274",
+            "statementCount": 3
+          },
+          {
+            "name": "012_repository_resource_membership.cql",
+            "sha256": "138b2befedc875d8df13ccac673d641759642b04f8cdf5f5a95f7fa25b3529a3",
+            "ledgerMd5": "5d53010fc9dc1d7b69b2ecea7c930b45",
+            "statementCount": 2
+          }
+        ],
+        "compatibility": "matching embedded bundle; reject changed/incomplete/extra ledger entries; no downgrade",
+        "ledgerMd5Purpose": "upstream compatibility bookkeeping, not an integrity signature"
+      },
+      "exclusivity": {
+        "daemon": "same deployment mutation queue and held datastore writer lease",
+        "datastoreLockTable": "schema_migrations_lock",
+        "datastoreLockKey": "migration",
+        "sourceLockTtlSeconds": 120,
+        "unsafeCancellation": "refuse after migration helper may have dispatched writes"
+      },
+      "preconditions": [
+        "registered immutable image/helper/schema mapping",
+        "owned stopped dependent workloads",
+        "verified keyspace and compatible ledger",
+        "explicit backup acknowledgment for retained data",
+        "exclusive datastore writer lease; no uncertain prior helper"
+      ],
+      "apiAfterMigration": {
+        "configuration": "api.datastore.scylla.auto_migrate",
+        "value": false
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "gitstore-api/cmd/gitctl/main.go",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/cmd/gitctl/main.go",
+      "sha256": "0316ecb89319e63fbdd0c22e4700301b3e52c7e34b9dc6b31135feff08956aea"
+    },
+    {
+      "path": "gitstore-api/internal/datastore/scylla/migration.go",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/internal/datastore/scylla/migration.go",
+      "sha256": "32f5cb20a3dc875f4cacc59551d2f66986ee4873f26129d7572a0901164bede2"
+    },
+    {
+      "path": "gitstore-api/internal/config/config.go",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/internal/config/config.go",
+      "sha256": "11473c10d87d899f8db673cf2c887c5e00304005f2d45760d83f0355782a2533"
+    },
+    {
+      "path": "gitstore-api/tests/contract/datastore/scylla_test.go",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/gitstore-api/tests/contract/datastore/scylla_test.go",
+      "sha256": "4e54f8d5c1e00ed329ec2b66f6967101104e02b962a07debd1e2a40f22df9120"
+    },
+    {
+      "path": "docker/api.Dockerfile",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/docker/api.Dockerfile",
+      "sha256": "689e88fedb484dfecf50d5355f3598f4acbecd1f678d90f543bb1cf9a5c5e25d"
+    },
+    {
+      "path": "compose.scylla.yml",
+      "url": "https://github.com/gitstore-dev/GitStore/blob/06152d193e854bc643fa884daa8b9f30b0d75d0f/compose.scylla.yml",
+      "sha256": "d60609532292301645c8dceca1c687c21d1036ed6119143cacef1ec14ee40074"
+    }
+  ]
+}

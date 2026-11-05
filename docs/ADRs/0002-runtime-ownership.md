@@ -1,7 +1,7 @@
 # ADR 0002: Profile Runtime Ownership and Recovery
 
 **Status**: accepted (design). **Date**: 2026-10-27.
-**Owner**: CLI/daemon maintainers. **Evidence**: EVD-001, EVD-002, EVD-022, EVD-023.
+**Owner**: CLI/daemon maintainers. **Evidence**: EVD-001, EVD-002, EVD-022, EVD-023, EVD-024.
 **Dependencies**: DEP-008 (protocol design), DEP-012 (implementation), DEP-013–DEP-015.
 
 ## Context
@@ -115,3 +115,30 @@ The experiment explicitly excludes cgroups/networking and uses only a tiny owned
 payload. It does not close DEP-012, prove full service startup/restart recovery,
 authorize a generic execution method or qualify other hosts. Actual image/network,
 retained-writer and manager-restart acceptance gates remain mandatory.
+
+## 2026-11-05 source implementation evidence
+
+The [Linux validation record](../contributing/validation/local-runtime.md) and
+[recovery experiment](../../runtime/experiments/recovery.md) extend the earlier
+tiny-payload experiment with actual core services, retained writers and public
+Unix lifecycle calls. SQLite persists acceptance, generations and ownership;
+the parent controls bounded workers, pidfds and cgroup population observations.
+Manager loss invalidates readiness. A new owned stop reopens recorded roots and
+observes the original workload before cleanup; it does not infer death from a
+missing PID or adopt a copied live deployment.
+
+The [Scylla experiment](../../runtime/experiments/scylladb.md) records standalone
+registered migrations, retained data and a surviving mutator across manager loss.
+Unsafe running migration cancellation is refused. Recovery waits for that exact
+mutator rather than signalling or retrying it; the original failed operation
+remains immutable and a separately accepted stop records cleanup. Stop deadlines
+retain uncertain ownership and require a new stop for a later observed outcome.
+
+These are development-source results on the named Linux arm64 fixture.
+[Restart evidence](../../runtime/experiments/restart-evidence.json) now covers
+bounded whole-deployment replacement after observed native exit. It creates
+independent stop/start operations and waits for observed cleanup/released writers;
+live health loss, uncertainty, operator intervention and manager loss do not
+authorize an automatic replacement. Four attempts use nonblocking delays; failed
+stop/replacement ends the chain. Other hosts, complete optional providers and artifact publication
+remain gated; this checkpoint does not close all DEP-012–DEP-015.

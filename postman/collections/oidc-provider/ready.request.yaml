@@ -1,0 +1,15 @@
+$kind: http-request
+name: Owned Hydra ready
+order: 1000
+method: GET
+url: '{{baseUrl}}/health/ready'
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Provider and its database are ready", () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().status).to.eql("ok");
+      });

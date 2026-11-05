@@ -43,7 +43,7 @@ static char *read_file(int root, const char *name) {
     close(fd);
     return bytes;
 }
-static int worker(pid_t parent, int root) {
+static int worker(pid_t parent, int root, int persistent) {
     alarm(15);
     struct rlimit core = {0, 0};
     CHECK(!setrlimit(RLIMIT_CORE, &core));
@@ -52,9 +52,11 @@ static int worker(pid_t parent, int root) {
     CHECK(scope >= 3);
     json_t *components = json_pack("[s,s,s]", "api", "git", "controller");
 #if defined(__aarch64__)
-    json_t *manifest = gstd_asset_manifest(components, "arm64");
+    json_t *manifest =
+        gstd_asset_manifest_for_datastore(components, "arm64", persistent ? "scylladb" : "memdb");
 #else
-    json_t *manifest = gstd_asset_manifest(components, "amd64");
+    json_t *manifest =
+        gstd_asset_manifest_for_datastore(components, "amd64", persistent ? "scylladb" : "memdb");
 #endif
     json_decref(components);
     CHECK(manifest);
@@ -62,7 +64,7 @@ static int worker(pid_t parent, int root) {
                                       .store_id = "0123456789abcdef0123456789abcdef",
                                       .deployment_id = "fixture",
                                       .operation_id = "fixture-start",
-                                      .datastore = "memdb",
+                                      .datastore = persistent ? "scylladb" : "memdb",
                                       .generation = 1,
                                       .control_owner = parent,
                                       .scope_fd = scope};
@@ -102,6 +104,12 @@ static int worker(pid_t parent, int root) {
          *signing = read_file(scope, "controller-signing.json"),
          *owner = read_file(scope, "owner.json");
     CHECK(api && base && git && controller && users && signing && owner);
+    if (persistent) {
+        CHECK(strstr(base, "backend = \"scylla\"") && strstr(base, "auto_migrate = false") &&
+              strstr(base, "127.0.0.1:9042") && !strstr(base, "memdb"));
+        CHECK(strstr(owner, json_string_value(json_object_get(manifest, "manifestDigest"))));
+    } else
+        CHECK(strstr(base, "backend = \"memdb\"") && !strstr(base, "auto_migrate"));
     json_t *secrets = gstd_json_parse(material.bytes, material.length);
     const char *password = json_string_value(json_object_get(secrets, "password")),
                *jwt = json_string_value(json_object_get(secrets, "jwtSecret")),
@@ -128,7 +136,7 @@ static int worker(pid_t parent, int root) {
     wrong.generation++;
     CHECK(gstd_bootstrap_prepare(&wrong, &material) == -1);
     wrong = request;
-    wrong.datastore = "scylladb";
+    wrong.datastore = persistent ? "memdb" : "scylladb";
     CHECK(gstd_bootstrap_prepare(&wrong, &material) == -1);
     wrong = request;
     wrong.control_owner = getpid();
@@ -173,7 +181,7 @@ static int worker(pid_t parent, int root) {
     gstd_credential_clear(&replacement);
     return 0;
 }
-int main(void) {
+static int scenario(int persistent) {
     gstd_json_initialize();
     char *root = gstd_test_dir();
     if (!root || !geteuid())
@@ -181,7 +189,7 @@ int main(void) {
     int fd = open(root, O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
     pid_t parent = getpid(), child = fork();
     if (!child)
-        _exit(worker(parent, fd));
+        _exit(worker(parent, fd, persistent));
     int status = 0;
     int valid = child > 0 && waitpid(child, &status, 0) == child && WIFEXITED(status) &&
                 !WEXITSTATUS(status);
@@ -191,3 +199,5 @@ int main(void) {
         valid = 0;
     return valid ? 0 : 1;
 }
+
+int main(void) { return scenario(0) || scenario(1); }

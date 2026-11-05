@@ -80,7 +80,7 @@ static int raw_worker(const char *stage) {
             reply.result = GSTD_NATIVE_OK;
         }
         if (reply.result == GSTD_NATIVE_OK && !strcmp(stage, "start-crash"))
-            raise(SIGSEGV);
+            raise(SIGKILL);
         ssize_t sent = write(fds[1], &reply, sizeof(reply));
         close(fds[1]);
         _exit(sent == (ssize_t)sizeof(reply) && reply.result == GSTD_NATIVE_OK ? 0 : 1);
@@ -130,8 +130,11 @@ static int worker(const char *stage) {
     if (!strcmp(stage, "stale-stop"))
         input.expected_start_time++;
     gstd_native_job job = {0};
-    if (gstd_native_launch(&input, action, 10000, &job))
+    if (gstd_native_launch(&input, action, 10000, &job)) {
+        fprintf(stderr, "native worker launch refused stage=%s dumpable=%d\n", stage,
+                prctl(PR_GET_DUMPABLE));
         return -1;
+    }
     gstd_native_status result;
     int ready;
     while (!(ready = gstd_native_poll(&job, -1, &result, &latest))) {
@@ -395,6 +398,8 @@ int main(int argc, char **argv) {
                 gstd_network_record_running(database, &network_worker, &network_observed) ||
                 gstd_network_attachment_reserve(database, &network_worker, &network_observed,
                                                 identifier) ||
+                gstd_network_attachment_matches(database, operation, identifier,
+                                                &network_observed.network) ||
                 gstd_network_attachment_reserve(database, &network_worker, &network_observed,
                                                 identifier) ||
                 sqlite3_exec(database, "COMMIT", NULL, NULL, NULL) != SQLITE_OK)
@@ -404,6 +409,10 @@ int main(int argc, char **argv) {
             if (sqlite3_exec(database, "BEGIN IMMEDIATE", NULL, NULL, NULL) != SQLITE_OK ||
                 gstd_network_attachment_reserve(database, &network_worker, &foreign_network,
                                                 identifier) != -1 ||
+                gstd_network_attachment_matches(database, operation, identifier,
+                                                &foreign_network.network) != -1 ||
+                gstd_network_attachment_matches(database, operation, "unattached-workload",
+                                                &network_observed.network) != -1 ||
                 sqlite3_exec(database, "ROLLBACK", NULL, NULL, NULL) != SQLITE_OK ||
                 sqlite3_exec(database, "UPDATE network_attachments SET network_inode='1'", NULL,
                              NULL, NULL) == SQLITE_OK ||
@@ -419,8 +428,10 @@ int main(int argc, char **argv) {
         input.manifest = manifest;
         json_decref(config);
         config = gstd_execution_build(&input);
-        if (!config)
+        if (!config) {
+            fputs("Registered synthetic launch plan was refused\n", stderr);
             return 2;
+        }
         context.component = "git";
         context.test_fixture = 0;
         context.registered_inputs = &input;
@@ -434,8 +445,10 @@ int main(int argc, char **argv) {
         gstd_native_context refused = context;
         refused.registered_inputs = &invalid;
         gstd_native_job job = {0};
-        if (gstd_native_launch(&refused, GSTD_NATIVE_CREATE, 1000, &job) != -1 || job.worker)
+        if (gstd_native_launch(&refused, GSTD_NATIVE_CREATE, 1000, &job) != -1 || job.worker) {
+            fputs("Stale namespace rejection boundary failed\n", stderr);
             return 1;
+        }
     }
     char sentinel[4096];
     int n = snprintf(sentinel, sizeof(sentinel), "%s/sentinel-inherited", argv[1]);
@@ -450,7 +463,7 @@ int main(int argc, char **argv) {
         context.expected_start_time = latest.start_time;
     }
     int started = created ? -1 : worker(crashed ? "start-crash" : "start");
-    if (created || (!crashed && started) || (crashed && (!started || worker_signal != SIGSEGV))) {
+    if (created || (!crashed && started) || (crashed && (!started || worker_signal != SIGKILL))) {
         close(fd);
         return 1;
     }
@@ -510,12 +523,12 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (!crash) {
-        raise(SIGSEGV);
+        raise(SIGKILL);
         _exit(99);
     }
     int status;
     if (waitpid(crash, &status, 0) != crash || !WIFSIGNALED(status) ||
-        WTERMSIG(status) != SIGSEGV || running(1)) {
+        WTERMSIG(status) != SIGKILL || running(1)) {
         close(fd);
         return 1;
     }

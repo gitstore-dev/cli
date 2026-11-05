@@ -1,30 +1,15 @@
 #ifndef GSTD_DEPLOYMENTS_H
 #define GSTD_DEPLOYMENTS_H
 #include "bootstrap_job.h"
+#include "datastore.h"
 #include "deployment_assets.h"
+#include "deployment_types.h"
 #include "execution_plan.h"
+#include "log_capture.h"
 #include "native_job.h"
 #include "native_population.h"
 #include "network_worker.h"
 #include "runtime_settings.h"
-typedef struct {
-    sqlite3 *database;
-    const gstd_runtime_settings *settings;
-    int cache_fd, resource_fd, native_fd, broker_fd;
-    gstd_volume_root volume_root;
-} gstd_deployment_environment;
-typedef struct {
-    const char *name;
-    char resource[65], asset_resource[65];
-    gstd_filesystem_reply scope;
-    int rootfs_fd;
-    gstd_execution_inputs inputs;
-    gstd_native_context native;
-    gstd_native_observation observed;
-    gstd_native_population population;
-    int launched, exited;
-    int death_fd; /* held pidfd when the manager cannot reap a recovered init */
-} gstd_deployment_workload;
 typedef struct {
     const gstd_deployment_environment *environment;
     gstd_deployment_target target;
@@ -34,20 +19,27 @@ typedef struct {
     gstd_network_worker network;
     gstd_network_worker_observation network_observed;
     gstd_deployment_workload workloads[3]; /* Git, API, controller */
+    gstd_datastore datastore;
+    int persistent, helper_output[2];
     unsigned count, index;
     int stage, outcome, detail, allow_initial, resolver_fd, cancel_requested;
+    int finalizing, final_outcome, final_detail, final_host_failure;
     int recovered, recovery_proven, keeper_death_fd;
+    /* Current desired snapshot after recovery or an attempted stop; target
+     * retains the original immutable resource-producing start generation. */
     uint64_t recovery_generation;
     char recovery_operation[65];
     int64_t ready_at_ms;
     struct {
-        int initialized, running, has_reply, status, index, reported_ready;
+        int initialized, running, has_reply, status, index, reported_ready, observation_failed;
+        int exit_observed;
         int64_t next_due, last_ready[3];
     } monitor;
     int64_t deadline_ms, next_health_ms;
     gstd_bootstrap_graph graph;
     json_t *credential_source;
     gstd_filesystem_job filesystem;
+    gstd_log_capture capture;
     gstd_deployment_asset asset;
     gstd_native_job native_job;
     gstd_bootstrap_job bootstrap;

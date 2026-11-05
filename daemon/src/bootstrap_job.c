@@ -2,6 +2,10 @@
 #include "bootstrap_job.h"
 #include "gitstored/assets.h"
 #include "gitstored/protocol.h"
+#include "oidc_config.h"
+#include "oidc_material.h"
+#include "oidc_preparation.h"
+#include "oidc_profile.h"
 #include <string.h>
 #if defined(__linux__) && defined(GITSTORED_BOOTSTRAP)
 #include <dirent.h>
@@ -44,16 +48,48 @@ static int limit(int resource, rlim_t bound) {
     return setrlimit(resource, &current);
 }
 static int material(const gstd_bootstrap_job_input *input, gstd_credential *output) {
-    json_t *message = json_pack("{s:{s:s,s:s,s:s,s:s},s:O}", "identity", "installation",
-                                input->preparation.store_id, "issuer", "gitstore-local/core/1",
-                                "account", input->preparation.deployment_id, "purpose",
-                                "bootstrap-material", "source", input->source);
+    int oidc = input->kind == GSTD_BOOT_JOB_OIDC_HTTP;
+    json_t *message = json_pack(
+        "{s:{s:s,s:s,s:s,s:s},s:O}", "identity", "installation", input->preparation.store_id,
+        "issuer", oidc ? "gitstore-local/reference-oidc/1" : "gitstore-local/core/1", "account",
+        input->preparation.deployment_id, "purpose",
+        oidc ? "oidc-provider-material" : "bootstrap-material", "source", input->source);
     char *encoded = message ? gstd_json_dump(message) : NULL;
     int result = encoded ? gstd_credential_run(input->broker_fd, (unsigned char *)encoded,
                                                strlen(encoded), 5000, output)
                          : -1;
     free(encoded);
     json_decref(message);
+    return result;
+}
+static gstd_oidc_http_status oidc_http(const gstd_bootstrap_job_input *input,
+                                       const gstd_bootstrap_http_context *context,
+                                       const gstd_credential *material) {
+    /* No missing preparation or missing material may be repaired as a side
+     * effect of an HTTP job. The parent committed the exact file receipt first. */
+    struct stat prepared;
+    if (fstatat(input->preparation.scope_fd, "prepared.json", &prepared, AT_SYMLINK_NOFOLLOW) ||
+        !S_ISREG(prepared.st_mode) || prepared.st_uid != geteuid() ||
+        (prepared.st_mode & 07777) != 0600 || prepared.st_nlink != 1 ||
+        gstd_oidc_material_check(material))
+        return GSTD_OIDC_REJECTED;
+    int files[4] = {-1, -1, -1, -1};
+    int valid = !gstd_oidc_prepare(&input->preparation, &input->oidc_ports, material, files);
+    for (size_t i = 0; i < 4; i++)
+        if (files[i] >= 3)
+            close(files[i]);
+    if (!valid)
+        return GSTD_OIDC_REJECTED;
+    json_t *family = gstd_json_parse(material->bytes, material->length);
+    const json_t *client = json_object_get(family, "clientSecret");
+    gstd_credential secret = {.bytes = (unsigned char *)json_string_value(client),
+                              .length = json_string_length(client)};
+    gstd_oidc_http_status result =
+        gstd_oidc_http(context, input->oidc_action,
+                       input->oidc_action == GSTD_OIDC_HTTP_READY ? NULL : &input->oidc_client,
+                       input->oidc_action == GSTD_OIDC_HTTP_CREATE ? &secret : NULL);
+    gstd_oidc_config_clear(family);
+    json_decref(family);
     return result;
 }
 static void run(gstd_bootstrap_job_input input, int writer, pid_t parent) {
@@ -118,7 +154,10 @@ static void run(gstd_bootstrap_job_input input, int writer, pid_t parent) {
                 network.network_fd = 7;
                 gstd_bootstrap_http_context context = {.control_owner = parent,
                                                        .network = &network};
-                output.status = gstd_bootstrap_http(&context, input.action, &secret, output.uid);
+                output.status =
+                    input.kind == GSTD_BOOT_JOB_OIDC_HTTP
+                        ? oidc_http(&input, &context, &secret)
+                        : gstd_bootstrap_http(&context, input.action, &secret, output.uid);
             }
         }
         gstd_credential_clear(&secret);
@@ -136,13 +175,21 @@ int gstd_bootstrap_job_launch(const gstd_bootstrap_job_input *input, unsigned ti
         (sigchild.sa_flags & SA_NOCLDWAIT))
         return -1;
     if (!input || !job || job->worker || input->kind < GSTD_BOOT_JOB_PREPARE ||
-        input->kind > GSTD_BOOT_JOB_HTTP || !timeout || timeout > 60000 ||
+        input->kind > GSTD_BOOT_JOB_OIDC_HTTP || !timeout || timeout > 60000 ||
         input->preparation.control_owner != getpid() || input->preparation.scope_fd < 3 ||
         input->broker_fd < 3 || !geteuid() || !one_thread() ||
         gstd_asset_manifest_check(input->preparation.manifest) || !json_is_object(input->source) ||
         (input->kind == GSTD_BOOT_JOB_HTTP &&
          (!input->network || input->action < GSTD_BOOT_API_READY ||
           input->action > GSTD_BOOT_CONTROLLER_READY)) ||
+        (input->kind == GSTD_BOOT_JOB_OIDC_HTTP &&
+         (!input->network || input->allow_initial ||
+          gstd_oidc_core_manifest_check(input->preparation.manifest) ||
+          !json_object_get(input->preparation.manifest, "oidcProfileDigest") ||
+          gstd_oidc_ports_check(&input->oidc_ports) || input->oidc_action < GSTD_OIDC_HTTP_READY ||
+          input->oidc_action > GSTD_OIDC_HTTP_INSPECT ||
+          (input->oidc_action != GSTD_OIDC_HTTP_READY &&
+           gstd_oidc_client_check(&input->oidc_client)))) ||
         (input->kind == GSTD_BOOT_JOB_BIND && (!input->uid || !*input->uid || !input->api_boot ||
                                                input->api_pid <= 0 || !input->api_start)))
         return -1;
@@ -164,8 +211,11 @@ int gstd_bootstrap_job_launch(const gstd_bootstrap_job_input *input, unsigned ti
         close(fds[0]);
         return -1;
     }
-    *job =
-        (gstd_bootstrap_job){.worker = child, .descriptor = fds[0], .deadline_ms = now + timeout};
+    *job = (gstd_bootstrap_job){.worker = child,
+                                .descriptor = fds[0],
+                                .deadline_ms = now + timeout,
+                                .kind = input->kind,
+                                .oidc_action = input->oidc_action};
     return 0;
 #else
     (void)input;
@@ -215,8 +265,21 @@ int gstd_bootstrap_job_poll(gstd_bootstrap_job *job, int cancel, gstd_bootstrap_
         if (job->received == sizeof(job->bytes)) {
             gstd_bootstrap_job_reply candidate;
             memcpy(&candidate, job->bytes, sizeof(candidate));
-            if (candidate.status >= -2 && candidate.status <= 1 &&
-                memchr(candidate.uid, 0, sizeof(candidate.uid)))
+            int valid = candidate.status >= -2 && candidate.status <= 1 &&
+                        memchr(candidate.uid, 0, sizeof(candidate.uid));
+            if (job->kind == GSTD_BOOT_JOB_OIDC_HTTP) {
+                static const char empty[129] = {0};
+                int success = job->oidc_action == GSTD_OIDC_HTTP_READY    ? GSTD_OIDC_PROVIDER_READY
+                              : job->oidc_action == GSTD_OIDC_HTTP_CREATE ? GSTD_OIDC_CLIENT_CREATED
+                                                                          : GSTD_OIDC_PUBLIC_MATCH;
+                valid = !memcmp(candidate.uid, empty, sizeof(empty)) &&
+                        (candidate.status == GSTD_OIDC_UNCERTAIN ||
+                         candidate.status == GSTD_OIDC_REJECTED ||
+                         (job->oidc_action != GSTD_OIDC_HTTP_CREATE &&
+                          candidate.status == GSTD_OIDC_PENDING) ||
+                         candidate.status == success);
+            }
+            if (valid)
                 *reply = candidate;
         }
     }

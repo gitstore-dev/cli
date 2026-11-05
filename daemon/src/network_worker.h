@@ -1,17 +1,22 @@
 #ifndef GSTD_NETWORK_WORKER_H
 #define GSTD_NETWORK_WORKER_H
 #include "namespace_owner.h"
+#include "oidc_config.h"
 #include <jansson.h>
 typedef struct {
     const json_t *manifest;
     const char *store_id, *resource_id, *operation_id;
     int scope_fd;
+    /* Required only for the full fixed OIDC graph. Persist this exact public
+     * tuple before permit. Binding conflicts never choose replacement ports. */
+    const gstd_oidc_ports *oidc_ports;
 } gstd_network_worker_request;
 typedef struct {
     pid_t pid;
     uint64_t start, scope_device, scope_inode;
     int channel, pid_fd, scope_fd, permitted, received;
     unsigned roles;
+    gstd_oidc_ports oidc_ports;
     char store_id[33], resource_id[65], operation_id[65], profile_digest[72];
     char boot_id[37];
 } gstd_network_worker;
@@ -23,8 +28,16 @@ typedef struct {
     uint16_t api_port, git_port;
     int api_descriptor, git_descriptor;
     uint64_t api_inode, git_inode;
+    gstd_oidc_ports oidc_ports;
+    int oidc_descriptors[5];
+    uint64_t oidc_inodes[5];
 } gstd_network_worker_observation;
 #define GSTD_NETWORK_OBSERVATION_INITIAL {.network = GSTD_NETWORK_NAMESPACE_INITIAL}
+/* Strict private registered role/port policy and fixed public tuple encoding.
+ * Core owner records retain their original shape. No arbitrary destination. */
+int gstd_network_request_roles(const gstd_network_worker_request *, unsigned *roles);
+json_t *gstd_network_oidc_ports_json(const gstd_oidc_ports *);
+int gstd_network_oidc_ports_parse(const json_t *, gstd_oidc_ports *);
 /* Parent-only threadless fork boundary. Scope is an already recorded private
  * empty resource directory, never a caller path. This creates a blocked child:
  * commit its returned PID/start/scope identity before granting permission.

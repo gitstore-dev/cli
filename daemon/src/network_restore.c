@@ -15,6 +15,13 @@ int gstd_network_restore_worker(int scope, const gstd_filesystem_input *input,
                                            .resource_id = input->resource_id,
                                            .operation_id = input->operation_id,
                                            .scope_fd = scope};
+    gstd_oidc_ports ports = {0};
+    const json_t *selected = json_object_get(input->scope_expected, "oidcPorts");
+    if (selected) {
+        if (gstd_network_oidc_ports_parse(selected, &ports))
+            return -1;
+        request.oidc_ports = &ports;
+    }
     if (gstd_network_worker_reopen(&request, input->scope_expected, &owner, &actual))
         return -1;
     reply->descriptor_count = 4;

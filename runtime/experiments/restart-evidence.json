@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "scope": "Source preview on named disposable Linux arm64 guest; no released binary or other host support claim",
+  "native": {
+    "runtime-run-recovery-sd29vd0y.json": {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-05T12:41:44Z",
+      "scenario": "recovery",
+      "case": "test_workload_exit_invalidates_readiness_and_preserves_start_history",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/mac-library-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/build/root-rust/release/gs",
+          "sha256": "8df92a1e12eac89defdeb3c9a22663840b1d0e552b2711f9f120f0498b49d45b"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/gitstored",
+          "sha256": "155e8059f2e66875bac9767b5986f9b184cc53d2e091b5d4698a2f24bf6a670d"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-8idfcui4/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 80.495
+    },
+    "runtime-run-persistent-scylla-ugvs9kdp.json": {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-05T12:41:38Z",
+      "scenario": "persistent-scylla",
+      "case": "test_persistent_observed_exit_restart",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/scylla-public-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/build/root-rust/release/gs",
+          "sha256": "8df92a1e12eac89defdeb3c9a22663840b1d0e552b2711f9f120f0498b49d45b"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/gitstored",
+          "sha256": "155e8059f2e66875bac9767b5986f9b184cc53d2e091b5d4698a2f24bf6a670d"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-8p2c1zzp/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 171.206
+    },
+    "runtime-run-recovery-amt36z2_.json": {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-05T12:37:45Z",
+      "scenario": "recovery",
+      "case": "test_paused_live_service_loses_and_regains_readiness_without_restart",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/mac-library-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/build/root-rust/release/gs",
+          "sha256": "8df92a1e12eac89defdeb3c9a22663840b1d0e552b2711f9f120f0498b49d45b"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/gitstored",
+          "sha256": "155e8059f2e66875bac9767b5986f9b184cc53d2e091b5d4698a2f24bf6a670d"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-he5siwrp/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 60.173
+    },
+    "runtime-run-recovery-wnt9jx18.json": {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-05T12:39:53Z",
+      "scenario": "recovery",
+      "case": "test_killed_manager_reopens_owned_resources_for_public_stop",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/mac-library-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/build/root-rust/release/gs",
+          "sha256": "8df92a1e12eac89defdeb3c9a22663840b1d0e552b2711f9f120f0498b49d45b"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/gitstored",
+          "sha256": "155e8059f2e66875bac9767b5986f9b184cc53d2e091b5d4698a2f24bf6a670d"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-igqnahky/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 82.442
+    }
+  },
+  "controlled": {
+    "host": "bounded_owned_restart_supervision passed; 52 applicable non-slow C cases passed",
+    "linuxSanitizers": "61 applicable non-slow cases passed; one cross-UID case skipped",
+    "cases": [
+      "four-attempt circuit limit",
+      "250/500/1000/2000 ms nonblocking delay",
+      "held owner after stop refuses replacement",
+      "superseding operator intent ends chain",
+      "failed stop or replacement ends chain",
+      "uncertain source refuses admission",
+      "original successful start outcome unchanged"
+    ]
+  },
+  "sourceSha256": {
+    "daemon/src/restart.c": "c9016ec365f9116613f38cc139d073138a570933af40cbd03ce43fdec1038a2b",
+    "daemon/src/restart.h": "bf10bde1ef000e84bb28d0fd4e8a1a0ab012bc5b7f7e5dbf0945be801af89a35",
+    "daemon/src/runtime_manager.c": "62264a8780f84f41f5d8cdbc58c608254fd3beabaa822cd07fa3d5a20f0ed3f3",
+    "daemon/src/monitor.c": "8ec6dacf8ed1097f68cafd1cdfb64eb1a6688840e5e8c96ffe195bfc44546db3",
+    "daemon/src/deployments.h": "61a3739fd9f31ba7b44c905546e1658d77b05baa65313f1fe9f5a40d98f731b4",
+    "daemon/tests/test_restart.c": "fee43a89b6559742f0529e1eeb2cd70f2df3484d1d2ce9aea9eb9fb072dc0c50",
+    "tests/runtime/test_recovery.py": "fff5d903ac73cd1c791b3a59f88b3e055bf9e1b20ee7242e858ee6a1da180f01",
+    "tests/runtime/test_scylla_public.py": "6f268ac314f0596cc6f09e56b9ef5efc66de377625b1d75fdd65588b88b5b823",
+    "tests/runtime/support.py": "8fd289d65bd69fa05e8935505b7e0b5354ec6ee401e3c12da442290890a88a0a"
+  },
+  "sourceIdentityLimit": "Hashes identify source at report time; exact executed bytes are pinned separately by each native runner. Header comment/format-only edits do not constitute a clean source commit."
+}

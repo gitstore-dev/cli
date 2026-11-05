@@ -37,11 +37,19 @@ int main(int argc, char **argv) {
     CHECK(!gstd_runtime_settings_load(root, &settings));
     CHECK(!strcmp(json_string_value(json_object_get(settings.credential_source, "kind")),
                   "os-store"));
+    CHECK(settings.oidc_credential_parent_fd == -1 &&
+          !strcmp(json_string_value(json_object_get(settings.oidc_credential_source, "kind")),
+                  "os-store"));
     gstd_runtime_settings_clear(&settings);
     CHECK(faccessat(root, "settings.json", F_OK, 0) != 0);
     const char *bad[] = {
         "{}",
         "{\"schemaVersion\":2}",
+        "{\"schemaVersion\":1,\"oidcCredentialSource\":null}",
+        "{\"schemaVersion\":1,\"oidcCredentialSource\":{\"kind\":\"os-store\",\"path\":\"ignored\"}"
+        "}",
+        "{\"schemaVersion\":1,\"oidcCredentialSource\":{\"kind\":\"protected-file\",\"path\":\"/"
+        "tmp/unknown\"}}",
         "{\"schemaVersion\":1,\"shell\":\"anything\"}",
         "{\"schemaVersion\":1,\"schemaVersion\":1}",
         "{\"schemaVersion\":1,\"offlineLayouts\":null}",
@@ -60,13 +68,20 @@ int main(int argc, char **argv) {
         asprintf(
             &text,
             "{\"schemaVersion\":1,\"bootstrapCredentialSource\":{\"kind\":\"protected-directory\","
-            "\"path\":\"%s/credentials\"},\"offlineLayouts\":{\"api\":\"%s/offline\"}}",
-            path, path) > 0);
+            "\"path\":\"%s/credentials\"},\"offlineLayouts\":{\"api\":\"%s/offline\","
+            "\"scylladb\":\"%s/offline\"}}",
+            path, path, path) > 0);
     CHECK(!write_settings(root, text));
     free(text);
     CHECK(!gstd_runtime_settings_load(root, &settings));
     CHECK(settings.credential_parent_fd >= 3 && settings.offline_fds[0] >= 3 &&
           settings.offline_fds[1] == -1);
+    int datastore_image = gstd_runtime_settings_image(&settings, "scylladb");
+    CHECK(datastore_image >= 3 && datastore_image == settings.offline_fds[3]);
+    CHECK(gstd_runtime_settings_image(&settings, "api") == settings.offline_fds[0]);
+    CHECK(gstd_runtime_settings_image(&settings, "git") == -1);
+    CHECK(gstd_runtime_settings_image(&settings, "unknown") == -1);
+    CHECK(gstd_runtime_settings_image(NULL, "scylladb") == -1);
     CHECK(faccessat(settings.credential_parent_fd, "new-material", F_OK, 0) != 0);
     json_t *one =
                gstd_runtime_settings_source(&settings, "0123456789abcdef0123456789abcdef", "one"),
@@ -80,6 +95,10 @@ int main(int argc, char **argv) {
           !json_equal(one, other));
     CHECK(!strcmp(json_string_value(json_object_get(one, "kind")), "protected-file"));
     CHECK(access(json_string_value(json_object_get(one, "path")), F_OK) != 0);
+    json_t *isolated =
+        gstd_runtime_settings_oidc_source(&settings, "0123456789abcdef0123456789abcdef", "one");
+    CHECK(isolated && !strcmp(json_string_value(json_object_get(isolated, "kind")), "os-store"));
+    json_decref(isolated);
     CHECK(!gstd_runtime_settings_source(&settings, "bad-store", "one"));
     CHECK(!renameat(root, "credentials", root, "moved-credentials") &&
           !mkdirat(root, "credentials", 0700));
@@ -95,6 +114,38 @@ int main(int argc, char **argv) {
     CHECK(!strcmp(json_string_value(json_object_get(settings.credential_source, "kind")),
                   "protected-directory"));
     gstd_runtime_settings_clear(&settings);
+    CHECK(fcntl(datastore_image, F_GETFD) == -1 && settings.offline_fds[3] == -1);
+    CHECK(asprintf(&text,
+                   "{\"schemaVersion\":1,\"bootstrapCredentialSource\":{\"kind\":\"protected-"
+                   "directory\",\"path\":\"%s/credentials\"},"
+                   "\"oidcCredentialSource\":{\"kind\":\"protected-directory\",\"path\":\"%s/"
+                   "credentials\"},"
+                   "\"offlineLayouts\":{\"oidc-hydra\":\"%s/offline\",\"oidc-ui\":\"%s/offline\"}}",
+                   path, path, path, path) > 0);
+    CHECK(!write_settings(root, text));
+    free(text);
+    CHECK(!gstd_runtime_settings_load(root, &settings));
+    CHECK(settings.oidc_credential_parent_fd >= 3 && settings.offline_fds[4] >= 3 &&
+          settings.offline_fds[7] >= 3 &&
+          gstd_runtime_settings_image(&settings, "oidc-ui") == settings.offline_fds[7]);
+    one = gstd_runtime_settings_source(&settings, "0123456789abcdef0123456789abcdef", "one");
+    two = gstd_runtime_settings_oidc_source(&settings, "0123456789abcdef0123456789abcdef", "one");
+    other = gstd_runtime_settings_oidc_source(&settings, "0123456789abcdef0123456789abcdef", "two");
+    CHECK(one && two && other && !json_equal(one, two) && !json_equal(two, other) &&
+          strstr(json_string_value(json_object_get(two, "path")), "/oidc-provider-") &&
+          access(json_string_value(json_object_get(two, "path")), F_OK) != 0);
+    json_decref(one);
+    json_decref(two);
+    json_decref(other);
+    CHECK(!renameat(root, "credentials", root, "moved-credentials") &&
+          !mkdirat(root, "credentials", 0700));
+    CHECK(!gstd_runtime_settings_oidc_source(&settings, "0123456789abcdef0123456789abcdef", "one"));
+    CHECK(!unlinkat(root, "credentials", AT_REMOVEDIR) &&
+          !renameat(root, "moved-credentials", root, "credentials"));
+    int oidc_image = settings.offline_fds[7];
+    gstd_runtime_settings_clear(&settings);
+    CHECK(fcntl(oidc_image, F_GETFD) == -1 && settings.offline_fds[7] == -1 &&
+          settings.oidc_credential_parent_fd == -1);
     CHECK(!fchmodat(root, "settings.json", 0644, 0));
     CHECK(gstd_runtime_settings_load(root, &settings) == -1);
     CHECK(!fchmodat(root, "settings.json", 0600, 0));

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "scope": "Pinned Linux arm64 provider serving only; separate network namespaces, cached image materialization, copied stopped fixture databases, no public OIDC profile or combined graph",
+  "source": {
+    "kratosRevision": "36e624c716e45ab405599c71b42c384dd45bdfbb",
+    "adminRoute": "http://127.0.0.1:4434/admin/health/ready",
+    "adminRoutingEvidence": "https://github.com/ory/kratos/blob/36e624c716e45ab405599c71b42c384dd45bdfbb/cmd/daemon/serve.go"
+  },
+  "tests": [
+    {
+      "provider": "hydra",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-hydra-3t3vbqx9",
+      "probeSha256": "b0b1612ca1ef020aa29cc9d7442514b6a93d4d1943250745e3eddfc969ba23fe",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+      "exitCode": 0,
+      "elapsedSeconds": 0.221,
+      "result": "{\"ready\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+      "diagnostic": "",
+      "health": {
+        "lastHealth": 0,
+        "ready": true,
+        "startAcknowledged": true
+      },
+      "termination": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      }
+    },
+    {
+      "provider": "kratos",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-kratos-dlaheuz5",
+      "probeSha256": "b0b1612ca1ef020aa29cc9d7442514b6a93d4d1943250745e3eddfc969ba23fe",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+      "exitCode": 0,
+      "elapsedSeconds": 0.923,
+      "result": "{\"ready\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+      "diagnostic": "",
+      "health": {
+        "lastHealth": 0,
+        "ready": true,
+        "startAcknowledged": true
+      },
+      "termination": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      }
+    },
+    {
+      "provider": "kratos",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-kratos-s3ow9ja4",
+      "probeSha256": "68055be825debdc73688fe055db5b764ed24abb9ebb314bc6a370315d3361d60",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+      "exitCode": 1,
+      "elapsedSeconds": 30.22,
+      "result": "",
+      "diagnostic": "",
+      "health": {
+        "ready": false,
+        "startAcknowledged": true
+      },
+      "termination": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      }
+    },
+    {
+      "provider": "kratos",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-kratos-xk_8ckey",
+      "probeSha256": "1e52d852d781065348d12d89cdcc9ce86966f5e7b7db088aac2fe4cf1aa1dc88",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+      "exitCode": 1,
+      "elapsedSeconds": 30.241,
+      "result": "",
+      "diagnostic": "",
+      "health": {
+        "lastHealth": 43,
+        "ready": false,
+        "startAcknowledged": true
+      },
+      "termination": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      }
+    },
+    {
+      "provider": "kratos",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-kratos-04oykqms",
+      "probeSha256": "c91a55eb185d615072ac4832014250049ea54f15ce9c344f10b7b2648dc49ccd",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+      "exitCode": 1,
+      "elapsedSeconds": 30.095,
+      "result": "",
+      "diagnostic": "",
+      "health": {
+        "lastHealth": 307,
+        "ready": false,
+        "startAcknowledged": true
+      },
+      "termination": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      }
+    }
+  ]
+}

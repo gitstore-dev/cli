@@ -52,14 +52,14 @@ static const char *path_string(json_t *value) {
     const char *path = json_string_value(value);
     return strlen(path) == json_string_length(value) ? path : NULL;
 }
-static int protected_source(gstd_runtime_settings *settings, json_t *source) {
+static int protected_source(int *output, json_t *source) {
     const char *path = path_string(json_object_get(source, "path"));
     if (!path || strlen(path) > 4000 || json_object_size(source) != 2)
         return -1;
     int directory = owned_path(path);
     if (directory < 3)
         return -1;
-    settings->credential_parent_fd = directory;
+    *output = directory;
     return 0;
 }
 static int same_file(const struct stat *a, const struct stat *b) {
@@ -81,10 +81,22 @@ void gstd_runtime_settings_clear(gstd_runtime_settings *settings) {
     json_decref(settings->credential_source);
     if (settings->credential_parent_fd >= 3)
         close(settings->credential_parent_fd);
-    for (unsigned i = 0; i < 3; i++)
+    json_decref(settings->oidc_credential_source);
+    if (settings->oidc_credential_parent_fd >= 3)
+        close(settings->oidc_credential_parent_fd);
+    for (unsigned i = 0; i < 9; i++)
         if (settings->offline_fds[i] >= 3)
             close(settings->offline_fds[i]);
     *settings = (gstd_runtime_settings)GSTD_RUNTIME_SETTINGS_INITIAL;
+}
+int gstd_runtime_settings_image(const gstd_runtime_settings *settings, const char *component) {
+    static const char *names[] = {"api",         "git",        "controller",
+                                  "scylladb",    "oidc-hydra", "oidc-kratos",
+                                  "oidc-bridge", "oidc-ui",    "oidc-smtp"};
+    for (unsigned i = 0; settings && component && i < 9; i++)
+        if (!strcmp(component, names[i]))
+            return settings->offline_fds[i] >= 3 ? settings->offline_fds[i] : -1;
+    return -1;
 }
 int gstd_runtime_settings_load(int state, gstd_runtime_settings *output) {
     if (!output || !private_directory(state))
@@ -93,8 +105,13 @@ int gstd_runtime_settings_load(int state, gstd_runtime_settings *output) {
     int open_error = errno;
     gstd_runtime_settings result = GSTD_RUNTIME_SETTINGS_INITIAL;
     result.credential_source = json_pack("{s:s}", "kind", "os-store");
-    if (!result.credential_source)
+    result.oidc_credential_source = json_pack("{s:s}", "kind", "os-store");
+    if (!result.credential_source || !result.oidc_credential_source) {
+        if (fd >= 0)
+            close(fd);
+        gstd_runtime_settings_clear(&result);
         return -1;
+    }
     if (fd < 0) {
         if (open_error == ENOENT) {
             *output = result;
@@ -133,29 +150,46 @@ int gstd_runtime_settings_load(int state, gstd_runtime_settings *output) {
             key = json_object_iter_key(it);
             if (strlen(key) != json_object_iter_key_len(it) ||
                 (strcmp(key, "schemaVersion") && strcmp(key, "bootstrapCredentialSource") &&
-                 strcmp(key, "offlineLayouts")))
+                 strcmp(key, "oidcCredentialSource") && strcmp(key, "offlineLayouts")))
                 valid = 0;
         }
     json_t *source = json_object_get(root, "bootstrapCredentialSource");
     if (valid && source) {
         const char *kind = path_string(json_object_get(source, "kind"));
-        valid =
-            kind && ((!strcmp(kind, "os-store") && json_object_size(source) == 1) ||
-                     (!strcmp(kind, "protected-directory") && !protected_source(&result, source)));
+        valid = kind && ((!strcmp(kind, "os-store") && json_object_size(source) == 1) ||
+                         (!strcmp(kind, "protected-directory") &&
+                          !protected_source(&result.credential_parent_fd, source)));
         if (valid) {
             json_decref(result.credential_source);
             result.credential_source = json_incref(source);
         }
     }
+    source = json_object_get(root, "oidcCredentialSource");
+    if (valid && source) {
+        const char *kind = path_string(json_object_get(source, "kind"));
+        valid = kind && ((!strcmp(kind, "os-store") && json_object_size(source) == 1) ||
+                         (!strcmp(kind, "protected-directory") &&
+                          !protected_source(&result.oidc_credential_parent_fd, source)));
+        if (valid) {
+            json_decref(result.oidc_credential_source);
+            result.oidc_credential_source = json_incref(source);
+        }
+    }
     json_t *offline = json_object_get(root, "offlineLayouts");
     if (valid && offline) {
-        valid = json_is_object(offline) && json_object_size(offline) <= 3;
+        valid = json_is_object(offline) && json_object_size(offline) <= 9;
         if (valid)
             json_object_foreach(offline, key, value) {
-                int index = !strcmp(key, "api")          ? 0
-                            : !strcmp(key, "git")        ? 1
-                            : !strcmp(key, "controller") ? 2
-                                                         : -1;
+                int index = !strcmp(key, "api")           ? 0
+                            : !strcmp(key, "git")         ? 1
+                            : !strcmp(key, "controller")  ? 2
+                            : !strcmp(key, "scylladb")    ? 3
+                            : !strcmp(key, "oidc-hydra")  ? 4
+                            : !strcmp(key, "oidc-kratos") ? 5
+                            : !strcmp(key, "oidc-bridge") ? 6
+                            : !strcmp(key, "oidc-ui")     ? 7
+                            : !strcmp(key, "oidc-smtp")   ? 8
+                                                          : -1;
                 const char *path = path_string(value);
                 if (strlen(key) != json_object_iter_key_len(json_object_key_to_iter(key)) ||
                     index < 0 || !path || (result.offline_fds[index] = owned_path(path)) < 3) {
@@ -173,44 +207,57 @@ int gstd_runtime_settings_load(int state, gstd_runtime_settings *output) {
     return 0;
 }
 
-json_t *gstd_runtime_settings_source(const gstd_runtime_settings *settings, const char *store,
-                                     const char *deployment) {
+static json_t *material_source(const gstd_runtime_settings *settings, const char *store,
+                               const char *deployment, int oidc) {
     if (!settings || !store || strnlen(store, 33) != 32 || !deployment ||
         !gstd_identifier(deployment, strnlen(deployment, 65)))
         return NULL;
     for (unsigned i = 0; i < 32; i++)
         if (!((store[i] >= '0' && store[i] <= '9') || (store[i] >= 'a' && store[i] <= 'f')))
             return NULL;
-    const char *kind = path_string(json_object_get(settings->credential_source, "kind"));
+    const json_t *source = oidc ? settings->oidc_credential_source : settings->credential_source;
+    int parent_fd = oidc ? settings->oidc_credential_parent_fd : settings->credential_parent_fd;
+    const char *kind = path_string(json_object_get((json_t *)source, "kind"));
     if (!kind)
         return NULL;
     if (!strcmp(kind, "os-store"))
         return json_pack("{s:s}", "kind", "os-store");
     if (strcmp(kind, "protected-directory"))
         return NULL;
-    const char *path = path_string(json_object_get(settings->credential_source, "path"));
+    const char *path = path_string(json_object_get((json_t *)source, "path"));
     if (!path)
         return NULL;
     int named = owned_path(path);
     struct stat held, current;
-    int valid = named >= 3 && private_directory(settings->credential_parent_fd) &&
-                !fstat(settings->credential_parent_fd, &held) && !fstat(named, &current) &&
-                held.st_dev == current.st_dev && held.st_ino == current.st_ino;
+    int valid = named >= 3 && private_directory(parent_fd) && !fstat(parent_fd, &held) &&
+                !fstat(named, &current) && held.st_dev == current.st_dev &&
+                held.st_ino == current.st_ino;
     if (named >= 0)
         close(named);
     if (!valid)
         return NULL;
     json_t *identity =
-        json_pack("{s:s,s:s,s:s,s:s}", "installation", store, "issuer", "gitstore-local/core/1",
-                  "account", deployment, "purpose", "bootstrap-material");
+        json_pack("{s:s,s:s,s:s,s:s}", "installation", store, "issuer",
+                  oidc ? "gitstore-local/reference-oidc/1" : "gitstore-local/core/1", "account",
+                  deployment, "purpose", oidc ? "oidc-provider-material" : "bootstrap-material");
     char digest[65];
     int hashed = identity ? gstd_fingerprint(identity, digest) : -1;
     json_decref(identity);
     if (hashed)
         return NULL;
     char file[4096];
-    int n = snprintf(file, sizeof(file), "%s/bootstrap-%s.json", path, digest);
+    int n = snprintf(file, sizeof(file), "%s/%s-%s.json", path,
+                     oidc ? "oidc-provider" : "bootstrap", digest);
     if (n < 0 || (size_t)n >= sizeof(file))
         return NULL;
     return json_pack("{s:s,s:s}", "kind", "protected-file", "path", file);
+}
+
+json_t *gstd_runtime_settings_source(const gstd_runtime_settings *settings, const char *store,
+                                     const char *deployment) {
+    return material_source(settings, store, deployment, 0);
+}
+json_t *gstd_runtime_settings_oidc_source(const gstd_runtime_settings *settings, const char *store,
+                                          const char *deployment) {
+    return material_source(settings, store, deployment, 1);
 }

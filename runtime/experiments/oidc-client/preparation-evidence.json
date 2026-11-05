@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private Linux arm64 broker/configuration preparation through the bounded filesystem worker. Explicit isolated protected-file source only; no live OS-store OIDC pass or public optional lifecycle is claimed.",
+  "normal": {
+    "root": "/home/gitstorefixture/experiments/oidc-protected-preparation-d6___98h",
+    "probeSha256": "b4475befe3ddc5a54fa3d161430dc6554c9db6b7b69ded04b6b78f0177add2f2",
+    "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+    "exitCode": 0,
+    "elapsedSeconds": 0.141,
+    "result": "{\"privateConfigDescriptors\":4,\"addOnlyMaterialFamily\":true,\"sameInodesOnReuse\":true,\"newGenerationReadsExistingMaterial\":true,\"changedPortsRejected\":true,\"linkedInputRejected\":true,\"missingMaterialNotRegenerated\":true,\"secretsReadByControlOwner\":false}\n",
+    "diagnostic": ""
+  },
+  "sanitizer": {
+    "root": "/home/gitstorefixture/experiments/oidc-protected-preparation-sanitized-j2k38iab",
+    "probeSha256": "0260bd38e4953fe20feda3a2aad096a6302921c737a00548753a924e2fa01221",
+    "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+    "exitCode": 0,
+    "elapsedSeconds": 0.407,
+    "result": "{\"privateConfigDescriptors\":4,\"addOnlyMaterialFamily\":true,\"sameInodesOnReuse\":true,\"newGenerationReadsExistingMaterial\":true,\"changedPortsRejected\":true,\"linkedInputRejected\":true,\"missingMaterialNotRegenerated\":true,\"secretsReadByControlOwner\":false}\n",
+    "diagnostic": ""
+  },
+  "ownerPolicy": {
+    "default": "os-store",
+    "setting": "oidcCredentialSource",
+    "inheritsBootstrapFallback": false,
+    "protectedFileDomain": "installation/reference-oidc/deployment/oidc-provider-material",
+    "readOnlyDescriptors": [
+      "hydra-provider-config",
+      "kratos-provider-config",
+      "identity-schema",
+      "ui-environment"
+    ]
+  },
+  "sourceSha256": {
+    "daemon/src/oidc_preparation.c": "28341337c4961bac7dbe761513f48f40cbc520ecf26aa0b98169292063e319d1",
+    "daemon/src/oidc_preparation.h": "a6c0b09b3afdce4357a8eee2d63ee7a0ab69e0c5bb1635c7c5ef44dae3c0d8af",
+    "daemon/src/filesystem_job.c": "28adf721fc35bcaec36ff9132e9898e4bc03705c8b4e2ad21d44b6432ca5a690",
+    "daemon/src/runtime_settings.c": "fa3c1eaa504c285b0e6f0a27fc439530eac3a9ae6e7cdd9b720a2735c949df0a",
+    "daemon/src/runtime_settings.h": "ba19a7fd876979bd77d559b5540254d10f46f26bf51f30fb12e980e79df8e944",
+    "daemon/tests/oidc_preparation_probe.c": "4d1c37d5493717f3c2e684f53c87272b26471ae1ad39bc08e4573139bba9ebbd"
+  },
+  "rejectedFixtureAttempts": [
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-protected-preparation-hx5calfb",
+      "reason": "Incorrect unresolved source policy and multiply-linked Cargo artifact; no credential/configuration files created."
+    },
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-protected-preparation-dupgn5bu",
+      "reason": "Multiply-linked Cargo artifact refused by installed-broker integrity checks; no credential/configuration files created."
+    }
+  ],
+  "parentEnrollmentCoordinatorIntegrated": false,
+  "retainedFamilyBindingChecks": [
+    {
+      "variant": "daemon-native",
+      "root": "/home/gitstorefixture/experiments/oidc-client-only-binding-a7quwdia",
+      "probeSha256": "1917e5fbbf0e20aedca6166213fc7edfccf565ec1c5dbc6b8daa8fa1bc1bb43e",
+      "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+      "exitCode": 0,
+      "elapsedSeconds": 0.111,
+      "result": {
+        "privateConfigDescriptors": 4,
+        "addOnlyMaterialFamily": true,
+        "sameInodesOnReuse": true,
+        "newGenerationReadsExistingMaterial": true,
+        "changedPortsRejected": true,
+        "linkedInputRejected": true,
+        "missingMaterialNotRegenerated": true,
+        "changedFamilyRejected": true,
+        "onlyClientSecretChanged": true,
+        "secretsReadByControlOwner": false
+      },
+      "diagnostic": ""
+    },
+    {
+      "variant": "daemon-native-sanitized",
+      "root": "/home/gitstorefixture/experiments/oidc-client-only-binding-yckcgx5x",
+      "probeSha256": "2bc076bee1bbd3a834cb57ab12ed48cf530f71366dbeb13a6b9206e472e0b1f1",
+      "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+      "exitCode": 0,
+      "elapsedSeconds": 0.387,
+      "result": {
+        "privateConfigDescriptors": 4,
+        "addOnlyMaterialFamily": true,
+        "sameInodesOnReuse": true,
+        "newGenerationReadsExistingMaterial": true,
+        "changedPortsRejected": true,
+        "linkedInputRejected": true,
+        "missingMaterialNotRegenerated": true,
+        "changedFamilyRejected": true,
+        "onlyClientSecretChanged": true,
+        "secretsReadByControlOwner": false
+      },
+      "diagnostic": ""
+    }
+  ],
+  "retainedFamilyBindingScope": "Private fingerprint comparison includes every secret, including the unmounted OAuth client secret. This fingerprint stays in protected configuration storage and is never returned over parent IPC.",
+  "preparedMetadataReceipt": {
+    "normalLinuxArm64": "one_attempt_oidc_material_reservation passed in 0.08 seconds",
+    "sanitizerLinuxArm64": "one_attempt_oidc_material_reservation passed in 0.59 seconds",
+    "hostMacArm64": "one_attempt_oidc_material_reservation passed in 0.84 seconds",
+    "scope": "Caller transaction, current core/2 OIDC operation, committed one-shot credential reservation, exact data directory identity and four distinct read-only protected file identities; changed ports, aliases and wrong scope rejected. No configuration bytes are read."
+  },
+  "retainedFamilyBindingSourceSha256": {
+    "daemon/src/oidc_preparation.c": "2cbb8c028e6454a81926e5243e17211b5c95e44e266cb4a7e5f8a1435875d66f",
+    "daemon/src/deployment_records.c": "60a201cee3b07c99fcd778865a92350d2a8b0dd94f4451613874ca04279819f0",
+    "daemon/src/deployment_records.h": "a386dda33ee77d63e8d5f33f1f3f9489b02695adf36559979c96eebfd4ead229",
+    "daemon/src/bootstrap_job.c": "5c2f4a991389c44a8c4140e04be3d0145f118290a49e67c6f184c78e91fd0101",
+    "daemon/src/bootstrap_job.h": "c1680c94c8e6136a60509aef87ee6eadba0946e0098bc6cab226e21853eb825d",
+    "daemon/tests/oidc_preparation_probe.c": "ea914a1a92a335d0a1ea6c4bd126e392ad28cae4a16af746a1b2adeba5c35b19",
+    "daemon/tests/test_oidc_credential_records.c": "bb652595356bf3a79ff0b9811a6df3d373e346b196e8508b3cb48b37659f2739",
+    "daemon/tests/test_bootstrap_job.c": "5d3a77df4124a07dd9090f2617554316ddc4d855d9cc192e6696524e68fc3bdf"
+  },
+  "retainedPreparationSource": {
+    "hostMacArm64": "one_attempt_oidc_material_reservation passed in 0.62 seconds",
+    "normalLinuxArm64": "passed in 0.21 seconds",
+    "sanitizerLinuxArm64": "passed in 0.44 seconds",
+    "scope": "A later generation pins the latest completed, released, purpose-bound configuration and its public file/port receipt before reopening it read-only. Missing, malformed, changed or unfinished prior preparation is refused without credential lookup or repair. First-generation absence is distinct from a blocked retained source."
+  },
+  "asynchronousWorkerBoundary": {
+    "normalLinuxArm64": "private_bootstrap_worker_boundary passed in 0.03 seconds",
+    "sanitizerLinuxArm64": "passed in 0.08 seconds",
+    "scope": "OIDC source purpose, existing-configuration verification and action-specific status/empty-UID handling are implemented. Boundary tests cover cancellation without consuming the cancel marker, child crash, deadline, invalid policy and unavailable broker with no preparation effects. Controlled asynchronous HTTP evidence is recorded separately; actual-provider integration remains unverified."
+  },
+  "asynchronousHttpMock": {
+    "scope": "Controlled Postman mock in a new owned user/network namespace mapped to namespace UID 10000. No service images, host admin listener, ambient credentials or externally routed network. Actual provider HTTP through this asynchronous wrapper and public lifecycle/recovery remain unverified. Raw mock console output is discarded.",
+    "normal": {
+      "variant": "daemon-native",
+      "root": "/home/gitstorefixture/experiments/oidc-async-protected-mock-vnv3lrqa",
+      "probeSha256": "a524096bada0a3277642ba947d6edd1eb326f29f9b92b4dbae7a258e58ae1f56",
+      "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+      "mockSourceSha256": "2a07c341950f1b20b3b9cde60c79f363c963314c4f5d389d6cfc7b519a3b6703",
+      "postmanSha256": "02571047b4a10900c6bcb51414ea3462644edf10dd33e95493e41afda5ef6ab0",
+      "exitCode": 0,
+      "elapsedSeconds": 5.685,
+      "result": {
+        "asyncHttpMockVerified": true,
+        "privateConfigDescriptors": 4,
+        "addOnlyMaterialFamily": true,
+        "sameInodesOnReuse": true,
+        "newGenerationReadsExistingMaterial": true,
+        "changedPortsRejected": true,
+        "linkedInputRejected": true,
+        "missingMaterialNotRegenerated": true,
+        "changedFamilyRejected": true,
+        "onlyClientSecretChanged": true,
+        "secretsReadByControlOwner": false
+      },
+      "diagnostic": ""
+    },
+    "sanitizer": {
+      "variant": "daemon-native-sanitized",
+      "root": "/home/gitstorefixture/experiments/oidc-async-protected-mock-1_79ahqx",
+      "probeSha256": "f5dac876f65e9855bc50009391c3a9cab96cf71d010f67e732567165bc97545c",
+      "brokerSha256": "ff6c1e25fc1f86db92d80791b5ff8f2b7d2f6577b0df67ff16a19cea83633875",
+      "mockSourceSha256": "2a07c341950f1b20b3b9cde60c79f363c963314c4f5d389d6cfc7b519a3b6703",
+      "postmanSha256": "02571047b4a10900c6bcb51414ea3462644edf10dd33e95493e41afda5ef6ab0",
+      "exitCode": 0,
+      "elapsedSeconds": 6.2,
+      "result": {
+        "asyncHttpMockVerified": true,
+        "privateConfigDescriptors": 4,
+        "addOnlyMaterialFamily": true,
+        "sameInodesOnReuse": true,
+        "newGenerationReadsExistingMaterial": true,
+        "changedPortsRejected": true,
+        "linkedInputRejected": true,
+        "missingMaterialNotRegenerated": true,
+        "changedFamilyRejected": true,
+        "onlyClientSecretChanged": true,
+        "secretsReadByControlOwner": false
+      },
+      "diagnostic": ""
+    },
+    "verified": [
+      "purpose-specific broker read and existing protected family/configuration validation",
+      "provider readiness typed status 1",
+      "one acknowledged client creation typed status 2",
+      "public configuration inspection typed status 3",
+      "second synthetic client accepted before deliberate connection loss returns uncertain -2",
+      "public match after lost reply stays distinct from creation acknowledgment; no POST retry",
+      "configuration and retained-material refusal checks still pass afterward"
+    ],
+    "notClaimed": [
+      "actual Hydra execution through the new asynchronous wrapper",
+      "namespace UID 0 compatibility of the maintainer mock",
+      "production parent enrollment coordinator",
+      "public OIDC support"
+    ],
+    "failedFixtureAttempts": [
+      {
+        "root": "/home/gitstorefixture/experiments/oidc-async-protected-mock-3h1v2d8s",
+        "reason": "Fixture omitted namespace worker resource bounds; failed before HTTP mutation."
+      },
+      {
+        "root": "/home/gitstorefixture/experiments/oidc-async-protected-mock-kj028zm0",
+        "reason": "Maintainer mock did not reach readiness under UID-0 mapping; no client creation dispatched."
+      },
+      {
+        "root": "/home/gitstorefixture/experiments/oidc-async-protected-mock-cv91gqkc",
+        "reason": "Maintainer mock startup/readiness failed under UID-0 mapping; no client creation dispatched."
+      }
+    ]
+  },
+  "asynchronousHttpSourceSha256": {
+    "daemon/src/bootstrap_job.c": "5c2f4a991389c44a8c4140e04be3d0145f118290a49e67c6f184c78e91fd0101",
+    "daemon/src/bootstrap_job.h": "c1680c94c8e6136a60509aef87ee6eadba0946e0098bc6cab226e21853eb825d",
+    "daemon/tests/oidc_async_probe.c": "68fc790228dc996d8279ee7de162aa874b4a230b969706ed0de8842a0359918c",
+    "daemon/tests/oidc_async_probe.h": "c26d24073c1921002cdf7bd2744e2632349368f6bc45874af5e137b91a3fcb72",
+    "daemon/tests/oidc_preparation_probe.c": "e39645e947fae69439cd070020ea3754f67dbafe8826e1c3ef3692853c36f2b8",
+    "daemon/cmake/Bootstrap.cmake": "5d85ff099df7f26e3568d2fce0195fe332d17e95f856db055abe4b5297f0596a",
+    "postman/mocks/oidc-hydra/default.js": "2a07c341950f1b20b3b9cde60c79f363c963314c4f5d389d6cfc7b519a3b6703",
+    "postman/specs/oidc-provider.openapi.json": "4db80ba556dff19c138107367f14f16ddf919f53b773c82a27686876ffc7520f"
+  }
+}

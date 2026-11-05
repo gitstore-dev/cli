@@ -62,3 +62,43 @@ subscription, returns safe gap guidance where possible and preserves work/histor
 Protocol tests must prove each numeric policy bound and cleanup deadline. Runtime
 crash tests additionally prove actual backend/workload recovery; controlled tests
 alone cannot close DEP-012. See [validation guide](../quickstart.md).
+
+### Interrupted migration cleanup
+
+A separate `deployment.stop` may reconcile a failed, uncertain migration for the
+same deployment. It must reopen the recorded native identities, cgroup population
+receipts, volume locks and network owner before cleanup. It never starts a workload
+or retries the schema helper. A running migration helper must terminate naturally;
+unknown or inaccessible ownership remains uncertain. Successful stop releases only
+observed owners and preserves the original migration state, result and error.
+
+Queued migration intent can be cancelled only before execution starts and while
+its sole owned resource is the undispatched migration control row. Running
+migration cancellation currently returns `UNSAFE_CANCELLATION`, including
+preparation: the manager does not promise safe cleanup of an in-flight native
+worker. Terminal migration cancellation is an independent no-op.
+
+A successful `migration.start` inspection/wait result exposes
+`migrationCompleted: true`, the registered `targetVersion` and its matching
+`targetDigest`. These are projected only from a successful operation and a
+matching compiled target; arbitrary persisted backend fields stay private.
+
+### Bounded restart supervision
+
+A previously ready current generation may restart after its manager observes an
+owned native workload or network worker exit. Failed health probes alone are not
+permission to replace a live writer. Recovered/uncertain actors never enter this
+automatic path. A separately accepted idempotent stop must complete observed
+cleanup and release every owner before a new start can be accepted. Both
+operations remain visible through ordinary operation inspection; prior terminal
+results never change. New starts reuse the original registered intent and existing
+verified assets with provisioning disabled.
+
+The manager permits four replacements per manager-owned chain with
+250/500/1000/2000 ms delays after observed cleanup, without sleeping its control
+loop. Native stop/start deadlines remain independent of the accumulated delay
+budget. A failed/uncertain stop, failed replacement start,
+exhausted retry budget, newer operator intent or manager loss ends automatic
+retries. Recovery retains normal ownership checks and requires explicit operator
+stop/start; it does not replay an unobserved automatic replacement. No new wire
+method, arbitrary runtime selection or migration retry is introduced.

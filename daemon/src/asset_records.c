@@ -7,6 +7,7 @@
 #include "gitstored/operations.h"
 #include "gitstored/profiles.h"
 #include "gitstored/protocol.h"
+#include "migration_execution.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -146,6 +147,26 @@ static int pin(sqlite3 *db, const char *key, const char *resource) {
     text(s, 2, key);
     return finish(s);
 }
+static int migration_component(const char *operation, const char *component, const char *resource) {
+    if (strcmp(component, "api") && strcmp(component, "scylladb"))
+        return 0;
+    char first[65], second[65];
+    int n = snprintf(first, sizeof(first), "%s-%s",
+                     !strcmp(component, "api") ? "asset-schema" : "asset-scylladb", operation);
+    int m = snprintf(second, sizeof(second), "asset-cql-%s", operation);
+    return n > 0 && n < (int)sizeof(first) && m > 0 && m < (int)sizeof(second) &&
+           (!strcmp(resource, first) ||
+            (!strcmp(component, "scylladb") && !strcmp(resource, second)));
+}
+static int migration_asset(sqlite3 *db, const char *operation, const char *component,
+                           const char *resource, const json_t *manifest) {
+    gstd_migration_execution execution = {0};
+    int valid = migration_component(operation, component, resource) &&
+                !gstd_migration_execution_read(db, operation, &execution) &&
+                json_equal(manifest, execution.target.manifest);
+    gstd_migration_execution_clear(&execution);
+    return valid;
+}
 static int authorized(sqlite3 *db, const json_t *manifest, const char *component, const char *op,
                       const char *resource, int *consent) {
     char platform[64];
@@ -170,23 +191,34 @@ static int authorized(sqlite3 *db, const json_t *manifest, const char *component
     text(s, 1, op);
     text(s, 2, resource);
     json_t *intent = NULL;
-    int valid = 0;
+    int valid = 0, migration = 0;
     if (sqlite3_step(s) == SQLITE_ROW && sqlite3_column_int64(s, 1) == (sqlite3_int64)geteuid() &&
-        equal(s, 2, "deployment.start") && (equal(s, 3, "accepted") || equal(s, 3, "running")) &&
+        (equal(s, 2, "deployment.start") || equal(s, 2, "migration.start")) &&
+        (equal(s, 3, "accepted") || equal(s, 3, "running")) &&
         equal(s, 4, json_string_value(json_object_get(manifest, "serverRevision"))) &&
         equal(s, 5, json_string_value(json_object_get(manifest, "profileDigest"))) &&
         equal(s, 6, platform)) {
+        migration = equal(s, 2, "migration.start");
         const unsigned char *bytes = sqlite3_column_text(s, 0);
         int length = sqlite3_column_bytes(s, 0);
         if (bytes && length > 0)
             intent = gstd_json_parse(bytes, (size_t)length);
     }
     sqlite3_finalize(s);
+    if (migration) {
+        *consent = 0;
+        json_decref(intent);
+        return migration_asset(db, op, component, resource, manifest) ? 0 : -1;
+    }
     if (intent &&
         json_equal(json_object_get(intent, "profileId"), json_object_get(manifest, "profileId")) &&
         json_equal(json_object_get(intent, "profileVersion"),
                    json_object_get(manifest, "profileVersion"))) {
         json_t *components = gstd_profile_components(json_object_get(intent, "components"));
+        if (components && !strcmp(component, "scylladb") &&
+            same(json_object_get(intent, "datastore"), "scylladb") &&
+            same(json_object_get(manifest, "datastore"), "scylladb"))
+            valid = 1;
         for (size_t i = 0; i < json_array_size(components); i++)
             if (same(json_array_get(components, i), component))
                 valid = 1;
@@ -229,11 +261,7 @@ static gstd_asset_record_status begin(sqlite3 *db, const json_t *manifest, int o
     int consent = 0;
     if (authorized(db, manifest, component, operation, resource, &consent))
         return GSTD_ASSET_RECORD_ERROR;
-    json_t *components = json_pack("[s]", component);
-    const char *architecture =
-        json_string_value(json_object_get(json_object_get(manifest, "platform"), "architecture"));
-    json_t *single = components ? gstd_asset_manifest(components, architecture) : NULL;
-    json_decref(components);
+    json_t *single = gstd_asset_manifest_component(manifest, component);
     if (!single)
         return GSTD_ASSET_RECORD_ERROR;
     char *descriptor = gstd_json_dump(single);
@@ -630,24 +658,49 @@ int gstd_asset_record_receipt(sqlite3 *db, const char *key, const char *operatio
     memset(proof, 0, sizeof(*proof));
     if (!db || !hex(key) || !id(operation) || !id(resource))
         return -1;
+    int own_transaction = sqlite3_get_autocommit(db);
+    if (own_transaction && sqlite3_exec(db, "BEGIN", NULL, NULL, NULL) != SQLITE_OK)
+        return -1;
     sqlite3_stmt *s = prepare(
         db, "SELECT a.staging_device,a.staging_inode,a.tree_digest,a.logical_bytes,"
-            "a.downloaded_bytes,a.merged_bytes FROM assets a JOIN asset_refs f ON "
+            "a.downloaded_bytes,a.merged_bytes,o.method FROM assets a JOIN asset_refs f ON "
             "f.asset_key=a.asset_key "
             "JOIN resource_ownership r ON r.resource_id=f.resource_id JOIN operations o ON "
             "o.operation_id=r.operation_id "
             "JOIN deployments d ON d.deployment_id=r.deployment_id "
             "WHERE a.asset_key=? AND a.state='active' AND r.resource_id=? AND r.operation_id=? "
             "AND r.resource_type='asset-root' AND r.ownership_state='held' AND o.caller_uid=? "
-            "AND o.method='deployment.start' AND o.state IN ('accepted','running') AND "
-            "d.last_operation_id=o.operation_id");
-    if (!s)
+            "AND o.state IN ('accepted','running') AND "
+            "((o.method='deployment.start' AND d.last_operation_id=o.operation_id) OR "
+            "o.method='migration.start')");
+    if (!s) {
+        if (own_transaction)
+            sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
         return -1;
+    }
     text(s, 1, key);
     text(s, 2, resource);
     text(s, 3, operation);
     sqlite3_bind_int64(s, 4, (sqlite3_int64)geteuid());
     int valid = sqlite3_step(s) == SQLITE_ROW;
+    if (valid && equal(s, 6, "migration.start")) {
+        gstd_migration_execution execution = {0};
+        valid = !gstd_migration_execution_read(db, operation, &execution);
+        const char *components[] = {"api", "scylladb"};
+        int selected = 0;
+        for (unsigned i = 0; valid && i < 2; i++) {
+            if (!migration_component(operation, components[i], resource))
+                continue;
+            json_t *descriptor =
+                gstd_asset_manifest_component(execution.target.manifest, components[i]);
+            char expected[65];
+            selected =
+                descriptor && !gstd_fingerprint(descriptor, expected) && !strcmp(key, expected);
+            json_decref(descriptor);
+        }
+        valid = valid && selected;
+        gstd_migration_execution_clear(&execution);
+    }
     uint64_t identity[2] = {0};
     if (valid)
         for (int i = 0; i < 2; i++) {
@@ -674,5 +727,13 @@ int gstd_asset_record_receipt(sqlite3 *db, const char *key, const char *operatio
         proof->merged_bytes = (uint64_t)sqlite3_column_int64(s, 5);
     }
     sqlite3_finalize(s);
+    if (own_transaction) {
+        if (!valid || sqlite3_exec(db, "COMMIT", NULL, NULL, NULL) != SQLITE_OK) {
+            sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);
+            valid = 0;
+        }
+    }
+    if (!valid)
+        memset(proof, 0, sizeof(*proof));
     return valid ? 0 : -1;
 }

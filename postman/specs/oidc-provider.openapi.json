@@ -1,0 +1,193 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Optional OIDC provider bootstrap consumer contract",
+    "version": "hydra-2.3.0",
+    "description": "Preimplementation T050 contract for the private Hydra administrative API. This is a narrow consumer of existing endpoints, not an enabled OIDC profile, public admin endpoint or gs login flow. All mutation bodies and successful creation responses are sensitive. No automatic retry, secret rotation or recovery adoption is implied."
+  },
+  "x-upstream": {
+    "repository": "https://github.com/ory/hydra",
+    "revision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
+    "openapiBlob": "f1f96c7c1ba1d04c0bcc00e6247c250033828926",
+    "source": "https://github.com/ory/hydra/blob/ee8c339ddada3a42529c0416897abc32bad03bbb/spec/api.json",
+    "handler": "https://github.com/ory/hydra/blob/ee8c339ddada3a42529c0416897abc32bad03bbb/client/handler.go"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4445",
+      "description": "Private owned provider namespace; never a host-published administrative API"
+    }
+  ],
+  "paths": {
+    "/health/ready": {
+      "get": {
+        "operationId": "oidcHydraReady",
+        "responses": {
+          "200": {
+            "description": "Provider and its database report ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "const": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependencies are not ready"
+          }
+        }
+      }
+    },
+    "/admin/clients": {
+      "post": {
+        "operationId": "oidcCreateClientOnce",
+        "description": "One attempt after durable preparation and dispatch intent. A lost response leaves uncertain enrollment; a GET matching public fields cannot prove ownership of the client secret. Hydra v2.3.0's handler returns the supplied secret and registration access token on creation, so consume the response only in the private worker and never log or persist it as an operation result.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Client created; response is sensitive",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Provider rejected the request"
+          },
+          "default": {
+            "description": "Failure or uncertain enrollment; never blindly retry"
+          }
+        }
+      }
+    },
+    "/admin/clients/{id}": {
+      "get": {
+        "operationId": "oidcInspectKnownClient",
+        "description": "Observe only a prepared known client ID. Matching public configuration is necessary but not sufficient for adopting an enrollment after an uncertain POST.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public client configuration; secret is not recoverable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Client"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Missing or failed lookup; no proof of a completed owned enrollment"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Client": {
+        "type": "object",
+        "properties": {
+          "client_id": {
+            "type": "string"
+          },
+          "client_secret": {
+            "type": "string",
+            "description": "May be echoed on creation; never print or persist a provider response"
+          },
+          "grant_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "response_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "scope": {
+            "type": "string"
+          },
+          "audience": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "redirect_uris": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_endpoint_auth_method": {
+            "type": "string"
+          },
+          "registration_access_token": {
+            "type": "string",
+            "description": "Creation response may include this credential; discard privately"
+          }
+        },
+        "required": [
+          "client_id"
+        ]
+      },
+      "ClientCreate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Client"
+          },
+          {
+            "type": "object",
+            "description": "The consumer supplies every reference-profile field explicitly; these are consumer requirements, not a statement that the upstream server requires all of them.",
+            "required": [
+              "client_id",
+              "client_secret",
+              "grant_types",
+              "response_types",
+              "scope",
+              "audience",
+              "redirect_uris",
+              "token_endpoint_auth_method"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

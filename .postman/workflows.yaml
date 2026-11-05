@@ -1,0 +1,6 @@
+workflows:
+  syncSpecToCollection:
+    - spec: ../postman/specs/oidc-provider.openapi.json
+      collection: ../postman/collections/oidc-provider
+    - spec: ../postman/specs/oidc-courier.openapi.json
+      collection: ../postman/collections/oidc-courier

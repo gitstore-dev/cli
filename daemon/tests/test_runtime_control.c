@@ -1,4 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
+#include "cancellation.h"
+#include "gitstored/inspect.h"
 #include "gitstored/operations.h"
 #include "gitstored/protocol.h"
 #include "gitstored/scheduler.h"
@@ -53,8 +55,50 @@ static gstd_accept_status accept(sqlite3 *db, const char *method, const char *ke
     json_decref(message);
     return result;
 }
+static int deny_after_dispatch(void *data, int action, const char *table, const char *column,
+                               const char *database, const char *origin) {
+    (void)database;
+    (void)origin;
+    unsigned *updates = data;
+    if (action == SQLITE_UPDATE && table && column && !strcmp(table, "operations") &&
+        !strcmp(column, "state") && ++*updates > 1)
+        return SQLITE_DENY;
+    return SQLITE_OK;
+}
+static int deny_job_completion(void *data, int action, const char *table, const char *column,
+                               const char *database, const char *origin) {
+    (void)column;
+    (void)database;
+    (void)origin;
+    unsigned *updates = data;
+    if (action == SQLITE_UPDATE && table && !strcmp(table, "jobs") && ++*updates > 1)
+        return SQLITE_DENY;
+    return SQLITE_OK;
+}
 int main(void) {
     gstd_json_initialize();
+    gstd_deployment actor = {.count = 3};
+    CHECK(!gstd_cancellation_can_notify(NULL));
+    CHECK(gstd_cancellation_can_notify(&actor));
+    actor.bootstrap.worker = 123;
+    actor.graph.stage = GSTD_BOOT_ENROLL;
+    CHECK(!gstd_cancellation_can_notify(&actor));
+    actor.bootstrap.worker = 0;
+    actor.native_job.worker = 123;
+    CHECK(!gstd_cancellation_can_notify(&actor));
+    actor.workloads[0].native.expected_pid = 456;
+    CHECK(gstd_cancellation_can_notify(&actor));
+    actor.index = 3;
+    CHECK(!gstd_cancellation_can_notify(&actor));
+    actor.native_job.worker = 0;
+    CHECK(gstd_cancellation_can_notify(&actor)); /* Volume/network preparation. */
+    actor.graph.persistent = 1;
+    actor.graph.stage = GSTD_BOOT_PREPARE_KEYSPACE;
+    CHECK(!gstd_cancellation_can_notify(&actor));
+    actor.graph.stage = GSTD_BOOT_MIGRATE_SCHEMA;
+    CHECK(!gstd_cancellation_can_notify(&actor));
+    actor.graph.stage = GSTD_BOOT_WAIT_DATASTORE;
+    CHECK(gstd_cancellation_can_notify(&actor));
     char *root = gstd_test_dir(), path[4096], starts[9][65], cancelled[65], noop[65], unsafe[65];
     CHECK(root);
     snprintf(path, sizeof(path), "%s/state.db", root);
@@ -82,19 +126,57 @@ int main(void) {
     CHECK(params);
     CHECK(accept(db, "operation.cancel", "cancel-queued", params, NULL, NULL, cancelled) ==
           GSTD_ACCEPT_NEW);
+    /* Cancellation has durable identity independent of its target and survives
+     * manager-store reopen before dispatch, with identical-key replay. */
+    CHECK(sqlite3_close(db) == SQLITE_OK);
+    db = NULL;
+    CHECK(!gstd_state_open(path, &db));
+    char replay[65];
+    CHECK(accept(db, "operation.cancel", "cancel-queued", params, NULL, NULL, replay) ==
+          GSTD_ACCEPT_REPLAY);
+    CHECK(!strcmp(replay, cancelled));
+    unsigned job_updates = 0;
+    CHECK(sqlite3_set_authorizer(db, deny_job_completion, &job_updates) == SQLITE_OK);
     gstd_test_control_once(db);
     CHECK(state(db, starts[8], "cancelled", NULL) && state(db, cancelled, "succeeded", NULL));
+    CHECK(count(db,
+                "SELECT count(*) FROM jobs j JOIN operations o ON o.operation_id=j.operation_id "
+                "WHERE j.state!='done' AND o.state IN ('cancelled','succeeded')") == 2);
+    CHECK(sqlite3_set_authorizer(db, NULL, NULL) == SQLITE_OK);
+    gstd_test_control_once(db);
+    gstd_test_control_once(db);
+    CHECK(count(db,
+                "SELECT count(*) FROM jobs j JOIN operations o ON o.operation_id=j.operation_id "
+                "WHERE j.state!='done' AND o.state IN ('cancelled','succeeded')") == 0);
     CHECK(count(db, "SELECT count(*) FROM jobs WHERE kind='runtime' AND state='reserved'") == 8);
     CHECK(count(db, "SELECT count(*) FROM resource_ownership WHERE deployment_id='dep-8' AND "
                     "ownership_state='released'") == 1);
     CHECK(count(db, "SELECT count(*) FROM resource_ownership WHERE deployment_id!='dep-8' AND "
                     "ownership_state='held'") == 8);
+    CHECK(sqlite3_exec(db, "DELETE FROM jobs WHERE state='done' AND kind='runtime'", NULL, NULL,
+                       NULL) == SQLITE_OK);
     CHECK(accept(db, "operation.cancel", "cancel-terminal", params, NULL, NULL, noop) ==
           GSTD_ACCEPT_NEW);
     json_decref(params);
+    unsigned updates = 0;
+    CHECK(sqlite3_set_authorizer(db, deny_after_dispatch, &updates) == SQLITE_OK);
+    gstd_test_control_once(db);
+    CHECK(state(db, noop, "running", NULL));
+    CHECK(state(db, starts[8], "cancelled", NULL));
+    CHECK(sqlite3_set_authorizer(db, NULL, NULL) == SQLITE_OK);
     gstd_test_control_once(db);
     CHECK(state(db, noop, "succeeded", NULL));
     CHECK(count(db, "SELECT count(*) FROM operations WHERE json_extract(result,'$.noOp')=1") == 1);
+    CHECK(count(db, "SELECT count(*) FROM operations WHERE json_extract(result,'$.noOp')=1 "
+                    "AND json_extract(result,'$.targetState')='cancelled'") == 1);
+    json_t *selected = json_pack("{s:s}", "operationId", noop), *inspected = NULL;
+    CHECK(selected &&
+          gstd_inspect(db, GSTD_OPERATION_INSPECT, selected, &inspected) == GSTD_QUERY_OK);
+    CHECK(!strcmp(
+        json_string_value(json_object_get(json_object_get(inspected, "result"), "targetState")),
+        "cancelled"));
+    json_decref(selected);
+    json_decref(inspected);
     char running[65];
     CHECK(gstd_schedule_take(db, 0, running) == 1);
     params = json_pack("{s:s}", "operationId", running);
@@ -131,6 +213,37 @@ int main(void) {
     CHECK(count(db, "SELECT count(*) FROM operations") == before);
     CHECK(count(db, "SELECT count(*) FROM deployments WHERE deployment_id='dep-8' AND "
                     "writer_ownership='held' AND generation=2") == 1);
+    /* Running controls already mapped to actors cannot be dispatched twice;
+     * another accepted control must still progress. Terminal runtime jobs are
+     * deliberately left alone: a running row can be a live health lease. */
+    char first_control[65], next_control[65], selected_control[65];
+    params = json_pack("{s:s}", "operationId", replacement);
+    CHECK(accept(db, "operation.cancel", "mapped-control", params, NULL, NULL, first_control) ==
+          GSTD_ACCEPT_NEW);
+    CHECK(gstd_schedule_take(db, 1, selected_control) == 1 &&
+          !strcmp(selected_control, first_control));
+    CHECK(accept(db, "operation.cancel", "other-control", params, NULL, NULL, next_control) ==
+          GSTD_ACCEPT_NEW);
+    json_decref(params);
+    const char *waiting[] = {first_control};
+    CHECK(gstd_cancellation_next(db, waiting, 1, selected_control) == 1 &&
+          !strcmp(selected_control, next_control));
+    CHECK(state(db, first_control, "running", NULL));
+    gstd_test_control_once(db);
+    CHECK(state(db, first_control, "succeeded", NULL));
+    gstd_test_control_once(db);
+    CHECK(state(db, next_control, "succeeded", NULL));
+    CHECK(count(db, "SELECT count(*) FROM operations WHERE json_extract(result,'$.noOp')=1 AND "
+                    "json_extract(result,'$.targetState')='succeeded'") == 2);
+    params = json_pack("{s:s}", "operationId", unsafe);
+    CHECK(accept(db, "operation.cancel", "failed-noop", params, NULL, NULL, selected_control) ==
+          GSTD_ACCEPT_NEW);
+    json_decref(params);
+    gstd_test_control_once(db);
+    CHECK(state(db, selected_control, "succeeded", NULL) &&
+          state(db, unsafe, "failed", "UNSAFE_CANCELLATION"));
+    CHECK(count(db, "SELECT count(*) FROM operations WHERE json_extract(result,'$.noOp')=1 AND "
+                    "json_extract(result,'$.targetState')='failed'") == 1);
     json_decref(components);
     CHECK(sqlite3_close(db) == SQLITE_OK);
     CHECK(!gstd_test_remove(root));

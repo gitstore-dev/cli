@@ -21,12 +21,18 @@ typedef enum {
     GSTD_BOOT_BIND_CONTROLLER,
     GSTD_BOOT_LAUNCH_CONTROLLER,
     GSTD_BOOT_WAIT_CONTROLLER,
-    GSTD_BOOT_COMPLETE
+    GSTD_BOOT_COMPLETE,
+    /* Append to preserve the already recorded memdb stage numbers. */
+    GSTD_BOOT_LAUNCH_DATASTORE,
+    GSTD_BOOT_WAIT_DATASTORE,
+    GSTD_BOOT_PREPARE_KEYSPACE,
+    GSTD_BOOT_MIGRATE_SCHEMA,
+    GSTD_BOOT_STAGE_COUNT
 } gstd_bootstrap_stage;
 typedef struct {
     uint64_t generation;
     gstd_bootstrap_stage stage;
-    unsigned controller;
+    unsigned controller, persistent, fresh_datastore;
     int outcome; /* 0=in progress/complete, -1=rejected, -2=uncertain */
     char controller_uid[129];
 } gstd_bootstrap_graph;
@@ -36,6 +42,11 @@ typedef struct {
  * including partial success. Missing mutation replies never authorize retry. */
 int gstd_bootstrap_graph_begin(const json_t *, const char *datastore, uint64_t generation,
                                gstd_bootstrap_graph *);
+/* Private graph policy only. Fresh is derived from a new canonical datastore
+ * allocation receipt, never wire input. Retained data skips schema mutation and
+ * requires API check mode; this graph does not grant execution/lease authority. */
+int gstd_bootstrap_graph_persistent_begin(const json_t *, uint64_t generation, int fresh,
+                                          gstd_bootstrap_graph *);
 int gstd_bootstrap_graph_observe(gstd_bootstrap_graph *, uint64_t generation, gstd_bootstrap_stage,
                                  int result, const char *uid);
 /* Private worker, after parent intent and credential persistence. Scope must be
@@ -51,8 +62,9 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *, const gstd_credential
  * installed gs ELF FD; it receives sensitive creation data only over private IPC. */
 int gstd_bootstrap_provision(const gstd_bootstrap_request *, int broker_fd, const json_t *source,
                              int allow_initial);
-/* Parent must first persist the public enrollment result for this exact API
- * instance. A fresh host worker verifies the prepared scope and current kernel
+/* Parent first persists a new public enrollment result or a prior successful
+ * enrollment on the same canonical retained datastore. A fresh worker verifies
+ * the prepared scope and current API kernel
  * identity, then writes the immutable controller overlay. Never overwrites a
  * prior UID or adopts another API instance, including after memdb restarts. */
 int gstd_bootstrap_controller_bind(const gstd_bootstrap_request *, const gstd_credential *,

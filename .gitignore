@@ -33,3 +33,7 @@ postman/.runtime/
 /build/
 __pycache__/
 *.pyc
+
+# Local Swift feasibility builds (resolved dependency locks remain tracked)
+.build/
+.swiftpm/

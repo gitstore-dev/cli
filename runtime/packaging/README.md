@@ -42,14 +42,18 @@ creates only `bin/gs`, `bin/gitstored` and `share/gitstore/candidate.json`; it n
 publishes, signs, installs a service or packages workload images/developer probes.
 Inputs and output must be explicitly selected; existing output files are refused.
 
-The [measured candidate](linux-arm64-candidate.json) is unpublished. Its compressed
+The [earlier measured candidate](linux-arm64-candidate.json) is unpublished.
+[Current executable measurements](../../docs/contributing/binary-sizes.md) describe
+the newer source build. The following values belong to the earlier candidate. Its compressed
 package is 5,185,243 bytes. Stripped cores are 5,525,032 bytes (`gs`) and 5,658,000
 bytes (`gitstored`): **both miss the 5,242,880-byte target**. Host libraries are
 reused rather than included; their unique traced closure totals 25,611,792 bytes.
 This is a fixture-specific disk inventory, not total OS cost or runtime memory.
 `gs`'s prior size-s/AWS-LC candidate measured 6,114,824 bytes. The daemon size-s
 candidate measured 5,657,952 bytes; size-z did not improve its final footprint.
-These measurements do not close the later size/performance/publication gates.
+These historical measurements do not establish current performance or publication
+support. The user accepted the newer executable baseline for this increment;
+published-binary size optimization is deferred to their follow-up.
 
 Actual release CLI TLS acceptance passed with a generated private test CA and a
 separate valid server certificate, and rejected the same endpoint when only an
@@ -91,7 +95,7 @@ At the sampled second readiness, the manager's RSS/high-water RSS was 13,920 kB;
 this excludes workload and provisioning-worker peaks. Logical asset files total
 258,759,008 bytes; total logical state is 776,611,941 bytes after two starts. The
 latter includes retained private execution copies; bounded transient cleanup is
-still T055 work, not a hidden package cost or a proven live-memory bound.
+still unfinished runtime work, not a hidden package cost or a proven live-memory bound.
 
 Each cold profile verifies 84,691,615 payload bytes across exactly three assets.
 For the registry case this is SDK-reported image payload transfer, excluding

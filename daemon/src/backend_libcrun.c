@@ -5,6 +5,7 @@
 #include "gitstored/execution.h"
 #include "gitstored/protocol.h"
 #include "native_exit.h"
+#include "oidc_profile.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -115,8 +116,12 @@ static int configuration(const gstd_native_context *context, const char *root) {
         seen |= bit;
     }
     json_t *resources = json_object_get(linux, "resources");
-    uint64_t memory =
-        context->test_fixture ? UINT64_C(128) * 1024 * 1024 : UINT64_C(512) * 1024 * 1024;
+    int scylla = !context->test_fixture && context->registered_inputs &&
+                 !strcmp(context->registered_inputs->component, "scylladb") &&
+                 context->registered_inputs->purpose == GSTD_EXEC_SERVICE;
+    uint64_t memory = context->test_fixture ? UINT64_C(128) * 1024 * 1024
+                      : scylla              ? UINT64_C(2) * 1024 * 1024 * 1024
+                                            : UINT64_C(512) * 1024 * 1024;
     int tasks = context->test_fixture ? 64 : 256;
     int quota = context->test_fixture ? 50000 : 100000;
     if (json_integer_value(json_object_get(json_object_get(resources, "memory"), "limit")) !=
@@ -186,14 +191,20 @@ gstd_native_status gstd_native_apply(const gstd_native_context *context, gstd_na
 #endif
     if ((context->test_fixture && !fixture) ||
         (!fixture && strcmp(context->component, "api") && strcmp(context->component, "git") &&
-         strcmp(context->component, "controller")))
+         strcmp(context->component, "controller") && strcmp(context->component, "scylladb") &&
+         !gstd_oidc_component(context->component)))
         return GSTD_NATIVE_INVALID;
     char boot[37];
     if (!fixture &&
         (!context->boot_id || gstd_native_boot_id(boot) || strcmp(boot, context->boot_id)))
         return action == GSTD_NATIVE_CREATE ? GSTD_NATIVE_INVALID : GSTD_NATIVE_UNCERTAIN;
     if (action == GSTD_NATIVE_CREATE && !fixture) {
-        if (!strcmp(context->component, "git")) {
+        int datastore_writer = !strcmp(context->component, "scylladb") &&
+                               context->registered_inputs &&
+                               context->registered_inputs->purpose == GSTD_EXEC_SERVICE;
+        if (!strcmp(context->component, "git") || datastore_writer ||
+            !strcmp(context->component, "oidc-hydra") ||
+            !strcmp(context->component, "oidc-kratos")) {
             struct stat lease;
             if (context->writer_lease_fd != 3 || fstat(3, &lease) || !S_ISREG(lease.st_mode) ||
                 lease.st_uid != geteuid() || lease.st_nlink != 1 || lease.st_size ||

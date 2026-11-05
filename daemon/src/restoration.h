@@ -3,13 +3,15 @@
 #include "deployments.h"
 typedef struct {
     gstd_deployment *deployment;
-    int stage, index, outcome;
+    int stage, index, outcome, terminated;
     int64_t deadline_ms;
-    json_t *expected;
+    char lifecycle[16];
+    json_t *expected, *discovered[6];
     gstd_filesystem_job filesystem;
     gstd_native_job native;
 } gstd_restoration;
-/* Recover only exact, still-observable core resources of an unreleased start.
+/* Recover exact core resources of an unreleased start. Every workload needs
+ * either live native proof or a committed post-delete termination receipt.
  * No create/start, credential access, readiness claim or workload signal. Failed
  * or incomplete proof retains uncertainty. Accepted stop is a separate action. */
 int gstd_restoration_begin(const gstd_deployment_environment *, const char *original_start,

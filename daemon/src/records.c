@@ -1,5 +1,9 @@
 #include "gitstored/records.h"
+#include "datastore_schema.inc"
 #include "gitstored/protocol.h"
+#include "migration_network_schema.inc"
+#include "observer_schema.inc"
+#include "oidc_volume_schema.inc"
 #include "schema.inc"
 #include <string.h>
 static void identifier_check(sqlite3_context *context, int argc, sqlite3_value **values) {
@@ -12,17 +16,49 @@ static void identifier_check(sqlite3_context *context, int argc, sqlite3_value *
     int bytes = sqlite3_value_bytes(values[0]);
     sqlite3_result_int(context, text && gstd_identifier((const char *)text, (size_t)bytes));
 }
+static void migration_preflight(sqlite3_context *context, int argc, sqlite3_value **values) {
+    (void)argc;
+    int valid = sqlite3_value_type(values[0]) == SQLITE_TEXT &&
+                sqlite3_value_type(values[1]) == SQLITE_INTEGER &&
+                sqlite3_value_int64(values[1]) > 0 &&
+                sqlite3_value_int64(values[1]) <= GSTD_SAFE_INTEGER &&
+                sqlite3_value_bytes(values[0]) > 0 && sqlite3_value_bytes(values[0]) <= 32768;
+    json_t *value = valid ? gstd_json_parse(sqlite3_value_text(values[0]),
+                                            (size_t)sqlite3_value_bytes(values[0]))
+                          : NULL;
+    json_t *kind = json_object_get(value, "kind"), *stage = json_object_get(value, "stage");
+    valid = value && json_is_object(value) && json_object_size(value) == 7 &&
+            json_is_string(kind) && json_string_length(kind) == 17 &&
+            !memcmp(json_string_value(kind), "migration-control", 17) && json_is_string(stage) &&
+            json_string_length(stage) == 9 && !memcmp(json_string_value(stage), "preflight", 9) &&
+            json_is_integer(json_object_get(value, "generation")) &&
+            json_integer_value(json_object_get(value, "generation")) ==
+                sqlite3_value_int64(values[1]) &&
+            json_is_false(json_object_get(value, "unsafe"));
+    json_decref(value);
+    sqlite3_result_int(context, valid);
+}
 int gstd_records_functions(sqlite3 *db) {
     return sqlite3_create_function_v2(db, "gstd_identifier", 1,
                                       SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_INNOCUOUS, NULL,
-                                      identifier_check, NULL, NULL, NULL) == SQLITE_OK
+                                      identifier_check, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_create_function_v2(db, "gstd_migration_preflight", 2,
+                                              SQLITE_UTF8 | SQLITE_DETERMINISTIC | SQLITE_INNOCUOUS,
+                                              NULL, migration_preflight, NULL, NULL,
+                                              NULL) == SQLITE_OK
                ? 0
                : -1;
 }
 int gstd_records_create(sqlite3 *db) {
-    return sqlite3_exec(db, schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
+    return sqlite3_exec(db, schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_exec(db, observer_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_exec(db, datastore_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_exec(db, migration_network_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK
+               ? 0
+               : -1;
 }
-static int schema_matches(sqlite3 *db) {
+static int schema_matches(sqlite3 *db, int version) {
     /* Required definitions use the same maintained SQLite parser. Columns alone
      * cannot prove ownership constraints and immutable-receipt triggers remain. */
     sqlite3 *expected = NULL;
@@ -31,7 +67,16 @@ static int schema_matches(sqlite3 *db) {
     if (sqlite3_open_v2(":memory:", &expected,
                         SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MEMORY,
                         NULL) != SQLITE_OK ||
-        gstd_records_functions(expected) || gstd_records_create(expected) ||
+        gstd_records_functions(expected) ||
+        sqlite3_exec(expected, schema_sql, NULL, NULL, NULL) != SQLITE_OK ||
+        (version >= 2 &&
+         sqlite3_exec(expected, observer_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
+        (version >= 3 &&
+         sqlite3_exec(expected, datastore_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
+        (version >= 4 &&
+         sqlite3_exec(expected, migration_network_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
+        (version >= 5 &&
+         sqlite3_exec(expected, oidc_volume_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
         sqlite3_prepare_v2(expected, "SELECT type,name,sql FROM sqlite_schema ORDER BY name", -1,
                            &objects, NULL) != SQLITE_OK ||
         sqlite3_prepare_v2(db, "SELECT type,sql FROM sqlite_schema WHERE name=?", -1, &actual,
@@ -85,7 +130,16 @@ done:
     return valid ? 0 : -1;
 }
 int gstd_records_check(sqlite3 *db) {
-    if (schema_matches(db))
+    if (schema_matches(db, 5))
+        return -1;
+    sqlite3_stmt *observer = NULL;
+    if (sqlite3_prepare_v2(
+            db, "SELECT worker_slot,subscription_id,deployment_id FROM observer_slots LIMIT 0", -1,
+            &observer, NULL) != SQLITE_OK)
+        return -1;
+    int observer_valid = sqlite3_step(observer) == SQLITE_DONE;
+    sqlite3_finalize(observer);
+    if (!observer_valid)
         return -1;
     /* Refer to every required column, refusing incompatible stores rather than repairing them. */
     static const char *queries[] = {
@@ -139,4 +193,28 @@ int gstd_records_check(sqlite3 *db) {
     valid = sqlite3_step(meta) == SQLITE_ROW && sqlite3_column_int64(meta, 0) == 1;
     sqlite3_finalize(meta);
     return valid ? 0 : -1;
+}
+
+int gstd_records_upgrade_v1(sqlite3 *db) {
+    if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 1))
+        return -1;
+    return sqlite3_exec(db, observer_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
+}
+
+int gstd_records_upgrade_v2(sqlite3 *db) {
+    if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 2))
+        return -1;
+    return sqlite3_exec(db, datastore_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
+}
+
+int gstd_records_upgrade_v3(sqlite3 *db) {
+    if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 3))
+        return -1;
+    return sqlite3_exec(db, migration_network_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
+}
+
+int gstd_records_upgrade_v4(sqlite3 *db) {
+    if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 4))
+        return -1;
+    return sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
 }

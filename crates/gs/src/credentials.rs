@@ -86,7 +86,7 @@ impl Store for Native {
             }
             collection
                 .create_item(
-                    "GitStore runtime bootstrap material",
+                    "GitStore runtime protected material",
                     HashMap::from([("service", "dev.gitstore.gs"), ("user", key)]),
                     value.expose().as_bytes(),
                     false,

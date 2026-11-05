@@ -140,7 +140,14 @@ static void worker(int staging, int writer, int source, int mode, pid_t parent, 
 #endif
         for (int fd = source >= 0 ? 6 : 5; fd < maximum_fd; fd++)
             close(fd);
-    if (limit(RLIMIT_CORE, 0) || limit(RLIMIT_AS, UINT64_C(1024) * 1024 * 1024) ||
+    if (limit(RLIMIT_CORE, 0) ||
+#ifdef GITSTORED_INSTRUMENTED
+        /* Finite allowance for ASan shadow mappings, paired with the SDK's
+         * explicitly instrumented-host build. This is not physical memory. */
+        limit(RLIMIT_AS, UINT64_C(64) * 1024 * 1024 * 1024 * 1024) ||
+#else
+        limit(RLIMIT_AS, UINT64_C(1024) * 1024 * 1024) ||
+#endif
         limit(RLIMIT_FSIZE, (rlim_t)file_limit) || limit(RLIMIT_NOFILE, 128))
         _exit(126);
     report output = {0};

@@ -36,6 +36,12 @@ GITSTORED_TEST_BINARY="$daemon" cargo test --locked -p gs --test daemon_validate
 
 GITSTORED_TEST_BINARY="$daemon" cargo test --locked -p gs --test daemon_inspect -- --ignored
 
+cargo test --locked -p gs --test daemon_lifecycle
+
+cargo test --locked -p gs --test daemon_logs
+
+cargo test --locked -p gs --test daemon_migrate
+
 cargo test --locked -p gs --test runtime_credentials
 if [ "$(uname -s)" = Linux ]; then
   python3 runtime/experiments/credential-broker/test_broker.py \

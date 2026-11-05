@@ -1,0 +1,24 @@
+$kind: http-request
+name: Inspect prepared known fixture client
+order: 2000
+method: GET
+url: '{{baseUrl}}/admin/clients/{{clientId}}'
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Observed public configuration agrees with prepared intent", () => {
+        pm.response.to.have.status(200);
+        const value = pm.response.json();
+        pm.expect(value.client_id).to.eql(pm.variables.get("clientId"));
+        pm.expect(value.grant_types.slice().sort()).to.eql(["authorization_code", "refresh_token"]);
+        pm.expect(value.response_types).to.eql(["code"]);
+        pm.expect(value.scope.split(" ").sort()).to.eql(["email", "offline_access", "openid", "profile"]);
+        pm.expect(value.audience).to.eql([pm.variables.get("audience")]);
+        pm.expect(value.redirect_uris).to.eql([pm.variables.get("redirectUri")]);
+        pm.expect(value.token_endpoint_auth_method).to.eql("client_secret_basic");
+        pm.expect(value.client_secret === undefined || value.client_secret === "").to.eql(true);
+      });
+      // Matching public configuration does not prove secret ownership after lost POST acknowledgment.

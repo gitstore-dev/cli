@@ -3,7 +3,7 @@
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contracts](contracts/cli.md),
 [release evidence](release-evidence.md), [validation guide](quickstart.md).
-**Status**: Implementation in progress; completed tasks have local evidence in docs/m2-status.md. Actual Git
+**Status**: Implementation in progress; completed tasks have local evidence in docs/contributing/validation/local-runtime.md. Actual Git
 branch is `main`; the feature pointer selects this directory independently.
 **Tests**: Explicitly required by FR-021, SC-001–013 and the constitution. For each
 story, write meaningful behavior tests before its implementation and observe the
@@ -28,8 +28,10 @@ prerequisites; it never overrides a dependency or authorizes agent delegation.
   compatible host component or provision a missing external dependency with consent.
 - Attestations gate artifacts published by `gitstore-dev/cli`. Upstream GitStore
   images require trusted-source/platform/digest checks, not attestations. No gh bundle.
-- Core stripped executable engineering target: <=5 MiB each, not a measured result.
-  Report real misses and library/package/download/cache/memory costs separately.
+- The original <=5 MiB stripped-core target is a reporting reference. The user
+  accepted 5,590,568-byte gs and 5,723,600-byte gitstored for this increment;
+  published-binary optimization is deferred to their follow-up. Continue reporting
+  library/package/download/cache/memory costs separately.
 - Controlled tests do not establish real backend support. No publication or cloud
   workspace push is authorized by this checklist. No upstream checkout is modified.
 
@@ -62,7 +64,7 @@ consume these interfaces; no image/network/container operation is enabled here.
 - [X] T014 Implement deployment/canonical-volume ownership and recovery interfaces in `daemon/src/ownership.c` and `daemon/tests/test_ownership.c`; combine persistent reservations, filesystem locks and actual backend identity/termination evidence so distinct keys/deployments cannot bypass one writer; represent “normal -> reconciling -> normal | uncertain” and never release on daemon/PID absence alone.
 - [X] T015 Implement the bounded blocking socket client in `crates/gs/src/daemon_client.rs` and `crates/gs/tests/daemon_client.rs`; negotiate first, enforce 1..3,600,000 ms local timeouts, unique active request IDs, out-of-order response/event dispatch, same-key reconnect after lost acknowledgment and actionable version/capability/transport errors without adding an async runtime.
 - [X] T016 Split local command routing from remote credential/context resolution in `crates/gs/src/lib.rs`, `crates/gs/src/cli.rs` and `crates/gs/tests/daemon_routing.rs`; reserve the planned local command shapes, retain DEP-004 only for remote correlated waits, validate formats/stdin conflicts before effects, and prove remote help/version/catalogue behavior with daemon absent and no runtime downloads.
-- [X] T017 Run foundational CTest/Rust process checks via `scripts/test-daemon.sh` and record actual local/controlled results in `docs/m2-status.md`; verify M0 negotiation/framing examples and pre-acceptance failures, retain absent runtime capabilities and distinguish portable control checks from Linux execution or hosted CI evidence.
+- [X] T017 Run foundational CTest/Rust process checks via `scripts/test-daemon.sh` and record actual local/controlled results in `docs/contributing/validation/local-runtime.md`; verify M0 negotiation/framing examples and pre-acceptance failures, retain absent runtime capabilities and distinguish portable control checks from Linux execution or hosted CI evidence.
 
 **Checkpoint**: Foundation passes before story implementation. T006→T007–T008;
 T009–T014 build on those contracts and state primitives; T015→T016 integrates the
@@ -86,7 +88,7 @@ credentials generated, workload starts or remote-context changes.
 - [X] T021 [US1] Implement versioned configuration/native-validation planning in `daemon/src/config_validate.c` and `daemon/src/bootstrap_plan.c`; preserve API/controller additive overlays versus Git single-file semantics, config source reporting and rejected removed keys, and report missing native validators rather than claiming complete validation; do not generate/enroll/rotate credentials or expose optional profiling.
 - [X] T022 [US1] Implement read-only host/asset/external-dependency assessment and `deployment.validate` in `daemon/src/validate.c`; report namespace/mapping/cgroup/mount/port restrictions, verified cache/required downloads and supported runtime dependency compatibility without pulling, loading unverified components or elevating privileges; library code dependencies do not imply host shared-library discovery.
 - [X] T023 [US1] Wire component config validation/local selection and safe table/JSON/YAML plans in `crates/gs/src/deployment.rs` and `crates/gs/src/cli.rs`; implement flag/environment/local-config/default precedence, reject ambiguity/Markdown and unknown choices before effects, and preserve the proposed CLI contract without adding caller paths to the wire protocol.
-- [X] T024 [US1] Run T018–T019 and US1 quickstart checks, then update `docs/m2-status.md` and `docs/local-runtime.md` with actual preflight support and unperformed checks; confirm SC-001/006/008 and that no successful runnable-profile claim depends on unavailable validation.
+- [X] T024 [US1] Run T018–T019 and US1 quickstart checks, then update `docs/contributing/validation/local-runtime.md` and `docs/local-runtime.md` with actual preflight support and unperformed checks; confirm SC-001/006/008 and that no successful runnable-profile claim depends on unavailable validation.
 
 **Checkpoint**: US1 can be demonstrated without an execution backend. This is the
 first MVP checkpoint, not completion of M2 or permission to omit real startup.
@@ -107,7 +109,7 @@ operation identity, recovery and generation readiness consistently after restart
 - [X] T027 [US2] Implement `deployment.list/inspect` and `operation.inspect` queries in `daemon/src/inspect.c`; cap pages at 100, reject missing/expired IDs distinctly, implement opaque store/generation/position cursors with no invented snapshot guarantee, and return “desired running | stopped; readiness pending | ready | failed” with observed times and ownership.
 - [X] T028 [US2] Implement monotonic observation deadlines and `operation.wait` in `daemon/src/wait.c`; use accepted/terminal/ready conditions, default 30-second reads/acceptance and 60-second waits, require observedGeneration == generation, reject ready for non-start operations and never convert timeout/disconnect into cancellation or old readiness into current success.
 - [X] T029 [US2] Wire deployment list/inspect/operation-selector/wait commands in `crates/gs/src/deployment.rs`, `crates/gs/src/cli.rs` and shared output/error mapping; verify selected operation belongs to the deployment and keep local target selection independent of remote context/account defaults.
-- [X] T030 [US2] Execute T025–T026 including restart over seeded records and record SC-002/006 evidence in `docs/m2-status.md`; publish exact observation formats, error categories and retention limits in `docs/local-runtime.md`, without presenting seeded records as real containers.
+- [X] T030 [US2] Execute T025–T026 including restart over seeded records and record SC-002/006 evidence in `docs/contributing/validation/local-runtime.md`; publish exact observation formats, error categories and retention limits in `docs/local-runtime.md`, without presenting seeded records as real containers.
 
 ## Phase 5: User Story 5 — Run GitStore locally from its distribution (Priority: P1)
 
@@ -146,7 +148,10 @@ implementation on story ordering. No unsupported backend is advertised along the
 - [X] T047 [US5] Add `scripts/test-runtime.sh` and `tests/runtime/support.py` with explicit experiment/scenario dispatch, disposable host/registry/deployment selection, safe owned cleanup and result records; route EXP-003B and core-memdb scenarios to real selected image/runtime/network adapters, and separate missing fixture/host evidence from failed assertions or controlled substitutes.
 - [X] T048 [US5] Run EXP-003B and the local-volume EXP-004B cases through `scripts/test-runtime.sh`, store evidence in `runtime/experiments/images.md` and `runtime/experiments/local-volumes.md`, and fix actual adapters; cover malicious/truncated layers, auth expiry/denial/scope/redirects, host dependency compatibility, offline/cache/disk failures, retained hashes, backup/restore and no overlapping writers without requiring upstream attestations.
 - [X] T049 [US5] Prepare candidate minimal packaging and run core/clean-install acceptance using `runtime/packaging/`, `tests/runtime/test_clean_install.py` and `scripts/test-runtime.sh`; start from only gs/gitstored plus essential metadata, prove consented provisioning or compatible host reuse, no unused downloads, actual public GraphQL/Git/readiness and stop/restart, and record stripped core/library/package/download/cache/memory costs against <=5 MiB per-core targets without claiming publication.
-- [ ] T050 [US5] Verify optional OIDC/Admin/Storefront image/config/enrollment/readiness mappings in `runtime/profiles/optional-evidence.json`, implement each verified graph in `runtime/profiles/` and add `tests/runtime/test_optional.py`; for an unavailable mapping record the exact external prerequisite in `docs/m2-status.md` and preserve explicit component-specific failure instead of invented endpoints, bundled tools or blanket Linux disablement.
+- [ ] T050 [US5] Verify optional OIDC/Admin/Storefront image/config/enrollment/readiness mappings in `runtime/profiles/optional-evidence.json`, implement each verified graph in `runtime/profiles/` and add `tests/runtime/test_optional.py`; for an unavailable mapping record the exact external prerequisite in `docs/contributing/validation/local-runtime.md` and preserve explicit component-specific failure instead of invented endpoints, bundled tools or blanket Linux disablement.
+
+  Remaining implementation and acceptance criteria: [follow-up #9](https://github.com/gitstore-dev/cli/issues/9). T050 remains open; this PR delivers the implemented foundation without claiming the optional OIDC lifecycle is complete.
+
 
 **Checkpoint**: Real core execution is implemented and its own lifecycle/integrity
 checks pass on recorded hosts. US3/US4/US6 and cross-cutting gates still apply before
@@ -168,11 +173,11 @@ hash and corrupted-state cases without requiring a real container backend.
 ### Implementation
 
 - [X] T053 [US3] Implement deterministic controlled workloads and crash failpoints in `daemon/tests/backend_controlled.c` and `daemon/tests/failpoints.c`; exclude both from production compilation/registration/capabilities, support slow/failed/uncertain/unsafe-migration stages and do not accept arbitrary host commands to drive the fixture.
-- [ ] T054 [US3] Complete replay-safe lifecycle stages, retry-safe owner-only compensation and reconciliation in `daemon/src/recovery.c` and `daemon/src/operations.c` against T051–T053; preserve “accepted -> running -> succeeded | failed | cancelled” and “Terminal outcome is immutable”, with accepted-to-cancelled allowed before work and no manufactured terminal success during uncertain recovery.
-- [ ] T055 [US3] Implement safe metadata retention/eviction and full-store rejection in `daemon/src/retention.c`; enforce “256 MiB/100,000 operation records, >=7-day terminal retention”, active/deployment-start/ownership protection and DB/journal reserve accounting, returning RESOURCE_LIMIT before side effects when no safe space exists rather than silently discarding accepted history.
-- [ ] T056 [US3] Complete durable independent cancellation/no-op terminal-target handling and safe stop deadlines in `daemon/src/cancellation.c` and `daemon/src/scheduler.c`; cancellation has its own operation/key, unsafe stages reject explicitly, all eight busy workers cannot starve the control path, and 30-second stop/shutdown expiry preserves held/uncertain ownership.
-- [ ] T057 [US3] Exercise actual `gs` same-key reconnect/lost-ack/foreground-interrupt behavior in `crates/gs/tests/daemon_lifecycle.rs`, repair `crates/gs/src/daemon_client.rs` and `crates/gs/src/deployment.rs` as needed, and prove timeout/client exit does not cancel detached work or mutate local Git history/configuration.
-- [ ] T058 [US3] Run controlled crash/disk/retention/ownership/cancellation tests and repeat affected real core checks via `scripts/test-daemon.sh` and `scripts/test-runtime.sh`; record SC-003/004/005 outcomes and controlled-versus-native limits in `docs/m2-status.md`, without closing all DEP-012 from fake workloads.
+- [X] T054 [US3] Complete replay-safe lifecycle stages, retry-safe owner-only compensation and reconciliation in `daemon/src/recovery.c` and `daemon/src/operations.c` against T051–T053; preserve “accepted -> running -> succeeded | failed | cancelled” and “Terminal outcome is immutable”, with accepted-to-cancelled allowed before work and no manufactured terminal success during uncertain recovery.
+- [X] T055 [US3] Implement safe metadata retention/eviction and full-store rejection in `daemon/src/retention.c`; enforce “256 MiB/100,000 operation records, >=7-day terminal retention”, active/deployment-start/ownership protection and DB/journal reserve accounting, returning RESOURCE_LIMIT before side effects when no safe space exists rather than silently discarding accepted history.
+- [X] T056 [US3] Complete durable independent cancellation/no-op terminal-target handling and safe stop deadlines in `daemon/src/cancellation.c` and `daemon/src/scheduler.c`; cancellation has its own operation/key, unsafe stages reject explicitly, all eight busy workers cannot starve the control path, and 30-second stop/shutdown expiry preserves held/uncertain ownership.
+- [X] T057 [US3] Exercise actual `gs` same-key reconnect/lost-ack/foreground-interrupt behavior in `crates/gs/tests/daemon_lifecycle.rs`, repair `crates/gs/src/daemon_client.rs` and `crates/gs/src/deployment.rs` as needed, and prove timeout/client exit does not cancel detached work or mutate local Git history/configuration.
+- [X] T058 [US3] Run controlled crash/disk/retention/ownership/cancellation tests and repeat affected real core checks via `scripts/test-daemon.sh` and `scripts/test-runtime.sh`; record SC-003/004/005 outcomes and controlled-versus-native limits in `docs/contributing/validation/local-runtime.md`, without closing all DEP-012 from fake workloads.
 
 ## Phase 7: User Story 4 — Diagnose failures within safe limits (Priority: P2)
 
@@ -183,16 +188,16 @@ the manager; correct observer identity/expiry/gap errors remain inspectable.
 
 ### Tests
 
-- [ ] T059 [P] [US4] Add stream/queue/cursor/redaction tests in `daemon/tests/test_streams.c`, covering credential splits across chunks, disconnect/unsubscribe, foreign subscriptions, overflow isolation and expired replay; assert unrelated operations/observers continue within published bounds.
-- [ ] T060 [P] [US4] Add protocol/framer fuzz harnesses and deterministic malformed/resource corpus in `daemon/fuzz/` and `scripts/test-daemon-fuzz.sh`; expose the planned 60-second smoke command with exact corpus/compiler settings, parser allocation/depth faults, unauthorized peer cases and ASan/UBSan results without claiming exhaustive coverage.
+- [X] T059 [P] [US4] Add stream/queue/cursor/redaction tests in `daemon/tests/test_streams.c`, covering credential splits across chunks, disconnect/unsubscribe, foreign subscriptions, overflow isolation and expired replay; assert unrelated operations/observers continue within published bounds.
+- [X] T060 [P] [US4] Add protocol/framer fuzz harnesses and deterministic malformed/resource corpus in `daemon/fuzz/` and `scripts/test-daemon-fuzz.sh`; expose the planned 60-second smoke command with exact corpus/compiler settings, parser allocation/depth faults, unauthorized peer cases and ASan/UBSan results without claiming exhaustive coverage.
 
 ### Implementation
 
-- [ ] T061 [US4] Implement redacted segmented logs/event cursors in `daemon/src/logs.c`; preserve “Bounded retention; redacted on ingestion; cursor expiry explicit; metadata retention is independent”, 64 MiB/7-day per-deployment and 1 GiB global retained log bounds, ordered subscription sequences and no credential persistence before redaction.
-- [ ] T062 [US4] Implement subscribe/unsubscribe, replay and slow-consumer shedding in `daemon/src/streams.c`; enforce eight subscriptions per connection, 256 events/4 MiB per queue and 64 MiB global queues, explicit CURSOR_EXPIRED/STREAM_OVERFLOW and separate request/subscription identities, with disconnect affecting observation only.
-- [ ] T063 [US4] Wire `gs deployment logs`, JSON event/text output and full foreground stream observation in `crates/gs/src/deployment.rs`, `crates/gs/src/daemon_client.rs` and `crates/gs/tests/daemon_logs.rs`; stdout contains requested standalone logs, foreground logs use stderr, invalid YAML/table log requests fail before subscribe and Ctrl-C unsubscribes without implicit workload cancellation.
-- [ ] T064 [US4] Finish global/per-client parser/request/connection/job/time-bound enforcement and fuzz integration in `daemon/src/server.c`, `daemon/src/protocol.c` and `.github/workflows/daemon.yml`; verify 32 connections/16 outstanding requests, 10-second partial frame/5-minute idle bounds, and preserve independent cancellation/control capacity under hostile load.
-- [ ] T065 [US4] Run stream/peer/over-limit/fuzz/sanitizer and real log capture checks through `scripts/test-daemon.sh`, `scripts/test-daemon-fuzz.sh` and `scripts/test-runtime.sh`; document SC-005/006 and exact untested cases in `docs/m2-status.md`, and confirm production builds cannot load test backends.
+- [x] T061 [US4] Implement redacted segmented logs/event cursors in `daemon/src/logs.c`; preserve “Bounded retention; redacted on ingestion; cursor expiry explicit; metadata retention is independent”, 64 MiB/7-day per-deployment and 1 GiB global retained log bounds, ordered subscription sequences and no credential persistence before redaction.
+- [x] T062 [US4] Implement subscribe/unsubscribe, replay and slow-consumer shedding in `daemon/src/streams.c`; enforce eight subscriptions per connection, 256 events/4 MiB per queue and 64 MiB global queues, explicit CURSOR_EXPIRED/STREAM_OVERFLOW and separate request/subscription identities, with disconnect affecting observation only.
+- [x] T063 [US4] Wire `gs deployment logs`, JSON event/text output and full foreground stream observation in `crates/gs/src/deployment.rs`, `crates/gs/src/daemon_client.rs` and `crates/gs/tests/daemon_logs.rs`; stdout contains requested standalone logs, foreground logs use stderr, invalid YAML/table log requests fail before subscribe and Ctrl-C unsubscribes without implicit workload cancellation.
+- [X] T064 [US4] Finish global/per-client parser/request/connection/job/time-bound enforcement and fuzz integration in `daemon/src/server.c`, `daemon/src/protocol.c` and `.github/workflows/daemon.yml`; verify 32 connections/16 outstanding requests, 10-second partial frame/5-minute idle bounds, and preserve independent cancellation/control capacity under hostile load.
+- [x] T065 [US4] Run stream/peer/over-limit/fuzz/sanitizer and real log capture checks through `scripts/test-daemon.sh`, `scripts/test-daemon-fuzz.sh` and `scripts/test-runtime.sh`; document SC-005/006 and exact untested cases in `docs/contributing/validation/local-runtime.md`, and confirm production builds cannot load test backends.
 
 ## Phase 8: User Story 6 — Maintain persistent deployments safely (Priority: P2)
 
@@ -203,34 +208,34 @@ without data loss, implicit downgrade or overlapping writers.
 
 ### Tests
 
-- [ ] T066 [P] [US6] Add migration/profile contract cases to `daemon/tests/test_migrations.c` for registered targets, missing backup/keyspace/compatibility, unsupported datastore, concurrent daemon/datastore lock and unsafe cancellation; assert failed/incomplete migrations block dependent API startup and accepted identity survives observation failure.
-- [ ] T067 [P] [US6] Add persistent Scylla and real backend recovery scenarios in `tests/runtime/test_scylla.py` and `tests/runtime/test_recovery.py`, including retained repository/datastore hashes, live container after manager kill, uncertain stop timeout, disk failure, concurrent replacement and explicit backup/restore.
+- [X] T066 [P] [US6] Add migration/profile contract cases to `daemon/tests/test_migrations.c` for registered targets, missing backup/keyspace/compatibility, unsupported datastore, concurrent daemon/datastore lock and unsafe cancellation; assert failed/incomplete migrations block dependent API startup and accepted identity survives observation failure.
+- [x] T067 [P] [US6] Add persistent Scylla and real backend recovery scenarios in `tests/runtime/test_scylla.py` and `tests/runtime/test_recovery.py`, including retained repository/datastore hashes, live container after manager kill, uncertain stop timeout, disk failure, concurrent replacement and explicit backup/restore.
 
 ### Implementation
 
-- [ ] T068 [US6] Define pinned Scylla dependencies, keyspace preparation and targetVersion-to-image/helper/schema compatibility mappings in `runtime/profiles/scylladb.json` and `runtime/profiles/migration-targets.json`; verify T005 helper flags/protected input and image versions, distinguish `scylladb`/`scylla`, forbid arbitrary scripts/downgrades and name any actual missing upstream contract before enabling it.
-- [ ] T069 [US6] Implement migration preconditions/execution tracking in `daemon/src/migration.c` and persistent bootstrap graph in `daemon/src/bootstrap.c`; enforce “Exclusive against workload mutations and datastore migration mechanism; failure blocks dependent startup”, backup acknowledgment, existing-keyspace requirements and standalone image-native migration without starting API, followed by API migration-check mode rather than racing auto-migration.
-- [ ] T070 [US6] Implement persistent datastore named mounts/retention/compatibility and restore validation in `daemon/src/volumes.c` and `daemon/src/backup.c`; use only owned profile paths, preserve repository/datastore state through stop/replacement and disk failures, and prevent a copied DB/volume snapshot from authorizing takeover of a live independent deployment.
-- [ ] T071 [US6] Complete actual backend/workload/network/volume discovery and restart reconciliation in `daemon/src/recovery.c` and `daemon/src/backend_libcrun.c`; observe canonical identity and prior termination before replacement/release, restore inspect/log observation, persist uncertain ownership on inaccessible state and preserve lock identity through daemon shutdown and PID reuse.
-- [ ] T072 [US6] Wire `gs migrate` and real persistent stop/recovery status in `crates/gs/src/deployment.rs`, `crates/gs/src/cli.rs` and `crates/gs/tests/daemon_migrate.rs`; require target/backup selection, stable idempotency keys and truthful terminal/deadline/cancel results, keep secret input protected and never fall back to another datastore/write path.
-- [ ] T073 [US6] Run persistent Scylla migration, failed-start, backup/restore and controlled/native cancellation cases via `scripts/test-runtime.sh --scenario persistent-scylla`; fix actual failures and record exact image/helper/schema/host identities and SC-011 results in `runtime/experiments/scylladb.md` and `docs/m2-status.md`.
-- [ ] T074 [US6] Run actual manager/workload crash and concurrent Git-writer replacement cases via `scripts/test-runtime.sh --scenario recovery`; verify retained contents and absent overlap through real backend observations, record unresolved host/filesystem behavior explicitly in `runtime/experiments/recovery.md`, and do not substitute mock evidence.
-- [ ] T075 [US6] Update persistent operation, migration backup/recovery prerequisites and memdb-versus-retained-volume explanations in `docs/local-runtime.md` and `docs/m2-status.md`; verify T066–T074 results, report failed/unsafe/uncertain states truthfully and map FR-009–013/028 to actual evidence before declaring this story complete.
+- [X] T068 [US6] Define pinned Scylla dependencies, keyspace preparation and targetVersion-to-image/helper/schema compatibility mappings in `runtime/profiles/scylladb.json` and `runtime/profiles/migration-targets.json`; verify T005 helper flags/protected input and image versions, distinguish `scylladb`/`scylla`, forbid arbitrary scripts/downgrades and name any actual missing upstream contract before enabling it.
+- [x] T069 [US6] Implement migration preconditions/execution tracking in `daemon/src/migration.c` and persistent bootstrap graph in `daemon/src/bootstrap.c`; enforce “Exclusive against workload mutations and datastore migration mechanism; failure blocks dependent startup”, backup acknowledgment, existing-keyspace requirements and standalone image-native migration without starting API, followed by API migration-check mode rather than racing auto-migration.
+- [x] T070 [US6] Implement persistent datastore named mounts/retention/compatibility and restore validation in `daemon/src/volumes.c` and `daemon/src/backup.c`; use only owned profile paths, preserve repository/datastore state through stop/replacement and disk failures, and prevent a copied DB/volume snapshot from authorizing takeover of a live independent deployment.
+- [x] T071 [US6] Complete actual backend/workload/network/volume discovery and restart reconciliation in `daemon/src/recovery.c` and `daemon/src/backend_libcrun.c`; observe canonical identity and prior termination before replacement/release, restore inspect/log observation, persist uncertain ownership on inaccessible state and preserve lock identity through daemon shutdown and PID reuse.
+- [x] T072 [US6] Wire `gs migrate` and real persistent stop/recovery status in `crates/gs/src/deployment.rs`, `crates/gs/src/cli.rs` and `crates/gs/tests/daemon_migrate.rs`; require target/backup selection, stable idempotency keys and truthful terminal/deadline/cancel results, keep secret input protected and never fall back to another datastore/write path.
+- [x] T073 [US6] Run persistent Scylla migration, failed-start, backup/restore and controlled/native cancellation cases via `scripts/test-runtime.sh --scenario persistent-scylla`; fix actual failures and record exact image/helper/schema/host identities and SC-011 results in `runtime/experiments/scylladb.md` and `docs/contributing/validation/local-runtime.md`.
+- [X] T074 [US6] Run actual manager/workload crash and concurrent Git-writer replacement cases via `scripts/test-runtime.sh --scenario recovery`; verify retained contents and absent overlap through real backend observations, record unresolved host/filesystem behavior explicitly in `runtime/experiments/recovery.md`, and do not substitute mock evidence.
+- [x] T075 [US6] Update persistent operation, migration backup/recovery prerequisites and memdb-versus-retained-volume explanations in `docs/local-runtime.md` and `docs/contributing/validation/local-runtime.md`; verify T066–T074 results, report failed/unsafe/uncertain states truthfully and map FR-009–013/028 to actual evidence before declaring this story complete.
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
 **Purpose**: Feasibility, footprint, release policy and evidence reconciliation.
 All support claims remain scoped to actual results; no binary is published here.
 
-- [ ] T076 [P] Implement/run EXP-005A Apple container/direct Containerization feasibility in `runtime/experiments/apple/` and `runtime/experiments/apple.md` on explicitly selected compatible disposable Mac fixtures; compare maintained library integration, pin inputs and test installation privilege, private images, loopback discovery, logs, health, retained volumes and stop/crash recovery, or record unavailable hardware without blocking Linux.
-- [ ] T077 [P] Implement/run EXP-005B managed Linux guest feasibility in `runtime/experiments/macos-vm/` and `runtime/experiments/macos-vm.md`; prefer maintained integration, avoid default VM-tool bundling, verify authorized missing-component/guest assets, authenticated host/guest control and all core lifecycle/retention failures, with unavailable/failed combinations explicitly unsupported and no privileged automatic fallback.
-- [ ] T078 Implement/run EXP-003C CLI publication verification fixtures in `runtime/experiments/cli-provenance/` and document the trusted producer/workflow/source/digest policy in `runtime/packaging/release-policy.md`; validate CLI file/offline release evidence and wrong/missing/tampered cases, add OCI only if this repository publishes OCI, scope credentials to trusted release build jobs when targets exist and keep upstream service startup independent of attestations with no bundled gh.
-- [ ] T079 Measure and optimize stripped core release artifacts through `scripts/measure-runtime-size.sh`, `Cargo.toml`, `daemon/CMakeLists.txt` and `runtime/experiments/footprint.md`; measure current release gs first, compare LTO/strip/features/static-versus-shared tradeoffs without dropping behavior, record per-executable <=5 MiB target misses and separately report required libraries/package/download/cache/memory/cold-warm readiness.
-- [ ] T080 Add real Linux reference-host amd64/arm64 validation/package check lanes in `.github/workflows/runtime.yml` and `runtime/packaging/` after executable runners exist; include library-first selections, host-present/incompatible/missing/denied/offline dependency cases, sanitizers and clean installation without manually installed tools, and never present unavailable runner/host or untrusted PR outputs as release evidence.
-- [ ] T081 Update `README.md`, `CONTRIBUTING.md` and `docs/local-runtime.md` for actual install/daemon/user-service lifecycle, formats, prerequisites, footprint and supported subsets; preserve remote-only operation and M1 gates, document no default helper bundle and distinguish ordinary code dependencies from remaining host/runtime requirements.
-- [ ] T082 Run the complete applicable `specs/003-m2-daemon-foundation/quickstart.md` validation through `scripts/test-daemon.sh` and `scripts/test-runtime.sh`, plus pinned `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` and `cargo build --workspace --locked`; record actual local/controlled/native/hosted/unavailable results and unresolved Postman environment failures in `docs/m2-status.md` without claiming planned commands ran.
-- [ ] T083 Reconcile proven per-command/profile gates in `docs/contracts/command-matrix.md`, `docs/contracts/dependencies.md`, `docs/ADRs/0002-runtime-ownership.md`, `docs/ADRs/0003-runtime-assets-packaging.md`, `docs/ADRs/0004-rootless-network-volumes.md` and `docs/ADRs/0005-platform-backends.md`; preserve stable IDs/historical evidence, close only proven scope and retain named missing optional mappings/host checks without disabling verified subsets.
-- [ ] T084 Audit FR-001–031, SC-001–013, all six stories and task completion evidence in `specs/003-m2-daemon-foundation/tasks.md`, `specs/003-m2-daemon-foundation/checklists/requirements.md` and `docs/m2-status.md`; check local links/whitespace and that no credentials, bundled-tool/dynamic-loader assumptions, upstream-attestation gates or unsupported release claims remain, marking only actually completed tasks checked.
+- [x] T076 [P] Implement/run EXP-005A Apple container/direct Containerization feasibility in `runtime/experiments/apple/` and `runtime/experiments/apple.md` on explicitly selected compatible disposable Mac fixtures; compare maintained library integration, pin inputs and test installation privilege, private images, loopback discovery, logs, health, retained volumes and stop/crash recovery, or record unavailable hardware without blocking Linux.
+- [x] T077 [P] Implement/run EXP-005B managed Linux guest feasibility in `runtime/experiments/macos-vm/` and `runtime/experiments/macos-vm.md`; prefer maintained integration, avoid default VM-tool bundling, verify authorized missing-component/guest assets, authenticated host/guest control and all core lifecycle/retention failures, with unavailable/failed combinations explicitly unsupported and no privileged automatic fallback.
+- [x] T078 Implement/run EXP-003C CLI publication verification fixtures in `runtime/experiments/cli-provenance/` and document the trusted producer/workflow/source/digest policy in `runtime/packaging/release-policy.md`; validate CLI file/offline release evidence and wrong/missing/tampered cases, add OCI only if this repository publishes OCI, scope credentials to trusted release build jobs when targets exist and keep upstream service startup independent of attestations with no bundled gh.
+- [x] T079 Measure and record stripped core release artifacts through `scripts/measure-runtime-size.sh` and `docs/contributing/binary-sizes.md`; use the user-accepted baseline (gs 5,590,568 bytes; gitstored 5,723,600 bytes), preserve exact identities and separately report required libraries/package/download/cache/memory/cold-warm readiness. Published-binary optimization is deferred to the user's follow-up and is not a completion gate for this increment.
+- [x] T080 Add real Linux reference-host amd64/arm64 validation/package check lanes in `.github/workflows/runtime.yml` and `runtime/packaging/` after executable runners exist; include library-first selections, host-present/incompatible/missing/denied/offline dependency cases, sanitizers and clean installation without manually installed tools, and never present unavailable runner/host or untrusted PR outputs as release evidence.
+- [x] T081 Update `README.md`, `CONTRIBUTING.md` and `docs/local-runtime.md` for actual install/daemon/user-service lifecycle, formats, prerequisites, footprint and supported subsets; preserve remote-only operation and M1 gates, document no default helper bundle and distinguish ordinary code dependencies from remaining host/runtime requirements.
+- [x] T082 Run the complete applicable `specs/003-m2-daemon-foundation/quickstart.md` validation through `scripts/test-daemon.sh` and `scripts/test-runtime.sh`, plus pinned `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --locked -- -D warnings`, `cargo test --workspace --locked` and `cargo build --workspace --locked`; record actual local/controlled/native/hosted/unavailable results and unresolved Postman environment failures in `docs/contributing/validation/local-runtime.md` without claiming planned commands ran.
+- [x] T083 Reconcile proven per-command/profile gates in `docs/contracts/command-matrix.md`, `docs/contracts/dependencies.md`, `docs/ADRs/0002-runtime-ownership.md`, `docs/ADRs/0003-runtime-assets-packaging.md`, `docs/ADRs/0004-rootless-network-volumes.md` and `docs/ADRs/0005-platform-backends.md`; preserve stable IDs/historical evidence, close only proven scope and retain named missing optional mappings/host checks without disabling verified subsets.
+- [x] T084 Audit FR-001–031, SC-001–013, all six stories and task completion evidence in `specs/003-m2-daemon-foundation/tasks.md`, `specs/003-m2-daemon-foundation/checklists/requirements.md` and `docs/contributing/validation/local-runtime.md`; check local links/whitespace and that no credentials, bundled-tool/dynamic-loader assumptions, upstream-attestation gates or unsupported release claims remain, marking only actually completed tasks checked.
 
 ## Dependencies & Execution Order
 
@@ -274,7 +279,7 @@ fixtures are recorded explicitly and must not be relabeled completed validation.
 ### Shared-file serialization
 
 Changes to `cli.rs`, `lib.rs`, `deployment.rs`, core C headers, SQLite schema,
-`runtime/dependencies.lock.json`, profile manifests, ADRs and `docs/m2-status.md`
+`runtime/dependencies.lock.json`, profile manifests, ADRs and `docs/contributing/validation/local-runtime.md`
 serialize. `[P]` does not permit concurrent edits to these shared files. A dependency
 lock update is integrated after candidate results, not raced across experiments.
 The sketch above orders integrated completion, not a claim all tests can run before
@@ -371,3 +376,100 @@ US4 7, US6 10, final 9. Every task has a sequential ID, applicable story label
 and exact output path. All six stories have independent fixture criteria and
 parallel examples; every FR-001–031 and SC-001–013 has mapped work. No extension
 hook file is configured, so no before/after tasks hooks require dispatch.
+
+T070 validation: typed-volume/backup/schema-upgrade checks pass on the host and
+Linux ASan/UBSan; the bounded tmpfs ENOSPC case preserves actual Scylla data and
+writer identities. Saved native independent backup/restore and retained actor
+restart cover payload compatibility and continuity. The live copied-state case
+`runtime-run-scylla-native-7qmdiq8f.json` rejects copied SQLite/volume/cache-owner
+metadata before dispatch while preserving all four original workload identities
+and both writer locks, then observes recovery/stop (79.814 s). See
+[runtime evidence](../../runtime/experiments/scylladb.md#persistent-actor-recovery-checks).
+Public persistent lifecycle and standalone migration remain separately gated.
+
+Standalone migration execution checkpoint: T069 passes its private Linux arm64
+image-native path under ASan/UBSan in `runtime-run-scylla-native-o2jjyeup.json`
+(42.019 s). Production schema/stop actors bind the registered retained policy,
+existing datastore and journaled namespace; inspect the existing keyspace and
+compatible schema history; commit the single schema-helper dispatch; validate
+all 12 records afterward; and record owned source deletion, writer reacquisition
+and network termination before successful finalization. No API workload runs.
+The separately controlled schema-v4 upgrade, attachment gates, failed migration
+startup block and uncertain helper ownership remain covered. T072 manager/public
+wiring and T073 wider failure/cancellation/platform validation remain open.
+
+Recovery checkpoint: T071 is implemented with native identity/population reopening,
+read-only inspection/log receipts, exact kernel writer/network observation and
+separate STOP reconciliation of interrupted migration. Native manager-dispatch
+proof `runtime-run-scylla-native-rx1sztj2.json` passes; the subsequent Linux
+ASan/UBSan CTest selection passes 59 tests and skips the unavailable cross-UID
+fixture (60 selected, 75.46 s). The two connection-deadline tests were excluded
+from this focused regression and retain their separately recorded results.
+Inaccessible or replaced identities remain uncertain. T072 public persistent
+startup/migration integration remains in progress; no release claim is made.
+
+Public persistent integration checkpoint: T072 passes the real source-built
+`gs`/daemon Unix socket path in `runtime-run-persistent-scylla-d72b4527.json`
+(103.439 s), including Scylla startup/readiness, owned stop, standalone registered
+migration, safe target/completion projection, same-key replay and unchanged
+canonical datastore identity. The previous `yxfq8068` run remains failed: native
+migration succeeded but its public result omitted migration completion fields.
+The bounded result projection is now covered by positive and forged-digest
+inspection tests. Queued migration cancellation passes metadata/sanitizer tests;
+running cancellation is explicitly refused. Seven focused Rust lifecycle/migration
+cases and two daemon-backed validation cases pass. The wider failure/restore
+matrix remains T067/T073; publication/platform gates remain open.
+
+Persistent scenario checkpoint: T067's test scenarios are now implemented,
+including the actual Scylla paused-init stop timeout, held datastore writer and
+separate cleanup retry (`runtime-run-persistent-scylla-u2bm8u0n.json`, 148.345 s),
+manager-loss/concurrent replacement, retained hashes, independent backup/restore
+and the bounded 1 MiB private-tmpfs ENOSPC probe for both volume roles. Public
+Scylla digest rejection before any native service passes in
+`runtime-run-persistent-scylla-yqmqo5y0.json` (0.594 s). Final current native
+backup/restore/cancellation validation remains under T073.
+
+Publication/CI checkpoint: T078 adds the fixed own-producer offline verification
+gate and three policy tests. Ten real GitHub CLI 2.103.2 cryptographic controls
+pass using pinned official signed inputs; the own unsigned CLI is rejected and
+no GitStore release is claimed. T080 adds amd64/arm64 normal/sanitizer library,
+production-package and explicitly dispatched native reference lanes with read-only
+permissions. Guarded matrix/YAML/pin checks pass; hosted jobs and unavailable
+reference hosts remain not-run, not substituted by local results. T081 updates
+user-facing setup, retained Scylla/migration/recovery/footprint and optional service
+configuration, separating source prerequisites from product dependencies.
+
+## Phase 10: Completion audit remediation
+
+- [x] T085 Integrate production bounded whole-deployment restart supervision per FR-024 and the T084 audit (partial): react only to observed native exit from a previously ready, current owned generation; create separately inspectable idempotent stop/start operations, wait for observed cleanup and released writers before any replacement, enforce the existing bounded backoff/attempt budget without blocking the control loop, and stop retrying on uncertainty, operator intervention or manager loss. Add real workload-exit/no-overlap and control/budget checks; preserve immutable prior operation outcomes and remote-only behavior. The existing `gstd_execution_backoff` unit test alone does not satisfy this requirement.
+
+### Feasibility task outcome scope
+
+T076/T077 are complete as bounded feasibility assessments, not passing Mac product
+validation. The ordinary Apple SDK probes and exact final artifact receipt are in
+`runtime/experiments/apple/evidence.json`; `apple.md` and `macos-vm.md` record the
+actual guest passes, direct seccomp rejection and unavailable clean disposable Mac,
+amd64/Lima, host endpoint/provisioning/control/interruption combinations. No public
+Mac backend is selected; DEP-015 and all those support gates remain open. The tasks'
+unavailable-fixture paths are used explicitly rather than relabeling missing host
+validation as a pass.
+
+### Final applicable checks and audit scope
+
+T082/T084 completed the applicable source-preview verification and requirement
+audit on 2026-11-05: pinned Rust fmt/clippy/test/build, full remote controlled
+runner, actual Rust/C daemon runner, complete earlier timer runs plus all affected
+post-supervision C/sanitizer/native checks. The evidence archive explicitly names
+Postman default initialization failure, ignored/skipped cases, unrun hosted lanes,
+unsupported hosts and optional provider gates. All 256 changed/new local Markdown
+file targets exist; changed JSON parses, the three-job runtime workflow parses
+with read-only default permissions and pinned actions, `git diff --check` passes,
+and the read-only quality checklist remains 16/16. Production symbols include the
+supervisor and no `gstd_test_` entry points. No generated binary or large runtime
+payload is included in the untracked source/evidence files.
+
+The audit does not claim full M2 completion: T050 remains open for the actual
+optional OIDC provider/enrollment/readiness graph; Admin/Storefront published
+mappings remain unavailable. Further T050 changes must run their relevant new and
+regression checks. DEP-013/015 release and clean-host/platform gates remain open
+independently of these completed source checks.

@@ -2,6 +2,7 @@
 #define _DARWIN_C_SOURCE 1
 #define _POSIX_C_SOURCE 200809L
 #include "gitstored/asset_tree.h"
+#include "owned_read.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -71,6 +72,10 @@ typedef struct {
     link_record *links;
     int synchronize;
 } tree;
+static int consume_owned(void *context, const unsigned char *bytes, size_t length) {
+    tree *t = context;
+    return update(&t->digest, bytes, length);
+}
 static int number(tree *t, uint64_t value) {
     unsigned char bytes[8];
     for (size_t i = 0; i < 8; i++)
@@ -127,9 +132,16 @@ static int entry(tree *t, int directory, const char *name, unsigned depth) {
             return -1;
         result = 0;
     } else {
+        int delegated = 0;
         fd = beneath(directory, name,
                      O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK |
                          (kind == 'D' ? O_DIRECTORY : 0));
+#ifdef __linux__
+        if (fd < 0 && errno == EACCES && kind == 'F') {
+            fd = beneath(directory, name, O_PATH | O_CLOEXEC | O_NOFOLLOW);
+            delegated = fd >= 0;
+        }
+#endif
         struct stat opened;
         if (fd < 0 || fstat(fd, &opened) || !stable(&before, &opened))
             goto done;
@@ -146,20 +158,25 @@ static int entry(tree *t, int directory, const char *name, unsigned depth) {
                 t->links[t->link_count++] =
                     (link_record){before.st_dev, before.st_ino, before.st_nlink};
             }
-            uint64_t remaining = (uint64_t)before.st_size;
-            unsigned char buffer[32768];
-            while (remaining) {
-                size_t wanted = remaining < sizeof(buffer) ? (size_t)remaining : sizeof(buffer);
-                ssize_t length = read(fd, buffer, wanted);
-                if (length < 0 && errno == EINTR)
-                    continue;
-                if (length <= 0 || update(&t->digest, buffer, (size_t)length))
+            if (delegated) {
+                if (gstd_owned_read(fd, (uint64_t)before.st_size, t->synchronize, consume_owned, t))
                     goto done;
-                remaining -= (uint64_t)length;
+            } else {
+                uint64_t remaining = (uint64_t)before.st_size;
+                unsigned char buffer[32768];
+                while (remaining) {
+                    size_t wanted = remaining < sizeof(buffer) ? (size_t)remaining : sizeof(buffer);
+                    ssize_t length = read(fd, buffer, wanted);
+                    if (length < 0 && errno == EINTR)
+                        continue;
+                    if (length <= 0 || update(&t->digest, buffer, (size_t)length))
+                        goto done;
+                    remaining -= (uint64_t)length;
+                }
+                unsigned char extra;
+                if (read(fd, &extra, 1) != 0 || (t->synchronize && fsync(fd)))
+                    goto done;
             }
-            unsigned char extra;
-            if (read(fd, &extra, 1) != 0 || (t->synchronize && fsync(fd)))
-                goto done;
             t->bytes += (uint64_t)before.st_size;
         }
         if (fstat(fd, &opened) || !stable(&before, &opened))

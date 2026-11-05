@@ -2,7 +2,7 @@
 
 M0 [CLI behavior](../../../docs/contracts/cli-behavior.md) supplies exit codes,
 redaction, GraphQL grammar and output rules. These commands define the development implementation;
-release evidence is recorded separately in `docs/m1-status.md`. The feature deliberately restricts some M1 options.
+release evidence is recorded separately in `docs/contributing/validation/remote-cli.md`. The feature deliberately restricts some M1 options.
 
 ## Included command grammar
 

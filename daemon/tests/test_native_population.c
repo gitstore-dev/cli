@@ -35,6 +35,8 @@ int main(void) {
     group.inode = (uint64_t)directory.st_ino;
     group.events_inode = (uint64_t)event.st_ino;
     CHECK(gstd_native_population_empty(&group) == -1);
+    CHECK(!gstd_native_population_identity(&group, "unowned",
+                                           "00000000-0000-0000-0000-000000000001"));
     /* Unlinked ordinary inodes are not cgroup removal proof, even when a forged
      * events file says empty. Held descriptors must retain actual cgroup2 type. */
     CHECK(!unlinkat(group.directory_fd, "events", 0) && !unlinkat(fd, "group", AT_REMOVEDIR));
@@ -52,6 +54,26 @@ int main(void) {
     CHECK(gstd_native_population_open("unowned", getpid(), start + 1, boot, &group) == -1);
     CHECK(gstd_native_population_open("unowned", getpid(), start, boot, &group) == -1);
     CHECK(group.directory_fd == -1 && group.events_fd == -1);
+    CHECK(gstd_native_population_reopen(NULL, "unowned", boot, &group) == -1);
+    json_t *receipt = json_pack("{s:i,s:s,s:s,s:s,s:s,s:s}", "schemaVersion", 1, "bootId", boot,
+                                "scopePath", "/sys/fs/cgroup/crun-unowned.scope/container",
+                                "cgroupDevice", "1", "cgroupInode", "2", "eventsInode", "3");
+    CHECK(receipt);
+    CHECK(gstd_native_population_reopen(receipt, "unowned", boot, &group) == -1);
+    const char *invalid[] = {
+        "/tmp/crun-unowned.scope/container", "/sys/fs/cgroup/crun-other.scope/container",
+        "/sys/fs/cgroup/crun-unowned.scope/../container",
+        "/sys/fs/cgroup/crun-unowned.scope/foo/..", "/sys/fs/cgroup/crun-unowned.scope//container"};
+    for (size_t i = 0; i < sizeof(invalid) / sizeof(*invalid); i++) {
+        CHECK(!json_object_set_new(receipt, "scopePath", json_string(invalid[i])));
+        CHECK(gstd_native_population_reopen(receipt, "unowned", boot, &group) == -1);
+    }
+    CHECK(!json_object_set_new(receipt, "scopePath",
+                               json_string("/sys/fs/cgroup/crun-unowned.scope/container")));
+    CHECK(!json_object_set_new(receipt, "cgroupInode", json_string("18446744073709551616")));
+    CHECK(gstd_native_population_reopen(receipt, "unowned", boot, &group) == -1);
+    CHECK(group.directory_fd == -1 && group.events_fd == -1);
+    json_decref(receipt);
     close(fd);
     CHECK(!gstd_test_remove(root));
     return 0;

@@ -1,0 +1,24 @@
+$kind: http-request
+name: Fresh mailbox
+order: 1000
+method: GET
+url: '{{mailboxUrl}}/api/v1/messages'
+headers:
+- key: Accept
+  value: application/json
+settings:
+  followRedirects: false
+scripts:
+- type: afterResponse
+  language: text/javascript
+  code: 'try {
+
+    pm.test("Fresh dedicated mailbox is empty", () => { pm.response.to.have.status(200); const b=pm.response.json();
+    pm.expect(b.total).to.eql(0); pm.expect(b.messages).to.be.an("array").that.is.empty; });
+
+    if (pm.response.code !== 200 || pm.response.json().total !== 0) throw new Error();
+
+    pm.collectionVariables.set("mailboxVerified", "true");
+
+    } catch (_) { pm.execution.setNextRequest(null); throw new Error("Disposable courier fixture assertion
+    failed"); }'

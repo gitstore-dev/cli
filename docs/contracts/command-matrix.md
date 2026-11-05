@@ -1,6 +1,8 @@
 # Command and Operation Matrix
 
-**Reviewed**: 2026-10-27. **CLI/daemon implementation**: absent.
+**Baseline reviewed**: 2026-10-27. **Scoped implementation update**: 2026-11-05.
+`gs`/`gitstored` source exists; native runtime evidence is Linux arm64 (EVD-024),
+with no published CLI/daemon release.
 
 Status is `supported-contract`, `blocked`, or `deferred`. Never implies CLI implementation.
 A supported-contract row may depend on advertised optional capabilities; absence must fail
@@ -89,18 +91,18 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-043 | gs watch file | watch File metadata | namespace/name | WATCH | watchFiles(namespace?,selector?,resourceVersion?) | supported-contract | M1 | EVD-016, EVD-017 | DEP-017 |
 | CMD-044 | gs api graphql | Execute explicit GraphQL operation | installation and selected identity | GRAPHQL | GraphQL request/response, operationName and variables | supported-contract | M1 | EVD-003, EVD-010, EVD-017 | — |
 | CMD-045 | gs repository sync [repository] | Fetch and fast-forward push explicit/inferred repository | namespace/repository/ref and Git remote | GIT | Smart HTTP info/refs, upload-pack, receive-pack | supported-contract | M1 | EVD-018, EVD-003 | DEP-004, DEP-016 |
-| CMD-046 | gs serve | Start core profile | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
-| CMD-047 | gs api serve | Start managed api component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
-| CMD-048 | gs git serve | Start managed git component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
-| CMD-049 | gs controller serve | Start managed controller component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
+| CMD-046 | gs serve | Start core profile | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | supported-contract | M2 | EVD-022, EVD-023, EVD-024 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
+| CMD-047 | gs api serve | Start managed api component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | supported-contract | M2 | EVD-022, EVD-023, EVD-024 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
+| CMD-048 | gs git serve | Start managed git component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | supported-contract | M2 | EVD-022, EVD-023, EVD-024 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
+| CMD-049 | gs controller serve | Start managed controller component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | supported-contract | M2 | EVD-022, EVD-023, EVD-024 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
 | CMD-050 | gs oidc serve | Start managed oidc component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
-| CMD-051 | gs admin serve | Start managed admin component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
+| CMD-051 | gs admin serve | Start managed Admin UI component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
 | CMD-052 | gs storefront serve | Start managed storefront component | explicit local deployment/profile | DAEMON | deployment.start; component selection, never unmanaged process tree | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012, DEP-013, DEP-014, DEP-015 |
-| CMD-053 | gs migrate | Run compatible exclusive migration | deployment and datastore | DAEMON | migration.start; not automatic downgrade | blocked | M2 | EVD-022, EVD-023 | DEP-008, DEP-012 |
-| CMD-054 | gs deployment list | list managed deployment | local deployment ID | DAEMON | deployment.list | blocked | M2 | EVD-022 | DEP-008, DEP-012 |
-| CMD-055 | gs deployment inspect <deployment-id> | inspect managed deployment | local deployment ID | DAEMON | deployment.inspect | blocked | M2 | EVD-022 | DEP-008, DEP-012 |
-| CMD-056 | gs deployment stop <deployment-id> | stop managed deployment | local deployment ID | DAEMON | deployment.stop | blocked | M2 | EVD-022 | DEP-008, DEP-012 |
-| CMD-057 | gs deployment logs <deployment-id> | logs managed deployment | local deployment ID | DAEMON | stream.subscribe(kind=logs) | blocked | M2 | EVD-022 | DEP-008, DEP-012 |
+| CMD-053 | gs migrate | Run compatible exclusive migration | deployment and datastore | DAEMON | migration.start; not automatic downgrade | supported-contract | M2 | EVD-022, EVD-023, EVD-024 | DEP-008, DEP-012 |
+| CMD-054 | gs deployment list | list managed deployment | local deployment ID | DAEMON | deployment.list | supported-contract | M2 | EVD-022, EVD-024 | DEP-008, DEP-012 |
+| CMD-055 | gs deployment inspect <deployment-id> | inspect managed deployment | local deployment ID | DAEMON | deployment.inspect | supported-contract | M2 | EVD-022, EVD-024 | DEP-008, DEP-012 |
+| CMD-056 | gs deployment stop <deployment-id> | stop managed deployment | local deployment ID | DAEMON | deployment.stop | supported-contract | M2 | EVD-022, EVD-024 | DEP-008, DEP-012 |
+| CMD-057 | gs deployment logs <deployment-id> | logs managed deployment | local deployment ID | DAEMON | stream.subscribe(kind=logs) | supported-contract | M2 | EVD-022, EVD-024 | DEP-008, DEP-012 |
 | CMD-058 | gs transfer product <name> (destination syntax gated) | Transfer Product | source/destination namespace and identity | GATED | No accepted transfer/atomicity contract | deferred | M3 | EVD-001 | DEP-010 |
 | CMD-059 | gs file upload -f <blob> (remaining syntax gated) | Upload payload and admit manifest separately | namespace/File and payload endpoint | GATED | No verified public transfer mapping | deferred | M3 | EVD-016, EVD-020 | DEP-007 |
 | CMD-060 | gs list file (not offered) | Explicitly exclude inferred File list | namespace | GATED | No list field; not part of first-release target | deferred | M3 | EVD-016 | DEP-007 |
@@ -153,3 +155,27 @@ mutation inputs; reject instead of dropping content (DEP-005). Public author upd
 lack stale-client resourceVersion preconditions even though controller status inputs
 have them: those status operations cannot be substituted (DEP-009). Default-branch and
 stored provenance restrictions remain authoritative; explicit placement is DEP-003.
+
+## Current native runtime scope
+
+EVD-024 supplements the historical contract status. CMD-046–049 run the registered
+core graph; memdb is default and Scylla is explicit. CMD-053 runs only
+`gitstore-06152d-schema-012` against a stopped owned Scylla deployment, with backup
+acknowledgment and cached/offline images. CMD-054–057 provide bounded inspection,
+owned stop and redacted replay/follow logs in matching source builds. Execution
+requires the advertised native capabilities; control-only builds remain usable
+for their read/validation subset. None of these rows advertises a release or
+native macOS support, nor closes every platform/distribution dependency.
+
+CMD-050 remains blocked on public OIDC deployment ownership, API issuer
+integration and full lifecycle/recovery. Private provider, enrollment, courier
+and network checks do not close that public command gate. CMD-051 requires a published
+reference Admin UI and its verified startup/authentication/readiness mapping.
+Alpha.9 ships the administrative API endpoint split inside `gitstore-api`; it does
+not establish that UI mapping. CMD-052 additionally requires publication reads and
+trusted target binding: alpha.9's Storefront boundary deliberately returns
+`STOREFRONT_UNAVAILABLE`. See the [pinned alpha.9 source evidence](../../runtime/profiles/alpha9-evidence.json).
+Those unavailable components fail
+explicitly before provisioning and do not disable the verified core subset.
+CMD-083's high-level registry setup command remains gated; protected registry
+credentials used by the image code library do not imply that command exists.

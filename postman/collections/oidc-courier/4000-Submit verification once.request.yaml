@@ -1,0 +1,35 @@
+$kind: http-request
+name: Submit verification once
+order: 4000
+method: POST
+url: '{{identityPublicUrl}}/self-service/verification?flow={{flowId}}'
+headers:
+- key: Accept
+  value: application/json
+- key: Content-Type
+  value: application/json
+settings:
+  followRedirects: false
+scripts:
+- type: beforeRequest
+  language: text/javascript
+  code: 'if(pm.variables.get("identityCreated")!=="true" || pm.variables.get("verificationAttempted")
+    || !/^[0-9a-f-]{36}$/.test(String(pm.variables.get("flowId"))) || !["link","code"].includes(pm.variables.get("verificationMethod")))
+    throw new Error("Verification mutation is single attempt");
+
+    pm.collectionVariables.set("verificationAttempted","true");'
+- type: afterResponse
+  language: text/javascript
+  code: 'try {
+
+    const b=pm.response.json(); const valid=pm.response.code===200 && b.id===pm.variables.get("flowId")
+    && b.state==="sent_email";
+
+    pm.test("Verification accepted for courier delivery",()=>pm.expect(valid).to.eql(true)); if(!valid)
+    throw new Error(); pm.collectionVariables.set("verificationAccepted","true");
+
+    } catch (_) { pm.execution.setNextRequest(null); throw new Error("Disposable courier fixture assertion
+    failed"); }'
+body:
+  type: json
+  content: '{"method": "{{verificationMethod}}", "email": "{{fixtureEmail}}"}'

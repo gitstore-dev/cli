@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "profileId": "core",
+  "profileVersion": "2",
+  "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
+  "baseProfile": {
+    "profileId": "core",
+    "profileVersion": "1",
+    "digest": "sha256:9ecc9d536b8a8c3addc7186192b67f596bc2cb4dea2c64a4c597adefe8576dc7"
+  },
+  "optionalProfile": {
+    "profileId": "reference-oidc",
+    "profileVersion": "1",
+    "digest": "sha256:834388e30dd91af252797c7f5e7204dff6bd64a3e3d862cb11025b4b3cadfc7a"
+  },
+  "components": [
+    "api",
+    "git",
+    "controller"
+  ],
+  "optionalComponents": [
+    "oidc"
+  ],
+  "datastores": [
+    "memdb",
+    "scylladb"
+  ],
+  "oidcDataFormat": "rootless-single-uid-sqlite-v1"
+}

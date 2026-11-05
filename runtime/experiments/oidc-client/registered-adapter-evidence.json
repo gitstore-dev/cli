@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private registered OCI adapter and bounded helper verification on Linux arm64. Fresh SQLite migration, provider readiness, real Hydra enrollment, inherited writer FD 3, observed empty cgroups and deletion. Public OIDC profile, full graph, parent ledger and recovery remain incomplete.",
+  "tests": [
+    {
+      "run": {
+        "provider": "hydra",
+        "root": "/home/gitstorefixture/experiments/oidc-serve-hydra-dx0p1rk8",
+        "probeSha256": "4d8b4a34029f11ec48b496b9d7f603328f67d9af17345c009449ddc906094dfb",
+        "materializeExit": 0,
+        "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+        "exitCode": 0,
+        "elapsedSeconds": 1.748,
+        "result": "{\"ready\":true,\"lostEnrollmentReply\":false,\"registeredAdapter\":true,\"freshMigration\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+        "diagnostic": ""
+      },
+      "health": {
+        "lastHealth": 0,
+        "ready": true,
+        "startAcknowledged": true,
+        "writerInherited": true
+      },
+      "migration-dispatched": {
+        "id": "oidc-sqlite-hydra-126731-migrate",
+        "profileDigest": "sha256:834388e30dd91af252797c7f5e7204dff6bd64a3e3d862cb11025b4b3cadfc7a",
+        "purpose": "fixed-provider-sqlite-migration"
+      },
+      "migration-created": {
+        "id": "oidc-sqlite-hydra-126731-migrate",
+        "pid": 126736,
+        "population": {
+          "bootId": "13405727-a231-464f-b313-cd7042e7bf2e",
+          "cgroupDevice": "25",
+          "cgroupInode": "66983",
+          "eventsInode": "66989",
+          "schemaVersion": 1,
+          "scopePath": "/sys/fs/cgroup/user.slice/user-11000.slice/user@11000.service/app.slice/crun-oidc-sqlite-hydra-126731-migrate.scope/container"
+        },
+        "startTime": 5792278
+      },
+      "migration-completed": {
+        "deleted": true,
+        "outcome": 0,
+        "populationEmpty": true
+      },
+      "enrollment-observed": {
+        "binding": {
+          "credentialRef": "fixture-protected-material",
+          "deploymentId": "fixture-deployment",
+          "generation": 1,
+          "operationId": "fixture-start",
+          "providerResourceId": "fixture-hydra",
+          "storeId": "fixture-store",
+          "volumeDevice": "65040",
+          "volumeInode": "19879",
+          "volumeProducerId": "fixture-import"
+        },
+        "client": {
+          "audience": "gitstore",
+          "clientId": "gs-oidc-fixture-native",
+          "redirectUri": "http://127.0.0.1:24004/callback"
+        },
+        "kind": "oidc-enrollment",
+        "schemaVersion": 1,
+        "state": "created"
+      },
+      "completed": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      },
+      "migrationMounts": [
+        "/dev",
+        "/run",
+        "/tmp",
+        "/proc",
+        "/etc/resolv.conf",
+        "/work"
+      ],
+      "migrationEnvironmentNames": [
+        "PATH",
+        "HOME",
+        "GOMAXPROCS",
+        "GOMEMLIMIT",
+        "SQA_OPT_OUT",
+        "DSN"
+      ]
+    },
+    {
+      "run": {
+        "provider": "kratos",
+        "root": "/home/gitstorefixture/experiments/oidc-serve-kratos-a3ya1kei",
+        "probeSha256": "4d8b4a34029f11ec48b496b9d7f603328f67d9af17345c009449ddc906094dfb",
+        "materializeExit": 0,
+        "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":27656746,\"mergedBytes\":63164928}\n",
+        "exitCode": 0,
+        "elapsedSeconds": 3.316,
+        "result": "{\"ready\":true,\"lostEnrollmentReply\":false,\"registeredAdapter\":true,\"freshMigration\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+        "diagnostic": ""
+      },
+      "health": {
+        "lastHealth": 0,
+        "ready": true,
+        "startAcknowledged": true,
+        "writerInherited": true
+      },
+      "migration-dispatched": {
+        "id": "oidc-sqlite-kratos-126763-migrate",
+        "profileDigest": "sha256:834388e30dd91af252797c7f5e7204dff6bd64a3e3d862cb11025b4b3cadfc7a",
+        "purpose": "fixed-provider-sqlite-migration"
+      },
+      "migration-created": {
+        "id": "oidc-sqlite-kratos-126763-migrate",
+        "pid": 126768,
+        "population": {
+          "bootId": "13405727-a231-464f-b313-cd7042e7bf2e",
+          "cgroupDevice": "25",
+          "cgroupInode": "67151",
+          "eventsInode": "67157",
+          "schemaVersion": 1,
+          "scopePath": "/sys/fs/cgroup/user.slice/user-11000.slice/user@11000.service/app.slice/crun-oidc-sqlite-kratos-126763-migrate.scope/container"
+        },
+        "startTime": 5792515
+      },
+      "migration-completed": {
+        "deleted": true,
+        "outcome": 0,
+        "populationEmpty": true
+      },
+      "completed": {
+        "deleted": true,
+        "exitCode": 0,
+        "exitObserved": true,
+        "populationEmpty": true
+      },
+      "migrationMounts": [
+        "/dev",
+        "/run",
+        "/tmp",
+        "/proc",
+        "/etc/resolv.conf",
+        "/work"
+      ],
+      "migrationEnvironmentNames": [
+        "PATH",
+        "HOME",
+        "GOMAXPROCS",
+        "GOMEMLIMIT",
+        "SQA_OPT_OUT",
+        "DSN"
+      ]
+    }
+  ]
+}

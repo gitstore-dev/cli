@@ -1,0 +1,5 @@
+name: oidc-hydra
+version: 1
+mockSrc: default.js
+interceptRequests: true
+origin: hydra.oidc-fixture.test

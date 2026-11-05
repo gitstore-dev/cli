@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "scope": "Real pinned Hydra creation with acknowledged versus deliberately lost private reply. File-journal fixture uses the production pure journal policy; production ledger coordinator and combined OIDC graph remain incomplete.",
+  "tests": [
+    {
+      "lostEnrollmentReply": false,
+      "provider": "hydra",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-hydra-igasmj8c",
+      "probeSha256": "a8b78265f4fb7ee67e032d17a5abc76fb63c6b51133e59744c2b79e19afeb85e",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+      "exitCode": 0,
+      "elapsedSeconds": 0.218,
+      "result": "{\"ready\":true,\"lostEnrollmentReply\":false,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+      "diagnostic": "",
+      "journal": {
+        "binding": {
+          "credentialRef": "fixture-protected-material",
+          "deploymentId": "fixture-deployment",
+          "generation": 1,
+          "operationId": "fixture-start",
+          "providerResourceId": "fixture-hydra",
+          "storeId": "fixture-store",
+          "volumeDevice": "65040",
+          "volumeInode": "589907",
+          "volumeProducerId": "fixture-import"
+        },
+        "client": {
+          "audience": "gitstore",
+          "clientId": "gs-oidc-fixture-native",
+          "redirectUri": "http://127.0.0.1:24004/callback"
+        },
+        "kind": "oidc-enrollment",
+        "schemaVersion": 1,
+        "state": "created"
+      },
+      "privateReply": {
+        "created": true,
+        "status": 2
+      },
+      "registeredClients": 1
+    },
+    {
+      "lostEnrollmentReply": true,
+      "provider": "hydra",
+      "root": "/home/gitstorefixture/experiments/oidc-serve-hydra-6f7p99jg",
+      "probeSha256": "a8b78265f4fb7ee67e032d17a5abc76fb63c6b51133e59744c2b79e19afeb85e",
+      "materializeExit": 0,
+      "materialize": "{\"imageStatus\":0,\"mode\":\"cache-materialize\",\"compressedBytes\":18794488,\"mergedBytes\":49480704}\n",
+      "exitCode": 0,
+      "elapsedSeconds": 0.171,
+      "result": "{\"ready\":true,\"lostEnrollmentReply\":true,\"namespaceUid\":0,\"capabilities\":0,\"exitCode\":0,\"signalled\":0,\"populationEmpty\":true,\"nativeDeleted\":true}\n",
+      "diagnostic": "",
+      "journal": {
+        "binding": {
+          "credentialRef": "fixture-protected-material",
+          "deploymentId": "fixture-deployment",
+          "generation": 1,
+          "operationId": "fixture-start",
+          "providerResourceId": "fixture-hydra",
+          "storeId": "fixture-store",
+          "volumeDevice": "65040",
+          "volumeInode": "598166",
+          "volumeProducerId": "fixture-import"
+        },
+        "client": {
+          "audience": "gitstore",
+          "clientId": "gs-oidc-fixture-native",
+          "redirectUri": "http://127.0.0.1:24004/callback"
+        },
+        "kind": "oidc-enrollment",
+        "schemaVersion": 1,
+        "state": "uncertain"
+      },
+      "privateReply": {
+        "created": false,
+        "status": -2
+      },
+      "registeredClients": 1
+    }
+  ]
+}

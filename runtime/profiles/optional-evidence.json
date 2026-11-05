@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
-  "scope": "Committed reference inputs and public manifest/config metadata; provider lifecycle not verified. No upstream attestation requirement.",
+  "scope": "Pinned source/image metadata and private Linux arm64 provider, courier and ownership checks. Public optional-profile lifecycle remains gated. No upstream attestation requirement.",
   "sourceEvidence": [
     {
       "path": "compose.oidc.yml",
@@ -18,6 +18,10 @@
     {
       "path": "docs/ADRs/0012-admin-storefront-graphql-endpoints.md",
       "sha256": "9acdd6715afda941dfb251c4b85ffa955b833eebcb4bcf7b2a37fcf93190e668"
+    },
+    {
+      "path": "config/oidc/kratos/identity.schema.json",
+      "sha256": "65a3db26213ff205748bb9a888f4a41996eb4295e3cf1841b75b1f15d111d343"
     }
   ],
   "registryEvidence": [
@@ -187,14 +191,47 @@
     "oidc": {
       "status": "not-enabled",
       "shipped": "OIDC bridge alpha.8 and reference provider images exist",
-      "linuxArm64Prerequisite": "An approved native SMTP image/configuration or verified external SMTP mapping replacing the amd64-only reference MailSlurper image",
       "implementationRemaining": [
         "Complete provider graph and migration ownership",
         "Private client enrollment without secrets in arguments",
         "Current-generation issuer/provider readiness",
         "Native amd64 lifecycle validation; metadata support alone does not verify execution"
       ],
-      "uidEvidence": "Native registered user namespace UID 10000 libcrun and owned slirp/TAP probes passed; no subuid/helper prerequisite was found"
+      "uidEvidence": "Native registered user namespace UID 10000 libcrun and owned slirp/TAP probes passed; no subuid/helper prerequisite was found",
+      "protectedEnrollment": {
+        "provider": "Hydra 2.3.0",
+        "sourceRevision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
+        "contract": "postman/specs/oidc-provider.openapi.json",
+        "implemented": "Private bounded C policy/HTTP worker; distinct provider-ready, created and public-match receipts; no public OIDC profile",
+        "controlledEvidence": "runtime/experiments/oidc-client/evidence.json",
+        "nativeProviderGraph": "Private registered five-service graph passed; public dispatcher not enabled",
+        "durableCoordinator": "not implemented",
+        "security": "No secret-bearing CLI arguments, raw response IPC, proxy/redirect, blind POST retry or public-match adoption after uncertain creation",
+        "material": "Separate add-only oidc-provider-material credential purpose and private material generator; public profile integration pending",
+        "nativeSingleProviderEvidence": "runtime/experiments/oidc-client/enrollment-journal-evidence.json",
+        "journalPolicy": "Public-only prepared/dispatched/created/uncertain transitions, exact binding checks and lost-reply refusal; production parent-ledger integration remains incomplete"
+      },
+      "sqliteCompatibility": {
+        "status": "linux-arm64-migrations-verified",
+        "evidence": "runtime/experiments/oidc-client/sqlite-evidence.json",
+        "scope": "Image-native SQLite migrations, observed exit, empty cgroup, native deletion and read-only database integrity only; no serving or full graph proof"
+      },
+      "providerServing": {
+        "status": "linux-arm64-separate-provider-ready-and-clean-stop-verified",
+        "evidence": "runtime/experiments/oidc-client/serve-evidence.json",
+        "scope": "Generated private JSON configurations and separate namespaces; not the combined graph"
+      },
+      "linuxArm64Remaining": "API issuer integration and public durable enrollment/volume/network lifecycle/recovery",
+      "combinedGraph": {
+        "status": "linux-arm64-private-graph-passed",
+        "evidence": "runtime/experiments/oidc-client/combined-graph-evidence.json",
+        "scope": "Five services ready, protected client creation, fresh migrations and clean observed stop; production ownership and API issuer integration remain incomplete"
+      },
+      "courier": {
+        "status": "linux-arm64-private-native-delivery-passed",
+        "evidence": "runtime/experiments/oidc-client/courier-evidence.json",
+        "scope": "Real Kratos native verification-to-Mailpit delivery in owned namespace; eight requests, five scripted assertions, runner exit 0 and clean deletion; no public daemon activation"
+      }
     },
     "admin": {
       "status": "mapping-unavailable",
@@ -237,7 +274,17 @@
       "https://mailpit.axllent.org/docs/configuration/smtp/",
       "https://github.com/axllent/mailpit/releases/tag/v1.33.0"
     ],
-    "selection": "Candidate only; native platform metadata verified; courier and lifecycle not yet verified; acquired only for an explicitly selected OIDC profile",
+    "selection": "Selected by the private reference OIDC adapter; Linux arm64 courier delivery and clean graph stop verified. Public durable OIDC profile and native amd64 validation remain gated. Separate consented image only.",
     "packaging": "Separate consented runtime image, never bundled into core executables"
-  }
+  },
+  "releaseSupplements": [
+    {
+      "release": "v0.1.0-alpha.9",
+      "serverRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+      "evidence": "runtime/profiles/alpha9-evidence.json",
+      "scope": "Committed source only; original alpha.8 execution/image pins are retained.",
+      "admin": "Admin API split ships in gitstore-api; the optional command requires a reference Admin UI mapping.",
+      "storefront": "Dedicated boundary ships, but accepted requests deliberately return 503 STOREFRONT_UNAVAILABLE; publication reads and trusted target binding remain unimplemented."
+    }
+  ]
 }

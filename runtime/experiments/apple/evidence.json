@@ -1,0 +1,130 @@
+{
+  "binarySha256": "f73b3b1d7a540085e932cbcab0f87dd4810aa9128df5a6495a1bac0d1894f05f",
+  "cases": [
+    {
+      "mode": "--guest-image-check",
+      "exitCode": 0,
+      "elapsedSeconds": 1.534,
+      "result": {
+        "fixture": "gitstore-m2-linux-a1a13c",
+        "fixtureImageDigest": "sha256:0bf2f725e3ee269a2e804c3426e38270e43eaa41960add5ad0ef12e072181178",
+        "guestScenario": "exp-003b-sdk",
+        "guestScenarioPassed": true,
+        "guestUid11000Verified": true,
+        "hostMountCount": 0,
+        "invokingUid": 502,
+        "publicBackend": false,
+        "publishedPortCount": 0,
+        "publishedSocketCount": 0,
+        "running": true,
+        "schemaVersion": 1,
+        "scope": "bounded guest process through ordinary Swift dependency",
+        "sshForwarding": false,
+        "virtualizationSupported": true,
+        "wrappedContainerExecutable": false
+      }
+    },
+    {
+      "mode": "--guest-offline-check",
+      "exitCode": 0,
+      "elapsedSeconds": 36.683,
+      "result": {
+        "fixture": "gitstore-m2-linux-a1a13c",
+        "fixtureImageDigest": "sha256:0bf2f725e3ee269a2e804c3426e38270e43eaa41960add5ad0ef12e072181178",
+        "guestScenario": "core-offline",
+        "guestScenarioPassed": true,
+        "guestUid11000Verified": true,
+        "hostMountCount": 0,
+        "invokingUid": 502,
+        "publicBackend": false,
+        "publishedPortCount": 0,
+        "publishedSocketCount": 0,
+        "running": true,
+        "schemaVersion": 1,
+        "scope": "bounded guest process through ordinary Swift dependency",
+        "sshForwarding": false,
+        "virtualizationSupported": true,
+        "wrappedContainerExecutable": false
+      }
+    },
+    {
+      "mode": "--guest-recovery-check",
+      "exitCode": 0,
+      "elapsedSeconds": 75.848,
+      "result": {
+        "fixture": "gitstore-m2-linux-a1a13c",
+        "fixtureImageDigest": "sha256:0bf2f725e3ee269a2e804c3426e38270e43eaa41960add5ad0ef12e072181178",
+        "guestScenario": "recovery",
+        "guestScenarioPassed": true,
+        "guestUid11000Verified": true,
+        "hostMountCount": 0,
+        "invokingUid": 502,
+        "publicBackend": false,
+        "publishedPortCount": 0,
+        "publishedSocketCount": 0,
+        "running": true,
+        "schemaVersion": 1,
+        "scope": "bounded guest process through ordinary Swift dependency",
+        "sshForwarding": false,
+        "virtualizationSupported": true,
+        "wrappedContainerExecutable": false
+      }
+    }
+  ],
+  "date": "2026-11-05",
+  "scope": "Existing same-user Apple service and disposable owned Linux guest; not clean Mac installation or public backend support",
+  "directGuard": {
+    "exitCode": 0,
+    "directWithoutGuestRuntimeRejected": true,
+    "guestBooted": false
+  },
+  "artifacts": {
+    "AppleProbe": {
+      "bytes": 63006680,
+      "sha256": "f73b3b1d7a540085e932cbcab0f87dd4810aa9128df5a6495a1bac0d1894f05f",
+      "kind": "experimental unstripped release build; not a shipping core executable"
+    },
+    "DirectGuard": {
+      "bytes": 55837080,
+      "sha256": "04312693f4cd93ec98063ec372e959e1260766f9382dabb4c7f4f57ebc9492f0",
+      "kind": "experimental unstripped release build; not a shipping core executable"
+    }
+  },
+  "rawLogReceipts": [
+    {
+      "name": "guest-15dc39b0-2ad1-40cd-a578-6ba64ee706a9.log",
+      "bytes": 344,
+      "sha256": "ae4296386d34da48949b91c1487c08bceb859ded89a350e18a4b52ce8a1f28a5"
+    },
+    {
+      "name": "guest-5ca036f5-a375-4aee-89d5-8194668d3c18.log",
+      "bytes": 344,
+      "sha256": "1b8b47de8f636ca63385d648166bb49260a2dad09d573e8f41e816ac8ffb5ccd"
+    },
+    {
+      "name": "guest-721df0b3-d53d-4724-a5fd-28162d35faab.log",
+      "bytes": 328,
+      "sha256": "82cdbfc35dff604ca853490f1b65cb4ed451efe0411b6f7e27654b29d683daf3"
+    },
+    {
+      "name": "guest-ce814ed5-b23d-4f35-9f0b-e87a9f985272.log",
+      "bytes": 2655,
+      "sha256": "7ae2d08a4040e82fab3e044d76ff26e2e8c88f4a0eef1f7862eb2cc21e41be9c"
+    },
+    {
+      "name": "guest-control-build.log",
+      "bytes": 795,
+      "sha256": "de638297f7fdef07ef15afb0e0417c350de3b6eba2926e89e8f6ed09438f7f31"
+    },
+    {
+      "name": "guest-d686e514-3f20-4aad-b23d-fcd8e643e17c.log",
+      "bytes": 2655,
+      "sha256": "363c6b1ef082d8dc5cc6f8ffea355b3cee10bfc5da00c27f207a42989b0bf4d0"
+    },
+    {
+      "name": "guest-f465df2c-ad1a-4c0d-9a73-4c742065a552.log",
+      "bytes": 328,
+      "sha256": "6bfa62d98e5420359985d44f2e7c0b7a55af18afef4bb918ff1b20eb91a3f13e"
+    }
+  ]
+}

@@ -33,7 +33,8 @@
       },
       "patches": [
         "Private generated jansson_config.h: JSON_PARSER_MAX_DEPTH=33 with preparse 32-container structural bound; protocol boundary tests required",
-        "daemon/cmake/PatchJansson.cmake: remove decoder-only NUL-key rejection; use existing length-aware key insertion/lookup and duplicate rejection"
+        "daemon/cmake/PatchJansson.cmake: remove decoder-only NUL-key rejection; use existing length-aware key insertion/lookup and duplicate rejection",
+        "daemon/cmake/PatchJansson.cmake: propagate saved-token allocation failure as a sticky lexer error instead of returning an unsaved byte; allocation-denial/fuzz regression required"
       ]
     },
     "sqlite": {

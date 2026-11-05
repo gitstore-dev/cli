@@ -114,6 +114,8 @@ fn exact_identity_separates_purposes_accounts_installations_and_repositories() {
         "bootstrap-user",
         "controller-enrollment",
         "controller-signing",
+        "bootstrap-material",
+        "oidc-provider-material",
     ] {
         let mut changed = base.clone();
         changed["purpose"] = purpose.into();
@@ -258,4 +260,39 @@ fn installed_entry_returns_secret_only_on_inherited_descriptor() {
         .unwrap();
     assert!(!output.status.success());
     assert!(output.stdout.is_empty() && output.stderr.is_empty());
+}
+
+#[test]
+fn oidc_material_is_add_only_and_missing_file_has_no_ambient_fallback() {
+    let root = tempfile::tempdir().unwrap();
+    fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
+    let path = root.path().join("oidc-material.json");
+    let store = Synthetic::default();
+    let mut request: serde_json::Value = serde_json::from_slice(&bootstrap_request(
+        json!({"kind":"protected-file", "path":path}),
+        "synthetic-oidc-one",
+    ))
+    .unwrap();
+    request["identity"]["purpose"] = "oidc-provider-material".into();
+    request.as_object_mut().unwrap().remove("createIfAbsent");
+    let decode =
+        |value: &serde_json::Value| Request::decode(&serde_json::to_vec(value).unwrap()).unwrap();
+    assert!(resolve(&decode(&request), &store).unwrap().is_none());
+    assert!(!path.exists());
+    for candidate in ["synthetic-oidc-one", "must-not-replace-oidc"] {
+        request["createIfAbsent"] = candidate.into();
+        assert_eq!(
+            resolve(&decode(&request), &store)
+                .unwrap()
+                .unwrap()
+                .expose(),
+            "synthetic-oidc-one"
+        );
+    }
+    assert_eq!(fs::read_to_string(&path).unwrap(), "synthetic-oidc-one");
+    assert_eq!(
+        fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
+    assert!(store.0.borrow().is_empty());
 }

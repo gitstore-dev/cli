@@ -1,5 +1,7 @@
+#define _POSIX_C_SOURCE 200809L
 #include "gitstored/scheduler.h"
 #include "backend.h"
+#include "gitstored/protocol.h"
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -21,10 +23,12 @@ static int finish(sqlite3_stmt *s) {
 }
 static int free_slot(sqlite3 *db) {
     for (int slot = 0; slot < 8; ++slot) {
-        sqlite3_stmt *s = prepare(db, "SELECT 1 FROM jobs WHERE worker_slot=?");
+        sqlite3_stmt *s = prepare(db, "SELECT 1 FROM jobs WHERE worker_slot=? UNION ALL SELECT 1 "
+                                      "FROM observer_slots WHERE worker_slot=?");
         if (!s)
             return -2;
         sqlite3_bind_int(s, 1, slot);
+        sqlite3_bind_int(s, 2, slot);
         int rc = sqlite3_step(s);
         sqlite3_finalize(s);
         if (rc == SQLITE_DONE)
@@ -108,6 +112,17 @@ rollback:
     (void)execute(db, "ROLLBACK");
     return -1;
 }
+static int promote(sqlite3 *db, int slot) {
+    sqlite3_stmt *s = prepare(
+        db,
+        "UPDATE jobs SET state='reserved',worker_slot=? WHERE operation_id=(SELECT j.operation_id "
+        "FROM jobs j JOIN operations o ON o.operation_id=j.operation_id WHERE j.kind='runtime' AND "
+        "j.state='queued' AND o.state='accepted' ORDER BY j.rowid LIMIT 1)");
+    if (!s)
+        return -1;
+    sqlite3_bind_int(s, 1, slot);
+    return finish(s);
+}
 int gstd_schedule_finish(sqlite3 *db, const char *id) {
     if (execute(db, "BEGIN IMMEDIATE"))
         return -1;
@@ -135,16 +150,8 @@ int gstd_schedule_finish(sqlite3 *db, const char *id) {
     sqlite3_bind_text(s, 1, id, -1, SQLITE_TRANSIENT);
     if (finish(s))
         goto rollback;
-    if (slot >= 0) {
-        s = prepare(db, "UPDATE jobs SET state='reserved',worker_slot=? WHERE operation_id=(SELECT "
-                        "operation_id FROM jobs WHERE kind='runtime' AND state='queued' ORDER BY "
-                        "rowid LIMIT 1)");
-        if (!s)
-            goto rollback;
-        sqlite3_bind_int(s, 1, slot);
-        if (finish(s))
-            goto rollback;
-    }
+    if (slot >= 0 && promote(db, slot))
+        goto rollback;
     if (execute(db, "COMMIT"))
         goto rollback;
     return 0;
@@ -193,3 +200,94 @@ int gstd_test_backend_register(const gstd_backend *backend) {
     return 0;
 }
 #endif
+
+int gstd_schedule_read_reserve(sqlite3 *db, const char *subscription, const char *deployment) {
+    if (!db || !subscription || !deployment ||
+        !gstd_identifier(subscription, strnlen(subscription, 65)) ||
+        !gstd_identifier(deployment, strnlen(deployment, 65)) || !sqlite3_get_autocommit(db) ||
+        execute(db, "BEGIN IMMEDIATE"))
+        return -1;
+    sqlite3_stmt *s = prepare(db, "SELECT count(*) FROM observer_slots");
+    if (!s)
+        goto rollback_read;
+    int step = sqlite3_step(s), count = step == SQLITE_ROW ? sqlite3_column_int(s, 0) : -1;
+    sqlite3_finalize(s);
+    if (count < 0)
+        goto rollback_read;
+    int slot = count >= 2 ? -1 : free_slot(db);
+    if (slot == -2)
+        goto rollback_read;
+    if (slot < 0) {
+        if (execute(db, "COMMIT"))
+            goto rollback_read;
+        return 0;
+    }
+    s = prepare(db, "INSERT INTO observer_slots VALUES(?,?,?)");
+    if (!s)
+        goto rollback_read;
+    sqlite3_bind_int(s, 1, slot);
+    sqlite3_bind_text(s, 2, subscription, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(s, 3, deployment, -1, SQLITE_TRANSIENT);
+    if (finish(s) || execute(db, "COMMIT"))
+        goto rollback_read;
+    return 1;
+rollback_read:
+    execute(db, "ROLLBACK");
+    return -1;
+}
+int gstd_schedule_read_finish(sqlite3 *db, const char *subscription) {
+    if (!db || !subscription || !gstd_identifier(subscription, strnlen(subscription, 65)) ||
+        !sqlite3_get_autocommit(db) || execute(db, "BEGIN IMMEDIATE"))
+        return -1;
+    sqlite3_stmt *s = prepare(db, "SELECT worker_slot FROM observer_slots WHERE subscription_id=?");
+    if (!s)
+        goto rollback_read;
+    sqlite3_bind_text(s, 1, subscription, -1, SQLITE_TRANSIENT);
+    int step = sqlite3_step(s), slot = step == SQLITE_ROW ? sqlite3_column_int(s, 0) : -1;
+    sqlite3_finalize(s);
+    if (step == SQLITE_DONE) {
+        if (execute(db, "COMMIT"))
+            goto rollback_read;
+        return 0;
+    }
+    if (step != SQLITE_ROW || slot < 0 || slot > 7)
+        goto rollback_read;
+    s = prepare(db, "DELETE FROM observer_slots WHERE subscription_id=?");
+    if (!s)
+        goto rollback_read;
+    sqlite3_bind_text(s, 1, subscription, -1, SQLITE_TRANSIENT);
+    if (finish(s) || promote(db, slot) || execute(db, "COMMIT"))
+        goto rollback_read;
+    return 0;
+rollback_read:
+    execute(db, "ROLLBACK");
+    return -1;
+}
+int gstd_schedule_read_recover(sqlite3 *db) {
+    if (!db || !sqlite3_get_autocommit(db))
+        return -1;
+    sqlite3_stmt *s =
+        prepare(db, "SELECT subscription_id FROM observer_slots ORDER BY worker_slot");
+    if (!s)
+        return -1;
+    char identities[8][65];
+    unsigned count = 0;
+    int step;
+    while ((step = sqlite3_step(s)) == SQLITE_ROW) {
+        const char *id = (const char *)sqlite3_column_text(s, 0);
+        int bytes = sqlite3_column_bytes(s, 0);
+        if (count == 8 || !id || !gstd_identifier(id, (size_t)bytes)) {
+            sqlite3_finalize(s);
+            return -1;
+        }
+        memcpy(identities[count], id, (size_t)bytes);
+        identities[count++][bytes] = 0;
+    }
+    sqlite3_finalize(s);
+    if (step != SQLITE_DONE)
+        return -1;
+    for (unsigned i = 0; i < count; i++)
+        if (gstd_schedule_read_finish(db, identities[i]))
+            return -1;
+    return 0;
+}
