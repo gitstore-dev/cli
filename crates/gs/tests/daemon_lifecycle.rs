@@ -5,6 +5,7 @@ use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
     fs,
+    io::Read,
     os::unix::{
         fs::PermissionsExt,
         net::{UnixListener, UnixStream},
@@ -165,16 +166,44 @@ fn prepare_capabilities(listener: &UnixListener, logs: bool) -> UnixStream {
     s
 }
 fn wait(mut child: Child) -> Output {
+    // Drain both pipes while waiting: a foreground log plus cleanup diagnostics
+    // can fill a small host pipe and block the child before it exits.
+    let mut stdout = child.stdout.take().unwrap();
+    let mut stderr = child.stderr.take().unwrap();
+    let stdout = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stdout.read_to_end(&mut bytes).unwrap();
+        bytes
+    });
+    let stderr = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stderr.read_to_end(&mut bytes).unwrap();
+        bytes
+    });
     let end = Instant::now() + BOUND;
-    while child.try_wait().unwrap().is_none() {
+    let mut timed_out = false;
+    let status = loop {
+        if let Some(status) = child.try_wait().unwrap() {
+            break status;
+        }
         if Instant::now() >= end {
             child.kill().unwrap();
-            child.wait().unwrap();
-            panic!("gs process exceeded controlled test bound");
+            timed_out = true;
+            break child.wait().unwrap();
         }
         thread::sleep(Duration::from_millis(5));
-    }
-    child.wait_with_output().unwrap()
+    };
+    let output = Output {
+        status,
+        stdout: stdout.join().unwrap(),
+        stderr: stderr.join().unwrap(),
+    };
+    assert!(
+        !timed_out,
+        "gs process exceeded controlled test bound: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output
 }
 fn diagnostic(output: &Output) -> Value {
     output

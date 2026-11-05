@@ -168,9 +168,29 @@ pub fn checked(client: &Client, r: &Request, f: Format) -> Result<Value> {
     }
     Ok(reply.body)
 }
-pub fn read(client: &Client, s: &Selection, n: Option<&str>, f: Format) -> Result<Value> {
+pub fn selection_for_profile(
+    s: &Selection,
+    n: Option<&str>,
+    profile: Option<&str>,
+) -> Result<Request> {
+    let legacy = selection(s, n)?;
+    if profile != Some("gitstore-alpha9-2026-11-05") || Kind::parse(&s.kind)? != Kind::File {
+        return Ok(legacy);
+    }
+    graphql::validate(json!({
+        "query": format!("query Read($by:FileBy!){{file(by:$by){{{}}}}}", Kind::File.fields()),
+        "variables": {"by": {"namespacePath": legacy.envelope["variables"]}}
+    }))
+}
+pub fn read(
+    client: &Client,
+    s: &Selection,
+    n: Option<&str>,
+    f: Format,
+    profile: Option<&str>,
+) -> Result<Value> {
     let k = Kind::parse(&s.kind)?;
-    let body = checked(client, &selection(s, n)?, f)?;
+    let body = checked(client, &selection_for_profile(s, n, profile)?, f)?;
     let obj = &body["data"][k.field()];
     if obj.is_null() {
         return Err(Error::new(4, "NOT_FOUND", "Selected resource not found"));
@@ -210,7 +230,7 @@ pub fn list(
 pub fn delete(client: &Client, s: &Selection, n: Option<&str>, f: Format) -> Result<Value> {
     let k = Kind::parse(&s.kind)?;
     k.can_delete()?;
-    let obj = read(client, s, n, f)?;
+    let obj = read(client, s, n, f, None)?;
     let id = obj["id"]
         .as_str()
         .filter(|s| !s.is_empty())

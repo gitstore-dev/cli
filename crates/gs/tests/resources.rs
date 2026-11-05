@@ -56,3 +56,35 @@ fn invalid_selectors_fail() {
     assert!(selection(&s, None).is_err());
     assert!(list_request(Kind::Product, Some("shop"), 101, None).is_err());
 }
+
+#[test]
+fn alpha9_file_selector_is_explicit_and_preserves_legacy_gates() {
+    use gs::resources::selection_for_profile;
+    let mut s = Selection {
+        kind: "file".into(),
+        name: Some("photo".into()),
+        id: None,
+    };
+    let r = selection_for_profile(&s, Some("shop"), Some("gitstore-alpha9-2026-11-05")).unwrap();
+    assert!(
+        r.envelope["query"]
+            .as_str()
+            .unwrap()
+            .contains("file(by:$by)")
+    );
+    assert_eq!(
+        r.envelope["variables"],
+        serde_json::json!({"by":{"namespacePath":{"namespace":"shop","name":"photo"}}})
+    );
+    let legacy = selection_for_profile(&s, Some("shop"), Some("m0-2026-10-27")).unwrap();
+    assert!(
+        legacy.envelope["query"]
+            .as_str()
+            .unwrap()
+            .contains("file(namespace:")
+    );
+    assert!(selection_for_profile(&s, None, Some("gitstore-alpha9-2026-11-05")).is_err());
+    s.name = None;
+    s.id = Some("opaque-id".into());
+    assert!(selection_for_profile(&s, None, Some("gitstore-alpha9-2026-11-05")).is_err());
+}

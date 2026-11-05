@@ -5,7 +5,7 @@ let calls = [];
 http.createServer(async (req, res) => {
   const reply = (code, value) => { res.writeHead(code, {'content-type':'application/json'}); res.end(JSON.stringify(value)); };
   if (req.url === '/calls') return reply(200, calls);
-  if (req.method !== 'POST' || !req.url.startsWith('/graphql')) return reply(501, {error:'Outside fixture contract'});
+  if (req.method !== 'POST' || !(req.url.startsWith('/graphql') || req.url === '/admin/graphql')) return reply(501, {error:'Outside fixture contract'});
   let body = req.body;
   if (body === undefined) { let raw=''; for await (const part of req) raw+=part; try { body=JSON.parse(raw); } catch { return reply(400,{error:'Invalid JSON'}); } }
   if (typeof body === 'string') { try { body=JSON.parse(body); } catch { return reply(400,{error:'Invalid JSON'}); } }
@@ -22,6 +22,11 @@ http.createServer(async (req, res) => {
   const q=body.query||'', v=body.variables||{};
   const single = q.match(/\b(namespace|repository|product|category|collection|file)\s*\(/);
   const list = q.match(/\b(namespaces|repositories|products|categories|collections)\s*\(/);
+  if (req.url === '/admin/graphql' && single?.[1] === 'file') {
+    if (!q.includes('file(by:$by)') || !v.by?.namespacePath || v.by.id)
+      return reply(200,{errors:[{message:'FileBy selector required'}]});
+    if (v.by.namespacePath.name === 'absent') return reply(200,{data:{file:null}});
+  }
   const kinds={namespace:'Namespace',repository:'Repository',product:'Product',category:'CategoryTaxonomy',collection:'Collection',file:'File'};
   if (q.includes('createProduct')||q.includes('createCategory')) {
     const field=q.includes('createProduct')?'product':'category', input=v.input;

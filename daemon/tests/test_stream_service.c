@@ -39,8 +39,7 @@ int main(void) {
     gstd_logs *logs = NULL;
     gstd_stream_service *s = NULL;
     json_t *value = NULL,
-           *params = json_pack("{s:s,s:s,s:s}", "deploymentId", "observed", "kind", "logs",
-                               "component", "api"),
+           *params = json_pack("{s:s,s:s}", "deploymentId", "observed", "kind", "logs"),
            *payload = json_pack("{s:s}", "text", "redacted fixture");
     CHECK(root && params && payload);
     snprintf(path, sizeof(path), "%s/state.db", root);
@@ -63,8 +62,9 @@ int main(void) {
     CHECK(state >= 3);
     directory = gstd_logs_directory(state, store, 1);
     CHECK(directory >= 3 && gstd_logs_open_at(directory, NULL, 1, &logs) == GSTD_LOG_OK);
+    const char *components[] = {"api", "scylladb", "controller"};
     for (unsigned i = 0; i < 300; i++)
-        CHECK(gstd_logs_append(logs, "observed", "api", GSTD_STREAM_LOGS, payload,
+        CHECK(gstd_logs_append(logs, "observed", components[i % 3], GSTD_STREAM_LOGS, payload,
                                (int64_t)time(NULL)) == GSTD_LOG_OK);
     s = gstd_stream_service_open(db, state);
     CHECK(s);
@@ -96,6 +96,8 @@ int main(void) {
         while (gstd_stream_service_next(s, 0, &value) == 1) {
             CHECK(text(value, "subscriptionId", fast) && text(value, "type", "log"));
             CHECK(json_integer_value(json_object_get(value, "sequence")) == ++received);
+            CHECK(text(json_object_get(value, "payload"), "component",
+                       components[(received - 1) % 3]));
             json_decref(value);
             value = NULL;
         }

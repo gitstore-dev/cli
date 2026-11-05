@@ -1,0 +1,16 @@
+$kind: collection
+name: GitStore alpha.9 File consumer checks
+variables:
+  - key: baseUrl
+    value: ''
+  - key: ownedDisposableFixture
+    value: ''
+auth:
+  type: noauth
+scripts:
+  - type: http:beforeRequest
+    language: text/javascript
+    code: |-
+      if (pm.variables.get("ownedDisposableFixture") !== "true") throw new Error("Owned disposable fixture required");
+      const target = new URL(pm.variables.get("baseUrl"));
+      if (target.protocol !== "http:" || target.hostname !== "127.0.0.1" || Number(target.port) < 1024 || target.pathname !== "/gitstore" || target.username || target.password || target.search || target.hash) throw new Error("Owned numeric-loopback simulation required");

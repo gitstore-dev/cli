@@ -1,5 +1,5 @@
 name: m1
-source: GitStore b6c866421dbcf43994565f847553c1f6aec83994 public GraphQL schemas
+source: GitStore b6c866421dbcf43994565f847553c1f6aec83994 public GraphQL schemas; alpha.9 FileBy at 68f8471edc947e417c98b6e8299a1367ab6b20da
 scope: Client serialization, response handling, isolation and transport failures only
 ownerMockSearch: skipped; no owning workspace is bound, local contract-derived mock used
 claims:
@@ -9,3 +9,8 @@ claims:
 limitations:
   - Does not validate real provider credentials, admission, readiness or production compatibility
   - Returns 501 for routes outside the fixture contract
+alpha9:
+  scope: Explicit profile File name lookups at /admin/graphql only; missing File returns null
+  source: shared/schemas/admin/file.graphqls at 68f8471edc947e417c98b6e8299a1367ab6b20da
+  contract: postman/specs/gitstore-alpha9.openapi.json
+  verification: scripts/test_remote.py; separate published-image run required for live compatibility

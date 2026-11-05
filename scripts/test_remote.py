@@ -1,7 +1,7 @@
 """Exercise the built gs process through the local Postman simulation; synthetic data only."""
 import json, os, pathlib, selectors, shutil, subprocess, tempfile, time, urllib.request
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BINARY = ROOT / 'target/debug/gs'
+BINARY = pathlib.Path(os.environ.get('GITSTORE_TEST_BINARY', ROOT / 'target/debug/gs'))
 proc = subprocess.Popen([shutil.which('postman') or 'postman', 'simulation', 'run',
     str(ROOT / 'postman/simulations/m1.sim.yaml'), '--port', 'auto', '--output', 'ndjson', '--no-history'],
     cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -15,25 +15,25 @@ try:
         line = proc.stdout.readline()
         try: event = json.loads(line)
         except json.JSONDecodeError: continue
-        if event.get('event') == 'listening': address = event['url']+'/gitstore'; break
+        if event.get('event') == 'listening': address = event['url'].replace('://localhost:', '://127.0.0.1:')+'/gitstore'; break
     if not address: raise RuntimeError('Simulation did not become ready within 60 seconds')
     with tempfile.TemporaryDirectory(prefix='gs-simulation-') as temp:
         temp = pathlib.Path(temp); token = temp/'credential'; token.write_text('synthetic-simulation-token\n'); token.chmod(0o600)
         cfg=temp/'config.toml'
-        def configure(suffix=''):
+        def configure(suffix='', profile='m0-2026-10-27', endpoint_path='/graphql'):
             cfg.write_text(f'''version = 1
 current_context = "test"
 [contexts.test]
-endpoint = "{address}/graphql{suffix}"
+endpoint = "{address}{endpoint_path}{suffix}"
 allow_loopback_http = true
-contract_profile = "m0-2026-10-27"
+contract_profile = "{profile}"
 account = "test"
 namespace = "shop"
 [contexts.test.accounts.test]
 issuer = "controlled-fixture"
 ''')
-        def invoke(args, code=0, suffix=''):
-            configure(suffix)
+        def invoke(args, code=0, suffix='', profile='m0-2026-10-27', endpoint_path='/graphql'):
+            configure(suffix, profile, endpoint_path)
             env={k:v for k,v in os.environ.items() if not k.startswith(('GITSTORE_','GIT_'))}
             env.update(HOME=str(temp),PATH='/nonexistent')
             out=subprocess.run([str(BINARY),'--config',str(cfg),'--credential-file',str(token),'-o','json',*args],env=env,cwd=temp,capture_output=True,text=True,timeout=10)
@@ -53,6 +53,9 @@ issuer = "controlled-fixture"
         invoke(['api','graphql','-f','query=mutation { fixture }'],8,'/disconnect')
         for kind in ['namespace','repository','product','category','collection','file']:
             value=invoke(['read',kind,'fixture']); assert value['metadata']['name']=='fixture'
+        alpha9 = {'profile': 'gitstore-alpha9-2026-11-05', 'endpoint_path': '/admin/graphql'}
+        assert invoke(['read','file','fixture'], **alpha9)['kind'] == 'File'
+        invoke(['read','file','absent'], 4, **alpha9)
         for kind in ['namespace','repository','product','category','collection']:
             value=invoke(['list',kind]); assert value['items']==[] and not value['pageInfo']['hasNextPage']
         for kind in ['Product','CategoryTaxonomy']:
@@ -92,6 +95,10 @@ Body ü\n\n''')
         print(collection.stdout, end='')
         if collection.stderr: print(collection.stderr, end='')
         assert collection.returncode == 0, 'Saved contract collection failed'
+        collection = subprocess.run([shutil.which('postman') or 'postman', 'collection', 'run', str(ROOT/'postman/collections/gitstore-alpha9'), '--env-var', 'baseUrl='+address, '--env-var', 'ownedDisposableFixture=true', '--no-report-events'], cwd=ROOT, text=True, capture_output=True, timeout=30)
+        print(collection.stdout, end='')
+        if collection.stderr: print(collection.stderr, end='')
+        assert collection.returncode == 0, 'Saved alpha.9 consumer collection failed'
         print(f'PASS: actual gs CLI exercised {len(recorded)} controlled GraphQL requests, failure scenarios, authoring/read/delete and zero-write gates.')
 finally:
     proc.terminate()

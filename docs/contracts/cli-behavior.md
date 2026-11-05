@@ -216,3 +216,14 @@ Page size is at most 100 or the smaller server bound. Never hydrate an entire ca
 in memory. Preserve object versions and explain that independently paged results are
 not an atomic snapshot without a server contract. Watch expiry requires an explicit
 resnapshot; report the gap instead of claiming lossless continuation.
+
+## Alpha.9 remote contract selection
+
+An explicit `contract_profile = "gitstore-alpha9-2026-11-05"` selects the
+source-verified alpha.9 remote subset. Configure its Admin GraphQL endpoint
+(including `/admin/graphql`) independently from Git. File name reads use
+`file(by: {namespacePath: {namespace, name}})` with a `FileBy!` variable; the
+legacy `m0-2026-10-27` profile retains its flat File arguments. File ID reads,
+lists and writes retain their existing gates. No error triggers a fallback
+request to another endpoint or selector. Evidence: [alpha.9 source contracts](../../runtime/profiles/alpha9-evidence.json).
+This does not upgrade the local runtime's alpha.8 image/schema pins.

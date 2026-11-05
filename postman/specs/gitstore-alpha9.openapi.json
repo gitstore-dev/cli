@@ -1,0 +1,79 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "GitStore alpha.9 File name lookup consumer",
+    "version": "0.1.0-alpha.9",
+    "description": "Narrow consumer contract at GitStore commit 68f8471edc947e417c98b6e8299a1367ab6b20da: shared/schemas/admin/file.graphqls and gitstore-api/internal/app/graphql.go. Other resource operations remain outside this contract. Owned disposable fixtures only."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:4000"
+    }
+  ],
+  "paths": {
+    "/admin/graphql": {
+      "post": {
+        "operationId": "readAlpha9File",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query",
+                  "variables"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string"
+                  },
+                  "variables": {
+                    "type": "object"
+                  }
+                }
+              },
+              "example": {
+                "query": "query Read($by:FileBy!){file(by:$by){id apiVersion kind metadata{name namespace uid resourceVersion generation revision} body spec{contentType}}}",
+                "variables": {
+                  "by": {
+                    "namespacePath": {
+                      "namespace": "shop",
+                      "name": "fixture"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GraphQL result; a missing File is data.file null. GraphQL errors are distinct from transport success.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -8,8 +8,14 @@ mode 0666. This is a reference fixture prerequisite, never product elevation or 
 silent fallback. The probe refuses UID 0. Its only external DNS lookup is
 `example.org` through libc's resolver and libslirp's DNS forwarding.
 
-Verify [the source hash](source-lock.json) before extracting into an owned source
-directory `libslirp-4.9.7`. This archive is a known source input, not a runtime image.
+Verify [the source lock](source-lock.json) before extracting into an owned source
+directory `libslirp-4.9.7`. Gitiles regenerates archive member timestamps, so its
+historical compressed-byte SHA256 is not a stable download identity. The build's
+`fetch-source.py` bounds the archive, normalizes timestamps and entry order, then
+verifies the entire normalized tar SHA256 before extraction. Source bytes, modes,
+ownership metadata and link targets remain part of that hash. The known original
+archive and a fresh download normalize identically; changed content is rejected.
+This is build-time source preparation, not a runtime download or bundled helper.
 Unpatched instrumented input fails as recorded. The selected development build uses
 a separate copy and `apply-source-patch.py`; [patch-lock.json](patch-lock.json)
 verifies each original/patched header and [queue-access.patch](queue-access.patch).

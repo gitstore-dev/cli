@@ -268,7 +268,10 @@ impl Effective {
             .ok_or_else(|| Error::usage("Select a namespace"))
     }
     pub fn profile(&self) -> Result<()> {
-        if self.context.contract_profile.as_deref() != Some("m0-2026-10-27") {
+        if !matches!(
+            self.context.contract_profile.as_deref(),
+            Some("m0-2026-10-27" | "gitstore-alpha9-2026-11-05")
+        ) {
             return Err(Error::unsupported(
                 "explicit compatible contract_profile required",
             ));

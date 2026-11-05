@@ -1,0 +1,35 @@
+$kind: http-request
+name: Read File using alpha.9 selector
+url: "{{baseUrl}}/admin/graphql"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "query": "query Read($by:FileBy!){file(by:$by){id apiVersion kind metadata{name namespace uid resourceVersion generation revision} body spec{contentType}}}",
+      "variables": {
+        "by": {
+          "namespacePath": {
+            "namespace": "shop",
+            "name": "fixture"
+          }
+        }
+      }
+    }
+settings:
+  followRedirects: false
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Alpha.9 FileBy returns File", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(body.data.file.kind).to.eql("File");
+        pm.expect(body.data.file.metadata.name).to.eql("fixture");
+      });

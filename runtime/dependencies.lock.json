@@ -120,7 +120,8 @@
         "PCRE2 8",
         "platform C/m/loader"
       ],
-      "scope": "IPv4 owned namespace/TAP, DNS, fixed API/Git high loopback forwards; native namespace joins and retained writer lease primitives pass; public lifecycle/recovery remain gated"
+      "scope": "IPv4 owned namespace/TAP, DNS, fixed API/Git high loopback forwards; native namespace joins and retained writer lease primitives pass; public lifecycle/recovery remain gated",
+      "normalizedTarSha256": "9c5098987f1c585a0e5e97c374e547bb1a3a68c0ff31ef658d0162f84fc875cd"
     },
     "execution": {
       "status": "private registered libcrun lifecycle/signal/exit adapter passes; public lifecycle dispatch pending",

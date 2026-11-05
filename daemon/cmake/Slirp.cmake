@@ -13,13 +13,12 @@ if(GITSTORED_SLIRP)
   find_program(GITSTORED_NINJA ninja REQUIRED)
   set(slirp_record "${CMAKE_CURRENT_SOURCE_DIR}/../runtime/experiments/network-library")
   file(READ "${slirp_record}/source-lock.json" slirp_lock)
-  string(JSON slirp_url GET "${slirp_lock}" url)
-  string(JSON slirp_sha256 GET "${slirp_lock}" sha256)
-  set(GITSTORED_LIBSLIRP_ARCHIVE "" CACHE FILEPATH "Optional pinned libslirp archive (hash checked)")
+  set(slirp_input "")
+  set(GITSTORED_LIBSLIRP_ARCHIVE "" CACHE FILEPATH "Optional libslirp archive (normalized source hash checked)")
   if(GITSTORED_LIBSLIRP_ARCHIVE)
-    set(slirp_url "${GITSTORED_LIBSLIRP_ARCHIVE}")
+    set(slirp_input --input "${GITSTORED_LIBSLIRP_ARCHIVE}")
   elseif(GITSTORED_SOURCE_CACHE AND EXISTS "${GITSTORED_SOURCE_CACHE}/libslirp-4.9.7.tar.gz")
-    set(slirp_url "${GITSTORED_SOURCE_CACHE}/libslirp-4.9.7.tar.gz")
+    set(slirp_input --input "${GITSTORED_SOURCE_CACHE}/libslirp-4.9.7.tar.gz")
   endif()
   set(slirp_source "${CMAKE_CURRENT_BINARY_DIR}/_deps/libslirp-src")
   set(slirp_build "${CMAKE_CURRENT_BINARY_DIR}/_deps/libslirp-build")
@@ -30,8 +29,10 @@ if(GITSTORED_SLIRP)
   endif()
   file(MAKE_DIRECTORY "${slirp_source}/src" "${slirp_build}")
   ExternalProject_Add(gitstored_slirp_build
-    URL "${slirp_url}" URL_HASH "SHA256=${slirp_sha256}"
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    DOWNLOAD_COMMAND "${Python3_EXECUTABLE}" "${slirp_record}/fetch-source.py"
+      ${slirp_input} --output "${CMAKE_CURRENT_BINARY_DIR}/libslirp-verified.tar"
+      COMMAND "${CMAKE_COMMAND}" -E chdir <SOURCE_DIR>
+        "${CMAKE_COMMAND}" -E tar xf "${CMAKE_CURRENT_BINARY_DIR}/libslirp-verified.tar"
     SOURCE_DIR "${slirp_source}" BINARY_DIR "${slirp_build}"
     UPDATE_COMMAND ""
     PATCH_COMMAND "${Python3_EXECUTABLE}" "${slirp_record}/apply-source-patch.py" <SOURCE_DIR>
@@ -42,6 +43,8 @@ if(GITSTORED_SLIRP)
     BUILD_COMMAND "${GITSTORED_NINJA}" -C <BINARY_DIR> libslirp.a
     BUILD_BYPRODUCTS "${slirp_static}" INSTALL_COMMAND ""
     LOG_CONFIGURE ON LOG_BUILD ON LOG_OUTPUT_ON_FAILURE ON)
+  ExternalProject_Add_StepDependencies(gitstored_slirp_build download
+    "${slirp_record}/fetch-source.py" "${slirp_record}/source-lock.json")
   add_library(gitstored_slirp STATIC IMPORTED)
   set_target_properties(gitstored_slirp PROPERTIES IMPORTED_LOCATION "${slirp_static}"
     INTERFACE_INCLUDE_DIRECTORIES "${slirp_source}/src;${slirp_build}")
@@ -51,6 +54,8 @@ if(GITSTORED_SLIRP)
   target_compile_definitions(gitstored_core PRIVATE GITSTORED_SLIRP=1)
   target_link_libraries(gitstored_core PRIVATE gitstored_slirp PkgConfig::GITSTORED_GLIB resolv)
   if(GITSTORED_TESTING)
+    add_test(NAME pinned_slirp_source_verification
+      COMMAND "${Python3_EXECUTABLE}" "${slirp_record}/test_source.py")
     add_executable(network_worker_probe tests/network_worker_probe.c)
     target_include_directories(network_worker_probe PRIVATE src)
     target_link_libraries(network_worker_probe PRIVATE gitstored_core gitstored_options resolv)

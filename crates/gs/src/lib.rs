@@ -181,14 +181,24 @@ fn dispatch(cli: &Cli) -> Result<()> {
         }
         Command::Read(s) => {
             e.profile()?;
-            let r = resources::selection(s, e.context.namespace.as_deref())?;
+            let r = resources::selection_for_profile(
+                s,
+                e.context.namespace.as_deref(),
+                e.context.contract_profile.as_deref(),
+            )?;
             let _ = r;
             let client = graphql::Client::new(
                 &e.context.endpoint,
                 credentials::token(cli, &e)?,
                 cli.timeout(),
             )?;
-            resources::read(&client, s, e.context.namespace.as_deref(), cli.format())?
+            resources::read(
+                &client,
+                s,
+                e.context.namespace.as_deref(),
+                cli.format(),
+                e.context.contract_profile.as_deref(),
+            )?
         }
         Command::List(a) => {
             e.profile()?;
