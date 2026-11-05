@@ -31,8 +31,10 @@ if(GITSTORED_SLIRP)
   ExternalProject_Add(gitstored_slirp_build
     DOWNLOAD_COMMAND "${Python3_EXECUTABLE}" "${slirp_record}/fetch-source.py"
       ${slirp_input} --output "${CMAKE_CURRENT_BINARY_DIR}/libslirp-verified.tar"
+      # Give verified files fresh worktree mtimes so an incremental build never
+      # reuses older objects after a source-lock update (archive mtimes are zero).
       COMMAND "${CMAKE_COMMAND}" -E chdir <SOURCE_DIR>
-        "${CMAKE_COMMAND}" -E tar xf "${CMAKE_CURRENT_BINARY_DIR}/libslirp-verified.tar"
+        "${CMAKE_COMMAND}" -E tar xf "${CMAKE_CURRENT_BINARY_DIR}/libslirp-verified.tar" --touch
     SOURCE_DIR "${slirp_source}" BINARY_DIR "${slirp_build}"
     UPDATE_COMMAND ""
     PATCH_COMMAND "${Python3_EXECUTABLE}" "${slirp_record}/apply-source-patch.py" <SOURCE_DIR>
