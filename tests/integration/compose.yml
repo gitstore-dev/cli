@@ -61,7 +61,7 @@ services:
       - |
         export GITSTORE_BOOTSTRAP_ADMIN_USERNAME=admin
         export GITSTORE_BOOTSTRAP_ADMIN_PASSWORD="$$(cat /bootstrap/admin-password)"
-        exec /app/gitctl enroll-serviceaccount --api-url http://api:4000/graphql \
+        exec /app/gitctl enroll-serviceaccount --api-url http://api:4000/admin/graphql \
           --name gitstore-controller-manager --key-id controller-key --replace-existing-key \
           --private-key-path /run/controller-secrets/controller-key \
           --identity-output-path /run/controller-bootstrap/serviceaccount.env

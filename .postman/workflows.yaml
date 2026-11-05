@@ -4,3 +4,5 @@ workflows:
       collection: ../postman/collections/oidc-provider
     - spec: ../postman/specs/oidc-courier.openapi.json
       collection: ../postman/collections/oidc-courier
+    - spec: ../postman/specs/gitstore-alpha9.openapi.json
+      collection: ../postman/collections/gitstore-alpha9

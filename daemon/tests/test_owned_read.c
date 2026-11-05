@@ -4,6 +4,7 @@
 #include "support.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/capability.h>
 #include <sched.h>
 #include <stdio.h>
 #include <string.h>
@@ -67,6 +68,27 @@ static int copied_execution(int sealed) {
                ? 0
                : -1;
 }
+/* Ubuntu can allow unshare while denying capabilities inside that namespace.
+ * Probe the required kernel operations independently; do not turn a reader
+ * failure into a skip or relax the production reader's confinement. */
+static int namespace_capabilities(void) {
+    if (unshare(CLONE_NEWUSER))
+        return errno == EPERM || errno == EACCES ? 77 : 1;
+    for (unsigned cap = 0;; cap++) {
+        int present = prctl(PR_CAPBSET_READ, cap, 0, 0, 0);
+        if (present < 0) {
+            if (errno != EINVAL)
+                return 1;
+            break;
+        }
+        if (present && cap != CAP_DAC_READ_SEARCH && prctl(PR_CAPBSET_DROP, cap, 0, 0, 0))
+            return errno == EPERM || errno == EACCES ? 77 : 1;
+    }
+    struct __user_cap_header_struct header = {_LINUX_CAPABILITY_VERSION_3, 0};
+    struct __user_cap_data_struct caps[2] = {{0}};
+    caps[0].effective = caps[0].permitted = UINT32_C(1) << CAP_DAC_READ_SEARCH;
+    return syscall(SYS_capset, &header, caps) ? (errno == EPERM || errno == EACCES ? 77 : 1) : 0;
+}
 int main(int argc, char **argv) {
     /* Keep this executable independent of libcrun's automatic self-cloning:
      * both sealed and unsealed current executables must reach the reader. */
@@ -74,14 +96,16 @@ int main(int argc, char **argv) {
         return 77;
     pid_t probe = fork();
     if (!probe)
-        _exit(unshare(CLONE_NEWUSER) ? 77 : 0);
+        _exit(namespace_capabilities());
     int status;
     if (probe < 0 || waitpid(probe, &status, 0) != probe || !WIFEXITED(status))
         return 1;
     if (WEXITSTATUS(status) == 77) {
-        fputs("SKIP: rootless user namespaces unavailable\n", stderr);
+        fputs("SKIP: rootless user namespace capabilities unavailable\n", stderr);
         return 77;
     }
+    if (WEXITSTATUS(status))
+        return 1;
     if ((argc != 1 && (argc != 2 || (strcmp(argv[1], "sealed") && strcmp(argv[1], "unsealed")))) ||
         (argc == 1 && (copied_execution(1) || copied_execution(0))))
         return 1;

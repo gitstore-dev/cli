@@ -66,7 +66,7 @@ def main():
                 address = dc('port', 'api', str(port), capture_output=True, text=True).stdout.strip()
                 return 'http://' + address
 
-            api, git = endpoint(4000) + '/graphql', endpoint(9000)
+            api, git = endpoint(4000) + '/admin/graphql', endpoint(9000)
             token = None
 
             def graphql(query, variables):
@@ -122,7 +122,7 @@ current_context = "integration"
 [contexts.integration]
 endpoint = "{api}"
 allow_loopback_http = true
-contract_profile = "m0-2026-10-27"
+contract_profile = "gitstore-alpha9-2026-11-05"
 account = "admin"
 namespace = "gs-m1-ci"
 git_endpoint = "{git}"

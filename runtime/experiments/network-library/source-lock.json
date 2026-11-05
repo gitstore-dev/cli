@@ -29,5 +29,7 @@
     "file": "runtime/experiments/network-library/queue-access.patch",
     "sha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
     "policy": "no sanitizer exemptions; normal container layout unchanged"
-  }
+  },
+  "normalizedTarSha256": "9c5098987f1c585a0e5e97c374e547bb1a3a68c0ff31ef658d0162f84fc875cd",
+  "archiveVerification": "Gitiles regenerates every member timestamp. Normalize only mtime/PAX mtime and entry order, then verify the entire tar SHA256 before extraction. Original sha256 remains historical archive evidence."
 }

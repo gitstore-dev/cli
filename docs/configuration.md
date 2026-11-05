@@ -39,3 +39,9 @@ protected-file source containing JSON username/password or token; otherwise the
 OS store is used. A GraphQL token is never substituted as a Basic password.
 See [the config contract](../specs/002-m1-remote-cli/contracts/config.md) for exact
 identity fields. No daemon, browser login or Git executable is required.
+
+For GitStore alpha.9, explicitly select
+`contract_profile = "gitstore-alpha9-2026-11-05"` and configure the Admin endpoint
+including `/admin/graphql`. The legacy `m0-2026-10-27` profile keeps its original
+File selector. The alpha.9 profile changes File name reads to `FileBy`; it does
+not enable File ID reads, lists or writes, or change local runtime image pins.

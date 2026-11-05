@@ -67,3 +67,8 @@ This target checks the memdb stack over loopback HTTP. It does not establish ext
 provider, HTTPS, native credential-store, admission/readiness correlation, or full M1
 release support. Default `cargo test` skips the six image tests; only this runner provisions
 its required disposable installation.
+
+The alpha.9 fixture uses `api.admin_port`/`api.storefront_port`, the Admin
+`/admin/graphql` path for bootstrap and controller calls, and the explicit
+`gitstore-alpha9-2026-11-05` CLI contract profile. It uses fresh memdb volumes;
+this does not validate upgrades of the daemon's retained Scylla schema.

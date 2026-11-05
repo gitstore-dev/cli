@@ -9,7 +9,8 @@ timeout = "10s"
 [git_service.admission]
 branch_pattern = "^refs/heads/main$"
 [api]
-port = 4000
+admin_port = 4000
+storefront_port = 4001
 git_port = 9000
 grpc_port = 6000
 [api.rate_limit]
@@ -40,7 +41,7 @@ provider = "static-users"
 policy_file = "/etc/gitstore/policy.yaml"
 [controller]
 port = 5001
-api_uri = "http://api:4000/graphql"
+api_uri = "http://api:4000/admin/graphql"
 [controller.serviceaccount]
 name = "gitstore-controller-manager"
 key_ref = { kind = "SecretRef", name = "gitstore-controller-manager-signing-key" }

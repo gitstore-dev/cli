@@ -30,10 +30,11 @@ struct gstd_streams {
     subscription subscriptions[32][8];
 };
 static int component_valid(const char *name) {
-    static const char *names[] = {"api", "git", "controller", "oidc", "admin", "storefront"};
+    static const char *names[] = {"api",   "git",        "controller", "oidc",
+                                  "admin", "storefront", "scylladb"};
     if (!name)
         return 1;
-    for (unsigned i = 0; i < 6; i++)
+    for (unsigned i = 0; i < sizeof(names) / sizeof(names[0]); i++)
         if (!strcmp(name, names[i]))
             return 1;
     return 0;
