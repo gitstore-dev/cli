@@ -98,10 +98,11 @@ class InspectionCommands(Commands):
     def test_read_repository(self):
         self.assertEqual(self.invoke(['read', 'repository', 'catalog'])['spec']['defaultBranch'], 'main')
 
-    def test_read_collection_missing_preserves_graphql_errors(self):
-        # Current published API returns operation errors without a NOT_FOUND code.
-        result = self.invoke(['read', 'collection', 'gs-m1-absent-' + uuid.uuid4().hex[:12]], code=8)
+    def test_read_collection_missing_preserves_not_found_error(self):
+        # Alpha.9 returns an explicit NOT_FOUND GraphQL error for a missing Collection.
+        result = self.invoke(['read', 'collection', 'gs-m1-absent-' + uuid.uuid4().hex[:12]], code=4)
         self.assertTrue(result['errors'])
+        self.assertEqual(result['errors'][0]['extensions']['code'], 'NOT_FOUND')
 
     def test_read_file_missing_is_not_found(self):
         self.invoke(['read', 'file', 'gs-m1-absent-' + uuid.uuid4().hex[:12]], code=4)

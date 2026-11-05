@@ -58,7 +58,7 @@ high-level `gs create` commands support those kinds.
 `auth logout` and native OS-store behavior remain in the local/native-store suites;
 the image target never opens the host credential store. Successful Collection/File
 reads retain controlled-fixture coverage: this target currently checks a Collection
-operation-error response and File not-found response, not successful object hydration.
+`NOT_FOUND` error and File not-found response, not successful object hydration.
 Login/refresh, updates, watches, discovery and waits retain their existing unsupported
 behavior and separate gate tests; this target does not enable gated functionality.
 The caller-provisioned opt-in `scripts/test-live.sh` remains available separately.
