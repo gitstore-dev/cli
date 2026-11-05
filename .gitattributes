@@ -1,0 +1,2 @@
+# Unified diffs require a space on empty context lines; retain hash-bound patch bytes.
+*.patch whitespace=-blank-at-eol
