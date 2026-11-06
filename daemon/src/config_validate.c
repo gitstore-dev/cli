@@ -1,4 +1,5 @@
 #include "gitstored/config_validate.h"
+#include "oidc_profile.h"
 #include <stdio.h>
 #include <string.h>
 /* Removed/renamed owning-service keys at the pinned revision. Native validators
@@ -74,6 +75,20 @@ json_t *gstd_config_plan(const json_t *profile, const json_t *components, const 
         return NULL;
     for (size_t i = 0; i < json_array_size(components); i++) {
         const char *name = json_string_value(json_array_get(components, i));
+        if (name && !strcmp(name, "oidc")) {
+            const char *roles[] = {"oidc-smtp", "oidc-hydra", "oidc-kratos", "oidc-ui",
+                                   "oidc-bridge"};
+            for (unsigned j = 0; j < 5; j++) {
+                json_t *entry = json_pack("{s:s,s:s,s:s}", "component", roles[j], "sourceStatus",
+                                          "planned-owned-protected-configuration",
+                                          "nativeValidation", "unperformed");
+                if (!entry || json_array_append_new(plans, entry)) {
+                    json_decref(plans);
+                    return NULL;
+                }
+            }
+            continue;
+        }
         json_t *definition = json_object_get(json_object_get(profile, "config"), name);
         json_t *merged = gstd_config_merge(name, json_object_get(definition, "layers"));
         if (!merged) {

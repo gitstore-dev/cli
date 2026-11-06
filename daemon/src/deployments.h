@@ -10,6 +10,8 @@
 #include "native_population.h"
 #include "network_worker.h"
 #include "runtime_settings.h"
+#include "workload_roles.h"
+#include "oidc_runtime.h"
 typedef struct {
     const gstd_deployment_environment *environment;
     gstd_deployment_target target;
@@ -18,8 +20,13 @@ typedef struct {
     gstd_volume_handle volume;
     gstd_network_worker network;
     gstd_network_worker_observation network_observed;
-    gstd_deployment_workload workloads[3]; /* Git, API, controller */
+    gstd_deployment_workload workloads[GSTD_ROLE_COUNT];
+    gstd_workload_role roles[GSTD_ROLE_COUNT];
+    unsigned core_offset, core_count;
     gstd_datastore datastore;
+    gstd_oidc_runtime oidc;
+    gstd_oidc_ports oidc_ports;
+    int oidc_enabled;
     int persistent, helper_output[2];
     unsigned count, index;
     int stage, outcome, detail, allow_initial, resolver_fd, cancel_requested;
@@ -33,7 +40,7 @@ typedef struct {
     struct {
         int initialized, running, has_reply, status, index, reported_ready, observation_failed;
         int exit_observed;
-        int64_t next_due, last_ready[3];
+        int64_t next_due, last_ready[GSTD_ROLE_COUNT];
     } monitor;
     int64_t deadline_ms, next_health_ms;
     gstd_bootstrap_graph graph;
@@ -63,4 +70,10 @@ int gstd_deployment_observers_close(gstd_deployment *);
  * Keep actor and capabilities after ready/failure for owned stop/reconciliation.
  * Never dispose a live actor or release references merely on a terminal result. */
 int gstd_deployment_poll(gstd_deployment *, int cancellation_fd);
+/* Fixed service start order (providers before core); helpers are separately
+ * owned and never counted as ready services. Used by cleanup/monitoring. */
+unsigned gstd_deployment_service_count(const gstd_deployment *);
+gstd_deployment_workload *gstd_deployment_service(gstd_deployment *, unsigned);
+unsigned gstd_deployment_owned_workload_count(const gstd_deployment *);
+gstd_deployment_workload *gstd_deployment_owned_workload(gstd_deployment *, unsigned);
 #endif

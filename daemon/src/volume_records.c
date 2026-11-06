@@ -365,7 +365,7 @@ gstd_accept_status gstd_scylla_volume_reserve(sqlite3 *db, const char *operation
             "WHERE o.operation_id=? AND o.caller_uid=? AND o.method='deployment.start' "
             "AND o.state IN ('accepted','running') AND d.last_operation_id=o.operation_id "
             "AND d.desired_state='running' AND d.recovery='normal' AND d.writer_ownership='held' "
-            "AND d.profile_id='core' AND d.profile_version='1' AND "
+            "AND d.profile_id='core' AND d.profile_version IN ('1','2') AND "
             "json_extract(o.intent,'$.datastore')='scylladb'");
     if (!s)
         return GSTD_ACCEPT_DATABASE;

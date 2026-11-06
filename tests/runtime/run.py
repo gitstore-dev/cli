@@ -129,9 +129,22 @@ if args.scenario in ("core-offline", "exp-004b-local", "clean-install", "recover
     checks.append("offlineLayouts")
 if args.scenario == "exp-003b" and (not selected or selected == "test_wrong_platform_offline_input_never_activates"):
     checks.append("wrongPlatformLayouts")
+if args.scenario == "optional" and (not selected or selected.startswith("test_public_")):
+    layouts = settings.get("offlineOidcLayouts")
+    if not isinstance(layouts, dict) or set(layouts) != {
+            "api", "git", "controller", "oidc-smtp", "oidc-hydra", "oidc-kratos", "oidc-ui", "oidc-bridge"}:
+        unavailable("Select the three core and five pinned OIDC offline layout inputs")
+    checks.append("offlineOidcLayouts")
+if args.scenario == "optional" and (not selected or selected == "test_public_combined_persistent_graph"):
+    try:
+        path = Path(settings["offlineScyllaLayout"])
+        if not path.is_absolute() or path.is_symlink() or not (path / "oci-layout").is_file() or not (path / "index.json").is_file():
+            unavailable("Select the pinned Scylla offline layout for persistent OIDC composition")
+    except (KeyError, OSError, TypeError):
+        unavailable("Select the pinned Scylla offline layout for persistent OIDC composition")
 for name in checks:
     layouts = settings.get(name)
-    if not isinstance(layouts, dict) or set(layouts) != {"api", "git", "controller"}:
+    if not isinstance(layouts, dict) or (name != "offlineOidcLayouts" and set(layouts) != {"api", "git", "controller"}):
         unavailable("Select all three verified offline layout inputs required by this scenario")
     for value in layouts.values():
         try:

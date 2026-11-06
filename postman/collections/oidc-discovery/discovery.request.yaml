@@ -1,0 +1,13 @@
+$kind: http-request
+method: GET
+url: '{{issuer_base}}/.well-known/openid-configuration'
+order: 1000
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("HTTP success", () => pm.response.to.have.status(200));
+      pm.test("Exact selected issuer", () => pm.expect(pm.response.json().issuer).to.eql(pm.variables.get("issuer_base") + "/"));
+      pm.test("Fixed selected JWKS URI", () => pm.expect(pm.response.json().jwks_uri).to.eql(pm.variables.get("issuer_base") + "/.well-known/jwks.json"));

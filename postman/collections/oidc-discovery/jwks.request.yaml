@@ -1,0 +1,22 @@
+$kind: http-request
+method: GET
+url: '{{issuer_base}}/.well-known/jwks.json'
+order: 2000
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("HTTP success", () => pm.response.to.have.status(200));
+      pm.test("Bounded public RSA signing keys", () => {
+        const keys = pm.response.json().keys;
+        pm.expect(keys).to.be.an("array").with.length.within(1, 32);
+        for (const key of keys) {
+          pm.expect(key.kty).to.eql("RSA"); pm.expect(key.use).to.eql("sig"); pm.expect(key.alg).to.eql("RS256");
+          pm.expect(key.kid).to.be.a("string").with.length.within(1, 256);
+          pm.expect(key.n).to.match(/^[A-Za-z0-9_-]{342,1366}$/);
+          pm.expect(key.e).to.match(/^[A-Za-z0-9_-]{1,16}$/);
+          for (const field of ["d", "p", "q", "dp", "dq", "qi", "oth", "k"]) pm.expect(key).not.to.have.property(field);
+        }
+      });

@@ -8,8 +8,11 @@ typedef struct {
     int stage, outcome;
 } gstd_helper_owner;
 /* Parent-only journaled helper dispatch. Borrow target/context inputs through
- * close. Requires an accepted persistent start, prepared helper scope, running
- * datastore and committed namespace attachments. No transaction may be open.
+ * close. Requires an accepted persistent start or core/2 OIDC start,
+ * prepared helper scope and committed namespace attachments. Core helpers bind
+ * the running datastore; OIDC migrations bind the correct canonical provider
+ * data/writer capabilities. Caller retains those leases through observed native
+ * deletion. No transaction may be open.
  * Dispatch is committed before CREATE, kernel identity before START, observed
  * deletion before exposing success/retry permission. No graph step is implied. */
 int gstd_helper_owner_begin(sqlite3 *, const gstd_deployment_target *, const char *configuration_id,

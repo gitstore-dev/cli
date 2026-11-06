@@ -31,7 +31,7 @@ int main(void) {
     CHECK(snprintf(path, sizeof(path), "%s/state.db", root) > 0);
     CHECK(!gstd_state_open(path, &db));
     CHECK(integer(db, "PRAGMA max_page_count") == 32000 && integer(db, "PRAGMA page_size") == 4096);
-    CHECK(integer(db, "PRAGMA user_version") == 5 && integer(db, "PRAGMA synchronous") == 3 &&
+    CHECK(integer(db, "PRAGMA user_version") == 6 && integer(db, "PRAGMA synchronous") == 3 &&
           integer(db, "PRAGMA foreign_keys") == 1);
     CHECK(sqlite3_exec(db, "CREATE TABLE t(n);BEGIN;INSERT INTO t VALUES(1);ROLLBACK;", NULL, NULL,
                        NULL) == SQLITE_OK);
@@ -47,11 +47,11 @@ int main(void) {
     CHECK(sqlite3_open(path, &db) == SQLITE_OK);
     CHECK(sqlite3_exec(db, "UPDATE daemon_store SET owner_uid=owner_uid-1", NULL, NULL, NULL) ==
           SQLITE_OK);
-    CHECK(sqlite3_exec(db, "PRAGMA user_version=6", NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(sqlite3_exec(db, "PRAGMA user_version=7", NULL, NULL, NULL) == SQLITE_OK);
     sqlite3_close(db);
     db = NULL;
     CHECK(gstd_state_open(path, &db) != 0 && db == NULL);
-    CHECK(sqlite3_open(path, &db) == SQLITE_OK && integer(db, "PRAGMA user_version") == 6);
+    CHECK(sqlite3_open(path, &db) == SQLITE_OK && integer(db, "PRAGMA user_version") == 7);
     sqlite3_close(db);
     db = NULL;
     CHECK(snprintf(link, sizeof(link), "%s/link.db", root) > 0);

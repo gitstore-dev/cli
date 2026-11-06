@@ -143,7 +143,8 @@ static json_t *capabilities(void) {
     }
     if (gstd_runtime_manager_capable(runtime_manager)) {
         json_t *names = json_object_get(result, "capabilities");
-        if (json_array_append_new(names, json_string("deployment.start")) ||
+        if (json_array_append_new(names, json_string("deployment.oidc")) ||
+            json_array_append_new(names, json_string("deployment.start")) ||
             json_array_append_new(names, json_string("deployment.stop")) ||
             json_array_append_new(names, json_string("operation.cancel")) ||
             json_array_append_new(names, json_string("migration.start"))) {

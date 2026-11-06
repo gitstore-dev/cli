@@ -242,6 +242,13 @@ json_t *gstd_oidc_execution_build(const gstd_execution_inputs *input) {
         json_object_set(spec, "process", process) || json_object_set(spec, "linux", linux) ||
         json_object_set(spec, "mounts", mounts))
         goto fail;
+#ifdef GITSTORED_INSTRUMENTED
+    /* Match the core diagnostic lane: ASan's shadow mapping is present in the
+     * libcrun init before payload exec. Keep physical cgroup/core limits; the
+     * ordinary build independently enforces the finite address-space bound. */
+    if (json_array_remove(json_object_get(process, "rlimits"), 0))
+        goto fail;
+#endif
     json_decref(process);
     json_decref(linux);
     json_decref(mounts);

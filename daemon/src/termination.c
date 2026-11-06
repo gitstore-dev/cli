@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include "termination.h"
+#include "oidc_profile.h"
 #include "gitstored/protocol.h"
 #include "native_exit.h"
 #include <limits.h>
@@ -64,6 +65,9 @@ int gstd_termination_read(sqlite3 *db, const gstd_deployment_target *target, con
         !text(native, "kind", "libcrun") ||
         !(text(native, "component", "git") || text(native, "component", "api") ||
           text(native, "component", "controller") ||
+          (gstd_oidc_component(json_string_value(json_object_get(native, "component"))) &&
+           !gstd_oidc_core_manifest_check(target->manifest) &&
+           json_object_get(target->manifest, "oidcProfileDigest")) ||
           (text(native, "component", "scylladb") &&
            text(target->manifest, "datastore", "scylladb"))) ||
         !boot || json_string_length(json_object_get(native, "bootId")) != 36 ||

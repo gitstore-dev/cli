@@ -22,7 +22,9 @@ int gstd_helper_owner_begin(sqlite3 *db, const gstd_deployment_target *target,
     if (sqlite3_exec(db, "BEGIN IMMEDIATE", NULL, NULL, NULL) != SQLITE_OK)
         return -1;
     int reserved =
-        target->migration
+        context->registered_inputs->purpose == GSTD_EXEC_OIDC_MIGRATE
+            ? gstd_deployment_oidc_helper_reserve(db, target, configuration, context)
+            : target->migration
             ? gstd_migration_helper_reserve(db, target, configuration, context->backend_id,
                                             context->registered_inputs->purpose)
             : gstd_deployment_helper_reserve(db, target, configuration, context->backend_id,

@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "scope": "Private helper-owner OIDC migration coordinator and fixed health consumers only. Public orchestration, issuer integration and full stop/recovery remain gated.",
+  "runs": [
+    {
+      "variant": "daemon-native",
+      "mode": "native",
+      "root": "/home/gitstorefixture/experiments/oidc-coordination-final-d2h0u9vp/native",
+      "exitCode": 0,
+      "elapsedSeconds": 3.691,
+      "result": {
+        "nativeMigrations": 4,
+        "retainedVolumes": true,
+        "dispatchBeforeCreate": true,
+        "identityBeforeStart": true,
+        "observedNativeDeletion": true,
+        "repeatedDispatchRejected": true
+      },
+      "diagnostic": "",
+      "probeSha256": "70c840e4fc853cf377ab58c730ad0418b4ed4acd04ecbef3b8ad7565f71e94b7",
+      "sqliteIntegrity": [
+        {
+          "role": "oidc-hydra",
+          "integrity": "ok"
+        },
+        {
+          "role": "oidc-kratos",
+          "integrity": "ok"
+        }
+      ]
+    },
+    {
+      "variant": "daemon-native",
+      "mode": "journal",
+      "root": "/home/gitstorefixture/experiments/oidc-coordination-final-d2h0u9vp/journal",
+      "exitCode": 0,
+      "elapsedSeconds": 0.313,
+      "result": {
+        "providerJournals": 2,
+        "rollbackAllowsFirstDispatch": true,
+        "repeatedDispatchRejected": true,
+        "wrongProviderWriterRejected": true,
+        "missingAttachmentRejected": true,
+        "laterGenerationReplayRejected": true,
+        "nativeMigrationExecuted": false
+      },
+      "diagnostic": "",
+      "probeSha256": "70c840e4fc853cf377ab58c730ad0418b4ed4acd04ecbef3b8ad7565f71e94b7"
+    },
+    {
+      "variant": "daemon-native-sanitized",
+      "mode": "native",
+      "root": "/home/gitstorefixture/experiments/oidc-coordination-final-s1inroww/native",
+      "exitCode": 0,
+      "elapsedSeconds": 4.739,
+      "result": {
+        "nativeMigrations": 4,
+        "retainedVolumes": true,
+        "dispatchBeforeCreate": true,
+        "identityBeforeStart": true,
+        "observedNativeDeletion": true,
+        "repeatedDispatchRejected": true
+      },
+      "diagnostic": "",
+      "probeSha256": "e0a9ee8704b63f281d2946c13fee5428ebb05edfc39ff9216e7a4b50637923d6",
+      "sqliteIntegrity": [
+        {
+          "role": "oidc-hydra",
+          "integrity": "ok"
+        },
+        {
+          "role": "oidc-kratos",
+          "integrity": "ok"
+        }
+      ]
+    },
+    {
+      "variant": "daemon-native-sanitized",
+      "mode": "journal",
+      "root": "/home/gitstorefixture/experiments/oidc-coordination-final-s1inroww/journal",
+      "exitCode": 0,
+      "elapsedSeconds": 0.935,
+      "result": {
+        "providerJournals": 2,
+        "rollbackAllowsFirstDispatch": true,
+        "repeatedDispatchRejected": true,
+        "wrongProviderWriterRejected": true,
+        "missingAttachmentRejected": true,
+        "laterGenerationReplayRejected": true,
+        "nativeMigrationExecuted": false
+      },
+      "diagnostic": "",
+      "probeSha256": "e0a9ee8704b63f281d2946c13fee5428ebb05edfc39ff9216e7a4b50637923d6"
+    }
+  ],
+  "controlledHealth": {
+    "asynchronousRoles": 5,
+    "workerReceipt": "/home/gitstorefixture/experiments/oidc-role-health-3w1cexu7/result.json",
+    "scope": "Actual asynchronous private worker calls in an owned namespace against maintained Postman mock; synthetic material only",
+    "collection": {
+      "requests": 5,
+      "assertions": 6,
+      "failures": 0,
+      "exitCode": 0,
+      "output": "/home/gitstorefixture/experiments/oidc-health-collection-auo_scaf/collection.txt"
+    },
+    "specSyntaxLint": "passed",
+    "collectionLint": "5 requests; zero errors and warnings",
+    "postmanVersion": "1.86.0",
+    "cloudPublication": "not requested; signed out; artifacts stay local"
+  },
+  "regressions": {
+    "gccRelease": {
+      "passed": 14,
+      "failed": 0,
+      "log": "/home/gitstorefixture/experiments/source/build/oidc-current-tests.log"
+    },
+    "clangAsanUbsan": {
+      "passed": 14,
+      "failed": 0,
+      "log": "/home/gitstorefixture/experiments/source/build/oidc-current-sanitized-tests.log"
+    },
+    "rust": {
+      "toolchain": "1.96.0",
+      "fmt": "passed",
+      "clippy": "passed",
+      "testPassed": 85,
+      "ignored": 13,
+      "build": "passed",
+      "note": "The initial sandboxed socket tests were denied; the unrestricted local-socket rerun passed."
+    },
+    "publicOptionalGate": {
+      "testsPassed": 2,
+      "exitCode": 0,
+      "receipt": "/home/gitstorefixture/experiments/runtime-run-optional-uzd5ssi1.json",
+      "scope": "Existing component-specific preflight failures; no public OIDC service acceptance"
+    }
+  },
+  "failedRunsRetained": [
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-journal-sanitized-4wdq5jso",
+      "reason": "OIDC OCI address limit prevented ASan pre-exec mmap; incomplete dispatch remains retained, not a successful cleanup receipt"
+    },
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-native-diagnostic-8t7gs5c3",
+      "reason": "Same pre-exec mmap failure, confirmed through protected migration-only worker diagnostics"
+    },
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-health-collection-6qvztsiw",
+      "reason": "First collection invocation included four stale guest requests; six current assertions passed but four stale unresolved URLs failed. Isolated current five-request collection rerun passed."
+    },
+    {
+      "root": "/home/gitstorefixture/experiments/oidc-native-diagnostic-aagskw6g",
+      "reason": "Additional pre-fix native sanitizer mmap failure; original dispatched ownership retained"
+    }
+  ],
+  "remaining": [
+    "Public deployment actor preparation/asset/endpoint orchestration",
+    "Five-service startup and durable enrollment with current native/network/writer proofs",
+    "API issuer/client/audience overlay and current discovery/JWKS checks",
+    "Service log redaction and all inspection/stop/restoration roles",
+    "Cancellation, lost ACK, helper ACK racing STOP and manager-loss reconciliation",
+    "Public gs/daemon lifecycle acceptance; native amd64 and release/platform gates"
+  ],
+  "roleLayout": {
+    "scope": "Fixed provider/core service order and bounded role storage; production core begin/recovery preparation derives identities from the immutable manifest. OIDC public activation fence remains unchanged.",
+    "test": "fixed_deployment_service_roles",
+    "coverage": [
+      "amd64 and arm64 manifests",
+      "core two-service selection",
+      "standalone five-provider selection with no implicit core",
+      "combined seven/eight-service selections",
+      "duplicate-image rejection",
+      "fixed health/provider-volume mappings"
+    ],
+    "gccReleaseSelection": {
+      "passed": 15,
+      "failed": 0,
+      "log": "/home/gitstorefixture/experiments/source/build/oidc-role-layout-tests.log"
+    },
+    "clangAsanUbsanSelection": {
+      "passed": 15,
+      "failed": 0,
+      "log": "/home/gitstorefixture/experiments/source/build/oidc-role-layout-sanitized-tests.log"
+    },
+    "publicCoreRegression": {
+      "case": "test_public_graphql_git_and_retained_restart",
+      "exitCode": 0,
+      "elapsedSeconds": 72.813,
+      "receipt": "/home/gitstorefixture/experiments/runtime-run-clean-install-tp2brb2w.json",
+      "scope": "Actual public gs/daemon core startup, GraphQL/Git, owned stop and retained restart against verified offline inputs"
+    }
+  },
+  "sourceSha256": {
+    "daemon/src/bootstrap_http.c": "4492baa353ac62b8786a2a6cbe1870713855239a487cb9f86966c1dfc770b48e",
+    "daemon/src/bootstrap_job.c": "30f4c54cfeebff1245a8d75c73536793cd79b9ec1e767cc77703e6a5e61bbb7a",
+    "daemon/src/deployment_records.c": "32145584276bfc42dc45bee488707e0747cc49e734c34bb1acb71d76bb7e0740",
+    "daemon/src/helper_owner.c": "d4c9e343714d820b3a116923cf7fcdce712d918af3be95fbae9c4871d2efc261",
+    "daemon/src/oidc_execution.c": "bbc680ade8e564d9bd0338f2b14a8935b71f0df09dcb0e26a0ee957117c1aabe",
+    "daemon/src/workload_roles.c": "92a66971b22af69b8b641141d22cde01b22a16ad073ebf7f08e1c84bd1e17890",
+    "daemon/src/deployments.c": "9549f09d1d5bb392496329362da4a82148531593ce3324cb09a410e20f4230af",
+    "daemon/src/deployments.h": "e2d28cedf7ce1b85531c20e35b41696c498a6d9765781af670fbe5c06783957d"
+  },
+  "baseGitCommit": "6fcf33d7e1c0ff6b62ae7b30631453da4b4a0eb7"
+}

@@ -3,11 +3,15 @@
 #include "gitstored/state.h"
 #include "oidc_profile.h"
 #include "oidc_setup.h"
+#include "oidc_migration_journal_probe.h"
 #include <fcntl.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/prctl.h>
 #include <unistd.h>
 #define CHECK(x)                                                                                   \
     do {                                                                                           \
@@ -76,8 +80,10 @@ static int finish(gstd_oidc_setup *setup, int cancel, int success) {
     return setup->worker.worker ? -1 : 0;
 }
 int main(int argc, char **argv) {
-    CHECK(argc == 3 && argv[1][0] == '/' && argv[2][0] == '/' && geteuid());
-    alarm(90);
+    CHECK((argc == 3 || (argc == 4 && !strcmp(argv[3], "--migration-journal")) ||
+           (argc == 5 && !strcmp(argv[3], "--migration-native") && argv[4][0] == '/')) && argv[1][0] == '/' && argv[2][0] == '/' && geteuid());
+    alarm(180);
+    CHECK(!prctl(PR_SET_CHILD_SUBREAPER, 1, 0, 0, 0));
     gstd_json_initialize();
     int root = open(argv[1], O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW),
         broker = open(argv[2], O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
@@ -136,6 +142,24 @@ int main(int argc, char **argv) {
                                                .broker_fd = broker,
                                                .volume_root = owner};
     gstd_oidc_ports ports = {24001, 24002, 24003, 24004, 24005};
+    if (argc >= 4) {
+        int sockets[5];
+        uint16_t selected[5];
+        for (unsigned i = 0; i < 5; i++) {
+            sockets[i] = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+            struct sockaddr_in address = {.sin_family = AF_INET,
+                                          .sin_addr.s_addr = htonl(INADDR_LOOPBACK)};
+            socklen_t size = sizeof(address);
+            CHECK(sockets[i] >= 3 &&
+                  !bind(sockets[i], (struct sockaddr *)&address, sizeof(address)) &&
+                  !getsockname(sockets[i], (struct sockaddr *)&address, &size));
+            selected[i] = ntohs(address.sin_port);
+        }
+        ports = (gstd_oidc_ports){selected[0], selected[1], selected[2], selected[3], selected[4]};
+        for (unsigned i = 0; i < 5; i++)
+            close(sockets[i]);
+    }
+
     gstd_oidc_setup setup = {0};
     CHECK(!operation(db, &target, "first", 1));
     gstd_deployment_environment invalid = environment;
@@ -149,6 +173,45 @@ int main(int argc, char **argv) {
         condition(db, "SELECT count(*)=0 FROM resource_ownership WHERE resource_type='workload'"));
     CHECK(condition(db, "SELECT readiness='pending' AND observed_generation=0 FROM deployments "
                         "WHERE deployment_id='oidc-setup-fixture'"));
+    if (argc >= 4) {
+        const char *native_source = argc == 5 ? argv[4] : NULL;
+        if (native_source) {
+            environment.native_fd = directory(root, "native-state");
+            CHECK(environment.native_fd >= 3);
+        }
+        CHECK(!gstd_test_oidc_migration_journal(&environment, &target, &setup, 1, native_source));
+        CHECK(!gstd_oidc_setup_close(&setup));
+        /* No native CREATE was invoked in this metadata-only fixture. Simulate
+         * a later admitted generation to prove the dispatch journal still fences
+         * replay even if its old resource owners were explicitly released. */
+        CHECK(!operation(db, &target, "next", 2));
+        CHECK(!gstd_oidc_setup_begin(&environment, &target, &ports, &setup) &&
+              !finish(&setup, -1, 1));
+        CHECK(!gstd_test_oidc_migration_journal(&environment, &target, &setup, native_source ? 1 : 0, native_source));
+        CHECK(!gstd_oidc_setup_close(&setup));
+        gstd_volume_root_close(&owner);
+        gstd_runtime_settings_clear(&settings);
+        gstd_deployment_target_clear(&target);
+        CHECK(sqlite3_close(db) == SQLITE_OK);
+        close(credentials);
+        close(resources);
+        close(volumes);
+        close(broker);
+        close(root);
+        if (environment.native_fd >= 3)
+            close(environment.native_fd);
+        if (native_source) {
+            puts("{\"nativeMigrations\":4,\"retainedVolumes\":true,"
+                 "\"dispatchBeforeCreate\":true,\"identityBeforeStart\":true,"
+                 "\"observedNativeDeletion\":true,\"repeatedDispatchRejected\":true}");
+            return 0;
+        }
+        puts("{\"providerJournals\":2,\"rollbackAllowsFirstDispatch\":true,"
+             "\"repeatedDispatchRejected\":true,\"wrongProviderWriterRejected\":true,"
+             "\"missingAttachmentRejected\":true,\"laterGenerationReplayRejected\":true,"
+             "\"nativeMigrationExecuted\":false}");
+        return 0;
+    }
     gstd_volume_identity original[2] = {setup.volumes[0].identity, setup.volumes[1].identity};
     char ids[2][65];
     strcpy(ids[0], setup.volume_ids[0]);

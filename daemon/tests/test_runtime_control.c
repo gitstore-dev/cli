@@ -78,6 +78,22 @@ static int deny_job_completion(void *data, int action, const char *table, const 
 int main(void) {
     gstd_json_initialize();
     gstd_deployment actor = {.count = 3};
+    gstd_deployment optional = {.oidc_enabled = 1};
+    CHECK(gstd_cancellation_can_notify(&optional));
+    optional.oidc.migration.stage = 1;
+    CHECK(!gstd_cancellation_can_notify(&optional));
+    optional.oidc.migration.stage = 0;
+    optional.oidc.native_job.worker = 1;
+    CHECK(!gstd_cancellation_can_notify(&optional));
+    optional.oidc.workloads[0].native.expected_pid = 1;
+    CHECK(gstd_cancellation_can_notify(&optional));
+    optional.oidc.native_job.worker = 0;
+    optional.oidc.http.worker = 1;
+    optional.oidc.http.kind = GSTD_BOOT_JOB_OIDC_HTTP;
+    optional.oidc.http.oidc_action = GSTD_OIDC_HTTP_CREATE;
+    CHECK(!gstd_cancellation_can_notify(&optional));
+    optional.oidc.http.oidc_action = GSTD_OIDC_HTTP_INSPECT;
+    CHECK(gstd_cancellation_can_notify(&optional));
     CHECK(!gstd_cancellation_can_notify(NULL));
     CHECK(gstd_cancellation_can_notify(&actor));
     actor.bootstrap.worker = 123;

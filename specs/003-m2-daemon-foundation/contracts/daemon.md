@@ -102,3 +102,57 @@ exhausted retry budget, newer operator intent or manager loss ends automatic
 retries. Recovery retains normal ownership checks and requires explicit operator
 stop/start; it does not replay an unobserved automatic replacement. No new wire
 method, arbitrary runtime selection or migration retry is introduced.
+
+### OIDC service log selectors
+
+The optional runtime keeps `oidc` as the aggregate log selector and adds the five
+fixed service selectors `oidc-smtp`, `oidc-hydra`, `oidc-kratos`, `oidc-ui` and
+`oidc-bridge`. Aggregate replay/subscriptions include those five roles; each
+record retains its precise service component. Unknown selectors remain invalid.
+The private collector has at most nine service inputs (core three, Scylla one,
+OIDC five), with the existing per-deployment/global storage and stream bounds.
+It reads the complete OIDC material family under its separate broker purpose,
+including the client secret, before ingesting any provider output. Standalone
+OIDC does not read bootstrap credentials. Serving also requires `deployment.oidc` and the owned runtime proofs.
+
+#### Combined OIDC API configuration
+
+The core/2 coordinator supplies the selected loopback issuer port and the
+same public client ID/audience used by the enrollment journal to the isolated core
+configuration worker. The worker adds `oidc-jwt` before `anonymous` in the existing
+authentication chain and writes `[api.auth.oidc_jwt]` with `issuer_uri` equal to
+`http://127.0.0.1:<selected issuer port>/`, `client_id`, and `audience`. No client
+secret is mounted in the API. The immutable configuration owner receipt binds
+these three public values; changed ports or client mappings reject reuse. The
+validator input includes the same table once. Core/1 has no OIDC configuration.
+This maps GitStore revision `06152d193e854bc643fa884daa8b9f30b0d75d0f`,
+`gitstore-api/internal/config/config.go` and `internal/auth/provider/oidcjwt/provider.go`.
+Configuration preparation alone is not discovery/JWKS readiness or public support.
+
+For a current verified core/2 OIDC generation, deployment inspection projects the
+owned loopback forwards as `oidcIssuer` (with a trailing slash), `oidcBridge`,
+`identity`, `identityUi` and `mail` HTTP URLs. A combined selection also projects
+`api` and `git`; a standalone selection has only the five provider URLs. All five
+provider ports must be present, valid and distinct. Partial tuples, foreign hosts,
+private/admin ports, unknown fields, unready or obsolete generations expose no
+endpoint projection. These serving URLs imply no browser/device login command or
+Admin/Storefront capability.
+
+Core/2 selects the registered optional OIDC graph explicitly. `components:["oidc"]`
+selects its five provider images without API/Git/controller; core selections close
+API/Git dependencies, and adding `oidc` adds exactly the five providers. Core/1
+keeps its original selection/digest/cache identities. Validation remains read-only
+and reports immutable assets, configuration roles and unperformed startup stages.
+No missing cache/input permits downloading without explicit provisioning consent.
+A runtime-capable manager advertises `deployment.oidc` for clients that require this
+mapping; older managers fail the capability check before submission. Admin and
+Storefront keep their component-specific external prerequisites.
+
+
+### Final provider readiness
+
+Core/2 performs a bounded read-only provider/discovery/JWKS sweep after all selected
+services start. Its 30-second window includes the readiness commit; it cannot
+reuse provider health from before slow Scylla/API/controller startup. A stalled
+live bridge keeps readiness pending until fresh checks succeed. Start admission
+checks all unresolved owners and recovery state even without a repository volume.

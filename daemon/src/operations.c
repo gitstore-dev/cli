@@ -271,6 +271,24 @@ gstd_accept_status gstd_accept(sqlite3 *db, const gstd_request *r, const json_t 
                                           : GSTD_ACCEPT_OWNERSHIP_UNCERTAIN;
             goto rollback;
         }
+        /* Standalone provider graphs have no repository volume. Every prior
+         * owner and the deployment recovery state must be settled before a new
+         * generation, independently of that optional core-volume identity. */
+        s = prepare(db, "SELECT 1 FROM deployments d WHERE d.deployment_id=?1 AND "
+                        "(d.recovery!='normal' OR d.writer_ownership!='released' OR EXISTS("
+                        "SELECT 1 FROM resource_ownership r WHERE r.deployment_id=d.deployment_id "
+                        "AND r.ownership_state!='released'))");
+        if (!s)
+            goto rollback;
+        text(s, 1, deployment);
+        step = sqlite3_step(s);
+        sqlite3_finalize(s);
+        if (step == SQLITE_ROW) {
+            status = GSTD_ACCEPT_OWNERSHIP_UNCERTAIN;
+            goto rollback;
+        }
+        if (step != SQLITE_DONE)
+            goto rollback;
         if (volume) {
             s = prepare(db, "SELECT ownership_state FROM resource_ownership WHERE resource_id=?");
             if (!s)

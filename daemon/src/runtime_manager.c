@@ -12,6 +12,7 @@
 #include "migration_recovery.h"
 #include "migration_runtime.h"
 #include "monitor.h"
+#include "oidc_profile.h"
 #include "recovery.h"
 #include "restart.h"
 #include "restoration.h"
@@ -218,21 +219,9 @@ int gstd_runtime_manager_assess(gstd_runtime_manager *m, json_t *assessment) {
     for (size_t i = 0; i < json_array_size(assets); i++) {
         json_t *asset = json_array_get(assets, i);
         const char *name = json_string_value(json_object_get(asset, "component"));
-        if (!name || (strcmp(name, "api") && strcmp(name, "git") && strcmp(name, "controller") &&
-                      strcmp(name, "scylladb")))
-            return -1;
-        unsigned role = !strcmp(name, "api")          ? 0
-                        : !strcmp(name, "git")        ? 1
-                        : !strcmp(name, "controller") ? 2
-                                                      : 3;
-        json_t *single = json_pack("[s]", !strcmp(name, "scylladb") ? "api" : name),
-               *full = single ? gstd_asset_manifest_for_datastore(
-                                    single, architecture(),
-                                    !strcmp(name, "scylladb") ? "scylladb" : "memdb")
-                              : NULL,
-               *manifest = full ? gstd_asset_manifest_component(full, name) : NULL;
-        json_decref(full);
-        json_decref(single);
+        const json_t *full =
+            json_object_get(json_object_get(assessment, "effectivePlan"), "assetManifest");
+        json_t *manifest = name ? gstd_asset_manifest_component(full, name) : NULL;
         char key[65];
         int valid = manifest && !gstd_fingerprint(manifest, key);
         json_decref(manifest);
@@ -250,73 +239,65 @@ int gstd_runtime_manager_assess(gstd_runtime_manager *m, json_t *assessment) {
         sqlite3_finalize(s);
         if (!cached && step != SQLITE_DONE)
             return -1;
-        int offline = m->environment.settings->offline_fds[role] >= 3;
+        int offline = gstd_runtime_settings_image(m->environment.settings, name) >= 3;
         if (json_object_set_new(asset, "cacheCandidate", json_boolean(cached)) ||
             json_object_set_new(asset, "offlineInput", json_boolean(offline)) ||
             json_object_set_new(asset, "requiresDownload", json_boolean(!cached && !offline)) ||
-            json_object_set_new(
-                asset, "downloadLimitBytes",
-                json_integer((!strcmp(name, "scylladb") ? UINT64_C(512) : UINT64_C(128)) * 1024 *
-                             1024)) ||
-            json_object_set_new(
-                asset, "mergeLimitBytes",
-                json_integer((!strcmp(name, "scylladb") ? UINT64_C(1024) : UINT64_C(512)) * 1024 *
-                             1024)))
+            json_object_set_new(asset, "downloadLimitBytes",
+                                json_integer((!strcmp(name, "scylladb") || gstd_oidc_component(name)
+                                                  ? UINT64_C(512)
+                                                  : UINT64_C(128)) *
+                                             1024 * 1024)) ||
+            json_object_set_new(asset, "mergeLimitBytes",
+                                json_integer((gstd_oidc_component(name)   ? UINT64_C(2048)
+                                              : !strcmp(name, "scylladb") ? UINT64_C(1024)
+                                                                          : UINT64_C(512)) *
+                                             1024 * 1024)))
             return -1;
     }
     return 0;
 }
-static int profile(gstd_runtime_manager *m) {
-    json_t *components = gstd_profile_components(NULL),
-           *manifest = components ? gstd_asset_manifest(components, architecture()) : NULL;
+static int profile(gstd_runtime_manager *m, const char *version) {
+    json_t *components = gstd_profile_components_for(version, NULL),
+           *manifest = components
+                           ? gstd_profile_manifest(version, components, architecture(), "memdb")
+                           : NULL;
     json_decref(components);
     if (!manifest)
         return -1;
     sqlite3_stmt *s = NULL;
     int ok = sqlite3_prepare_v2(m->database,
-                                "INSERT INTO profiles VALUES('core','1',?,?,?) ON "
+                                "INSERT INTO profiles VALUES('core',?,?,?,?) ON "
                                 "CONFLICT(profile_id,profile_version) DO NOTHING",
                                 -1, &s, NULL) == SQLITE_OK;
     char platform[32];
     snprintf(platform, sizeof(platform), "linux-%s", architecture());
     if (ok) {
-        sqlite3_bind_text(s, 1, json_string_value(json_object_get(manifest, "serverRevision")), -1,
+        sqlite3_bind_text(s, 1, version, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(s, 2, json_string_value(json_object_get(manifest, "serverRevision")), -1,
                           SQLITE_TRANSIENT);
-        sqlite3_bind_text(s, 2, json_string_value(json_object_get(manifest, "profileDigest")), -1,
+        sqlite3_bind_text(s, 3, json_string_value(json_object_get(manifest, "profileDigest")), -1,
                           SQLITE_TRANSIENT);
-        sqlite3_bind_text(s, 3, platform, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(s, 4, platform, -1, SQLITE_TRANSIENT);
         ok = sqlite3_step(s) == SQLITE_DONE;
     }
     sqlite3_finalize(s);
     json_decref(manifest);
     return ok ? 0 : -1;
 }
-static int consent(gstd_runtime_manager *m, const json_t *components, const json_t *params) {
+static int consent(gstd_runtime_manager *m, const json_t *manifest, const json_t *params) {
     if (json_is_true(json_object_get(params, "allowProvision")))
         return 1;
-    const char *datastore = json_string_value(json_object_get(params, "datastore"));
-    int persistent = datastore && !strcmp(datastore, "scylladb");
-    for (size_t i = 0; i < json_array_size(components) + (size_t)persistent; i++) {
-        const char *name = i == json_array_size(components)
-                               ? "scylladb"
-                               : json_string_value(json_array_get(components, i));
-        unsigned role = !strcmp(name, "api")          ? 0
-                        : !strcmp(name, "git")        ? 1
-                        : !strcmp(name, "controller") ? 2
-                                                      : 3;
-        if (m->environment.settings->offline_fds[role] >= 3)
+    const json_t *images = json_object_get(manifest, "images");
+    for (size_t i = 0; i < json_array_size(images); i++) {
+        const char *name =
+            json_string_value(json_object_get(json_array_get(images, i), "component"));
+        if (gstd_runtime_settings_image(m->environment.settings, name) >= 3)
             continue;
-        json_t *single = json_pack("[s]", !strcmp(name, "scylladb") ? "api" : name),
-               *full = single ? gstd_asset_manifest_for_datastore(
-                                    single, architecture(),
-                                    !strcmp(name, "scylladb") ? "scylladb" : "memdb")
-                              : NULL,
-               *manifest = full ? gstd_asset_manifest_component(full, name) : NULL;
-        json_decref(full);
-        json_decref(single);
+        json_t *single = gstd_asset_manifest_component(manifest, name);
         char key[65];
-        int valid = manifest && !gstd_fingerprint(manifest, key);
-        json_decref(manifest);
+        int valid = single && !gstd_fingerprint(single, key);
+        json_decref(single);
         if (!valid)
             return -1;
         sqlite3_stmt *s = NULL;
@@ -349,36 +330,33 @@ json_t *gstd_runtime_manager_submit(gstd_runtime_manager *m, const gstd_request 
         const char *id = json_string_value(json_object_get(request->params, "profileId")),
                    *version = json_string_value(json_object_get(request->params, "profileVersion")),
                    *datastore = json_string_value(json_object_get(request->params, "datastore"));
-        if (!id || strcmp(id, "core") || !version || strcmp(version, "1") ||
+        if (!id || strcmp(id, "core") || !version || (!gstd_profile_digest_for(version)) ||
             (datastore && strcmp(datastore, "memdb") && strcmp(datastore, "scylladb")))
             return error_value("INVALID_ARGUMENT");
-        components = gstd_profile_components(json_object_get(request->params, "components"));
+        components =
+            gstd_profile_components_for(version, json_object_get(request->params, "components"));
         if (!components)
             return error_value("INVALID_ARGUMENT");
-        json_t *selected_manifest = gstd_asset_manifest_for_datastore(
-            components, architecture(), datastore ? datastore : "memdb");
+        json_t *selected_manifest = gstd_profile_manifest(version, components, architecture(),
+                                                          datastore ? datastore : "memdb");
         if (!selected_manifest) {
             json_decref(components);
             return error_value("INVALID_ARGUMENT");
         }
-        json_decref(selected_manifest);
         json_t *approved = json_object_get(request->params, "assetManifestDigest");
-        if (approved) {
-            json_t *manifest = gstd_asset_manifest_for_datastore(components, architecture(),
-                                                                 datastore ? datastore : "memdb");
-            int matches =
-                manifest && json_equal(approved, json_object_get(manifest, "manifestDigest"));
-            json_decref(manifest);
-            if (!matches) {
-                json_decref(components);
-                return error_value("IDEMPOTENCY_CONFLICT");
-            }
+        if (approved &&
+            !json_equal(approved, json_object_get(selected_manifest, "manifestDigest"))) {
+            json_decref(selected_manifest);
+            json_decref(components);
+            return error_value("IDEMPOTENCY_CONFLICT");
         }
         if (!gstd_execution_kernel_supported()) {
+            json_decref(selected_manifest);
             json_decref(components);
             return error_value("UNSUPPORTED_HOST");
         }
-        int permission = consent(m, components, request->params);
+        int permission = consent(m, selected_manifest, request->params);
+        json_decref(selected_manifest);
         if (permission != 1) {
             json_decref(components);
             return error_value(permission ? "INTERNAL" : "PROVISIONING_REQUIRED");
@@ -388,11 +366,17 @@ json_t *gstd_runtime_manager_submit(gstd_runtime_manager *m, const gstd_request 
         char hash[65];
         int ok = identity && !gstd_fingerprint(identity, hash);
         json_decref(identity);
-        if (!ok || profile(m)) {
+        if (!ok || profile(m, version)) {
             json_decref(components);
             return error_value("INTERNAL");
         }
-        snprintf(volume, sizeof(volume), "repo-%.56s", hash);
+        int core = 0;
+        for (size_t i = 0; i < json_array_size(components); i++) {
+            const char *name = json_string_value(json_array_get(components, i));
+            core |= name && strcmp(name, "oidc");
+        }
+        if (core)
+            snprintf(volume, sizeof(volume), "repo-%.56s", hash);
     }
     char operation[65];
     gstd_accept_status accepted =

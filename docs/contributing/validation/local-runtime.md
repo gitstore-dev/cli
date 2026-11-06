@@ -5,23 +5,24 @@ Historical implementation checkpoints for contributors. For usage, read the
 see [contributor documentation](../README.md). Older measurements and claims below
 apply to their recorded checkpoints, not automatically to the current build.
 
-**Updated**: 2026-11-05. **State**: Source preview, incomplete M2. Public core
-memdb and retained Scylla start/readiness/stop, standalone migration, streams and
-owned manager-loss recovery have passed on the explicitly selected Linux arm64
-fixture. Private native backup/restore evidence does not provide a public restore
-command. Current source tests: 52 host C tests pass; 61 Linux sanitized C tests
-pass and one cross-UID test skips; pinned Rust format/clippy/test/build and the
-Rust/C daemon process runner pass. Full remote regression runner also passes.
+**Updated**: 2026-11-06. **State**: Source preview; release qualification remains
+incomplete. Public core memdb/retained Scylla and optional OIDC startup, readiness,
+logs, stop/restart and owned manager-loss reconciliation have passed on the
+explicitly selected Linux arm64 fixture. The non-test production build passed the
+full nine-service graph; standalone OIDC also has sanitizer acceptance. Current
+ordinary and sanitized C suites select 72 tests each, with one cross-UID skip;
+exact results are in the latest evidence below. Pinned Rust format/Clippy/test/build
+checks accompany the implementation.
 
-The [task record](../../../specs/003-m2-daemon-foundation/tasks.md) retains the
-remaining work. Optional OIDC graph/enrollment is not enabled; Admin/Storefront
-mappings are unavailable. Bounded whole-deployment restart supervision now has actual native exit and live-health evidence.
-The [Mac library experiment](../../../runtime/experiments/apple.md) passed bounded
-existing-service/guest checks, but clean host installation, host endpoints and
-public host/guest control remain unqualified. macOS local execution is unsupported.
-No hosted workflow run, Linux amd64 native pass, own signed CLI release or complete
-M2 release support is claimed. Postman initialization still fails with
-`SecItemCopyMatching failed -50` (exit 139); native socket checks are separate.
+The [task record](../../../specs/003-m2-daemon-foundation/tasks.md) distinguishes
+implementation completion from release qualification. Admin UI and Storefront
+retain their component-specific external mapping prerequisites. Private native
+backup/restore does not provide a public restore command. The
+[Mac library experiment](../../../runtime/experiments/apple.md) does not qualify
+public macOS execution. Native amd64, clean-host/provider support, hosted workflow
+runs and own signed CLI publication remain separate gates. Local Linux Postman
+contract runs passed; earlier macOS Postman initialization failed with
+`SecItemCopyMatching failed -50` and does not substitute for Linux contract evidence.
 
 No third-party executable bundle is used: Git, image transfer/unpack, libcrun and
 libslirp use ordinary code libraries. See [current measurements](../binary-sizes.md)
@@ -1393,7 +1394,7 @@ metadata and evidence remain. Trimming restored host free space to about 12 GiB.
 
 ## Optional OIDC enrollment implementation increment
 
-T050 remains open. Its fixed-reference private request policy and HTTP worker
+At this earlier increment, T050 remained open. Its fixed-reference private request policy and HTTP worker
 are now implemented and tested without enabling any public OIDC capability.
 [The controlled receipt](../../../runtime/experiments/oidc-client/evidence.json)
 records 19 real C-worker HTTP cases against a contract-derived Postman mock,
@@ -1488,3 +1489,78 @@ An automatic approval review rejected sending a project-specific OIDC discovery
 query to the third-party Orbit service. The request was not retried or routed
 indirectly; immutable official upstream sources were used instead. This does not
 block local implementation or require cloud sign-in.
+
+
+## Issue-9 follow-up: fixed health and migration journals
+
+At this earlier checkpoint, spec-003 T050 remained open. The private asynchronous health worker and
+provider-specific journal path in the production helper owner are implemented.
+See the [coordination evidence](../../../runtime/experiments/oidc-client/coordination-evidence.json)
+and [reproduction instructions](../../../runtime/experiments/oidc-client/README.md#follow-up-health-and-migration-coordination).
+Normal GCC Release and Clang ASan/UBSan each exercise the focused daemon checks;
+native migrations are separate from controlled HTTP and metadata-only policy.
+The normal Rust checks pass (85 tests, 13 fixture-dependent ignored).
+
+A native sanitizer run exposed the OIDC plan's finite address limit preventing
+ASan's pre-exec shadow mappings. The diagnostic plan now uses the existing core
+handling; ordinary finite address limits and physical cgroup limits remain.
+Earlier failed fixtures retain their journals/data/ownership and are not treated
+as successful migration or cleanup evidence. No sanitizer warning was suppressed.
+
+These checks do not enable public OIDC serving. Deployment asset/preparation
+orchestration, API issuer/discovery/JWKS readiness, secret-aware service logs,
+all five services' inspection/stop/restoration, helper ACK racing STOP and public
+CLI acceptance remain required. Admin UI and Storefront still fail with their
+component-specific external prerequisites. No release/platform gate is closed.
+
+The fixed-role layout extension passes 15 focused normal and 15 sanitizer checks
+(including restart/recovery policy). The actual public core GraphQL/Git,
+owned-stop and retained-restart regression passes in 72.813 s with verified
+offline inputs, recorded as `runtime-run-clean-install-tp2brb2w.json`. This is
+existing core behavior; it does not substitute for OIDC lifecycle acceptance.
+
+
+## 2026-11-06: optional OIDC lifecycle follow-up
+
+The production actor now integrates both provider-volume migrations, five native
+services, one-shot enrollment, API issuer/client/audience configuration, bounded
+role health/discovery/JWKS, V6 component metadata, endpoint/log projection, reverse
+stop and read-only recovery. Standalone admission checks all unresolved ownership
+and recovery state independently of repository-volume selection.
+
+Public standalone ASan/UBSan acceptance passed fresh and retained readiness,
+lost-ACK replay, redacted aggregate/bridge logs, retained ports/material/volumes,
+manager loss without adopted readiness, rejected replacement and owned stop.
+Combined API/Git/Controller/OIDC memdb acceptance also passed public readiness and
+foreground interruption cleanup. The exact input hashes and receipts are in
+[lifecycle evidence](../../../runtime/experiments/oidc-client/lifecycle-evidence.json).
+
+The ordinary production build with test facilities disabled passed the full
+nine-service OIDC/Scylla/Controller graph, including paused-bridge readiness,
+foreground interruption and owned stop. A subsequent retained generation passed
+paused-provider readiness, actual manager loss, rejected concurrent replacement,
+read-only reconciliation and owned stop while preserving its original successful
+operation. The final provider sweep and readiness commit share a 30-second window.
+A sanitizer standalone fresh generation and a separately accepted retained
+generation passed the same current actor, including manager loss and owned stop;
+all five original cache producer identities were preserved.
+
+Host ENOSPC caused earlier preparation/build failures and an aborted guest journal.
+Those failed attempts remain failures in the evidence. The user explicitly
+approved cleanup of seven stopped failed fixtures: 81 exact-inode generated
+execution/cache copies were removed only after release/reference/stop checks and
+verified original-input checks. Canonical data, credentials, logs, journals and
+inputs remain. A later sanitizer retained preparation hit confirmed block I/O
+errors before native dispatch; a new accepted generation passed after reclaiming
+additional unreferenced successful-run copies. No failed operation was rewritten.
+
+The public OIDC capability is now enabled only when the installation's native
+runtime is capable. Admin/Storefront, native amd64, clean-host, macOS and binary
+publication remain separate gates. The native source-preview acceptance does not
+provide CLI login/browser/device flows or qualify a local alpha.9 data upgrade.
+
+
+The final portable metadata/control build also passes on macOS: 58 tests pass,
+zero fail and two Linux-only tests skip (42.07 s). Native runtime libraries are
+disabled in that build; this protects portable control behavior and does not
+qualify macOS native execution.

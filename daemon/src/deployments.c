@@ -34,8 +34,41 @@ enum {
     CAPTURE_READY,
     DATASTORE_PREPARE,
     DATASTORE_SERVICE,
-    DATASTORE_HELPER
+    DATASTORE_HELPER,
+    OIDC_PORTS,
+    OIDC_PREPARE,
+    OIDC_EXECUTE,
+    OIDC_FINAL_HEALTH
 };
+unsigned gstd_deployment_service_count(const gstd_deployment *d) {
+    return d ? d->count + (d->oidc_enabled ? GSTD_OIDC_SERVICE_COUNT : 0) : 0;
+}
+gstd_deployment_workload *gstd_deployment_service(gstd_deployment *d, unsigned index) {
+    if (!d || index >= gstd_deployment_service_count(d))
+        return NULL;
+    if (d->oidc_enabled) {
+        if (index < GSTD_OIDC_SERVICE_COUNT)
+            return &d->oidc.workloads[index];
+        index -= GSTD_OIDC_SERVICE_COUNT;
+    }
+    return &d->workloads[index];
+}
+unsigned gstd_deployment_owned_workload_count(const gstd_deployment *d) {
+    return gstd_deployment_service_count(d) + (d && d->oidc_enabled ? 2u : 0u) +
+           (d && d->persistent ? 3u : 0u);
+}
+gstd_deployment_workload *gstd_deployment_owned_workload(gstd_deployment *d, unsigned index) {
+    unsigned services = gstd_deployment_service_count(d);
+    if (index < services)
+        return gstd_deployment_service(d, index);
+    index -= services;
+    if (d && d->oidc_enabled) {
+        if (index < 2)
+            return &d->oidc.workloads[GSTD_OIDC_SERVICE_COUNT + index];
+        index -= 2;
+    }
+    return d && d->persistent && index < 3 ? &d->datastore.workloads[index] : NULL;
+}
 static int64_t now_ms(void) {
     struct timespec t;
     return clock_gettime(CLOCK_MONOTONIC, &t) ? -1 : (int64_t)t.tv_sec * 1000 + t.tv_nsec / 1000000;
@@ -62,6 +95,15 @@ static int identifier(char out[65], const char *role, const char *operation) {
     return n > 0 && n < 65 ? 0 : -1;
 }
 static int finish(gstd_deployment *d, int outcome, int detail) {
+    if (!outcome && d->oidc_enabled && !d->finalizing && !d->oidc.final_check) {
+        d->stage = OIDC_FINAL_HEALTH;
+        if (!gstd_oidc_runtime_final_health_begin(&d->oidc))
+            return 0;
+        outcome = d->oidc.execute_outcome ? d->oidc.execute_outcome : -1;
+    }
+    if (!outcome && d->oidc.final_check &&
+        (!d->oidc.final_verified || now_ms() >= d->oidc.deadline_ms))
+        outcome = -1;
     int host_failure =
         d->finalizing ? d->final_host_failure : d->stage == HOST_PREFLIGHT && outcome == -1;
     if (!outcome) {
@@ -69,6 +111,9 @@ static int finish(gstd_deployment *d, int outcome, int detail) {
             outcome = -1;
         for (unsigned i = 0; i < d->count; i++)
             if (gstd_native_watch_poll(d->workloads[i].death_fd) != 0)
+                outcome = -1;
+        for (unsigned i = 0; d->oidc_enabled && i < GSTD_OIDC_SERVICE_COUNT; i++)
+            if (d->oidc.execute_outcome || gstd_oidc_runtime_service_live(&d->oidc, i))
                 outcome = -1;
         if (gstd_native_watch_poll(d->network.pid_fd) != 0 ||
             gstd_native_watch_poll(d->keeper_death_fd) != 0 || d->cancel_requested)
@@ -88,15 +133,18 @@ static int finish(gstd_deployment *d, int outcome, int detail) {
     d->outcome = outcome;
     d->detail = detail;
     /* Keep the runtime reservation until its immutable result commits. Pending
-     * finalization does not repeat native/credential effects or claim readiness. */
+     * finalization does not repeat native/credential effects or claim readiness.
+     */
     if (sql(d, "BEGIN IMMEDIATE")) {
         d->outcome = -2;
         return 0;
     }
     sqlite3_stmt *s =
-        prepare(d, "UPDATE deployments SET readiness=?,observed_generation=CASE WHEN ?=0 THEN "
+        prepare(d, "UPDATE deployments SET readiness=?,observed_generation=CASE WHEN ?=0 "
+                   "THEN "
                    "generation ELSE observed_generation END,recovery=CASE WHEN ?=-2 THEN "
-                   "'uncertain' ELSE recovery END,observed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') "
+                   "'uncertain' ELSE recovery "
+                   "END,observed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') "
                    "WHERE deployment_id=? AND generation=? AND last_operation_id=?");
     int ok = s != NULL;
     if (ok) {
@@ -116,23 +164,36 @@ static int finish(gstd_deployment *d, int outcome, int detail) {
                         : outcome == -2 ? "OWNERSHIP_UNCERTAIN"
                                         : "OPERATION_FAILED",
                         "stage", "start", "retryable", 0, "message",
-                        "Owned start did not reach verified readiness; resources retained")
+                        "Owned start did not reach verified readiness; "
+                        "resources retained")
             : json_pack("{s:s,s:I,s:{s:s,s:i,s:s,s:i}}", "deploymentId", d->target.deployment_id,
                         "generation", (json_int_t)d->target.generation, "endpoints", "host",
                         "127.0.0.1", "apiPort", d->network_observed.api_port, "gitHost",
                         "127.0.0.1", "gitPort", d->network_observed.git_port);
+    if (!outcome && value && d->oidc_enabled) {
+        json_t *endpoints = json_object_get(value, "endpoints");
+        if (!d->count) {
+            json_object_del(endpoints, "apiPort");
+            json_object_del(endpoints, "gitPort");
+            json_object_del(endpoints, "gitHost");
+        }
+        json_object_set_new(endpoints, "oidcIssuerPort", json_integer(d->oidc_ports.issuer));
+        json_object_set_new(endpoints, "oidcBridgePort", json_integer(d->oidc_ports.bridge));
+        json_object_set_new(endpoints, "identityPort", json_integer(d->oidc_ports.identity));
+        json_object_set_new(endpoints, "identityUiPort", json_integer(d->oidc_ports.ui));
+        json_object_set_new(endpoints, "mailPort", json_integer(d->oidc_ports.mail));
+    }
     if (host_failure && value)
         json_object_set_new(value, "requirement",
                             json_string(gstd_host_requirement_name((gstd_host_requirement)detail)));
     char *bytes = value ? gstd_json_dump(value) : NULL;
     json_decref(value);
-    s = ok && bytes
-            ? prepare(
-                  d,
-                  "UPDATE operations SET state=?,result=?,error=?,recovery=CASE WHEN ?=-2 THEN "
-                  "'uncertain' ELSE recovery END,updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') "
-                  "WHERE operation_id=? AND state IN ('accepted','running')")
-            : NULL;
+    s = ok && bytes ? prepare(d, "UPDATE operations SET "
+                                 "state=?,result=?,error=?,recovery=CASE WHEN ?=-2 THEN "
+                                 "'uncertain' ELSE recovery "
+                                 "END,updated_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') "
+                                 "WHERE operation_id=? AND state IN ('accepted','running')")
+                    : NULL;
     ok = ok && s;
     if (ok) {
         bind(s, 1, outcome ? (d->cancel_requested ? "cancelled" : "failed") : "succeeded");
@@ -224,6 +285,10 @@ static int boot_launch(gstd_deployment *d, gstd_bootstrap_job_kind kind,
         .api_boot = d->boot,
         .api_pid = d->workloads[1].native.expected_pid,
         .api_start = d->workloads[1].native.expected_start_time};
+    if (d->oidc_enabled) {
+        input.preparation.oidc_issuer_port = d->oidc_ports.issuer;
+        input.preparation.oidc_client = &d->oidc.client;
+    }
     return gstd_bootstrap_job_launch(&input, 20000, &d->bootstrap);
 }
 static int role(gstd_deployment *d, const char *name) {
@@ -266,12 +331,12 @@ static int native_record(gstd_deployment *d, gstd_deployment_workload *w, const 
     json_decref(record);
     char *bytes = ok ? gstd_json_dump(value) : NULL;
     json_decref(value);
-    s = bytes
-            ? prepare(
-                  d, "UPDATE resource_ownership SET "
-                     "backend_identity=?,lifecycle_stage=?,observed_at=strftime('%Y-%m-%dT%H:%M:%"
-                     "SZ','now') WHERE resource_id=? AND operation_id=? AND ownership_state='held'")
-            : NULL;
+    s = bytes ? prepare(d, "UPDATE resource_ownership SET "
+                           "backend_identity=?,lifecycle_stage=?,observed_at="
+                           "strftime('%Y-%m-%dT%H:%M:%"
+                           "SZ','now') WHERE resource_id=? AND operation_id=? "
+                           "AND ownership_state='held'")
+              : NULL;
     ok = s != NULL;
     if (ok) {
         bind(s, 1, bytes);
@@ -284,7 +349,8 @@ static int native_record(gstd_deployment *d, gstd_deployment_workload *w, const 
     free(bytes);
     if (ok && !strcmp(stage, "running")) {
         s = prepare(d, "UPDATE components SET "
-                       "backend_id=?,observed_state='running',observed_at=strftime('%Y-%m-%dT%H:%M:"
+                       "backend_id=?,observed_state='running',observed_at=strftime('%Y-%m-%dT%"
+                       "H:%M:"
                        "%SZ','now') WHERE deployment_id=? AND component=? AND generation=?");
         ok = s != NULL;
         if (ok) {
@@ -383,10 +449,20 @@ int gstd_deployment_begin(const gstd_deployment_environment *environment, const 
     if (identifier(d->configuration_id, "cfg", operation) ||
         identifier(d->network_id, "net", operation))
         return -1;
-    d->count = (unsigned)json_array_size(d->target.components);
-    if (d->count < 2 || d->count > 3)
+    gstd_workload_role layout[GSTD_ROLE_COUNT];
+    unsigned total = 0;
+    if (gstd_workload_layout(d->target.manifest, layout, &total))
         return -1;
-    const char *names[] = {"git", "api", "controller"};
+    d->oidc_enabled = json_object_get(d->target.manifest, "oidcProfileDigest") != NULL;
+    for (unsigned i = 0; i < total; i++)
+        if (layout[i] >= GSTD_ROLE_GIT)
+            d->roles[d->count++] = layout[i];
+    if ((d->count != 2 && d->count != 3) && !(d->oidc_enabled && !d->count))
+        return -1;
+    d->core_count = d->count;
+    const char *names[GSTD_ROLE_COUNT];
+    for (unsigned i = 0; i < d->count; i++)
+        names[i] = gstd_workload_name(d->roles[i]);
     for (unsigned i = 0; i < d->count; i++) {
         gstd_deployment_workload *w = &d->workloads[i];
         w->name = names[i];
@@ -401,27 +477,29 @@ int gstd_deployment_begin(const gstd_deployment_environment *environment, const 
         if (identifier(w->asset_resource, role_name, operation))
             return -1;
     }
-    sqlite3_stmt *s =
-        prepare(d, "SELECT resource_id FROM resource_ownership WHERE operation_id=? AND "
-                   "resource_type='repository-volume' AND ownership_state='held'");
-    int ok = s != NULL;
-    if (ok) {
-        bind(s, 1, operation);
-        ok = sqlite3_step(s) == SQLITE_ROW;
+    if (d->count) {
+        sqlite3_stmt *s =
+            prepare(d, "SELECT resource_id FROM resource_ownership WHERE operation_id=? AND "
+                       "resource_type='repository-volume' AND ownership_state='held'");
+        int ok = s != NULL;
         if (ok) {
-            const char *id = (const char *)sqlite3_column_text(s, 0);
-            ok = id && strlen(id) < 65;
-            if (ok)
-                memcpy(d->volume_id, id, strlen(id) + 1);
+            bind(s, 1, operation);
+            ok = sqlite3_step(s) == SQLITE_ROW;
+            if (ok) {
+                const char *id = (const char *)sqlite3_column_text(s, 0);
+                ok = id && strlen(id) < 65;
+                if (ok)
+                    memcpy(d->volume_id, id, strlen(id) + 1);
+            }
         }
+        sqlite3_finalize(s);
+        if (!ok)
+            return -1;
+        d->credential_source = gstd_runtime_settings_source(
+            environment->settings, d->target.store_id, d->target.deployment_id);
+        if (!d->credential_source)
+            return -1;
     }
-    sqlite3_finalize(s);
-    if (!ok)
-        return -1;
-    d->credential_source = gstd_runtime_settings_source(environment->settings, d->target.store_id,
-                                                        d->target.deployment_id);
-    if (!d->credential_source)
-        return -1;
     if (sql(d, "BEGIN IMMEDIATE"))
         return -1;
     json_t *images = json_object_get(d->target.manifest, "images");
@@ -432,12 +510,14 @@ int gstd_deployment_begin(const gstd_deployment_environment *environment, const 
         if (d->persistent &&
             !strcmp(json_string_value(json_object_get(image, "component")), "scylladb"))
             continue;
-        sqlite3_stmt *component = prepare(
-            d, "INSERT INTO components VALUES(?,?,NULL,?,'running','pending',?,"
-               "strftime('%Y-%m-%dT%H:%M:%SZ','now')) ON CONFLICT(deployment_id,component) "
-               "DO UPDATE SET backend_id=NULL,image_digest=excluded.image_digest,"
-               "desired_state='running',observed_state='pending',generation=excluded.generation,"
-               "observed_at=excluded.observed_at");
+        sqlite3_stmt *component =
+            prepare(d, "INSERT INTO components VALUES(?,?,NULL,?,'running','pending',?,"
+                       "strftime('%Y-%m-%dT%H:%M:%SZ','now')) ON "
+                       "CONFLICT(deployment_id,component) "
+                       "DO UPDATE SET backend_id=NULL,image_digest=excluded.image_digest,"
+                       "desired_state='running',observed_state='pending',generation="
+                       "excluded.generation,"
+                       "observed_at=excluded.observed_at");
         int inserted = component != NULL;
         if (inserted) {
             bind(component, 1, d->target.deployment_id);
@@ -467,9 +547,10 @@ static int capture_record(gstd_deployment *d) {
         json_decref(capture);
         return -1;
     }
-    sqlite3_stmt *s = prepare(
-        d, "SELECT backend_identity FROM resource_ownership WHERE resource_id=? AND operation_id=? "
-           "AND deployment_id=? AND resource_type='configuration' AND ownership_state='held'");
+    sqlite3_stmt *s = prepare(d, "SELECT backend_identity FROM resource_ownership WHERE "
+                                 "resource_id=? AND operation_id=? "
+                                 "AND deployment_id=? AND resource_type='configuration' AND "
+                                 "ownership_state='held'");
     json_t *record = NULL;
     if (s) {
         bind(s, 1, d->configuration_id);
@@ -484,13 +565,12 @@ static int capture_record(gstd_deployment *d) {
     char *bytes = valid ? gstd_json_dump(record) : NULL;
     json_decref(record);
     json_decref(capture);
-    s = bytes
-            ? prepare(
-                  d,
-                  "UPDATE resource_ownership SET "
-                  "backend_identity=?,observed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE "
-                  "resource_id=? AND operation_id=? AND deployment_id=? AND ownership_state='held'")
-            : NULL;
+    s = bytes ? prepare(d, "UPDATE resource_ownership SET "
+                           "backend_identity=?,observed_at=strftime('%Y-%m-%dT%H:"
+                           "%M:%SZ','now') WHERE "
+                           "resource_id=? AND operation_id=? AND deployment_id=? "
+                           "AND ownership_state='held'")
+              : NULL;
     valid = s != NULL;
     if (valid) {
         bind(s, 1, bytes);
@@ -512,7 +592,10 @@ static int capture_launch(gstd_deployment *d) {
                                     .deployment_id = d->target.deployment_id,
                                     .operation_id = d->target.operation_id,
                                     .generation = d->target.generation,
-                                    .components = d->count + (unsigned)d->persistent,
+                                    .components = d->count + (unsigned)d->persistent +
+                                                  (d->oidc_enabled ? GSTD_OIDC_SERVICE_COUNT : 0),
+                                    .oidc = (unsigned)d->oidc_enabled,
+                                    .oidc_source = d->oidc_enabled ? d->oidc.setup.source : NULL,
                                     .scylladb = (unsigned)d->persistent};
     d->stage = CAPTURE_READY;
     return gstd_log_capture_launch(&input, &d->capture) ? finish(d, -1, 0) : 0;
@@ -546,6 +629,40 @@ static int datastore_helper_launch(gstd_deployment *d) {
         return finish(d, -1, 0);
     return 0;
 }
+static int network_launch(gstd_deployment *d) {
+    gstd_network_worker_request request = {.manifest = d->target.manifest,
+                                           .store_id = d->target.store_id,
+                                           .resource_id = d->network_id,
+                                           .operation_id = d->target.operation_id,
+                                           .scope_fd = d->network_scope.descriptors[1],
+                                           .oidc_ports = d->oidc_enabled ? &d->oidc_ports : NULL};
+    if (gstd_network_worker_prepare(&request, &d->network) != GSTD_NETWORK_OK)
+        return finish(d, -1, 0);
+    if (sql(d, "BEGIN IMMEDIATE"))
+        return finish(d, -2, 0);
+    if (commit(d, gstd_network_record_bind(d->environment->database, &request, &d->network)) ||
+        gstd_network_worker_permit(&d->network))
+        return finish(d, -2, 0);
+    d->deadline_ms = now_ms() + 10000;
+    d->stage = NETWORK_READY;
+    return 0;
+}
+static int core_bootstrap(gstd_deployment *d) {
+    if (sql(d, "BEGIN IMMEDIATE"))
+        return finish(d, -2, 0);
+    int failure = d->persistent
+                      ? gstd_deployment_graph_matches(d->environment->database, &d->target,
+                                                      d->configuration_id, &d->graph)
+                      : gstd_deployment_graph_begin(d->environment->database, &d->target,
+                                                    d->configuration_id, &d->graph);
+    if (!failure)
+        failure = gstd_deployment_credential_reserve(d->environment->database, &d->target,
+                                                     d->configuration_id, &d->allow_initial);
+    if (commit(d, failure))
+        return finish(d, -2, 0);
+    d->stage = BOOTSTRAP;
+    return boot_launch(d, GSTD_BOOT_JOB_PREPARE, GSTD_BOOT_API_READY) ? finish(d, -1, 0) : 0;
+}
 int gstd_deployment_poll(gstd_deployment *d, int cancel) {
     if (!d || !d->stage || !sqlite3_get_autocommit(d->environment->database))
         return -1;
@@ -557,7 +674,49 @@ int gstd_deployment_poll(gstd_deployment *d, int cancel) {
             return ready;
         if (d->capture.status || capture_record(d))
             return finish(d, -1, 0);
+        if (d->oidc_enabled) {
+            d->stage = OIDC_EXECUTE;
+            return gstd_oidc_runtime_execute_begin(
+                       &d->oidc, &d->network_observed.network, &d->network, d->boot, d->resolver_fd,
+                       (const int(*)[2]) & d->capture.output[d->count + (unsigned)d->persistent])
+                       ? finish(d, -2, 0)
+                       : 0;
+        }
         return d->persistent ? datastore_launch(d) : native_launch(d, 0);
+    }
+    if (d->stage == OIDC_FINAL_HEALTH) {
+        int ready = gstd_oidc_runtime_execute_poll(&d->oidc, cancel);
+        return ready == 1 ? finish(d, d->oidc.execute_outcome, d->oidc.detail) : ready;
+    }
+    if (d->stage == OIDC_PREPARE) {
+        int ready = gstd_oidc_runtime_prepare_poll(&d->oidc, cancel);
+        if (ready != 1)
+            return ready;
+        if (d->oidc.outcome)
+            return finish(d, d->oidc.outcome, d->oidc.detail);
+        if (sql(d, "BEGIN IMMEDIATE"))
+            return finish(d, -2, 0);
+        int failed = 0;
+        for (unsigned i = 0; !failed && i < GSTD_OIDC_WORKLOAD_COUNT; i++)
+            failed = gstd_network_attachment_reserve(d->environment->database, &d->network,
+                                                     &d->network_observed,
+                                                     d->oidc.workloads[i].resource);
+        if (commit(d, failed))
+            return finish(d, -2, 0);
+        return d->count ? core_bootstrap(d) : capture_launch(d);
+    }
+    if (d->stage == OIDC_EXECUTE) {
+        int ready = gstd_oidc_runtime_execute_poll(&d->oidc, cancel);
+        for (unsigned i = 0; i < GSTD_OIDC_SERVICE_COUNT; i++)
+            if (d->oidc.workloads[i].launched)
+                gstd_log_capture_output_close(&d->capture, d->count + (unsigned)d->persistent + i);
+        if (ready != 1)
+            return ready;
+        if (d->oidc.execute_outcome)
+            return finish(d, d->oidc.execute_outcome, d->oidc.detail);
+        return d->persistent ? datastore_launch(d)
+               : d->count    ? native_launch(d, 0)
+                             : finish(d, 0, 0);
     }
     if (d->stage == DATASTORE_PREPARE) {
         int ready = gstd_datastore_prepare_poll(&d->datastore, cancel);
@@ -783,7 +942,8 @@ int gstd_deployment_poll(gstd_deployment *d, int cancel) {
                        ? finish(d, -1, 0)
                        : 0;
         }
-        return scope_launch(d, d->workloads[0].resource, "workload", WORK_SCOPE);
+        return d->count ? scope_launch(d, d->workloads[0].resource, "workload", WORK_SCOPE)
+                        : scope_launch(d, d->network_id, "network", NETWORK_SCOPE);
     }
     if (d->stage == WORK_SCOPE) {
         gstd_deployment_workload *w = &d->workloads[d->index];
@@ -852,39 +1012,35 @@ int gstd_deployment_poll(gstd_deployment *d, int cancel) {
     }
     if (d->stage == NETWORK_SCOPE) {
         d->network_scope = reply;
-        gstd_network_worker_request request = {.manifest = d->target.manifest,
-                                               .store_id = d->target.store_id,
-                                               .resource_id = d->network_id,
-                                               .operation_id = d->target.operation_id,
-                                               .scope_fd = reply.descriptors[1]};
-        if (gstd_network_worker_prepare(&request, &d->network) != GSTD_NETWORK_OK)
-            return finish(d, -1, 0);
+        if (!d->oidc_enabled)
+            return network_launch(d);
         if (sql(d, "BEGIN IMMEDIATE"))
             return finish(d, -2, 0);
-        if (commit(d, gstd_network_record_bind(db, &request, &d->network)) ||
-            gstd_network_worker_permit(&d->network))
+        int selected = gstd_deployment_oidc_ports_read(db, &d->target, &d->oidc_ports);
+        if (commit(d, selected < 0))
             return finish(d, -2, 0);
-        d->deadline_ms = now_ms() + 10000;
-        d->stage = NETWORK_READY;
-        return 0;
+        if (!selected)
+            return network_launch(d);
+        gstd_filesystem_input request =
+            fs_input(d, GSTD_FS_OIDC_PORTS, d->network_scope.descriptors[1], -1);
+        request.resource_id = d->network_id;
+        d->stage = OIDC_PORTS;
+        return gstd_filesystem_launch(&request, 5000, &d->filesystem) ? finish(d, -1, 0) : 0;
+    }
+    if (d->stage == OIDC_PORTS) {
+        if (gstd_oidc_ports_check(&reply.oidc_ports))
+            return finish(d, -2, 0);
+        d->oidc_ports = reply.oidc_ports;
+        return network_launch(d);
     }
     if (d->stage == RESOLVER) {
         d->resolver_fd = reply.descriptors[0];
-        if (sql(d, "BEGIN IMMEDIATE"))
-            return finish(d, -2, 0);
-        int failure =
-            d->persistent
-                ? gstd_deployment_graph_matches(db, &d->target, d->configuration_id, &d->graph)
-                : gstd_deployment_graph_begin(db, &d->target, d->configuration_id, &d->graph);
-        if (!failure)
-            failure = gstd_deployment_credential_reserve(db, &d->target, d->configuration_id,
-                                                         &d->allow_initial);
-        if (commit(d, failure))
-            return finish(d, -2, 0);
-        d->stage = BOOTSTRAP;
-        if (boot_launch(d, GSTD_BOOT_JOB_PREPARE, GSTD_BOOT_API_READY))
-            return finish(d, -1, 0);
-        return 0;
+        if (!d->oidc_enabled)
+            return core_bootstrap(d);
+        d->stage = OIDC_PREPARE;
+        return gstd_oidc_runtime_prepare_begin(d->environment, &d->target, &d->oidc_ports, &d->oidc)
+                   ? finish(d, -2, 0)
+                   : 0;
     }
     gstd_filesystem_reply_close(&reply);
     return finish(d, -2, 0);
@@ -914,10 +1070,22 @@ int gstd_deployment_recovery_prepare(const gstd_deployment_environment *environm
     if (d->persistent &&
         gstd_datastore_recovery_seed(environment, &d->target, d->configuration_id, &d->datastore))
         return -1;
-    d->count = (unsigned)json_array_size(d->target.components);
-    if (d->count < 2 || d->count > 3)
+    gstd_workload_role layout[GSTD_ROLE_COUNT];
+    unsigned total = 0;
+    if (gstd_workload_layout(d->target.manifest, layout, &total))
         return -1;
-    const char *names[] = {"git", "api", "controller"};
+    d->oidc_enabled = json_object_get(d->target.manifest, "oidcProfileDigest") != NULL;
+    for (unsigned i = 0; i < total; i++)
+        if (layout[i] >= GSTD_ROLE_GIT)
+            d->roles[d->count++] = layout[i];
+    if ((d->count != 2 && d->count != 3) && !(d->oidc_enabled && !d->count))
+        return -1;
+    d->core_count = d->count;
+    if (d->oidc_enabled && gstd_oidc_runtime_recovery_seed(environment, &d->target, &d->oidc))
+        return -1;
+    const char *names[GSTD_ROLE_COUNT];
+    for (unsigned i = 0; i < d->count; i++)
+        names[i] = gstd_workload_name(d->roles[i]);
     for (unsigned i = 0; i < d->count; i++) {
         gstd_deployment_workload *w = &d->workloads[i];
         w->name = names[i];
@@ -934,8 +1102,8 @@ int gstd_deployment_recovery_prepare(const gstd_deployment_environment *environm
         if (identifier(w->asset_resource, name, operation))
             return -1;
     }
-    sqlite3_stmt *s =
-        prepare(d, "SELECT generation,last_operation_id FROM deployments WHERE deployment_id=?");
+    sqlite3_stmt *s = prepare(d, "SELECT generation,last_operation_id FROM "
+                                 "deployments WHERE deployment_id=?");
     if (!s)
         return -1;
     bind(s, 1, d->target.deployment_id);

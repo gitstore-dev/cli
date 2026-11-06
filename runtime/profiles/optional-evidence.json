@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "serverRevision": "06152d193e854bc643fa884daa8b9f30b0d75d0f",
-  "scope": "Pinned source/image metadata and private Linux arm64 provider, courier and ownership checks. Public optional-profile lifecycle remains gated. No upstream attestation requirement.",
+  "scope": "Pinned source/image metadata, controlled contracts and source-preview public Linux arm64 lifecycle acceptance. Native amd64, clean-host and publication qualification remain separate; no upstream attestation requirement.",
   "sourceEvidence": [
     {
       "path": "compose.oidc.yml",
@@ -189,27 +189,22 @@
   ],
   "components": {
     "oidc": {
-      "status": "not-enabled",
+      "status": "source-preview-linux-arm64-enabled",
       "shipped": "OIDC bridge alpha.8 and reference provider images exist",
-      "implementationRemaining": [
-        "Complete provider graph and migration ownership",
-        "Private client enrollment without secrets in arguments",
-        "Current-generation issuer/provider readiness",
-        "Native amd64 lifecycle validation; metadata support alone does not verify execution"
-      ],
+      "implementationRemaining": [],
       "uidEvidence": "Native registered user namespace UID 10000 libcrun and owned slirp/TAP probes passed; no subuid/helper prerequisite was found",
       "protectedEnrollment": {
         "provider": "Hydra 2.3.0",
         "sourceRevision": "ee8c339ddada3a42529c0416897abc32bad03bbb",
         "contract": "postman/specs/oidc-provider.openapi.json",
-        "implemented": "Private bounded C policy/HTTP worker; distinct provider-ready, created and public-match receipts; no public OIDC profile",
+        "implemented": "Bounded C worker and durable production coordinator; distinct provider-ready, created and public-match receipts",
         "controlledEvidence": "runtime/experiments/oidc-client/evidence.json",
-        "nativeProviderGraph": "Private registered five-service graph passed; public dispatcher not enabled",
-        "durableCoordinator": "not implemented",
+        "nativeProviderGraph": "Public five/eight/nine-service graphs accepted; see production lifecycle evidence",
+        "durableCoordinator": "oidc_runtime.c with dispatch-before-POST and no uncertain replay",
         "security": "No secret-bearing CLI arguments, raw response IPC, proxy/redirect, blind POST retry or public-match adoption after uncertain creation",
-        "material": "Separate add-only oidc-provider-material credential purpose and private material generator; public profile integration pending",
+        "material": "Separate add-only oidc-provider-material purpose, private family preparation and provider-volume ownership",
         "nativeSingleProviderEvidence": "runtime/experiments/oidc-client/enrollment-journal-evidence.json",
-        "journalPolicy": "Public-only prepared/dispatched/created/uncertain transitions, exact binding checks and lost-reply refusal; production parent-ledger integration remains incomplete"
+        "journalPolicy": "Public-only prepared/dispatched/created/uncertain transitions bind original generation, native/population/network and canonical writers; missing ACK never authorizes retry"
       },
       "sqliteCompatibility": {
         "status": "linux-arm64-migrations-verified",
@@ -221,17 +216,37 @@
         "evidence": "runtime/experiments/oidc-client/serve-evidence.json",
         "scope": "Generated private JSON configurations and separate namespaces; not the combined graph"
       },
-      "linuxArm64Remaining": "API issuer integration and public durable enrollment/volume/network lifecycle/recovery",
+      "linuxArm64Remaining": "No remaining T050 implementation gate; release/platform qualification remains separate",
       "combinedGraph": {
         "status": "linux-arm64-private-graph-passed",
         "evidence": "runtime/experiments/oidc-client/combined-graph-evidence.json",
-        "scope": "Five services ready, protected client creation, fresh migrations and clean observed stop; production ownership and API issuer integration remain incomplete"
+        "scope": "Historical private five-service milestone; production lifecycle evidence records the current public integration"
       },
       "courier": {
         "status": "linux-arm64-private-native-delivery-passed",
         "evidence": "runtime/experiments/oidc-client/courier-evidence.json",
         "scope": "Real Kratos native verification-to-Mailpit delivery in owned namespace; eight requests, five scripted assertions, runner exit 0 and clean deletion; no public daemon activation"
-      }
+      },
+      "fixedRoleHealth": {
+        "status": "production-worker-implemented",
+        "contract": "postman/specs/oidc-health.openapi.json",
+        "evidence": "runtime/experiments/oidc-client/coordination-evidence.json",
+        "scope": "Bounded controlled contract coverage; production lifecycle evidence separately establishes native public behavior"
+      },
+      "migrationCoordinator": {
+        "status": "production-helper-owner-implemented",
+        "evidence": "runtime/experiments/oidc-client/coordination-evidence.json",
+        "scope": "Production provider-specific single-dispatch journals, fresh/retained image-native migrations and observed helper deletion/recovery; unknown or dispatched-without-proof work stays held"
+      },
+      "productionActor": {
+        "implementation": "daemon/src/oidc_runtime.c",
+        "evidence": "runtime/experiments/oidc-client/lifecycle-evidence.json",
+        "publicStatus": "Public standalone and combined memdb/Scylla native acceptance passed, including a non-test production build, fresh/retained startup, stalled-provider readiness, manager-loss reconciliation and owned stop"
+      },
+      "qualificationRemaining": [
+        "Native amd64 lifecycle validation",
+        "Clean-host/provider and own-artifact publication qualification"
+      ]
     },
     "admin": {
       "status": "mapping-unavailable",
@@ -274,7 +289,7 @@
       "https://mailpit.axllent.org/docs/configuration/smtp/",
       "https://github.com/axllent/mailpit/releases/tag/v1.33.0"
     ],
-    "selection": "Selected by the private reference OIDC adapter; Linux arm64 courier delivery and clean graph stop verified. Public durable OIDC profile and native amd64 validation remain gated. Separate consented image only.",
+    "selection": "Selected by the owned OIDC lifecycle with separate asset consent. Linux arm64 courier and public graph stop/recovery are verified; native amd64 qualification remains separate.",
     "packaging": "Separate consented runtime image, never bundled into core executables"
   },
   "releaseSupplements": [

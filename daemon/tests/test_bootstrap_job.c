@@ -29,8 +29,47 @@ static int finish(gstd_bootstrap_job *job, int cancellation, gstd_bootstrap_job_
     }
     return -1;
 }
+static int acknowledged_stop_race(unsigned mode) {
+    int reports[2], cancellation[2];
+    CHECK(!pipe2(reports, O_CLOEXEC | O_NONBLOCK) && !pipe2(cancellation, O_CLOEXEC));
+    pid_t child = fork();
+    CHECK(child >= 0);
+    if (!child) {
+        close(reports[0]);
+        gstd_bootstrap_job_reply reply = {.status = mode == 2 ? GSTD_OIDC_PUBLIC_MATCH
+                                                              : GSTD_OIDC_CLIENT_CREATED};
+        if (mode == 1)
+            reply.uid[0] = 'x';
+        if (write(reports[1], &reply, sizeof(reply)) != sizeof(reply))
+            _exit(1);
+        if (mode == 3)
+            raise(SIGSTOP); /* A pipe reply alone is not an observed completion. */
+        _exit(0);
+    }
+    close(reports[1]);
+    if (mode == 3) {
+        int status;
+        CHECK(waitpid(child, &status, WUNTRACED) == child && WIFSTOPPED(status));
+    } else {
+        siginfo_t info = {0};
+        CHECK(!waitid(P_PID, (id_t)child, &info, WEXITED | WNOWAIT) && info.si_pid == child);
+    }
+    CHECK(write(cancellation[1], "s", 1) == 1);
+    gstd_bootstrap_job job = {.worker = child, .descriptor = reports[0], .deadline_ms = 0,
+                              .kind = GSTD_BOOT_JOB_OIDC_HTTP, .oidc_action = GSTD_OIDC_HTTP_CREATE};
+    gstd_bootstrap_job_reply reply;
+    CHECK(finish(&job, cancellation[0], &reply) == 1 &&
+          reply.status == (mode == 0 ? GSTD_OIDC_CLIENT_CREATED : GSTD_OIDC_UNCERTAIN));
+    char marker;
+    CHECK(read(cancellation[0], &marker, 1) == 1 && marker == 's');
+    close(cancellation[0]);
+    close(cancellation[1]);
+    return 0;
+}
 int main(void) {
     alarm(10);
+    for (unsigned mode = 0; mode < 4; mode++)
+        CHECK(!acknowledged_stop_race(mode));
     gstd_json_initialize();
     char *root = gstd_test_dir();
     CHECK(root);
@@ -72,7 +111,7 @@ int main(void) {
 #endif
     CHECK(oidc_manifest);
     gstd_network_namespace network = GSTD_NETWORK_NAMESPACE_INITIAL;
-    for (unsigned mode = 0; mode < 6; mode++) {
+    for (unsigned mode = 0; mode < 9; mode++) {
         if (mode == 3) {
             input.kind = GSTD_BOOT_JOB_OIDC_HTTP;
             input.preparation.manifest = oidc_manifest;
@@ -89,6 +128,21 @@ int main(void) {
             CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
             invalid = input;
             invalid.oidc_action = GSTD_OIDC_HTTP_CREATE;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+        }
+        if (mode == 6) {
+            input.kind = GSTD_BOOT_JOB_OIDC_HEALTH;
+            input.broker_fd = -1;
+            input.source = NULL;
+            input.oidc_health_role = GSTD_OIDC_HEALTH_HYDRA;
+            invalid = input;
+            invalid.oidc_health_role = (gstd_oidc_health_role)99;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+            invalid = input;
+            invalid.oidc_ports.ui = invalid.oidc_ports.mail;
+            CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
+            invalid = input;
+            invalid.preparation.manifest = manifest;
             CHECK(gstd_bootstrap_job_launch(&invalid, 5000, &job) == -1 && !job.worker);
         }
         unsigned failure = mode % 3;

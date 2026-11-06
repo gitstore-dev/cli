@@ -202,7 +202,7 @@ pub enum DeploymentCommand {
     },
     Logs {
         id: String,
-        #[arg(long, value_parser = ["api", "git", "controller", "oidc", "admin", "storefront"])]
+        #[arg(long, value_parser = ["api", "git", "controller", "oidc", "oidc-smtp", "oidc-hydra", "oidc-kratos", "oidc-ui", "oidc-bridge", "admin", "storefront", "scylladb"])]
         component: Option<String>,
         #[arg(long)]
         cursor: Option<String>,

@@ -9,7 +9,8 @@ typedef enum {
     GSTD_CLEANUP_WRITER,
     GSTD_CLEANUP_NETWORK,
     GSTD_CLEANUP_DONE,
-    GSTD_CLEANUP_DATASTORE_WRITER
+    GSTD_CLEANUP_DATASTORE_WRITER,
+    GSTD_CLEANUP_OIDC_WRITER
 } gstd_cleanup_stage;
 typedef struct {
     gstd_deployment *deployment;
@@ -17,6 +18,7 @@ typedef struct {
     uint64_t generation;
     int stage, index, outcome, started, uncertain, finalizing, final_uncertain;
     int datastore_selected;
+    unsigned oidc_writer;
     int64_t deadline_ms;
     gstd_native_job native;
     gstd_filesystem_job filesystem;

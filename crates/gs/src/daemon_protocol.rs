@@ -364,11 +364,27 @@ pub enum StreamKind {
     Events,
 }
 #[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum LogComponent {
+    Service(Component),
+    Provider(ProviderLogComponent),
+}
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ProviderLogComponent {
+    OidcSmtp,
+    OidcHydra,
+    OidcKratos,
+    OidcUi,
+    OidcBridge,
+    Scylladb,
+}
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SubscribeParams {
     pub deployment_id: Identifier,
     pub kind: StreamKind,
-    pub component: Option<Component>,
+    pub component: Option<LogComponent>,
     pub cursor: Option<String>,
 }
 #[derive(Debug, Deserialize)]

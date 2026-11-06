@@ -64,7 +64,14 @@ int gstd_cancellation_next(sqlite3 *db, const char *const *waiting, size_t count
 }
 
 int gstd_cancellation_can_notify(const gstd_deployment *d) {
-    if (!d || !d->count || d->count > 3)
+    if (!d || (!d->count && !d->oidc_enabled) || d->count > 3)
+        return 0;
+    if (d->oidc_enabled &&
+        (d->oidc.migration.stage ||
+         (d->oidc.http.worker && d->oidc.http.kind == GSTD_BOOT_JOB_OIDC_HTTP &&
+          d->oidc.http.oidc_action == GSTD_OIDC_HTTP_CREATE) ||
+         (d->oidc.native_job.worker && (d->oidc.index >= GSTD_OIDC_SERVICE_COUNT ||
+                                        !d->oidc.workloads[d->oidc.index].native.expected_pid))))
         return 0;
     if (d->graph.persistent && (d->graph.stage == GSTD_BOOT_PREPARE_KEYSPACE ||
                                 d->graph.stage == GSTD_BOOT_MIGRATE_SCHEMA))

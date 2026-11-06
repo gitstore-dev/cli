@@ -1,5 +1,7 @@
 #include "gitstored/profiles.h"
+#include "gitstored/assets.h"
 #include "gitstored/protocol.h"
+#include "oidc_profile.h"
 #include "profile.inc"
 #include <string.h>
 const char *gstd_profile_digest(void) { return profile_digest; }
@@ -104,4 +106,25 @@ json_t *gstd_profile_components(const json_t *requested) {
     }
     return controller ? json_pack("[s,s,s]", "api", "git", "controller")
                       : json_pack("[s,s]", "api", "git");
+}
+
+json_t *gstd_profile_components_for(const char *version, const json_t *requested) {
+    return !version                ? NULL
+           : !strcmp(version, "1") ? gstd_profile_components(requested)
+           : !strcmp(version, "2") ? gstd_oidc_core_components(requested)
+                                   : NULL;
+}
+json_t *gstd_profile_manifest(const char *version, const json_t *components,
+                              const char *architecture, const char *datastore) {
+    return !version ? NULL
+           : !strcmp(version, "1")
+               ? gstd_asset_manifest_for_datastore(components, architecture, datastore)
+           : !strcmp(version, "2") ? gstd_oidc_core_manifest(components, architecture, datastore)
+                                   : NULL;
+}
+const char *gstd_profile_digest_for(const char *version) {
+    return !version                ? NULL
+           : !strcmp(version, "1") ? gstd_profile_digest()
+           : !strcmp(version, "2") ? gstd_oidc_core_profile_digest()
+                                   : NULL;
 }

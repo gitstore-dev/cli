@@ -3,6 +3,7 @@
 #include "bootstrap_material.h"
 #include "namespace_owner.h"
 #include "oidc_client.h"
+#include "oidc_config.h"
 typedef enum {
     GSTD_BOOT_API_READY,
     GSTD_BOOT_GIT_READY,
@@ -42,6 +43,22 @@ typedef enum {
     GSTD_OIDC_CLIENT_CREATED = 2,
     GSTD_OIDC_PUBLIC_MATCH = 3
 } gstd_oidc_http_status;
+/* Fixed private service roles.  These are deliberately not component names or
+ * caller-supplied URLs: the worker can only contact the pinned loopback routes
+ * below after entering the deployment's owned namespace. */
+typedef enum {
+    GSTD_OIDC_HEALTH_HYDRA,
+    GSTD_OIDC_HEALTH_KRATOS,
+    GSTD_OIDC_HEALTH_BRIDGE,
+    GSTD_OIDC_HEALTH_UI,
+    GSTD_OIDC_HEALTH_SMTP,
+    GSTD_OIDC_HEALTH_ISSUER
+} gstd_oidc_health_role;
+typedef enum {
+    GSTD_OIDC_HEALTH_REJECTED = -1,
+    GSTD_OIDC_HEALTH_PENDING = 0,
+    GSTD_OIDC_HEALTH_READY = 1
+} gstd_oidc_health_status;
 /* T050 private worker building block, not an enabled optional profile. Fixed
  * Hydra admin loopback endpoint inside the owned namespace, no proxy/redirect.
  * Parent must journal dispatch before CREATE; one attempt, no automatic retry.
@@ -51,4 +68,10 @@ typedef enum {
 gstd_oidc_http_status gstd_oidc_http(const gstd_bootstrap_http_context *, gstd_oidc_http_action,
                                      const gstd_oidc_client *,
                                      const gstd_credential *creation_secret);
+/* One bounded, read-only health attempt. Hydra preserves its source-verified
+ * JSON {"status":"ok"} predicate. The other pinned consumers accept only an
+ * HTTP 200 and discard their bodies without assigning a shared JSON schema or
+ * interpreting failure status codes. No redirect, proxy or caller URL is used. */
+gstd_oidc_health_status gstd_oidc_health(const gstd_bootstrap_http_context *,
+                                         gstd_oidc_health_role, const gstd_oidc_ports *);
 #endif

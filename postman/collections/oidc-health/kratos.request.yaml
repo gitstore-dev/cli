@@ -1,0 +1,11 @@
+$kind: http-request
+method: GET
+url: '{{kratos_base}}/admin/health/ready'
+order: 2000
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("HTTP readiness status", () => pm.response.to.have.status(200));

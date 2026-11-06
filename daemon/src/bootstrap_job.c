@@ -98,7 +98,10 @@ static void run(gstd_bootstrap_job_input input, int writer, pid_t parent) {
     gstd_network_namespace network = GSTD_NETWORK_NAMESPACE_INITIAL;
     if (input.network)
         network = *input.network;
-    int original[] = {input.preparation.scope_fd, input.broker_fd, writer, network.user_fd,
+    /* Read-only health jobs carry no configuration or credential capability. */
+    int health = input.kind == GSTD_BOOT_JOB_OIDC_HEALTH;
+    int original[] = {health ? -1 : input.preparation.scope_fd, health ? -1 : input.broker_fd,
+                      writer, network.user_fd,
                       network.network_fd},
         copies[5];
     for (unsigned i = 0; i < 5; i++) {
@@ -142,6 +145,11 @@ static void run(gstd_bootstrap_job_input input, int writer, pid_t parent) {
     if (input.kind == GSTD_BOOT_JOB_PREPARE) {
         output.status =
             gstd_bootstrap_provision(&input.preparation, 4, input.source, input.allow_initial);
+    } else if (input.kind == GSTD_BOOT_JOB_OIDC_HEALTH) {
+        network.user_fd = 6;
+        network.network_fd = 7;
+        gstd_bootstrap_http_context context = {.control_owner = parent, .network = &network};
+        output.status = gstd_oidc_health(&context, input.oidc_health_role, &input.oidc_ports);
     } else {
         gstd_credential secret = {0};
         if (!material(&input, &secret)) {
@@ -175,10 +183,11 @@ int gstd_bootstrap_job_launch(const gstd_bootstrap_job_input *input, unsigned ti
         (sigchild.sa_flags & SA_NOCLDWAIT))
         return -1;
     if (!input || !job || job->worker || input->kind < GSTD_BOOT_JOB_PREPARE ||
-        input->kind > GSTD_BOOT_JOB_OIDC_HTTP || !timeout || timeout > 60000 ||
+        input->kind > GSTD_BOOT_JOB_OIDC_HEALTH || !timeout || timeout > 60000 ||
         input->preparation.control_owner != getpid() || input->preparation.scope_fd < 3 ||
-        input->broker_fd < 3 || !geteuid() || !one_thread() ||
-        gstd_asset_manifest_check(input->preparation.manifest) || !json_is_object(input->source) ||
+        (input->kind != GSTD_BOOT_JOB_OIDC_HEALTH && input->broker_fd < 3) || !geteuid() ||
+        !one_thread() || gstd_asset_manifest_check(input->preparation.manifest) ||
+        (input->kind != GSTD_BOOT_JOB_OIDC_HEALTH && !json_is_object(input->source)) ||
         (input->kind == GSTD_BOOT_JOB_HTTP &&
          (!input->network || input->action < GSTD_BOOT_API_READY ||
           input->action > GSTD_BOOT_CONTROLLER_READY)) ||
@@ -190,6 +199,13 @@ int gstd_bootstrap_job_launch(const gstd_bootstrap_job_input *input, unsigned ti
           input->oidc_action > GSTD_OIDC_HTTP_INSPECT ||
           (input->oidc_action != GSTD_OIDC_HTTP_READY &&
            gstd_oidc_client_check(&input->oidc_client)))) ||
+        (input->kind == GSTD_BOOT_JOB_OIDC_HEALTH &&
+         (!input->network || input->allow_initial ||
+          gstd_oidc_core_manifest_check(input->preparation.manifest) ||
+          !json_object_get(input->preparation.manifest, "oidcProfileDigest") ||
+          gstd_oidc_ports_check(&input->oidc_ports) ||
+          input->oidc_health_role < GSTD_OIDC_HEALTH_HYDRA ||
+          input->oidc_health_role > GSTD_OIDC_HEALTH_ISSUER)) ||
         (input->kind == GSTD_BOOT_JOB_BIND && (!input->uid || !*input->uid || !input->api_boot ||
                                                input->api_pid <= 0 || !input->api_start)))
         return -1;
@@ -228,30 +244,38 @@ int gstd_bootstrap_job_poll(gstd_bootstrap_job *job, int cancel, gstd_bootstrap_
     if (!job || job->worker <= 0 || !reply || cancel < -1)
         return -1;
 #if defined(__linux__) && defined(GITSTORED_BOOTSTRAP)
-    int64_t now = now_ms();
-    struct pollfd cancellation = {.fd = cancel, .events = POLLIN};
-    if (!job->interrupted &&
-        (now < 0 || now >= job->deadline_ms ||
-         (cancel >= 0 && poll(&cancellation, 1, 0) > 0 && cancellation.revents))) {
-        if (kill(job->worker, SIGKILL) && errno != ESRCH)
-            return -1;
-        job->interrupted = 1;
-    }
-    if (!job->interrupted && job->received < sizeof(job->bytes)) {
-        ssize_t count =
-            read(job->descriptor, job->bytes + job->received, sizeof(job->bytes) - job->received);
-        if (count > 0)
-            job->received += (size_t)count;
-        else if (count < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+    /* A fully reaped reply belongs to the original operation even if STOP is
+     * now ready. In particular, do not discard a known creation ACK by killing
+     * an already completed worker. A reply without observed exit is not enough. */
+    int status = 0;
+    pid_t waited = waitpid(job->worker, &status, WNOHANG);
+    if (waited < 0 && errno == EINTR)
+        return 0;
+    if (!waited) {
+        int64_t now = now_ms();
+        struct pollfd cancellation = {.fd = cancel, .events = POLLIN};
+        if (!job->interrupted &&
+            (now < 0 || now >= job->deadline_ms ||
+             (cancel >= 0 && poll(&cancellation, 1, 0) > 0 && cancellation.revents))) {
             if (kill(job->worker, SIGKILL) && errno != ESRCH)
                 return -1;
             job->interrupted = 1;
         }
+        if (!job->interrupted && job->received < sizeof(job->bytes)) {
+            ssize_t count = read(job->descriptor, job->bytes + job->received,
+                                 sizeof(job->bytes) - job->received);
+            if (count > 0)
+                job->received += (size_t)count;
+            else if (count < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
+                if (kill(job->worker, SIGKILL) && errno != ESRCH)
+                    return -1;
+                job->interrupted = 1;
+            }
+        }
+        waited = waitpid(job->worker, &status, WNOHANG);
+        if (!waited || (waited < 0 && errno == EINTR))
+            return 0;
     }
-    int status = 0;
-    pid_t waited = waitpid(job->worker, &status, WNOHANG);
-    if (!waited || (waited < 0 && errno == EINTR))
-        return 0;
     *reply = (gstd_bootstrap_job_reply){.status = GSTD_BOOT_HTTP_UNCERTAIN};
     if (waited == job->worker && WIFEXITED(status) && !WEXITSTATUS(status) && !job->interrupted) {
         /* A final pipe read may lag the wait observation. Child's small report
@@ -278,6 +302,12 @@ int gstd_bootstrap_job_poll(gstd_bootstrap_job *job, int cancel, gstd_bootstrap_
                          (job->oidc_action != GSTD_OIDC_HTTP_CREATE &&
                           candidate.status == GSTD_OIDC_PENDING) ||
                          candidate.status == success);
+            } else if (job->kind == GSTD_BOOT_JOB_OIDC_HEALTH) {
+                static const char empty[129] = {0};
+                valid = !memcmp(candidate.uid, empty, sizeof(empty)) &&
+                        (candidate.status == GSTD_OIDC_HEALTH_REJECTED ||
+                         candidate.status == GSTD_OIDC_HEALTH_PENDING ||
+                         candidate.status == GSTD_OIDC_HEALTH_READY);
             }
             if (valid)
                 *reply = candidate;

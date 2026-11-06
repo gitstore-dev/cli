@@ -36,21 +36,37 @@ json_t *gstd_validate(json_t *params) {
     profile = gstd_profile();
     if (!profile)
         goto fail;
+    const char *version = json_string_value(json_object_get(params, "profileVersion"));
+    const char *digest = gstd_profile_digest_for(version);
     if (!json_equal(json_object_get(params, "profileId"), json_object_get(profile, "profileId")) ||
-        !json_equal(json_object_get(params, "profileVersion"),
-                    json_object_get(profile, "profileVersion"))) {
-        if (diagnostic(result, "PROFILE_NOT_FOUND", "Select the installed core profile version 1"))
+        !digest) {
+        if (diagnostic(result, "PROFILE_NOT_FOUND",
+                       "Select an installed core profile version 1 or 2"))
             goto fail;
         goto done;
     }
     json_t *requested = json_object_get(params, "components");
-    components = gstd_profile_components(requested);
+    components = gstd_profile_components_for(version, requested);
     if (!components) {
+        const char *reason = "Select a nonempty unique set of registered core components";
+        for (size_t i = 0; i < json_array_size(requested); i++) {
+            const char *name = json_string_value(json_array_get(requested, i));
+            if (!name)
+                continue;
+            if (!strcmp(name, "admin"))
+                reason =
+                    "Admin UI requires a published image with verified authentication, configuration and readiness";
+            else if (!strcmp(name, "storefront"))
+                reason =
+                    "Storefront requires a verified reference runtime, publication reads and trusted target selection";
+            else if (!strcmp(name, "oidc"))
+                reason = "OIDC requires installed core profile version 2";
+        }
         if (diagnostic(result,
                        requested && json_is_array(requested) && !json_array_size(requested)
                            ? "INVALID_ARGUMENT"
                            : "COMPONENT_UNAVAILABLE",
-                       "Select a nonempty unique set of verified core components"))
+                       reason))
             goto fail;
         goto done;
     }
@@ -59,8 +75,8 @@ json_t *gstd_validate(json_t *params) {
         datastore = "memdb";
     json_t *plan = json_object_get(result, "effectivePlan");
     if (json_object_set(plan, "profileId", json_object_get(profile, "profileId")) ||
-        json_object_set(plan, "profileVersion", json_object_get(profile, "profileVersion")) ||
-        json_object_set_new(plan, "manifestDigest", json_string(gstd_profile_digest())) ||
+        json_object_set(plan, "profileVersion", json_object_get(params, "profileVersion")) ||
+        json_object_set_new(plan, "manifestDigest", json_string(digest)) ||
         json_object_set(plan, "serverRevision", json_object_get(profile, "serverRevision")) ||
         json_object_set(plan, "components", components) ||
         json_object_set_new(plan, "datastore", json_string(datastore)) ||
@@ -138,7 +154,7 @@ json_t *gstd_validate(json_t *params) {
                             resolutions))
         goto fail;
     if (strcmp(architecture, "unknown")) {
-        json_t *manifest = gstd_asset_manifest_for_datastore(components, architecture, datastore);
+        json_t *manifest = gstd_profile_manifest(version, components, architecture, datastore);
         if (!manifest || gstd_asset_manifest_check(manifest)) {
             json_decref(manifest);
             goto fail;

@@ -1,0 +1,168 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Pinned local Hydra discovery consumers",
+    "version": "1.0.0",
+    "description": "Narrow consumer mapping from Hydra ee8c339ddada3a42529c0416897abc32bad03bbb oauth2/handler.go and jwk/handler.go. Success only. Exact issuer and JWKS URI must use the selected loopback origin. No URLs from responses are followed."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:24001",
+      "description": "Selected private fixture issuer port"
+    }
+  ],
+  "paths": {
+    "/.well-known/openid-configuration": {
+      "get": {
+        "operationId": "discoverLocalIssuer",
+        "responses": {
+          "200": {
+            "description": "Pinned local success predicate; no shared upstream failure taxonomy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/.well-known/jwks.json": {
+      "get": {
+        "operationId": "readLocalPublicKeys",
+        "responses": {
+          "200": {
+            "description": "Pinned local success predicate; no shared upstream failure taxonomy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JWKS"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Discovery": {
+        "type": "object",
+        "required": [
+          "issuer",
+          "jwks_uri"
+        ],
+        "properties": {
+          "issuer": {
+            "type": "string"
+          },
+          "jwks_uri": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicKey": {
+        "type": "object",
+        "required": [
+          "kty",
+          "kid",
+          "use",
+          "alg",
+          "n",
+          "e"
+        ],
+        "properties": {
+          "kty": {
+            "const": "RSA"
+          },
+          "kid": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "use": {
+            "const": "sig"
+          },
+          "alg": {
+            "const": "RS256"
+          },
+          "n": {
+            "type": "string",
+            "minLength": 342,
+            "maxLength": 1366,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "e": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "d"
+              ]
+            },
+            {
+              "required": [
+                "p"
+              ]
+            },
+            {
+              "required": [
+                "q"
+              ]
+            },
+            {
+              "required": [
+                "dp"
+              ]
+            },
+            {
+              "required": [
+                "dq"
+              ]
+            },
+            {
+              "required": [
+                "qi"
+              ]
+            },
+            {
+              "required": [
+                "oth"
+              ]
+            },
+            {
+              "required": [
+                "k"
+              ]
+            }
+          ]
+        }
+      },
+      "JWKS": {
+        "type": "object",
+        "required": [
+          "keys"
+        ],
+        "properties": {
+          "keys": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {
+              "$ref": "#/components/schemas/PublicKey"
+            }
+          }
+        }
+      }
+    }
+  }
+}

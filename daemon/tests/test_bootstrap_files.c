@@ -4,6 +4,7 @@
 #include "gitstored/assets.h"
 #include "gitstored/protocol.h"
 #include "native_exit.h"
+#include "oidc_profile.h"
 #include "support.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -43,21 +44,24 @@ static char *read_file(int root, const char *name) {
     close(fd);
     return bytes;
 }
-static int worker(pid_t parent, int root, int persistent) {
+static int worker(pid_t parent, int root, int persistent, int oidc) {
     alarm(15);
     struct rlimit core = {0, 0};
     CHECK(!setrlimit(RLIMIT_CORE, &core));
     CHECK(!mkdirat(root, "scope", 0700));
     int scope = openat(root, "scope", O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
     CHECK(scope >= 3);
-    json_t *components = json_pack("[s,s,s]", "api", "git", "controller");
+    json_t *components = oidc ? json_pack("[s,s,s,s]", "api", "git", "controller", "oidc")
+                              : json_pack("[s,s,s]", "api", "git", "controller");
 #if defined(__aarch64__)
-    json_t *manifest =
-        gstd_asset_manifest_for_datastore(components, "arm64", persistent ? "scylladb" : "memdb");
+    const char *architecture = "arm64";
 #else
-    json_t *manifest =
-        gstd_asset_manifest_for_datastore(components, "amd64", persistent ? "scylladb" : "memdb");
+    const char *architecture = "amd64";
 #endif
+    json_t *manifest =
+        oidc ? gstd_oidc_core_manifest(components, architecture, persistent ? "scylladb" : "memdb")
+             : gstd_asset_manifest_for_datastore(components, architecture,
+                                                 persistent ? "scylladb" : "memdb");
     json_decref(components);
     CHECK(manifest);
     gstd_bootstrap_request request = {.manifest = manifest,
@@ -68,6 +72,11 @@ static int worker(pid_t parent, int root, int persistent) {
                                       .generation = 1,
                                       .control_owner = parent,
                                       .scope_fd = scope};
+    gstd_oidc_client client = {"fixture-client", "gitstore", "http://127.0.0.1:43003/callback"};
+    if (oidc) {
+        request.oidc_issuer_port = 43000;
+        request.oidc_client = &client;
+    }
     gstd_credential material = {0}, replacement = {0};
     CHECK(!gstd_bootstrap_material_generate(parent, &material));
     CHECK(!gstd_bootstrap_material_generate(parent, &replacement));
@@ -110,6 +119,26 @@ static int worker(pid_t parent, int root, int persistent) {
         CHECK(strstr(owner, json_string_value(json_object_get(manifest, "manifestDigest"))));
     } else
         CHECK(strstr(base, "backend = \"memdb\"") && !strstr(base, "auto_migrate"));
+    if (oidc) {
+        CHECK(strstr(base, "[api.auth.oidc_jwt]") &&
+              strstr(base, "issuer_uri = \"http://127.0.0.1:43000/\"") &&
+              strstr(base, "client_id = \"fixture-client\"") &&
+              strstr(base, "audience = \"gitstore\"") && strstr(base, "\"oidc-jwt\""));
+        CHECK(strstr(owner, "http://127.0.0.1:43000/") && strstr(owner, "fixture-client"));
+        CHECK(!strstr(api, "oidc_jwt"));
+        gstd_bootstrap_request changed = request;
+        changed.oidc_issuer_port++;
+        CHECK(gstd_bootstrap_prepare(&changed, &material) == -1);
+        changed = request;
+        changed.oidc_client = NULL;
+        CHECK(gstd_bootstrap_prepare(&changed, &material) == -1);
+        client.audience = "wrong-audience";
+        CHECK(gstd_bootstrap_prepare(&request, &material) == -1);
+        client.audience = "gitstore";
+        CHECK(!gstd_bootstrap_prepare(&request, &material));
+    } else {
+        CHECK(!strstr(base, "oidc") && !strstr(owner, "oidc"));
+    }
     json_t *secrets = gstd_json_parse(material.bytes, material.length);
     const char *password = json_string_value(json_object_get(secrets, "password")),
                *jwt = json_string_value(json_object_get(secrets, "jwtSecret")),
@@ -181,7 +210,7 @@ static int worker(pid_t parent, int root, int persistent) {
     gstd_credential_clear(&replacement);
     return 0;
 }
-static int scenario(int persistent) {
+static int scenario(int persistent, int oidc) {
     gstd_json_initialize();
     char *root = gstd_test_dir();
     if (!root || !geteuid())
@@ -189,7 +218,7 @@ static int scenario(int persistent) {
     int fd = open(root, O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
     pid_t parent = getpid(), child = fork();
     if (!child)
-        _exit(worker(parent, fd, persistent));
+        _exit(worker(parent, fd, persistent, oidc));
     int status = 0;
     int valid = child > 0 && waitpid(child, &status, 0) == child && WIFEXITED(status) &&
                 !WEXITSTATUS(status);
@@ -200,4 +229,4 @@ static int scenario(int persistent) {
     return valid ? 0 : 1;
 }
 
-int main(void) { return scenario(0) || scenario(1); }
+int main(void) { return scenario(0, 0) || scenario(1, 0) || scenario(0, 1) || scenario(1, 1); }

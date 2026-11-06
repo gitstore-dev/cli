@@ -119,6 +119,7 @@ static int same(const json_t *value, const char *expected) {
     return json_is_string(value) && json_string_length(value) == strlen(expected) &&
            !memcmp(json_string_value(value), expected, strlen(expected));
 }
+const char *gstd_oidc_core_profile_digest(void) { return core_oidc_profile_digest; }
 json_t *gstd_oidc_core_components(const json_t *requested) {
     int controller = requested == NULL, oidc = 0, have_core = requested == NULL;
     if (requested) {

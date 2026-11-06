@@ -1,0 +1,11 @@
+$kind: http-request
+method: GET
+url: '{{smtp_base}}/readyz'
+order: 5000
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("HTTP readiness status", () => pm.response.to.have.status(200));

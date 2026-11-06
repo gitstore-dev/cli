@@ -20,6 +20,7 @@ void gstd_filesystem_reply_close(gstd_filesystem_reply *reply) {
     memset(reply, 0, sizeof(*reply));
 }
 #ifdef __linux__
+#include <arpa/inet.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -64,6 +65,31 @@ static int directory(int root, const char *name, int create) {
         fd = -1;
     }
     return fd;
+}
+/* A bounded proposal in a private worker. Temporary sockets are held together
+ * to ensure distinct ports, then closed. The parent commits the tuple before
+ * permitting the owned network worker; a subsequent bind race fails explicitly. */
+static int oidc_ports(gstd_oidc_ports *ports) {
+    int sockets[5] = {-1, -1, -1, -1, -1};
+    uint16_t selected[5] = {0};
+    int result = -1;
+    for (unsigned i = 0; i < 5; i++) {
+        sockets[i] = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+        struct sockaddr_in address = {.sin_family = AF_INET,
+                                      .sin_addr.s_addr = htonl(INADDR_LOOPBACK)};
+        socklen_t size = sizeof(address);
+        if (sockets[i] < 3 || bind(sockets[i], (struct sockaddr *)&address, sizeof(address)) ||
+            getsockname(sockets[i], (struct sockaddr *)&address, &size))
+            goto done;
+        selected[i] = ntohs(address.sin_port);
+    }
+    *ports = (gstd_oidc_ports){selected[0], selected[1], selected[2], selected[3], selected[4]};
+    result = gstd_oidc_ports_check(ports);
+done:
+    for (unsigned i = 0; i < 5; i++)
+        if (sockets[i] >= 3)
+            close(sockets[i]);
+    return result;
 }
 static int initialize(gstd_filesystem_input *input, gstd_filesystem_reply *reply) {
     int existing = input->action == GSTD_FS_REOPEN_ROOTS;
@@ -279,6 +305,8 @@ static void worker(gstd_filesystem_input input, int channel, pid_t parent) {
     input.descriptors[2] = original[2] < 0 ? -1 : 5;
     if (input.action == GSTD_FS_INITIALIZE || input.action == GSTD_FS_REOPEN_ROOTS)
         reply.status = initialize(&input, &reply);
+    else if (input.action == GSTD_FS_OIDC_PORTS)
+        reply.status = oidc_ports(&reply.oidc_ports);
     else if (input.action == GSTD_FS_HOST_PROBE) {
         reply.detail = (int)gstd_host_probe(3);
         reply.status = reply.detail == GSTD_HOST_OK ? 0 : -1;
@@ -493,7 +521,7 @@ int gstd_filesystem_launch(const gstd_filesystem_input *input, unsigned timeout,
                            gstd_filesystem_job *job) {
 #ifdef __linux__
     if (!input || !job || job->worker || !timeout || timeout > 600000 || !geteuid() ||
-        input->action < GSTD_FS_INITIALIZE || input->action > GSTD_FS_OIDC_PREPARE ||
+        input->action < GSTD_FS_INITIALIZE || input->action > GSTD_FS_OIDC_PORTS ||
         !private_directory(input->descriptors[0]) ||
         (input->action >= GSTD_FS_IMAGE_STAGE && input->action <= GSTD_FS_IMAGE_MATERIALIZE &&
          (gstd_asset_manifest_check(input->manifest) || !input->component ||
@@ -511,6 +539,12 @@ int gstd_filesystem_launch(const gstd_filesystem_input *input, unsigned timeout,
             !json_object_get(input->manifest, "oidcProfileDigest"))
             return -1;
     }
+    if (input->action == GSTD_FS_OIDC_PORTS &&
+        (gstd_oidc_core_manifest_check(input->manifest) ||
+         !json_object_get(input->manifest, "oidcProfileDigest") ||
+         !store_id(input->store_id) || !identifier(input->operation_id) ||
+         !identifier(input->deployment_id) || !identifier(input->resource_id)))
+        return -1;
     if (input->action == GSTD_FS_OIDC_PREPARE &&
         (gstd_oidc_core_manifest_check(input->manifest) ||
          !json_object_get(input->manifest, "oidcProfileDigest") ||

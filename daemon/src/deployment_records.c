@@ -48,7 +48,8 @@ static int target_read(sqlite3 *db, const char *op, gstd_deployment_target *outp
             ? "SELECT o.intent,o.deployment_id,json_extract(r.backend_identity,'$.generation'),"
               "q.store_id,p.server_revision,p.manifest_digest,p.platform FROM operations o "
               "JOIN deployments d ON d.deployment_id=o.deployment_id "
-              "JOIN profiles p ON p.profile_id='core' AND p.profile_version='1' "
+              "JOIN profiles p ON p.profile_id=json_extract(o.intent,'$.profileId') AND "
+              "p.profile_version=json_extract(o.intent,'$.profileVersion') "
               "JOIN resource_ownership r ON r.operation_id=o.operation_id AND "
               "r.deployment_id=d.deployment_id "
               "CROSS JOIN query_meta q WHERE o.operation_id=? AND o.caller_uid=? AND "
@@ -96,18 +97,24 @@ static int target_read(sqlite3 *db, const char *op, gstd_deployment_target *outp
     const char *profile = json_string_value(json_object_get(intent, "profileId")),
                *version = json_string_value(json_object_get(intent, "profileVersion"));
     const char *datastore = json_string_value(json_object_get(intent, "datastore"));
-    if (!valid || !profile || strcmp(profile, "core") || !version || strcmp(version, "1") ||
-        !datastore || (strcmp(datastore, "memdb") && strcmp(datastore, "scylladb")))
+    if (!valid || !profile || strcmp(profile, "core") || !version ||
+        (strcmp(version, "1") && strcmp(version, "2")) || !datastore ||
+        (strcmp(datastore, "memdb") && strcmp(datastore, "scylladb")))
         goto failed;
-    target.components = gstd_profile_components(json_object_get(intent, "components"));
+    int oidc_profile = !strcmp(version, "2");
+    target.components = oidc_profile
+                            ? gstd_oidc_core_components(json_object_get(intent, "components"))
+                            : gstd_profile_components(json_object_get(intent, "components"));
 #if defined(__aarch64__) || defined(__arm64__)
     const char *architecture = "arm64";
 #else
     const char *architecture = "amd64";
 #endif
-    target.manifest = target.components ? gstd_asset_manifest_for_datastore(target.components,
-                                                                            architecture, datastore)
-                                        : NULL;
+    target.manifest =
+        !target.components ? NULL
+        : oidc_profile
+            ? gstd_oidc_core_manifest(target.components, architecture, datastore)
+            : gstd_asset_manifest_for_datastore(target.components, architecture, datastore);
     char expected_platform[64];
     snprintf(expected_platform, sizeof(expected_platform), "linux-%s", architecture);
     if (!target.manifest || strcmp(platform, expected_platform) ||
@@ -923,10 +930,14 @@ static int helper_network_matches(sqlite3 *db, const gstd_deployment_target *tar
     sqlite3_finalize(s);
     return valid && !gstd_network_namespace_check(network);
 }
+static int oidc_helper_execution_matches(sqlite3 *, const json_t *, const gstd_deployment_target *,
+                                         const char *, const gstd_helper *);
 static int helper_execution_matches(sqlite3 *db, const json_t *value,
                                     const gstd_deployment_target *target, const char *id,
                                     const gstd_helper *helper) {
     const gstd_execution_inputs *input = helper ? helper->context.registered_inputs : NULL;
+    if (input && input->purpose == GSTD_EXEC_OIDC_MIGRATE)
+        return oidc_helper_execution_matches(db, value, target, id, helper);
     char source[65];
     struct stat root, bundle;
     json_t *execution = json_object_get(value, "execution"),
@@ -1939,4 +1950,318 @@ int gstd_deployment_oidc_enrollment_observe(sqlite3 *db, const gstd_deployment_t
     json_decref(binding);
     json_decref(value);
     return valid ? 0 : -1;
+}
+
+/* OIDC migrations have their own provider/volume authority. In particular no
+ * Scylla resource name, graph stage or writer receipt is accepted here. */
+static int oidc_helper_id(const gstd_deployment_target *target, const char *component,
+                          const char *id) {
+    if (!target || !component || !id ||
+        (strcmp(component, "oidc-hydra") && strcmp(component, "oidc-kratos")))
+        return 0;
+    char expected[65];
+    int n = snprintf(expected, sizeof(expected), "migrate-%s-%s", component, target->operation_id);
+    return n > 0 && n < (int)sizeof(expected) && !strcmp(expected, id);
+}
+static json_t *oidc_helper_volume(sqlite3 *db, const gstd_deployment_target *target,
+                                  const gstd_native_context *context) {
+    const gstd_execution_inputs *input = context ? context->registered_inputs : NULL;
+    struct stat data, writer;
+    int flags = context ? fcntl(context->writer_lease_fd, F_GETFL) : -1;
+    if (!input || input->purpose != GSTD_EXEC_OIDC_MIGRATE || flags < 0 ||
+        (flags & O_ACCMODE) != O_RDWR || context->writer_lease_fd < 3 ||
+        input->role_fds[GSTD_MOUNT_DATASTORE] < 3 ||
+        fstat(input->role_fds[GSTD_MOUNT_DATASTORE], &data) || !S_ISDIR(data.st_mode) ||
+        data.st_uid != geteuid() || (data.st_mode & 07777) != 0700 ||
+        fstat(context->writer_lease_fd, &writer) || !S_ISREG(writer.st_mode) ||
+        writer.st_uid != geteuid() || (writer.st_mode & 07777) != 0600 || writer.st_nlink != 1 ||
+        writer.st_size)
+        return NULL;
+    sqlite3_stmt *s = prepare(
+        db, "SELECT v.volume_id,v.producer_operation_id,v.data_device,v.data_inode,"
+            "v.writer_device,v.writer_inode FROM oidc_provider_volumes v "
+            "JOIN resource_ownership r ON r.resource_id=v.volume_id "
+            "WHERE v.role=? AND v.store_id=? AND v.owner_uid=? AND v.allocated=1 "
+            "AND r.operation_id=? AND r.deployment_id=? AND r.resource_type='datastore-volume' "
+            "AND r.ownership_state='held'");
+    if (!s)
+        return NULL;
+    bind(s, 1, context->component);
+    bind(s, 2, target->store_id);
+    sqlite3_bind_int64(s, 3, (sqlite3_int64)geteuid());
+    bind(s, 4, target->operation_id);
+    bind(s, 5, target->deployment_id);
+    json_t *value = NULL;
+    int valid = sqlite3_step(s) == SQLITE_ROW;
+    const char *id = valid ? (const char *)sqlite3_column_text(s, 0) : NULL,
+               *producer = valid ? (const char *)sqlite3_column_text(s, 1) : NULL;
+    valid = identifier(id) && identifier(producer);
+    const uint64_t identities[] = {(uint64_t)data.st_dev, (uint64_t)data.st_ino,
+                                   (uint64_t)writer.st_dev, (uint64_t)writer.st_ino};
+    for (unsigned i = 0; valid && i < 4; i++) {
+        char expected[32];
+        snprintf(expected, sizeof(expected), "%llu", (unsigned long long)identities[i]);
+        const char *actual = (const char *)sqlite3_column_text(s, (int)i + 2);
+        valid = actual && sqlite3_column_bytes(s, (int)i + 2) == (int)strlen(expected) &&
+                !strcmp(actual, expected);
+    }
+    if (valid)
+        value =
+            json_pack("{s:s,s:s,s:s,s:s,s:s,s:s,s:s}", "role", context->component, "volumeId", id,
+                      "producerOperationId", producer, "dataDevice", sqlite3_column_text(s, 2),
+                      "dataInode", sqlite3_column_text(s, 3), "writerDevice",
+                      sqlite3_column_text(s, 4), "writerInode", sqlite3_column_text(s, 5));
+    valid = valid && sqlite3_step(s) == SQLITE_DONE;
+    sqlite3_finalize(s);
+    if (!valid) {
+        json_decref(value);
+        value = NULL;
+    }
+    return value;
+}
+static int oidc_helper_execution_matches(sqlite3 *db, const json_t *value,
+                                         const gstd_deployment_target *target, const char *id,
+                                         const gstd_helper *helper) {
+    const gstd_native_context *context = helper ? &helper->context : NULL;
+    const gstd_execution_inputs *input = context ? context->registered_inputs : NULL;
+    if (!input || !oidc_helper_id(target, context->component, id) || !context->backend_id ||
+        strcmp(context->backend_id, id) || !json_equal(input->manifest, target->manifest) ||
+        gstd_network_attachment_matches(db, target->operation_id, id, input->network))
+        return 0;
+    json_t *binding = oidc_helper_volume(db, target, context);
+    const json_t *control = json_object_get(value, "helperControl"),
+                 *stored = json_object_get(value, "oidcMigration"),
+                 *native = json_object_get(value, "native"),
+                 *execution = json_object_get(value, "execution");
+    struct stat root, bundle;
+    int deleted = helper_text(control, "stage", "deleted");
+    int valid =
+        binding && json_equal(binding, stored) && json_is_object(control) &&
+        json_object_size(control) == 7 && json_is_integer(json_object_get(control, "purpose")) &&
+        json_integer_value(json_object_get(control, "purpose")) == GSTD_EXEC_OIDC_MIGRATE &&
+        json_is_integer(json_object_get(control, "attempt")) &&
+        json_integer_value(json_object_get(control, "attempt")) == 1 &&
+        json_is_boolean(json_object_get(control, "unsafe")) &&
+        json_is_true(json_object_get(control, "unsafe")) == !deleted &&
+        helper_text(control, "sourceProviderVolume",
+                    json_string_value(json_object_get(binding, "volumeId"))) &&
+        (helper_text(control, "stage", "dispatch") || helper_text(control, "stage", "created") ||
+         deleted) &&
+        (!native || (helper_text(native, "kind", "libcrun") && helper_text(native, "id", id) &&
+                     helper_text(native, "component", context->component) &&
+                     helper_text(native, "bootId", context->boot_id) &&
+                     json_integer_value(json_object_get(native, "generation")) ==
+                         (json_int_t)target->generation)) &&
+        !fstat(context->rootfs_fd, &root) && !fstat(context->bundle_fd, &bundle) &&
+        identity_equals(execution, "rootfsDevice", root.st_dev) &&
+        identity_equals(execution, "rootfsInode", root.st_ino) &&
+        identity_equals(execution, "bundleDevice", bundle.st_dev) &&
+        identity_equals(execution, "bundleInode", bundle.st_ino);
+    json_decref(binding);
+    return valid;
+}
+static int oidc_helper_deleted(const json_t *old, const json_t *binding,
+                               const gstd_deployment_target *target,
+                               const gstd_native_context *context, int prior) {
+    const json_t *control = json_object_get(old, "helperControl"),
+                 *native = json_object_get(old, "native"),
+                 *termination = json_object_get(control, "termination");
+    const char *operation = json_string_value(json_object_get(old, "operationId")),
+               *id = json_string_value(json_object_get(native, "id"));
+    gstd_deployment_target original = {0};
+    if (!identifier(operation))
+        return 0;
+    memcpy(original.operation_id, operation, strlen(operation) + 1);
+    json_int_t pid = json_integer_value(json_object_get(native, "pid")),
+               start = json_integer_value(json_object_get(native, "startTime")),
+               generation = json_integer_value(json_object_get(old, "generation"));
+    if (!json_equal(json_object_get(old, "oidcMigration"), binding) ||
+        !helper_text(old, "storeId", target->store_id) ||
+        !helper_text(old, "deploymentId", target->deployment_id) ||
+        !oidc_helper_id(&original, context->component, id) ||
+        gstd_oidc_core_manifest_check(json_object_get(old, "executionManifest")) ||
+        !json_is_object(control) || json_object_size(control) != 7 ||
+        !json_is_integer(json_object_get(control, "purpose")) ||
+        json_integer_value(json_object_get(control, "purpose")) != GSTD_EXEC_OIDC_MIGRATE ||
+        !json_is_integer(json_object_get(control, "attempt")) ||
+        json_integer_value(json_object_get(control, "attempt")) != 1 ||
+        !helper_text(control, "stage", "deleted") ||
+        !json_is_false(json_object_get(control, "unsafe")) ||
+        !helper_text(control, "sourceProviderVolume",
+                     json_string_value(json_object_get(binding, "volumeId"))) ||
+        !json_is_integer(json_object_get(control, "result")) ||
+        json_integer_value(json_object_get(control, "result")) != 0 || !json_is_object(native) ||
+        json_object_size(native) != 7 || !helper_text(native, "kind", "libcrun") ||
+        !helper_text(native, "component", context->component) ||
+        !helper_text(native, "bootId", context->boot_id) || pid <= 0 || pid > INT_MAX ||
+        start <= 0 || !json_is_integer(json_object_get(old, "generation")) || generation <= 0 ||
+        (prior ? generation >= (json_int_t)target->generation
+               : generation != (json_int_t)target->generation) ||
+        (!prior && strcmp(operation, target->operation_id)) ||
+        json_integer_value(json_object_get(native, "generation")) != generation ||
+        !json_is_object(termination) || json_object_size(termination) != 6 ||
+        !helper_text(termination, "kind", "helper-native-delete") ||
+        !oidc_decimal(json_object_get(termination, "cgroupDevice"), 0) ||
+        !oidc_decimal(json_object_get(termination, "cgroupInode"), 1) ||
+        !json_equal(json_object_get(termination, "cgroupDevice"),
+                    json_object_get(json_object_get(old, "population"), "cgroupDevice")) ||
+        !json_equal(json_object_get(termination, "cgroupInode"),
+                    json_object_get(json_object_get(old, "population"), "cgroupInode")) ||
+        !json_equal(json_object_get(termination, "native"), native) ||
+        !json_is_false(json_object_get(termination, "signalled")) ||
+        !json_is_integer(json_object_get(termination, "exitCode")) ||
+        json_integer_value(json_object_get(termination, "exitCode")) != 0)
+        return 0;
+    struct stat state;
+    errno = 0;
+    if (!fstatat(context->state_fd, id, &state, AT_SYMLINK_NOFOLLOW) || errno != ENOENT)
+        return 0;
+    uint64_t current = 0;
+    errno = 0;
+    if (!gstd_native_process_start((pid_t)pid, &current))
+        return current != (uint64_t)start;
+    return errno == ENOENT || errno == ESRCH;
+}
+int gstd_deployment_oidc_helper_reserve(sqlite3 *db, const gstd_deployment_target *target,
+                                        const char *configuration,
+                                        const gstd_native_context *context) {
+    if (gstd_helper_validate(context) || !target ||
+        !oidc_helper_id(target, context->component, context->backend_id) ||
+        context->registered_inputs->purpose != GSTD_EXEC_OIDC_MIGRATE)
+        return -1;
+    json_t *config = oidc_configuration_owner(db, target, configuration),
+           *value = config ? owner(db, target, context->backend_id, "workload") : NULL,
+           *binding = value ? oidc_helper_volume(db, target, context) : NULL;
+    int valid = binding && json_is_object(json_object_get(config, "oidcPrepared")) &&
+                json_object_size(json_object_get(value, "execution")) == 4 &&
+                !json_object_get(value, "helperControl") && !json_object_get(value, "native") &&
+                !json_object_get(value, "population") && !json_object_get(value, "oidcMigration");
+    /* A prior dispatched mutation without an observed successful deletion is
+     * never made replayable by selecting a later start generation. */
+    sqlite3_stmt *s =
+        valid
+            ? prepare(
+                  db,
+                  "SELECT backend_identity,ownership_state FROM resource_ownership WHERE deployment_id=? "
+                  "AND resource_type='workload' AND resource_id LIKE ? AND operation_id!=?")
+            : NULL;
+    valid = s != NULL;
+    int prior = 0;
+    if (s) {
+        bind(s, 1, target->deployment_id);
+        char pattern[40];
+        int length = snprintf(pattern, sizeof(pattern), "migrate-%s-%%", context->component);
+        valid = length > 0 && length < (int)sizeof(pattern);
+        bind(s, 2, pattern);
+        bind(s, 3, target->operation_id);
+        int step;
+        while ((step = sqlite3_step(s)) == SQLITE_ROW && valid) {
+            json_t *old =
+                gstd_json_parse(sqlite3_column_text(s, 0), (size_t)sqlite3_column_bytes(s, 0));
+            const char *ownership = (const char *)sqlite3_column_text(s, 1);
+            valid = ownership && !strcmp(ownership, "released") &&
+                    oidc_helper_deleted(old, binding, target, context, 1);
+            prior++;
+            json_decref(old);
+        }
+        valid = valid && step == SQLITE_DONE;
+    }
+    sqlite3_finalize(s);
+    valid = valid && (prior || helper_text(binding, "producerOperationId", target->operation_id));
+    json_t *control =
+        valid ? json_pack("{s:i,s:i,s:s,s:b,s:O,s:n,s:n}", "purpose", GSTD_EXEC_OIDC_MIGRATE,
+                          "attempt", 1, "stage", "dispatch", "unsafe", 1, "sourceProviderVolume",
+                          json_object_get(binding, "volumeId"), "termination", "result")
+              : NULL;
+    valid = control && !json_object_set(value, "helperControl", control) &&
+            !json_object_set(value, "oidcMigration", binding);
+    gstd_helper check = {.context = *context};
+    valid = valid && oidc_helper_execution_matches(db, value, target, context->backend_id, &check);
+    int result = valid ? write_owner(db, target, context->backend_id, value, "reserved") : -1;
+    json_decref(control);
+    json_decref(binding);
+    json_decref(value);
+    json_decref(config);
+    return result;
+}
+
+int gstd_deployment_oidc_ports_read(sqlite3 *db, const gstd_deployment_target *target,
+                                    gstd_oidc_ports *ports) {
+    if (!ports || !current(db, target) || gstd_oidc_core_manifest_check(target->manifest) ||
+        !json_object_get(target->manifest, "oidcProfileDigest"))
+        return -1;
+    sqlite3_stmt *s = prepare(
+        db,
+        "SELECT backend_identity FROM resource_ownership WHERE deployment_id=? "
+        "AND resource_type='configuration' AND resource_id LIKE 'oidc-cfg-%' AND operation_id!=?");
+    if (!s)
+        return -1;
+    bind(s, 1, target->deployment_id);
+    bind(s, 2, target->operation_id);
+    json_t *selected = NULL;
+    int valid = 1, step;
+    while ((step = sqlite3_step(s)) == SQLITE_ROW && valid) {
+        json_t *value =
+            gstd_json_parse(sqlite3_column_text(s, 0), (size_t)sqlite3_column_bytes(s, 0));
+        const json_t *prepared = json_object_get(value, "oidcPrepared"),
+                     *tuple = json_object_get(prepared, "ports");
+        valid = value && helper_text(value, "kind", "configuration") &&
+                helper_text(value, "storeId", target->store_id) &&
+                helper_text(value, "deploymentId", target->deployment_id) &&
+                !gstd_oidc_core_manifest_check(json_object_get(value, "executionManifest"));
+        /* An incomplete reservation cannot be skipped in favour of an older
+         * complete family. Absence is uncertainty, never port/material repair. */
+        if (valid && (json_object_get(value, "oidcCredentialReservation") ||
+                      json_object_get(value, "oidcMaterialSource") || prepared)) {
+            valid = oidc_prepared_valid(prepared) && (!selected || json_equal(selected, tuple));
+            if (valid && !selected)
+                selected = json_incref((json_t *)tuple);
+        }
+        json_decref(value);
+    }
+    valid = valid && step == SQLITE_DONE;
+    sqlite3_finalize(s);
+    if (valid && selected) {
+        *ports = (gstd_oidc_ports){(uint16_t)json_integer_value(json_array_get(selected, 0)),
+                                   (uint16_t)json_integer_value(json_array_get(selected, 1)),
+                                   (uint16_t)json_integer_value(json_array_get(selected, 2)),
+                                   (uint16_t)json_integer_value(json_array_get(selected, 3)),
+                                   (uint16_t)json_integer_value(json_array_get(selected, 4))};
+        valid = !gstd_oidc_ports_check(ports);
+    }
+    int result = valid ? (selected ? 0 : 1) : -1;
+    json_decref(selected);
+    return result;
+}
+
+int gstd_deployment_oidc_recovery_configuration_read(const gstd_deployment_target *target,
+                                                     const json_t *value, gstd_oidc_ports *ports) {
+    const json_t *prepared = json_object_get(value, "oidcPrepared"),
+                 *tuple = json_object_get(prepared, "ports");
+    if (!target || !ports || !oidc_prepared_valid(prepared) ||
+        !helper_text(value, "kind", "configuration") ||
+        !helper_text(value, "storeId", target->store_id) ||
+        !helper_text(value, "deploymentId", target->deployment_id) ||
+        !helper_text(value, "operationId", target->operation_id) ||
+        json_integer_value(json_object_get(value, "generation")) !=
+            (json_int_t)target->generation ||
+        !json_equal(json_object_get(value, "executionManifest"), target->manifest))
+        return -1;
+    *ports = (gstd_oidc_ports){(uint16_t)json_integer_value(json_array_get(tuple, 0)),
+                               (uint16_t)json_integer_value(json_array_get(tuple, 1)),
+                               (uint16_t)json_integer_value(json_array_get(tuple, 2)),
+                               (uint16_t)json_integer_value(json_array_get(tuple, 3)),
+                               (uint16_t)json_integer_value(json_array_get(tuple, 4))};
+    return gstd_oidc_ports_check(ports);
+}
+int gstd_deployment_oidc_helper_receipt_read(const gstd_deployment_target *target, const char *id,
+                                             const json_t *value, const json_t *binding,
+                                             const char *boot, int native_fd) {
+    const char *component = json_string_value(json_object_get(binding, "role"));
+    gstd_native_context context = {.component = component, .boot_id = boot, .state_fd = native_fd};
+    if (!target || !boot || strlen(boot) != 36 || native_fd < 3 ||
+        !oidc_helper_id(target, component, id) ||
+        !json_equal(json_object_get(value, "executionManifest"), target->manifest))
+        return -1;
+    return oidc_helper_deleted(value, binding, target, &context, 0) ? 0 : -1;
 }

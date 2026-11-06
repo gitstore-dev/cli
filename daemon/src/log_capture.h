@@ -2,13 +2,15 @@
 #define GSTD_LOG_CAPTURE_H
 #include "gitstored/protocol.h"
 #include <sys/types.h>
+#define GSTD_CAPTURE_MAX 9u
 typedef struct {
     int state_fd, configuration_fd,
         broker_fd; /* configuration scope wrapper, not its material data directory */
-    const json_t *source;
+    const json_t *source, *oidc_source;
     const char *store_id, *deployment_id, *operation_id;
     uint64_t generation;
     unsigned components; /* Git/API[/controller][/Scylla] order */
+    unsigned oidc;       /* five fixed provider roles after core/datastore */
     unsigned scylladb;   /* trusted persistent graph dependency, not a wire selector */
     int test_fixture;    /* synthetic credentials only in explicitly built tests */
     const char *const *test_secrets;
@@ -17,14 +19,14 @@ typedef struct {
 typedef struct {
     pid_t worker;
     int stage, status, channel, death_fd, interrupted;
-    int output[4][2];
+    int output[GSTD_CAPTURE_MAX][2];
     int64_t deadline_ms;
     uint64_t start;
     char boot[37];
 } gstd_log_capture;
 #define GSTD_LOG_CAPTURE_INITIAL                                                                   \
     {                                                                                              \
-        .channel = -1, .death_fd = -1, .output = { {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1} }        \
+        .channel = -1, .death_fd = -1, .output = { {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1} }        \
     }
 /* One private collector per deployment, before any native CREATE. It reads the
  * existing canonical credential only in its private process, redacts both output
