@@ -151,6 +151,10 @@ int gstd_deployment_oidc_enrollment_observe(sqlite3 *, const gstd_deployment_tar
  * block another dispatch against the retained provider volume. */
 int gstd_deployment_oidc_helper_reserve(sqlite3 *, const gstd_deployment_target *,
                                         const char *configuration_id, const gstd_native_context *);
+/* Read-only prior migration validation: count verified released reservations or
+ * successfully deleted helpers, -1 for any uncertain/invalid history. */
+int gstd_deployment_oidc_helper_history(sqlite3 *, const gstd_deployment_target *, const json_t *,
+                                       const gstd_native_context *);
 /* Caller transaction, read-only retained port selection before new network
  * effects. 0=exact prior tuple, 1=no prior prepared family, -1=blocked/corrupt.
  * Incomplete reservations never authorize replacement/repair or new ports. */

@@ -2093,7 +2093,9 @@ static int oidc_helper_deleted(const json_t *old, const json_t *binding,
         json_integer_value(json_object_get(control, "result")) != 0 || !json_is_object(native) ||
         json_object_size(native) != 7 || !helper_text(native, "kind", "libcrun") ||
         !helper_text(native, "component", context->component) ||
-        !helper_text(native, "bootId", context->boot_id) || pid <= 0 || pid > INT_MAX ||
+        !json_is_string(json_object_get(native, "bootId")) ||
+        json_string_length(json_object_get(native, "bootId")) != 36 ||
+        (!prior && !helper_text(native, "bootId", context->boot_id)) || pid <= 0 || pid > INT_MAX ||
         start <= 0 || !json_is_integer(json_object_get(old, "generation")) || generation <= 0 ||
         (prior ? generation >= (json_int_t)target->generation
                : generation != (json_int_t)target->generation) ||
@@ -2116,11 +2118,74 @@ static int oidc_helper_deleted(const json_t *old, const json_t *binding,
     errno = 0;
     if (!fstatat(context->state_fd, id, &state, AT_SYMLINK_NOFOLLOW) || errno != ENOENT)
         return 0;
+    /* PID/start-time pairs are meaningful only within their recorded boot.
+     * A completed historical DELETE remains evidence after a host reboot. */
+    if (prior && !helper_text(native, "bootId", context->boot_id))
+        return 1;
     uint64_t current = 0;
     errno = 0;
     if (!gstd_native_process_start((pid_t)pid, &current))
         return current != (uint64_t)start;
     return errno == ENOENT || errno == ESRCH;
+}
+int gstd_deployment_oidc_helper_history(sqlite3 *db, const gstd_deployment_target *target,
+                                       const json_t *binding, const gstd_native_context *context) {
+    if (!db || !target || !binding || !context || !context->component || !context->boot_id)
+        return -1;
+    sqlite3_stmt *s = prepare(
+        db, "SELECT r.backend_identity,r.ownership_state,r.resource_id,r.operation_id,"
+            "r.lifecycle_stage,o.caller_uid,o.method FROM resource_ownership r "
+            "LEFT JOIN operations o ON o.operation_id=r.operation_id AND "
+            "o.deployment_id=r.deployment_id WHERE r.deployment_id=? AND "
+            "r.resource_type='workload' AND r.resource_id LIKE ? AND r.operation_id!=?");
+    if (!s)
+        return -1;
+    bind(s, 1, target->deployment_id);
+    char pattern[40];
+    int length = snprintf(pattern, sizeof(pattern), "migrate-%s-%%", context->component);
+    int valid = length > 0 && length < (int)sizeof(pattern), prior = 0, step;
+    bind(s, 2, pattern);
+    bind(s, 3, target->operation_id);
+    while ((step = sqlite3_step(s)) == SQLITE_ROW && valid) {
+        int absent = sqlite3_column_type(s, 0) == SQLITE_NULL;
+        json_t *old = absent ? NULL :
+            gstd_json_parse(sqlite3_column_text(s, 0), (size_t)sqlite3_column_bytes(s, 0));
+        char id[65], operation[65], ownership[16], stage[16];
+        gstd_deployment_target original = {0};
+        valid = !column(s, 2, id, sizeof(id)) &&
+                !column(s, 3, operation, sizeof(operation)) && identifier(operation) &&
+                !column(s, 1, ownership, sizeof(ownership)) && !strcmp(ownership, "released") &&
+                !column(s, 4, stage, sizeof(stage)) && !strcmp(stage, "retained") &&
+                sqlite3_column_type(s, 5) == SQLITE_INTEGER &&
+                sqlite3_column_int64(s, 5) == (sqlite3_int64)geteuid() &&
+                (absent || helper_text(old, "kind", "workload"));
+        if (valid)
+            memcpy(original.operation_id, operation, strlen(operation) + 1);
+        const char *method = (const char *)sqlite3_column_text(s, 6);
+        valid = valid && method && !strcmp(method, "deployment.start") &&
+                oidc_helper_id(&original, context->component, id);
+        if (valid && !absent) {
+            json_int_t generation = json_integer_value(json_object_get(old, "generation"));
+            int undispatched =
+                json_is_integer(json_object_get(old, "schemaVersion")) &&
+                json_integer_value(json_object_get(old, "schemaVersion")) == 1 &&
+                helper_text(old, "storeId", target->store_id) &&
+                helper_text(old, "deploymentId", target->deployment_id) &&
+                helper_text(old, "operationId", operation) &&
+                json_is_integer(json_object_get(old, "generation")) && generation > 0 &&
+                generation < (json_int_t)target->generation &&
+                !gstd_oidc_core_manifest_check(json_object_get(old, "executionManifest")) &&
+                !json_object_get(old, "helperControl") && !json_object_get(old, "oidcMigration") &&
+                !json_object_get(old, "native") && !json_object_get(old, "population");
+            valid = helper_text(old, "operationId", operation) &&
+                    (undispatched || oidc_helper_deleted(old, binding, target, context, 1));
+        }
+        prior++;
+        json_decref(old);
+    }
+    valid = valid && step == SQLITE_DONE;
+    sqlite3_finalize(s);
+    return valid ? prior : -1;
 }
 int gstd_deployment_oidc_helper_reserve(sqlite3 *db, const gstd_deployment_target *target,
                                         const char *configuration,
@@ -2136,38 +2201,10 @@ int gstd_deployment_oidc_helper_reserve(sqlite3 *db, const gstd_deployment_targe
                 json_object_size(json_object_get(value, "execution")) == 4 &&
                 !json_object_get(value, "helperControl") && !json_object_get(value, "native") &&
                 !json_object_get(value, "population") && !json_object_get(value, "oidcMigration");
-    /* A prior dispatched mutation without an observed successful deletion is
-     * never made replayable by selecting a later start generation. */
-    sqlite3_stmt *s =
-        valid
-            ? prepare(
-                  db,
-                  "SELECT backend_identity,ownership_state FROM resource_ownership WHERE deployment_id=? "
-                  "AND resource_type='workload' AND resource_id LIKE ? AND operation_id!=?")
-            : NULL;
-    valid = s != NULL;
-    int prior = 0;
-    if (s) {
-        bind(s, 1, target->deployment_id);
-        char pattern[40];
-        int length = snprintf(pattern, sizeof(pattern), "migrate-%s-%%", context->component);
-        valid = length > 0 && length < (int)sizeof(pattern);
-        bind(s, 2, pattern);
-        bind(s, 3, target->operation_id);
-        int step;
-        while ((step = sqlite3_step(s)) == SQLITE_ROW && valid) {
-            json_t *old =
-                gstd_json_parse(sqlite3_column_text(s, 0), (size_t)sqlite3_column_bytes(s, 0));
-            const char *ownership = (const char *)sqlite3_column_text(s, 1);
-            valid = ownership && !strcmp(ownership, "released") &&
-                    oidc_helper_deleted(old, binding, target, context, 1);
-            prior++;
-            json_decref(old);
-        }
-        valid = valid && step == SQLITE_DONE;
-    }
-    sqlite3_finalize(s);
-    valid = valid && (prior || helper_text(binding, "producerOperationId", target->operation_id));
+    /* Dispatched mutations require successful deletion; released reservations
+     * without a dispatch marker grant no evidence of an attempted mutation. */
+    int prior = valid ? gstd_deployment_oidc_helper_history(db, target, binding, context) : -1;
+    valid = prior >= 0 && (prior || helper_text(binding, "producerOperationId", target->operation_id));
     json_t *control =
         valid ? json_pack("{s:i,s:i,s:s,s:b,s:O,s:n,s:n}", "purpose", GSTD_EXEC_OIDC_MIGRATE,
                           "attempt", 1, "stage", "dispatch", "unsafe", 1, "sourceProviderVolume",
