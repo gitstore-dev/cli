@@ -73,6 +73,27 @@ int main(void) {
     CHECK(answer && diagnostic(answer, "COMPONENT_UNAVAILABLE"));
     json_decref(answer);
     answer = NULL;
+    CHECK(!json_object_set_new(params, "profileVersion", json_string("2")));
+    answer = gstd_validate(params);
+    CHECK(answer && !diagnostic(answer, "COMPONENT_UNAVAILABLE") &&
+          !diagnostic(answer, "PROFILE_NOT_FOUND"));
+    effective = json_object_get(answer, "effectivePlan");
+    CHECK(json_array_size(json_object_get(answer, "requiredAssets")) == 5);
+    CHECK(json_array_size(json_object_get(effective, "components")) == 1);
+    CHECK(json_array_size(json_object_get(effective, "configuration")) == 5);
+    CHECK(!gstd_asset_manifest_check(json_object_get(effective, "assetManifest")));
+    json_decref(answer);
+    answer = NULL;
+    CHECK(!json_object_set_new(params, "components", json_pack("[s,s]", "api", "oidc")));
+    answer = gstd_validate(params);
+    CHECK(answer && json_array_size(json_object_get(answer, "requiredAssets")) == 7);
+    effective = json_object_get(answer, "effectivePlan");
+    CHECK(json_array_size(json_object_get(effective, "components")) == 3);
+    CHECK(json_array_size(json_object_get(effective, "configuration")) == 7);
+    CHECK(!gstd_asset_manifest_check(json_object_get(effective, "assetManifest")));
+    json_decref(answer);
+    answer = NULL;
+    CHECK(!json_object_set_new(params, "profileVersion", json_string("1")));
     CHECK(!json_object_set_new(params, "components", json_pack("[s]", "git")));
     CHECK(!json_object_set_new(params, "datastore", json_string("other")));
     answer = gstd_validate(params);

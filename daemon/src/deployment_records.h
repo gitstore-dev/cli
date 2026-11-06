@@ -142,4 +142,22 @@ int gstd_deployment_oidc_enrollment_observe(sqlite3 *, const gstd_deployment_tar
                                             const char *configuration_id, const gstd_oidc_client *,
                                             const json_t *expected, gstd_oidc_http_status,
                                             json_t **record);
+/* Private OIDC mutation journal. Requires the exact registered migration plan,
+ * prepared scope/rootfs, committed owned network attachment and the provider's
+ * canonical data/writer capabilities retained by the caller. Never substitutes
+ * a Scylla source or infers migration authority from allocation freshness.
+ * Commit before CREATE. Reuse helper_created/finished for kernel-bound receipts.
+ * Same-operation dispatch is single-attempt; failed/uncertain prior generations
+ * block another dispatch against the retained provider volume. */
+int gstd_deployment_oidc_helper_reserve(sqlite3 *, const gstd_deployment_target *,
+                                        const char *configuration_id, const gstd_native_context *);
+/* Caller transaction, read-only retained port selection before new network
+ * effects. 0=exact prior tuple, 1=no prior prepared family, -1=blocked/corrupt.
+ * Incomplete reservations never authorize replacement/repair or new ports. */
+int gstd_deployment_oidc_ports_read(sqlite3 *, const gstd_deployment_target *, gstd_oidc_ports *);
+/* Pure immutable OIDC recovery predicates; no dispatch/retry or writer grant. */
+int gstd_deployment_oidc_recovery_configuration_read(const gstd_deployment_target *, const json_t *,
+                                                     gstd_oidc_ports *);
+int gstd_deployment_oidc_helper_receipt_read(const gstd_deployment_target *, const char *,
+                                             const json_t *, const json_t *, const char *, int);
 #endif

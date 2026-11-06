@@ -456,9 +456,17 @@ static int scenario(int scylla) {
         CHECK(!gstd_request_parse(next_message, &next_request));
         gstd_accept_status accepted =
             gstd_accept(db, &next_request, components, NULL, next_operation);
+        CHECK(accepted == GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
+        /* Admission now rejects every unresolved owner even when the caller
+         * has no repository-volume selection. Settle metadata before testing
+         * the separate volume reservation/kernel writer guards below. */
+        SQL("UPDATE resource_ownership SET ownership_state='released';"
+            "UPDATE deployments SET writer_ownership='released'");
+        accepted = gstd_accept(db, &next_request, components, NULL, next_operation);
         json_decref(next_message);
         CHECK(accepted == GSTD_ACCEPT_NEW);
-        SQL("BEGIN IMMEDIATE");
+        SQL("BEGIN IMMEDIATE;UPDATE resource_ownership SET ownership_state='held' WHERE "
+            "resource_type='datastore-volume'");
         CHECK(gstd_scylla_volume_reserve(db, next_operation, replayed) ==
               GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
         SQL("UPDATE resource_ownership SET ownership_state='released' WHERE "

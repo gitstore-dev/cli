@@ -1,0 +1,14 @@
+$kind: collection
+name: Fixed private OIDC health consumers
+description: Success mappings only from oidc-health.openapi.json. Local controlled targets; no shared failure schema.
+variables:
+  - key: hydra_base
+    value: 'http://127.0.0.1:4445'
+  - key: kratos_base
+    value: 'http://127.0.0.1:4434'
+  - key: bridge_base
+    value: 'http://127.0.0.1:24002'
+  - key: ui_base
+    value: 'http://127.0.0.1:24004'
+  - key: smtp_base
+    value: 'http://127.0.0.1:24005'

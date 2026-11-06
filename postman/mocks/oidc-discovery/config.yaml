@@ -1,0 +1,5 @@
+name: oidc-discovery
+version: 1
+mockSrc: default.js
+interceptRequests: true
+origin: discovery.oidc-fixture.test

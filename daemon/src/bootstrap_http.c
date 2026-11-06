@@ -3,6 +3,7 @@
 #include "gitstored/protocol.h"
 #if defined(__linux__) && defined(GITSTORED_BOOTSTRAP)
 #include "bootstrap_queries.inc"
+#include "oidc_discovery.h"
 #include <curl/curl.h>
 #include <dirent.h>
 #include <errno.h>
@@ -198,6 +199,54 @@ static int transport(const char *url, const char *body, const char *token, const
         OPENSSL_cleanse(authorization, strlen(authorization));
     free(authorization);
     return status == CURLE_OK ? 0 : status == CURLE_FILESIZE_EXCEEDED || output->overflow ? -2 : -1;
+#undef OPTION
+}
+static size_t discard(char *bytes, size_t size, size_t count, void *argument) {
+    (void)bytes;
+    size_t *received = argument;
+    if (size && count > SIZE_MAX / size)
+        return 0;
+    size_t length = size * count;
+    if (length > GSTD_FRAME_MAX - *received)
+        return 0;
+    *received += length;
+    return length;
+}
+/* Health consumers intentionally retain no response bytes. Their upstream
+ * bodies are not a contract, and this worker must not relay them to a parent. */
+static int transport_status(const char *url, long *code) {
+    CURL *curl = curl_easy_init();
+    if (!curl)
+        return -1;
+    if (!code) {
+        curl_easy_cleanup(curl);
+        return -1;
+    }
+    size_t received = 0;
+    int options = 0;
+#define OPTION(name, value)                                                                        \
+    do {                                                                                           \
+        if (curl_easy_setopt(curl, name, value) != CURLE_OK)                                       \
+            options = 1;                                                                           \
+    } while (0)
+    OPTION(CURLOPT_URL, url);
+    OPTION(CURLOPT_PROTOCOLS_STR, "http");
+    OPTION(CURLOPT_REDIR_PROTOCOLS_STR, "http");
+    OPTION(CURLOPT_FOLLOWLOCATION, 0L);
+    OPTION(CURLOPT_PROXY, "");
+    OPTION(CURLOPT_NOPROXY, "*");
+    OPTION(CURLOPT_CONNECTTIMEOUT_MS, 500L);
+    OPTION(CURLOPT_TIMEOUT_MS, 2000L);
+    OPTION(CURLOPT_NOSIGNAL, 1L);
+    OPTION(CURLOPT_VERBOSE, 0L);
+    OPTION(CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_1_1);
+    OPTION(CURLOPT_WRITEFUNCTION, discard);
+    OPTION(CURLOPT_WRITEDATA, &received);
+    CURLcode result = options ? CURLE_FAILED_INIT : curl_easy_perform(curl);
+    if (result == CURLE_OK && curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, code) != CURLE_OK)
+        result = CURLE_FAILED_INIT;
+    curl_easy_cleanup(curl);
+    return result == CURLE_OK ? 0 : -1;
 #undef OPTION
 }
 static json_t *json_response(const response *value) {
@@ -463,6 +512,63 @@ finish:
         curl_global_cleanup();
     return result;
 }
+static gstd_oidc_health_status issuer_health(const gstd_bootstrap_http_context *context,
+                                             const gstd_oidc_ports *ports) {
+    if (worker(context) || curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
+        return GSTD_OIDC_HEALTH_REJECTED;
+    gstd_oidc_health_status result = GSTD_OIDC_HEALTH_PENDING;
+    const char *paths[] = {"openid-configuration", "jwks.json"};
+    for (unsigned i = 0; i < 2; i++) {
+        char url[128];
+        snprintf(url, sizeof(url), "http://127.0.0.1:%u/.well-known/%s", ports->issuer, paths[i]);
+        response reply = {0};
+        int received = transport(url, NULL, NULL, NULL, NULL, &reply);
+        json_t *value = !received && reply.code == 200 ? json_response(&reply) : NULL;
+        int valid = value &&
+                    (i ? gstd_oidc_jwks_matches(value) : gstd_oidc_discovery_matches(value, ports));
+        int malformed = received == -2 || (!received && reply.code == 200 && !valid);
+        json_decref(value);
+        clear_response(&reply);
+        if (!valid) {
+            result = malformed ? GSTD_OIDC_HEALTH_REJECTED : GSTD_OIDC_HEALTH_PENDING;
+            goto done;
+        }
+    }
+    result = GSTD_OIDC_HEALTH_READY;
+done:
+    curl_global_cleanup();
+    return result;
+}
+gstd_oidc_health_status gstd_oidc_health(const gstd_bootstrap_http_context *context,
+                                         gstd_oidc_health_role role, const gstd_oidc_ports *ports) {
+    if (role < GSTD_OIDC_HEALTH_HYDRA || role > GSTD_OIDC_HEALTH_ISSUER ||
+        gstd_oidc_ports_check(ports))
+        return GSTD_OIDC_HEALTH_REJECTED;
+    if (role == GSTD_OIDC_HEALTH_ISSUER)
+        return issuer_health(context, ports);
+    if (role == GSTD_OIDC_HEALTH_HYDRA) {
+        gstd_oidc_http_status status = gstd_oidc_http(context, GSTD_OIDC_HTTP_READY, NULL, NULL);
+        return status == GSTD_OIDC_PROVIDER_READY ? GSTD_OIDC_HEALTH_READY
+               : status == GSTD_OIDC_REJECTED     ? GSTD_OIDC_HEALTH_REJECTED
+                                                  : GSTD_OIDC_HEALTH_PENDING;
+    }
+    if (worker(context))
+        return GSTD_OIDC_HEALTH_REJECTED;
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != CURLE_OK)
+        return GSTD_OIDC_HEALTH_REJECTED;
+    char url[128];
+    int length = role == GSTD_OIDC_HEALTH_KRATOS
+                     ? snprintf(url, sizeof(url), "http://127.0.0.1:4434/admin/health/ready")
+                 : role == GSTD_OIDC_HEALTH_BRIDGE
+                     ? snprintf(url, sizeof(url), "http://127.0.0.1:%u/health", ports->bridge)
+                 : role == GSTD_OIDC_HEALTH_UI
+                     ? snprintf(url, sizeof(url), "http://127.0.0.1:%u/health/ready", ports->ui)
+                     : snprintf(url, sizeof(url), "http://127.0.0.1:%u/readyz", ports->mail);
+    long code = 0;
+    int received = length < 1 || (size_t)length >= sizeof(url) || transport_status(url, &code);
+    curl_global_cleanup();
+    return !received && code == 200 ? GSTD_OIDC_HEALTH_READY : GSTD_OIDC_HEALTH_PENDING;
+}
 #else
 gstd_bootstrap_http_status gstd_bootstrap_http(const gstd_bootstrap_http_context *context,
                                                gstd_bootstrap_http_action action,
@@ -481,5 +587,12 @@ gstd_oidc_http_status gstd_oidc_http(const gstd_bootstrap_http_context *context,
     (void)client;
     (void)secret;
     return GSTD_OIDC_REJECTED;
+}
+gstd_oidc_health_status gstd_oidc_health(const gstd_bootstrap_http_context *context,
+                                         gstd_oidc_health_role role, const gstd_oidc_ports *ports) {
+    (void)context;
+    (void)role;
+    (void)ports;
+    return GSTD_OIDC_HEALTH_REJECTED;
 }
 #endif

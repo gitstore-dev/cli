@@ -278,3 +278,26 @@ fn immutable_approval_and_owned_stop_are_strictly_typed() {
         assert_eq!(gs::daemon_protocol::request(&value).is_ok(), valid);
     }
 }
+
+#[test]
+fn fixed_provider_log_roles_are_observation_only() {
+    for component in [
+        "oidc",
+        "oidc-smtp",
+        "oidc-hydra",
+        "oidc-kratos",
+        "oidc-ui",
+        "oidc-bridge",
+        "scylladb",
+    ] {
+        let request = json!({"version":{"major":1,"minor":0},"requestId":"roles","method":"stream.subscribe",
+                             "params":{"deploymentId":"fixture","kind":"logs","component":component}});
+        assert!(gs::daemon_protocol::request(&request).is_ok());
+        if component != "oidc" {
+            let start = json!({"version":{"major":1,"minor":0},"requestId":"roles","method":"deployment.start",
+                              "idempotencyKey":"roles", "params":{"deploymentId":"fixture","profileId":"core",
+                              "profileVersion":"2", "components":[component],"allowProvision":false}});
+            assert!(gs::daemon_protocol::request(&start).is_err());
+        }
+    }
+}

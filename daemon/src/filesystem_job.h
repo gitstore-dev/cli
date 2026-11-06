@@ -26,7 +26,8 @@ typedef enum {
     GSTD_FS_OBSERVE_DATASTORE,
     GSTD_FS_OIDC_VOLUME,
     GSTD_FS_OBSERVE_OIDC_VOLUME,
-    GSTD_FS_OIDC_PREPARE
+    GSTD_FS_OIDC_PREPARE,
+    GSTD_FS_OIDC_PORTS
 } gstd_filesystem_action;
 typedef struct {
     gstd_filesystem_action action;
@@ -58,6 +59,7 @@ typedef struct {
     gstd_cache_owner cache_owner;
     gstd_volume_root volume_root;
     gstd_volume_identity volume;
+    gstd_oidc_ports oidc_ports; /* public proposal only; commit before network permit */
     uint64_t scope_device, scope_inode;
     gstd_network_worker network_owner;
     gstd_network_worker_observation network_observed;

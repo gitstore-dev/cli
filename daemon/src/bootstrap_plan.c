@@ -18,6 +18,20 @@ json_t *gstd_bootstrap_plan(const json_t *components, const char *datastore) {
         return NULL;
     if (stage(stages, "prepare-owned-network-volumes", "validated-host-assets-ownership"))
         goto fail;
+    if (has(components, "oidc") &&
+        (stage(stages, "prepare-oidc-material-and-provider-volumes",
+               "separate-purpose-material; two retained SQLite volumes") ||
+         stage(stages, "migrate-hydra-kratos",
+               "durable-dispatch; canonical-writer; observed-helper-deletion") ||
+         stage(stages, "launch-smtp-hydra-kratos",
+               "owned-native-populations; fixed-private-health") ||
+         stage(stages, "enroll-oidc-client-once",
+               "journal-before-POST; no retry after missing acknowledgement") ||
+         stage(stages, "launch-identity-ui-bridge",
+               "acknowledged-enrollment; current-provider-writers") ||
+         stage(stages, "observe-issuer-discovery-jwks",
+               "exact-loopback-issuer; fixed-public-JWKS; no response URL dispatch")))
+        goto fail;
     if (has(components, "api") || has(components, "git") || has(components, "controller")) {
         if (stage(stages, "prepare-api-user-policy-hmac-issuer",
                   "persist-or-read-existing-private-material; issuer is API-only"))

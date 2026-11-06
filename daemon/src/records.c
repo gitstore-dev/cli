@@ -3,6 +3,7 @@
 #include "gitstored/protocol.h"
 #include "migration_network_schema.inc"
 #include "observer_schema.inc"
+#include "oidc_component_schema.inc"
 #include "oidc_volume_schema.inc"
 #include "schema.inc"
 #include <string.h>
@@ -54,13 +55,15 @@ int gstd_records_create(sqlite3 *db) {
                    sqlite3_exec(db, observer_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
                    sqlite3_exec(db, datastore_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
                    sqlite3_exec(db, migration_network_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
-                   sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK
+                   sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+                   sqlite3_exec(db, oidc_component_schema_sql, NULL, NULL, NULL) == SQLITE_OK
                ? 0
                : -1;
 }
 static int schema_matches(sqlite3 *db, int version) {
     /* Required definitions use the same maintained SQLite parser. Columns alone
-     * cannot prove ownership constraints and immutable-receipt triggers remain. */
+     * cannot prove ownership constraints and immutable-receipt triggers remain.
+     */
     sqlite3 *expected = NULL;
     sqlite3_stmt *objects = NULL, *actual = NULL, *unknown = NULL;
     int valid = 0;
@@ -77,6 +80,8 @@ static int schema_matches(sqlite3 *db, int version) {
          sqlite3_exec(expected, migration_network_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
         (version >= 5 &&
          sqlite3_exec(expected, oidc_volume_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
+        (version >= 6 &&
+         sqlite3_exec(expected, oidc_component_schema_sql, NULL, NULL, NULL) != SQLITE_OK) ||
         sqlite3_prepare_v2(expected, "SELECT type,name,sql FROM sqlite_schema ORDER BY name", -1,
                            &objects, NULL) != SQLITE_OK ||
         sqlite3_prepare_v2(db, "SELECT type,sql FROM sqlite_schema WHERE name=?", -1, &actual,
@@ -130,44 +135,59 @@ done:
     return valid ? 0 : -1;
 }
 int gstd_records_check(sqlite3 *db) {
-    if (schema_matches(db, 5))
+    if (schema_matches(db, 6))
         return -1;
     sqlite3_stmt *observer = NULL;
-    if (sqlite3_prepare_v2(
-            db, "SELECT worker_slot,subscription_id,deployment_id FROM observer_slots LIMIT 0", -1,
-            &observer, NULL) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db,
+                           "SELECT worker_slot,subscription_id,deployment_id "
+                           "FROM observer_slots LIMIT 0",
+                           -1, &observer, NULL) != SQLITE_OK)
         return -1;
     int observer_valid = sqlite3_step(observer) == SQLITE_DONE;
     sqlite3_finalize(observer);
     if (!observer_valid)
         return -1;
-    /* Refer to every required column, refusing incompatible stores rather than repairing them. */
+    /* Refer to every required column, refusing incompatible stores rather than
+     * repairing them. */
     static const char *queries[] = {
         "SELECT "
-        "asset_key,descriptor,producer_operation_id,operation_id,staging_name,staging_device,"
-        "staging_inode,state,reserved_bytes,download_limit,merge_limit,tree_digest,logical_bytes,"
+        "asset_key,descriptor,producer_operation_id,operation_id,staging_name,"
+        "staging_device,"
+        "staging_inode,state,reserved_bytes,download_limit,merge_limit,tree_"
+        "digest,logical_bytes,"
         "downloaded_bytes,merged_"
         "bytes FROM assets LIMIT 0",
         "SELECT resource_id,asset_key FROM asset_refs LIMIT 0",
         "SELECT store_id,generation FROM query_meta LIMIT 0",
-        "SELECT cursor_id,store_id,generation,last_id,expires_after FROM query_cursors LIMIT 0",
+        "SELECT cursor_id,store_id,generation,last_id,expires_after FROM "
+        "query_cursors LIMIT 0",
         "SELECT operation_id,kind,state,worker_slot FROM jobs LIMIT 0",
-        "SELECT profile_id,profile_version,server_revision,manifest_digest,platform FROM profiles "
+        "SELECT "
+        "profile_id,profile_version,server_revision,manifest_digest,platform "
+        "FROM profiles "
         "LIMIT 0",
         "SELECT "
-        "deployment_id,profile_id,profile_version,desired_state,generation,observed_generation,"
-        "readiness,recovery,writer_ownership,observed_at,last_operation_id FROM deployments LIMIT "
+        "deployment_id,profile_id,profile_version,desired_state,generation,"
+        "observed_generation,"
+        "readiness,recovery,writer_ownership,observed_at,last_operation_id FROM "
+        "deployments LIMIT "
         "0",
         "SELECT "
-        "operation_id,caller_uid,method,deployment_id,target_operation_id,intent_fingerprint,"
-        "intent,accepted_at,updated_at,state,recovery,result,error FROM operations LIMIT 0",
-        "SELECT caller_uid,method,idempotency_key,fingerprint,operation_id,expires_after FROM "
+        "operation_id,caller_uid,method,deployment_id,target_operation_id,intent_"
+        "fingerprint,"
+        "intent,accepted_at,updated_at,state,recovery,result,error FROM "
+        "operations LIMIT 0",
+        "SELECT "
+        "caller_uid,method,idempotency_key,fingerprint,operation_id,expires_"
+        "after FROM "
         "dedupe LIMIT 0",
         "SELECT "
-        "deployment_id,component,backend_id,image_digest,desired_state,observed_state,generation,"
+        "deployment_id,component,backend_id,image_digest,desired_state,observed_"
+        "state,generation,"
         "observed_at FROM components LIMIT 0",
         "SELECT "
-        "resource_id,resource_type,deployment_id,operation_id,lifecycle_stage,backend_identity,"
+        "resource_id,resource_type,deployment_id,operation_id,lifecycle_stage,"
+        "backend_identity,"
         "ownership_state,observed_at FROM resource_ownership LIMIT 0"};
     for (size_t i = 0; i < sizeof(queries) / sizeof(*queries); ++i) {
         sqlite3_stmt *s = NULL;
@@ -180,8 +200,10 @@ int gstd_records_check(sqlite3 *db) {
     }
     sqlite3_stmt *meta = NULL;
     if (sqlite3_prepare_v2(db,
-                           "SELECT count(*) FROM query_meta WHERE length(store_id)=32 AND store_id "
-                           "NOT GLOB '*[^0-9a-f]*' AND generation BETWEEN 1 AND 9007199254740991",
+                           "SELECT count(*) FROM query_meta WHERE "
+                           "length(store_id)=32 AND store_id "
+                           "NOT GLOB '*[^0-9a-f]*' AND generation BETWEEN 1 AND "
+                           "9007199254740991",
                            -1, &meta, NULL) != SQLITE_OK)
         return -1;
     int valid = sqlite3_step(meta) == SQLITE_ROW && sqlite3_column_int64(meta, 0) == 1;
@@ -217,4 +239,10 @@ int gstd_records_upgrade_v4(sqlite3 *db) {
     if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 4))
         return -1;
     return sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
+}
+
+int gstd_records_upgrade_v5(sqlite3 *db) {
+    if (!db || sqlite3_get_autocommit(db) || schema_matches(db, 5))
+        return -1;
+    return sqlite3_exec(db, oidc_component_schema_sql, NULL, NULL, NULL) == SQLITE_OK ? 0 : -1;
 }

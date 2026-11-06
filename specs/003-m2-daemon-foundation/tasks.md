@@ -148,9 +148,9 @@ implementation on story ordering. No unsupported backend is advertised along the
 - [X] T047 [US5] Add `scripts/test-runtime.sh` and `tests/runtime/support.py` with explicit experiment/scenario dispatch, disposable host/registry/deployment selection, safe owned cleanup and result records; route EXP-003B and core-memdb scenarios to real selected image/runtime/network adapters, and separate missing fixture/host evidence from failed assertions or controlled substitutes.
 - [X] T048 [US5] Run EXP-003B and the local-volume EXP-004B cases through `scripts/test-runtime.sh`, store evidence in `runtime/experiments/images.md` and `runtime/experiments/local-volumes.md`, and fix actual adapters; cover malicious/truncated layers, auth expiry/denial/scope/redirects, host dependency compatibility, offline/cache/disk failures, retained hashes, backup/restore and no overlapping writers without requiring upstream attestations.
 - [X] T049 [US5] Prepare candidate minimal packaging and run core/clean-install acceptance using `runtime/packaging/`, `tests/runtime/test_clean_install.py` and `scripts/test-runtime.sh`; start from only gs/gitstored plus essential metadata, prove consented provisioning or compatible host reuse, no unused downloads, actual public GraphQL/Git/readiness and stop/restart, and record stripped core/library/package/download/cache/memory costs against <=5 MiB per-core targets without claiming publication.
-- [ ] T050 [US5] Verify optional OIDC/Admin/Storefront image/config/enrollment/readiness mappings in `runtime/profiles/optional-evidence.json`, implement each verified graph in `runtime/profiles/` and add `tests/runtime/test_optional.py`; for an unavailable mapping record the exact external prerequisite in `docs/contributing/validation/local-runtime.md` and preserve explicit component-specific failure instead of invented endpoints, bundled tools or blanket Linux disablement.
+- [X] T050 [US5] Verify optional OIDC/Admin/Storefront image/config/enrollment/readiness mappings in `runtime/profiles/optional-evidence.json`, implement each verified graph in `runtime/profiles/` and add `tests/runtime/test_optional.py`; for an unavailable mapping record the exact external prerequisite in `docs/contributing/validation/local-runtime.md` and preserve explicit component-specific failure instead of invented endpoints, bundled tools or blanket Linux disablement.
 
-  Remaining implementation and acceptance criteria: [follow-up #9](https://github.com/gitstore-dev/cli/issues/9). T050 remains open; this PR delivers the implemented foundation without claiming the optional OIDC lifecycle is complete.
+  Completed in [follow-up #9](https://github.com/gitstore-dev/cli/issues/9); see [lifecycle acceptance](../../runtime/experiments/oidc-client/lifecycle-evidence.json). Admin/Storefront retain their explicitly documented external mapping prerequisites.
 
 
 **Checkpoint**: Real core execution is implemented and its own lifecycle/integrity
@@ -468,8 +468,42 @@ and the read-only quality checklist remains 16/16. Production symbols include th
 supervisor and no `gstd_test_` entry points. No generated binary or large runtime
 payload is included in the untracked source/evidence files.
 
-The audit does not claim full M2 completion: T050 remains open for the actual
-optional OIDC provider/enrollment/readiness graph; Admin/Storefront published
-mappings remain unavailable. Further T050 changes must run their relevant new and
-regression checks. DEP-013/015 release and clean-host/platform gates remain open
-independently of these completed source checks.
+That earlier audit left T050 open for the optional OIDC lifecycle. The follow-up
+below completes its source implementation and acceptance. Admin/Storefront
+published mappings remain unavailable; DEP-013/015 release and clean-host/platform
+gates remain open independently of source task completion.
+
+### T050 completion (2026-11-06)
+
+The follow-up integrates immutable core/2 selection and consent, separate provider
+material and SQLite volumes, two journaled image-native migrations, five services,
+one-shot enrollment, API issuer/client/audience configuration, bounded role health
+and discovery/JWKS, V6 metadata, endpoint/log projection, reverse stop and read-only
+recovery. Every new generation checks all unresolved owners and recovery state,
+including standalone selection without a repository volume. A final read-only
+provider sweep follows all selected service startup within a 30-second window.
+
+Public five-provider and combined eight-service memdb acceptance passed. The
+non-test production build passed the nine-service retained-Scylla graph, stalled
+bridge readiness, foreground interruption, retained startup, actual manager loss,
+refused replacement and owned stop; original successful operations stayed immutable.
+Standalone sanitizer acceptance covers fresh/retained startup, dropped-ACK replay,
+redacted aggregate/bridge logs, retained ports/material/volumes/cache and manager
+loss. The final sanitizer build also passed a separately accepted retained
+standalone generation after a known pre-native preparation failure.
+
+Normal and ASan/UBSan C regression selections each have 71 passes, zero failures
+and one cross-UID skip. The unchanged long connection timer passed in an earlier
+complete run. Pinned Rust fmt/Clippy/test/build, Python syntax, JSON/local links and
+whitespace checks accompany the change. The requirement checklist remains 16/16.
+Exact artifact identities, failed disk-pressure attempts and acceptance receipts
+are in [lifecycle evidence](../../runtime/experiments/oidc-client/lifecycle-evidence.json).
+The user approved cleanup of seven stopped failed fixtures; only verified generated
+execution/cache copies were removed. Data, material, logs, journals and inputs remain.
+
+All 85 implementation tasks are checked. This does not qualify native amd64,
+macOS, clean-host/provider support or own-artifact publication. Admin UI still
+requires its published image/authentication/startup/readiness mapping; Storefront
+still requires its reference runtime, publication reads and trusted target binding.
+Those named failures remain explicit before effects. CLI login and local alpha.9
+schema upgrades are outside this follow-up.

@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-06",
+  "scope": "Source-preview Linux arm64 native lifecycle qualification in one explicitly owned disposable fixture; no binary publication, amd64 native or macOS support claim",
+  "status": "source-preview-accepted",
+  "publicRuns": [
+    {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-06T02:14:18Z",
+      "scenario": "optional",
+      "case": "test_public_standalone_retained_restart_and_manager_loss",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/oidc-production-parent-an6xhpmi/public-fixture-sanitized.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/source/target/release/gs",
+          "sha256": "5302133d290ed9713c0c37e94cae512e58b13396d3a38b326bbb72015607f2ce"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native-sanitized/gitstored",
+          "sha256": "32985b17cdfcf7aeec7463b6895cbc2ee0c3490483d1a1442d8cb994300c5bda"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-z19q81e7/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 78.816
+    },
+    {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-06T01:16:00Z",
+      "scenario": "optional",
+      "case": "test_public_combined_graph",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/oidc-production-parent-an6xhpmi/public-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/source/target/release/gs",
+          "sha256": "5302133d290ed9713c0c37e94cae512e58b13396d3a38b326bbb72015607f2ce"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native/gitstored",
+          "sha256": "15e20750d240bbedc7998b700e64f820a000b125de675d94dd05f1bb63dc47bf"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-aikz7agk/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 194.689
+    },
+    {
+      "schemaVersion": 1,
+      "recordedAt": "2026-11-06T06:22:08Z",
+      "scenario": "optional",
+      "case": "test_public_combined_persistent_graph",
+      "adapter": "public CLI with selected native SDK/runtime/network implementations",
+      "status": "passed",
+      "fixture": "/home/gitstorefixture/experiments/oidc-production-parent-an6xhpmi/public-fixture.json",
+      "executables": {
+        "gs": {
+          "path": "/home/gitstorefixture/experiments/source/target/release/gs",
+          "sha256": "5302133d290ed9713c0c37e94cae512e58b13396d3a38b326bbb72015607f2ce"
+        },
+        "daemon": {
+          "path": "/home/gitstorefixture/experiments/source/build/daemon-native/gitstored",
+          "sha256": "56931acafcefebe85da14643f040e393b36264d6c888fe7947ba4043f138a663"
+        }
+      },
+      "snapshotFixture": "/home/gitstorefixture/experiments/runtime-inputs-9ulggkya/fixture.json",
+      "testAccountUid": 11000,
+      "retention": "all scenario roots retained",
+      "exitCode": 0,
+      "elapsedSeconds": 150.493
+    }
+  ],
+  "localChecks": {
+    "rust": [
+      "cargo fmt --all -- --check",
+      "cargo clippy --workspace --all-targets --locked -- -D warnings",
+      "cargo test --workspace --locked",
+      "cargo build --workspace --locked"
+    ],
+    "rustResult": "Pinned cargo fmt --all -- --check, cargo clippy --workspace --all-targets --locked -- -D warnings, cargo test --workspace --locked and cargo build --workspace --locked all passed in the final checkout; fixture-dependent ignored cases remain explicit",
+    "normalCTest": {
+      "selected": 72,
+      "passed": 71,
+      "failures": 0,
+      "skipped": 1,
+      "elapsedSeconds": 32.38,
+      "excluded": "production_connection_deadlines (earlier complete run passed; unchanged timing code)"
+    },
+    "sanitizedCTest": {
+      "selected": 72,
+      "passed": 71,
+      "failures": 0,
+      "skipped": 1,
+      "elapsedSeconds": 71.88,
+      "excluded": "production_connection_deadlines (earlier complete run passed; unchanged timing code)"
+    },
+    "admissionRegression": "Normal and sanitized atomic admission tests passed: original-key replay preserved; recovery, held writer and other unresolved owner each block no-volume replacement. Updated named-volume regression also passes.",
+    "metadataChecks": {
+      "requirementsChecklistComplete": 16,
+      "requirementsChecklistOpen": 0,
+      "localLinks": "passed",
+      "changedJson": "parsed",
+      "pythonSyntax": "passed",
+      "gitDiffCheck": "passed",
+      "implementationTasksComplete": 85
+    },
+    "earlierFullNormalCTest": {
+      "selected": 73,
+      "failures": 0,
+      "skipped": 1,
+      "elapsedSeconds": 346.52,
+      "scope": "Earlier complete run including the unchanged 300-second connection timer; final changed behavior is covered by current normal/sanitized selections and native production acceptance"
+    },
+    "portableMetadataCTest": {
+      "platform": "macOS AppleClang; native runtime libraries disabled",
+      "selected": 60,
+      "passed": 58,
+      "failures": 0,
+      "skipped": 2,
+      "elapsedSeconds": 42.07,
+      "scope": "Portable metadata/control regression only; Linux-only port/health tests skipped; no macOS native runtime support claim"
+    }
+  },
+  "privateNativeEvidence": {
+    "freshRetainedCombined": "Two generations each in normal and Clang ASan/UBSan production actors; issuer/discovery/JWKS and readonly restoration proved, observed stops succeeded",
+    "managerLossReceipt": "/home/gitstorefixture/experiments/oidc-manager-loss-iigg9ema/result.json",
+    "managerLossResult": {
+      "managerLoss": true,
+      "nativeRecovery": true,
+      "ownedStop": true,
+      "readinessNotAdopted": true,
+      "originalStartUnchanged": true
+    }
+  },
+  "controlledDiscovery": {
+    "requests": 2,
+    "assertions": 5,
+    "failures": 0,
+    "postmanVersion": "1.86.0",
+    "report": "/home/gitstorefixture/experiments/oidc-discovery-collection-nv3umxzl/result.json"
+  },
+  "failedAttempts": [
+    "Fixture owner-settings rejection due to offline Controller directory mode; corrected to mode 0700",
+    "Public acceptance found missing aggregate stream eligibility and individual CLI log-role parsing; fixed and regressions added",
+    "Acceptance assertions counted completed migration helpers as live services and expected an empty endpoints field instead of omission; corrected",
+    "UI staging/materialization failed during severe host disk pressure before native dispatch; failed fixtures retained",
+    "Native public recovery exposed standalone start admission relying on repository-volume ownership; fixed with all-owner/recovery guard, final verification pending",
+    "Earlier private retained-start native proof failure remains retained and was not reproduced by subsequent successful generations",
+    "A subsequent normal CTest run coincided with exhausted host space and failed ordinary writes/SQLite creation; it is not a passing suite and final rerun is required",
+    "Host ENOSPC caused guest block I/O errors and an aborted ext4 journal during a later sanitizer relink; the task-owned guest was restarted with its persistent root disk retained. Passing native receipts were exported first; no unresolved ledger was released.",
+    "After guest recovery, two pre-effect runs correctly rejected inaccessible mode-0600 TUN as UNSUPPORTED_HOST; standard guest device permissions restored before retry.",
+    "The nine-service retry exhausted host storage again before completing acceptance; subsequent CTest writes failed and the guest became read-only. No further image tests will run without adequate headroom.",
+    "Final sanitizer two-generation runner: fresh standalone readiness/logs passed, then retained UI materialization hit kernel-confirmed block I/O errors before native dispatch. A separately accepted new generation using the same retained cache/data passed final readiness, manager loss, refused replacement and owned stop. The failed operation remains immutable.",
+    "First retained production driver attempt read a nullable reserved backend row too early; the harness was fixed to wait for native identity and reject terminal starts. That interrupted fixture remains retained."
+  ],
+  "limits": [
+    "Admin UI and Storefront retain component-specific external mapping gates",
+    "No CLI login/browser/device flow or token-signature validation claim",
+    "Incomplete/dispatched/uncertain helper or enrollment proof never authorizes replay or replacement",
+    "Native amd64, clean-host qualification, hosted CI and own-artifact publication remain separate gates"
+  ],
+  "publicStandaloneSanitized": "Earlier complete public two-generation sanitizer run passed. In the final build, a fresh standalone generation passed before a pre-native retained preparation I/O failure; a separately accepted retained generation passed final readiness and manager-loss/stop checks, recorded below.",
+  "remainingAcceptance": [],
+  "publicGate": "Enabled for native-capable source-preview installations; requires deployment.oidc capability",
+  "lastPersistentAttempt": {
+    "fixture": "/home/gitstorefixture/experiments/gs-public-runtime-a6ywzl1m",
+    "status": "failed",
+    "reason": "240-second transport deadline while guest filesystem was read-only; runner could not persist its final result",
+    "nativeAcceptancePassed": false
+  },
+  "productionRetained": {
+    "schemaVersion": 1,
+    "status": "passed",
+    "root": "/home/gitstorefixture/experiments/gs-public-runtime-q7cy55e_",
+    "executables": {
+      "gs": "5302133d290ed9713c0c37e94cae512e58b13396d3a38b326bbb72015607f2ce",
+      "gitstored": "56931acafcefebe85da14643f040e393b36264d6c888fe7947ba4043f138a663"
+    },
+    "retention": "canonical data/material/receipts retained",
+    "services": 9,
+    "retainedStart": true,
+    "stalledBridgeBlockedReadiness": true,
+    "resumedReadiness": true,
+    "managerLoss": true,
+    "readinessNotAdopted": true,
+    "replacementRefused": true,
+    "ownedStop": true,
+    "originalStartUnchanged": true,
+    "elapsedSeconds": 68.49
+  },
+  "finalSanitizedRetained": {
+    "schemaVersion": 1,
+    "status": "passed",
+    "root": "/home/gitstorefixture/experiments/gs-public-runtime-aodvn_xx",
+    "executables": {
+      "gs": "5302133d290ed9713c0c37e94cae512e58b13396d3a38b326bbb72015607f2ce",
+      "gitstored": "1349ad410730fcbb0e9a57f1da18a08fd13de8a91b6f653ad8f03c5c60fea225"
+    },
+    "retention": "canonical data/material/receipts retained",
+    "services": 5,
+    "retainedStart": true,
+    "stalledBridgeBlockedReadiness": false,
+    "resumedReadiness": true,
+    "managerLoss": true,
+    "readinessNotAdopted": true,
+    "replacementRefused": true,
+    "ownedStop": true,
+    "originalStartUnchanged": true,
+    "elapsedSeconds": 27.044
+  },
+  "productionBuild": {
+    "testing": false,
+    "buildType": "Release",
+    "sha256": "56931acafcefebe85da14643f040e393b36264d6c888fe7947ba4043f138a663",
+    "bytes": 16023112,
+    "testSymbols": 0
+  },
+  "cacheReuse": {
+    "standaloneRoles": 5,
+    "allProducersRemainOriginalSuccessfulStart": true
+  },
+  "cleanup": {
+    "explicitUserApproval": true,
+    "approvedFixtures": 7,
+    "auditedGeneratedEntriesRemoved": 81,
+    "canonicalDataMaterialLogsReceiptsInputsPreserved": true,
+    "guestAuditFiles": [
+      "/home/gitstorefixture/experiments/approved-fixture-cleanup-1793945377980603179.json",
+      "/home/gitstorefixture/experiments/approved-fixture-cleanup-1793946098806109053.json"
+    ]
+  },
+  "sourcePreviewScope": "Five standalone providers, eight combined memdb services and nine combined retained-Scylla services; production build has testing disabled. Final read-only provider sweep uses a 30-second window after all selected services start.",
+  "changedSourceDigest": {
+    "algorithm": "sha256",
+    "digest": "b89b9199af8c6cfe951d5773237e4cc1c92239178c8d4d63bd3a74ec58f69ff4",
+    "fileCount": 98,
+    "scope": "Changed/new daemon, Rust CLI, profile, runtime-test and OIDC contract/collection files; sorted path NUL contents NUL"
+  }
+}

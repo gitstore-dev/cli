@@ -4,6 +4,7 @@
 #include "gitstored/state.h"
 #include "migration_network_schema.inc"
 #include "observer_schema.inc"
+#include "oidc_volume_schema.inc"
 #include "schema.inc"
 #include "support.h"
 #include <fcntl.h>
@@ -40,20 +41,29 @@ static int legacy(const char *path, int damaged, int version) {
     int ok =
         !gstd_records_functions(db) && sqlite3_exec(db, schema_sql, NULL, NULL, NULL) == SQLITE_OK;
     char *sql = sqlite3_mprintf(
-        "CREATE TABLE daemon_store(owner_uid INTEGER NOT NULL,schema_version INTEGER NOT NULL "
+        "CREATE TABLE daemon_store(owner_uid INTEGER NOT NULL,schema_version "
+        "INTEGER NOT NULL "
         "CHECK(schema_version=1));"
         "INSERT INTO daemon_store VALUES(%lld,1);"
-        "INSERT INTO profiles VALUES('core','1','controlled','controlled','linux-arm64');"
+        "INSERT INTO profiles "
+        "VALUES('core','1','controlled','controlled','linux-arm64');"
         "INSERT INTO deployments "
-        "VALUES('kept','core','1','running',1,0,'pending','uncertain','held','2000-01-01T00:00:00Z'"
+        "VALUES('kept','core','1','running',1,0,'pending','uncertain','held','"
+        "2000-01-01T00:00:00Z'"
         ",NULL);"
+        "INSERT INTO components "
+        "VALUES('kept','api','native-kept','digest-kept','running','running',1,'"
+        "2000-01-01T00:00:00Z');"
         "INSERT INTO operations "
-        "VALUES('old-start',%lld,'deployment.start','kept',NULL,printf('%%064d',0),'{}','2000-01-"
+        "VALUES('old-start',%lld,'deployment.start','kept',NULL,printf('%%064d',"
+        "0),'{}','2000-01-"
         "01T00:00:00Z','2000-01-01T00:00:00Z','succeeded','uncertain','{}',NULL);"
         "INSERT INTO dedupe "
-        "VALUES(%lld,'deployment.start','original-key',printf('%%064d',0),'old-start',9999999999);"
+        "VALUES(%lld,'deployment.start','original-key',printf('%%064d',0),'old-"
+        "start',9999999999);"
         "INSERT INTO resource_ownership "
-        "VALUES('volume','repository-volume','kept','old-start','reserved',NULL,'held','2000-01-"
+        "VALUES('volume','repository-volume','kept','old-start','reserved',NULL,'"
+        "held','2000-01-"
         "01T00:00:00Z');"
         "PRAGMA user_version=1;",
         (sqlite3_int64)geteuid(), (sqlite3_int64)geteuid(), (sqlite3_int64)geteuid());
@@ -63,28 +73,45 @@ static int legacy(const char *path, int damaged, int version) {
         ok = sqlite3_exec(db, observer_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
              sqlite3_exec(db,
                           "ALTER TABLE daemon_store RENAME TO legacy_store;"
-                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT NULL,schema_version "
+                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT "
+                          "NULL,schema_version "
                           "INTEGER NOT NULL CHECK(schema_version=2));"
-                          "INSERT INTO daemon_store SELECT owner_uid,2 FROM legacy_store;DROP "
+                          "INSERT INTO daemon_store SELECT owner_uid,2 FROM "
+                          "legacy_store;DROP "
                           "TABLE legacy_store;PRAGMA user_version=2;",
                           NULL, NULL, NULL) == SQLITE_OK;
     if (ok && version >= 3)
         ok = sqlite3_exec(db, datastore_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
              sqlite3_exec(db,
                           "ALTER TABLE daemon_store RENAME TO legacy_store;"
-                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT NULL,schema_version "
+                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT "
+                          "NULL,schema_version "
                           "INTEGER NOT NULL CHECK(schema_version=3));"
-                          "INSERT INTO daemon_store SELECT owner_uid,3 FROM legacy_store;DROP "
+                          "INSERT INTO daemon_store SELECT owner_uid,3 FROM "
+                          "legacy_store;DROP "
                           "TABLE legacy_store;PRAGMA user_version=3;",
                           NULL, NULL, NULL) == SQLITE_OK;
     if (ok && version >= 4)
         ok = sqlite3_exec(db, migration_network_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
              sqlite3_exec(db,
                           "ALTER TABLE daemon_store RENAME TO legacy_store;"
-                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT NULL,schema_version "
+                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT "
+                          "NULL,schema_version "
                           "INTEGER NOT NULL CHECK(schema_version=4));"
-                          "INSERT INTO daemon_store SELECT owner_uid,4 FROM legacy_store;DROP "
+                          "INSERT INTO daemon_store SELECT owner_uid,4 FROM "
+                          "legacy_store;DROP "
                           "TABLE legacy_store;PRAGMA user_version=4;",
+                          NULL, NULL, NULL) == SQLITE_OK;
+    if (ok && version >= 5)
+        ok = sqlite3_exec(db, oidc_volume_schema_sql, NULL, NULL, NULL) == SQLITE_OK &&
+             sqlite3_exec(db,
+                          "ALTER TABLE daemon_store RENAME TO legacy_store;"
+                          "CREATE TABLE daemon_store(owner_uid INTEGER NOT "
+                          "NULL,schema_version "
+                          "INTEGER NOT NULL CHECK(schema_version=5));"
+                          "INSERT INTO daemon_store SELECT owner_uid,5 FROM "
+                          "legacy_store;DROP "
+                          "TABLE legacy_store;PRAGMA user_version=5;",
                           NULL, NULL, NULL) == SQLITE_OK;
     if (ok && damaged == 1)
         ok = sqlite3_exec(db, "DROP TRIGGER terminal_outcome_immutable", NULL, NULL, NULL) ==
@@ -99,14 +126,18 @@ static int scenario(int damaged, int version) {
     CHECK(root);
     snprintf(path, sizeof(path), "%s/state.db", root);
     CHECK(!legacy(path, damaged, version));
+    CHECK(sqlite3_open(path, &db) == SQLITE_OK);
+    int original_generation = integer(db, "SELECT generation FROM query_meta");
+    CHECK(sqlite3_close(db) == SQLITE_OK);
+    db = NULL;
     if (damaged == 2) {
         CHECK(!chmod(root, 0500));
         CHECK(gstd_state_open(path, &db) == -1 && !db);
         CHECK(!chmod(root, 0700));
         CHECK(sqlite3_open(path, &db) == SQLITE_OK);
         CHECK(integer(db, "PRAGMA user_version") == version);
-        CHECK(integer(db, "SELECT count(*) FROM sqlite_schema WHERE name='datastore_volumes'") ==
-              (version >= 3));
+        CHECK(integer(db, "SELECT count(*) FROM sqlite_schema WHERE "
+                          "name='datastore_volumes'") == (version >= 3));
         CHECK(sqlite3_close(db) == SQLITE_OK);
         db = NULL;
     }
@@ -116,24 +147,43 @@ static int scenario(int damaged, int version) {
         CHECK(integer(db, "PRAGMA user_version") == version);
         CHECK(integer(db, "SELECT count(*) FROM sqlite_schema WHERE name='observer_slots'") ==
               (version >= 2));
-        CHECK(integer(db, "SELECT count(*) FROM sqlite_schema WHERE name='datastore_volumes'") ==
-              (version >= 3));
+        CHECK(integer(db, "SELECT count(*) FROM sqlite_schema WHERE "
+                          "name='datastore_volumes'") == (version >= 3));
     } else {
         CHECK(!gstd_state_open(path, &db));
-        CHECK(integer(db, "PRAGMA user_version") == 5 &&
-              integer(db, "SELECT schema_version FROM daemon_store") == 5);
+        CHECK(integer(db, "PRAGMA user_version") == 6 &&
+              integer(db, "SELECT schema_version FROM daemon_store") == 6);
+        CHECK(integer(db, "SELECT count(*) FROM components WHERE deployment_id='kept' AND "
+                          "component='api' AND backend_id='native-kept' AND "
+                          "image_digest='digest-kept' "
+                          "AND desired_state='running' AND observed_state='running' AND "
+                          "generation=1") == 1);
+        CHECK(integer(db, "SELECT generation FROM query_meta") == original_generation);
+        CHECK(sqlite3_exec(db,
+                           "INSERT INTO components VALUES('kept','oidc-hydra',NULL,'digest',"
+                           "'stopped','pending',1,'2000-01-01T00:00:00Z')",
+                           NULL, NULL, NULL) == SQLITE_OK);
+        CHECK(integer(db, "SELECT generation FROM query_meta") == original_generation + 1);
+        CHECK((sqlite3_exec(db,
+                            "INSERT INTO components VALUES('kept','arbitrary',NULL,'digest',"
+                            "'stopped','pending',1,'2000-01-01T00:00:00Z')",
+                            NULL, NULL, NULL) &
+               0xff) == SQLITE_CONSTRAINT);
         CHECK(integer(db, "SELECT count(*) FROM observer_slots") == 0);
         CHECK(integer(db, "SELECT count(*) FROM datastore_volumes") == 0);
         CHECK(integer(db, "SELECT count(*) FROM oidc_provider_volumes") == 0);
-        CHECK(integer(db, "SELECT count(*) FROM operations WHERE operation_id='old-start' AND "
+        CHECK(integer(db, "SELECT count(*) FROM operations WHERE "
+                          "operation_id='old-start' AND "
                           "state='succeeded' AND result='{}' AND error IS NULL") == 1);
-        CHECK(integer(db, "SELECT count(*) FROM dedupe WHERE idempotency_key='original-key' AND "
+        CHECK(integer(db, "SELECT count(*) FROM dedupe WHERE "
+                          "idempotency_key='original-key' AND "
                           "operation_id='old-start'") == 1);
-        CHECK(integer(db, "SELECT count(*) FROM resource_ownership WHERE resource_id='volume' AND "
+        CHECK(integer(db, "SELECT count(*) FROM resource_ownership WHERE "
+                          "resource_id='volume' AND "
                           "ownership_state='held'") == 1);
         CHECK(sqlite3_close(db) == SQLITE_OK);
         db = NULL;
-        CHECK(!gstd_state_open(path, &db) && integer(db, "PRAGMA user_version") == 5);
+        CHECK(!gstd_state_open(path, &db) && integer(db, "PRAGMA user_version") == 6);
     }
     result = 0;
 done:
@@ -146,7 +196,7 @@ done:
     return result;
 }
 int main(void) {
-    for (int version = 1; version <= 4; version++)
+    for (int version = 1; version <= 5; version++)
         for (int failure = 0; failure < 3; failure++)
             if (scenario(failure, version)) {
                 fprintf(stderr, "legacy version=%d failure=%d\n", version, failure);

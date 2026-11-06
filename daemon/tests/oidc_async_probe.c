@@ -129,6 +129,17 @@ int gstd_test_oidc_async(const char *path, int root, int configuration, int brok
     }
     if (!ready)
         goto done;
+    /* Actual asynchronous health workers enter the same owned namespace. They
+     * need neither the broker nor protected configuration descriptors. */
+    gstd_bootstrap_job_input health = input;
+    health.kind = GSTD_BOOT_JOB_OIDC_HEALTH;
+    health.broker_fd = -1;
+    health.source = NULL;
+    for (int role = GSTD_OIDC_HEALTH_HYDRA; role <= GSTD_OIDC_HEALTH_SMTP; role++) {
+        health.oidc_health_role = (gstd_oidc_health_role)role;
+        if (observe(&health, GSTD_OIDC_HEALTH_READY))
+            goto done;
+    }
     input.oidc_action = GSTD_OIDC_HTTP_CREATE;
     stage = 4;
     if (observe(&input, GSTD_OIDC_CLIENT_CREATED))

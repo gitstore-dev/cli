@@ -1,0 +1,5 @@
+$kind: collection
+name: Pinned local Hydra discovery consumers
+variables:
+  - key: issuer_base
+    value: 'http://127.0.0.1:24001'

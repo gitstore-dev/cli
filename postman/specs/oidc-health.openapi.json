@@ -1,0 +1,110 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fixed private OIDC health consumers",
+    "version": "1.0.0",
+    "description": "Narrow read-only consumer contract derived from the pinned provider receipts in runtime/experiments/oidc-client/health-contract.md. Success mappings only; this does not specify a shared upstream error taxonomy or activate a public profile."
+  },
+  "paths": {
+    "/health/ready": {
+      "get": {
+        "operationId": "hydraHealth",
+        "summary": "hydra readiness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:4445",
+            "description": "hydra fixed admin port"
+          },
+          {
+            "url": "http://127.0.0.1:24004",
+            "description": "ui (selected port)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hydra requires JSON status=ok. Identity UI has no response body schema; its body is discarded."
+          }
+        },
+        "description": "Hydra requires JSON status=ok; identity UI consumes status only. Role-specific servers select the fixed endpoint."
+      }
+    },
+    "/admin/health/ready": {
+      "get": {
+        "operationId": "kratosHealth",
+        "summary": "kratos readiness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:4434",
+            "description": "kratos fixed admin port"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ready. Response bytes are discarded by the consumer."
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "bridgeHealth",
+        "summary": "bridge readiness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:24002",
+            "description": "bridge (selected port)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ready. Response bytes are discarded by the consumer."
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "smtpHealth",
+        "summary": "smtp readiness",
+        "servers": [
+          {
+            "url": "http://127.0.0.1:24005",
+            "description": "smtp (selected port)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ready. Response bytes are discarded by the consumer."
+          }
+        }
+      }
+    }
+  },
+  "x-consumer-roles": {
+    "hydra": {
+      "port": 4445,
+      "path": "/health/ready",
+      "predicate": "HTTP 200 and JSON status=ok"
+    },
+    "kratos": {
+      "port": 4434,
+      "path": "/admin/health/ready",
+      "predicate": "HTTP 200; discard body"
+    },
+    "bridge": {
+      "port": 24002,
+      "path": "/health",
+      "predicate": "HTTP 200; discard body"
+    },
+    "ui": {
+      "port": 24004,
+      "path": "/health/ready",
+      "predicate": "HTTP 200; discard body"
+    },
+    "smtp": {
+      "port": 24005,
+      "path": "/readyz",
+      "predicate": "HTTP 200; discard body"
+    }
+  }
+}

@@ -162,6 +162,22 @@ int main(void) {
         }
     }
     CHECK(gaps && !gstd_streams_queued_bytes(streams));
+    gstd_streams_close(streams);
+    streams = gstd_streams_open();
+    CHECK(streams);
+    CHECK(!gstd_streams_subscribe(streams, 0, "providers", GSTD_STREAM_LOGS, "oidc", slow));
+    CHECK(!gstd_streams_subscribe(streams, 1, "providers", GSTD_STREAM_LOGS, "oidc-hydra", fast));
+    CHECK(!gstd_streams_publish(streams, "providers", GSTD_STREAM_LOGS, "oidc-kratos", payload));
+    CHECK(gstd_streams_next(streams, 0, &event) == 1);
+    json_decref(event); event = NULL;
+    CHECK(!gstd_streams_next(streams, 1, &event));
+    CHECK(!gstd_streams_publish(streams, "providers", GSTD_STREAM_LOGS, "oidc-hydra", payload));
+    CHECK(gstd_streams_next(streams, 1, &event) == 1);
+    json_decref(event); event = NULL;
+    CHECK(!gstd_streams_publish(streams, "providers", GSTD_STREAM_LOGS, "api", payload));
+    CHECK(gstd_streams_next(streams, 0, &event) == 1);
+    json_decref(event); event = NULL;
+    CHECK(!gstd_streams_next(streams, 0, &event));
     result = 0;
 done:
     json_decref(event);

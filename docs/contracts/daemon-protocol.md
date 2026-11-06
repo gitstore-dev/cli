@@ -83,7 +83,10 @@ host path, OCI hooks, raw runtime flags, arbitrary mount or privileged mode.
 
 Profile datastores are `memdb` or `scylladb`; components are `api`, `git`, `controller`,
 `oidc`, `admin`, `storefront`. Log component selectors additionally accept
-`scylladb` for the profile-owned datastore. It is an implicit datastore dependency,
+`scylladb` for the profile-owned datastore and the fixed provider roles
+`oidc-smtp`, `oidc-hydra`, `oidc-kratos`, `oidc-ui`, `oidc-bridge`. The `oidc` log
+selector aggregates those five roles while preserving each record's precise
+component. It is an implicit datastore dependency,
 not an allowed item in the caller's `components` selection. A profile constrains allowed combinations and dependency
 readiness graph. Server-resolved profile metadata, not caller-supplied paths, controls
 images, volumes, mount policy and entrypoints. `targetVersion` identifies a registered
@@ -107,9 +110,14 @@ volume/network identities, writerOwnership held/released/uncertain, lastOperatio
 generation, observedGeneration, recovery, observedAt. Redact configuration and backend diagnostics. Readiness belongs
 to the intended deployment generation; it is independent of operation acceptance.
 When real public forwards are verified, inspection additionally exposes
-`endpoints` with only `api` and `git` HTTP URLs on owned high IPv4 loopback ports.
+`endpoints` with `api` and `git` HTTP URLs on owned high IPv4 loopback ports.
+The core/2 OIDC graph additionally projects its complete verified tuple
+as `oidcIssuer`, `oidcBridge`, `identity`, `identityUi` and `mail`; standalone OIDC
+has only those five URLs. The issuer URL retains its canonical trailing slash.
+Native-capable installations advertise `deployment.oidc`; the CLI requires it
+before OIDC submission. Core/1 remains unchanged.
 Never expose private RPC/controller ports or embed credentials. This projection
-is implemented for verified current native core generations; control-only or
+is implemented for verified current native generations; control-only or
 unready generations do not advertise it.
 
 If a current health observation cannot be persisted, the running manager must not
@@ -1015,3 +1023,18 @@ changed digest fails before acceptance/effects. Foreground-owned stop supplies
 observer cannot stop a later generation. Omission retains explicit operator stop
 semantics. `implementationVersion` in negotiation/capabilities identifies the
 installed application version independently of the protocol major/minor.
+
+
+### OIDC final readiness and replacement admission
+
+Before committing ready, an OIDC deployment performs a final read-only sweep of
+all five provider roles plus exact issuer discovery/public JWKS after all selected
+core services start. The sweep and readiness commit share a 30-second freshness
+window. Cancellation, stale observations or a failed sweep cannot advertise ready.
+This never repeats enrollment or migrations. Recovered actors do not adopt ready.
+
+Every new start generation requires normal recovery, released writer ownership
+and no unresolved resource owner, including standalone OIDC with no repository
+volume. An identical original idempotency key still replays its original operation.
+Known acknowledgements remain bound to their original generation; missing mutation
+or helper proof cannot authorize replay or replacement.

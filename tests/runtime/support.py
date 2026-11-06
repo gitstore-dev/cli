@@ -19,7 +19,7 @@ from urllib.parse import urlsplit
 
 
 class Fixture:
-    def __init__(self, offline=None, unsupported=False):
+    def __init__(self, offline=None, unsupported=False, oidc=False):
         if os.geteuid() == 0 or not Path("/proc/self/ns/user").exists():
             raise RuntimeError("Select an explicitly owned, non-root disposable Linux fixture")
         source = Path(os.environ["GITSTORE_RUNTIME_FIXTURE"]).resolve(strict=True)
@@ -54,6 +54,10 @@ class Fixture:
         # validate these before any credential or asset operation is enabled.
         self.settings = {"schemaVersion": 1, "bootstrapCredentialSource": {
             "kind": "protected-directory", "path": str(self.root / "credentials")}}
+        if oidc:
+            (self.root / "oidc-credentials").mkdir(mode=0o700)
+            self.settings["oidcCredentialSource"] = {"kind": "protected-directory", "path": str(self.root / "oidc-credentials")}
+            self.ready_timeout = 240
         self.offline_layouts = settings.get("offlineLayouts")
         self.wrong_platform_layouts = settings.get("wrongPlatformLayouts")
         if offline == "persistent":
@@ -61,6 +65,14 @@ class Fixture:
                 name: settings[key] for name, key in
                 (("api", "offlineApiLayout"), ("git", "offlineGitLayout"),
                  ("controller", "offlineControllerLayout"), ("scylladb", "offlineScyllaLayout"))}
+        elif offline in ("oidc", "oidc-persistent"):
+            layouts = settings.get("offlineOidcLayouts")
+            providers = {"oidc-smtp", "oidc-hydra", "oidc-kratos", "oidc-ui", "oidc-bridge"}
+            if not isinstance(layouts, dict) or not providers.issubset(layouts):
+                raise RuntimeError("Select all five pinned disposable OIDC offline layouts")
+            self.settings["offlineLayouts"] = dict(layouts)
+            if offline == "oidc-persistent":
+                self.settings["offlineLayouts"]["scylladb"] = settings["offlineScyllaLayout"]
         elif offline == "verified" and self.offline_layouts:
             self.settings["offlineLayouts"] = self.offline_layouts
         elif offline == "wrong-platform" and self.wrong_platform_layouts:
@@ -235,7 +247,7 @@ class Fixture:
         # terminated here; no broad process matching or recursive data deletion.
         for name in self.deployments:
             try:
-                self.stop(name, key=f"fixture-cleanup-{name}")
+                self.stop(name, key=f"fixture-cleanup-{hashlib.sha256(name.encode()).hexdigest()[:8]}-{time.time_ns()}")
             except (AssertionError, subprocess.TimeoutExpired):
                 pass
         self.process.terminate()

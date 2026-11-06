@@ -273,7 +273,7 @@ static int valid_param(const char *key, size_t len, json_t *v) {
     if (field_allowed(key, len, "datastore"))
         return one_of(v, "memdb scylladb");
     if (field_allowed(key, len, "component"))
-        return one_of(v, "api git controller oidc admin storefront scylladb");
+        return one_of(v, "api git controller oidc oidc-smtp oidc-hydra oidc-kratos oidc-ui oidc-bridge admin storefront scylladb");
     if (field_allowed(key, len, "until"))
         return one_of(v, "accepted terminal ready");
     if (field_allowed(key, len, "kind"))

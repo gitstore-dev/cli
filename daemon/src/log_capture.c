@@ -5,6 +5,9 @@
 #include "logs.h"
 #include "native_exit.h"
 #include "redaction.h"
+#include "oidc_material.h"
+#include "oidc_config.h"
+#include "workload_roles.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -97,11 +100,13 @@ static int receipt(const gstd_log_capture_input *input, const reply *r) {
     free(bytes);
     return valid ? 0 : -1;
 }
-static int material(const gstd_log_capture_input *input, gstd_credential *out) {
+static int material(const gstd_log_capture_input *input, int oidc, gstd_credential *out) {
     json_t *request =
         json_pack("{s:{s:s,s:s,s:s,s:s},s:O}", "identity", "installation", input->store_id,
-                  "issuer", "gitstore-local/core/1", "account", input->deployment_id, "purpose",
-                  "bootstrap-material", "source", input->source);
+                  "issuer", oidc ? "gitstore-local/reference-oidc/1" : "gitstore-local/core/1",
+                  "account", input->deployment_id, "purpose",
+                  oidc ? "oidc-provider-material" : "bootstrap-material", "source",
+                  oidc ? input->oidc_source : input->source);
     char *encoded = request ? gstd_json_dump(request) : NULL;
     int result =
         encoded ? gstd_credential_run(5, (unsigned char *)encoded, strlen(encoded), 5000, out) : -1;
@@ -109,17 +114,19 @@ static int material(const gstd_log_capture_input *input, gstd_credential *out) {
     json_decref(request);
     return result;
 }
-static int secrets_from_material(const gstd_credential *material, char *values[64], size_t *count) {
-    if (gstd_bootstrap_material_check(material))
+static int secrets_from_material(const gstd_credential *material, int oidc, char *values[64], size_t *count) {
+    if (oidc ? gstd_oidc_material_check(material) : gstd_bootstrap_material_check(material))
         return -1;
     json_t *value = gstd_json_parse(material->bytes, material->length);
     if (!value)
         return -1;
     const char *fields[] = {"password",   "passwordHash", "jwtSecret",
                             "hmacSecret", "apiIssuerPEM", "controllerPEM"};
+    const char *oidc_fields[] = {"hydraSystem", "hydraCookie", "kratosCookie", "kratosDefault",
+                                 "kratosCipher", "uiCookie", "uiCsrf", "clientSecret"};
     int valid = 1;
-    for (unsigned i = 0; valid && i < 6; i++) {
-        const char *text = json_string_value(json_object_get(value, fields[i]));
+    for (unsigned i = 0; valid && i < (oidc ? 8u : 6u); i++) {
+        const char *text = json_string_value(json_object_get(value, oidc ? oidc_fields[i] : fields[i]));
         if (!text) {
             valid = 0;
             break;
@@ -177,16 +184,16 @@ static int ingest(void *context, const char *text, size_t size) {
      * stopping pipe draining or exposing raw output through another sink. */
     return 0;
 }
-static void run(gstd_log_capture_input input, int channel, int pipes[4][2][2], pid_t parent) {
+static void run(gstd_log_capture_input input, int channel, int pipes[GSTD_CAPTURE_MAX][2][2], pid_t parent) {
     if (prctl(PR_SET_PDEATHSIG, SIGKILL) || getppid() != parent || prctl(PR_SET_DUMPABLE, 0) ||
         prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0))
         _exit(126);
-    int original[12] = {input.state_fd, input.configuration_fd, input.broker_fd, channel};
+    int original[4 + GSTD_CAPTURE_MAX * 2] = {input.state_fd, input.configuration_fd, input.broker_fd, channel};
     unsigned descriptors = 4;
     for (unsigned i = 0; i < input.components; i++)
         for (unsigned j = 0; j < 2; j++)
             original[descriptors++] = pipes[i][j][0];
-    int copied[12];
+    int copied[4 + GSTD_CAPTURE_MAX * 2];
     for (unsigned i = 0; i < descriptors; i++) {
         copied[i] = original[i] < 0 ? -1 : fcntl(original[i], F_DUPFD_CLOEXEC, 32);
         if (original[i] >= 0 && copied[i] < 32)
@@ -221,11 +228,15 @@ static void run(gstd_log_capture_input input, int channel, int pipes[4][2][2], p
     size_t count = 0;
     gstd_credential secret = {0};
     gstd_logs *logs = NULL;
-    gstd_redactor *redactors[8] = {0};
-    sink sinks[8] = {0};
-    const char *components[] = {"git", "api", "controller", "scylladb"};
-    if (input.scylladb && input.components == 3)
-        components[2] = "scylladb";
+    gstd_redactor *redactors[GSTD_CAPTURE_MAX * 2] = {0};
+    sink sinks[GSTD_CAPTURE_MAX * 2] = {0};
+    const char *components[GSTD_CAPTURE_MAX] = {"git", "api", "controller"};
+    unsigned core = input.components - (input.oidc ? 5u : 0u) - input.scylladb;
+    if (input.scylladb)
+        components[core] = "scylladb";
+    if (input.oidc)
+        for (unsigned i = 0; i < 5; i++)
+            components[core + input.scylladb + i] = gstd_workload_name((gstd_workload_role)i);
     int log_root = gstd_logs_directory(3, input.store_id, 1);
     int narrowed = log_root >= 3 && dup2(log_root, 3) == 3 && !fcntl(3, F_SETFD, FD_CLOEXEC);
     if (log_root >= 3 && log_root != 3)
@@ -245,8 +256,12 @@ static void run(gstd_log_capture_input input, int channel, int pipes[4][2][2], p
     } else
 #endif
     {
-        if (valid)
-            valid = !material(&input, &secret) && !secrets_from_material(&secret, values, &count);
+        if (valid && core) {
+            valid = !material(&input, 0, &secret) && !secrets_from_material(&secret, 0, values, &count);
+            gstd_credential_clear(&secret);
+        }
+        if (valid && input.oidc)
+            valid = !material(&input, 1, &secret) && !secrets_from_material(&secret, 1, values, &count);
     }
     if (valid)
         ready.status = -11;
@@ -277,7 +292,7 @@ static void run(gstd_log_capture_input input, int channel, int pipes[4][2][2], p
     close(6);
     close(4);
     if (valid) {
-        struct pollfd pollers[8];
+        struct pollfd pollers[GSTD_CAPTURE_MAX * 2];
         unsigned live = input.components * 2;
         for (unsigned i = 0; i < live; i++)
             pollers[i] = (struct pollfd){7 + (int)i, POLLIN, 0};
@@ -308,14 +323,14 @@ static void run(gstd_log_capture_input input, int channel, int pipes[4][2][2], p
                 }
         }
     }
-    for (unsigned i = 0; i < 8; i++)
+    for (unsigned i = 0; i < GSTD_CAPTURE_MAX * 2; i++)
         gstd_redactor_close(redactors[i]);
     gstd_logs_close(logs);
     _exit(valid ? 0 : 126);
 }
 #endif
 void gstd_log_capture_output_close(gstd_log_capture *capture, unsigned component) {
-    if (!capture || component >= 4)
+    if (!capture || component >= GSTD_CAPTURE_MAX)
         return;
     for (unsigned i = 0; i < 2; i++) {
         if (capture->output[component][i] >= 3)
@@ -324,7 +339,7 @@ void gstd_log_capture_output_close(gstd_log_capture *capture, unsigned component
     }
 }
 void gstd_log_capture_outputs_close(gstd_log_capture *capture) {
-    for (unsigned i = 0; i < 4; i++)
+    for (unsigned i = 0; i < GSTD_CAPTURE_MAX; i++)
         gstd_log_capture_output_close(capture, i);
 }
 int gstd_log_capture_launch(const gstd_log_capture_input *input, gstd_log_capture *capture) {
@@ -335,9 +350,13 @@ int gstd_log_capture_launch(const gstd_log_capture_input *input, gstd_log_captur
         !input->operation_id ||
         !gstd_identifier(input->operation_id, strnlen(input->operation_id, 65)) ||
         !input->generation || input->generation > GSTD_SAFE_INTEGER || !input->components ||
-        input->components > 4 || input->scylladb > 1 ||
-        (input->scylladb && input->components < 3) ||
-        (!input->scylladb && input->components == 4) || !private_directory(input->state_fd) ||
+        input->components > GSTD_CAPTURE_MAX || input->scylladb > 1 || input->oidc > 1 ||
+        (!input->oidc && (input->components > 4 ||
+            (input->scylladb && input->components < 3) ||
+            (!input->scylladb && input->components == 4))) ||
+        (input->oidc && (input->components < 5u + input->scylladb ||
+            (input->components != 5 && input->components != 7u + input->scylladb &&
+             input->components != 8u + input->scylladb))) || !private_directory(input->state_fd) ||
         !private_directory(input->configuration_fd) || !one_thread())
         return -1;
     for (unsigned i = 0; i < 32; i++)
@@ -355,14 +374,16 @@ int gstd_log_capture_launch(const gstd_log_capture_input *input, gstd_log_captur
             if (!input->test_secrets[i] || !*input->test_secrets[i] ||
                 strnlen(input->test_secrets[i], 4097) > 4096)
                 return -1;
-    } else if (input->components < 2 || input->broker_fd < 3 || !json_is_object(input->source) ||
+    } else if (input->components < 2 || input->broker_fd < 3 ||
+               (input->components > (input->oidc ? 5u : 0u) && !json_is_object(input->source)) ||
+               (input->oidc && !json_is_object(input->oidc_source)) ||
                input->test_secrets || input->test_secret_count)
         return -1;
     int64_t now = now_ms();
     if (now < 0)
         return -1;
-    int pipes[4][2][2];
-    for (unsigned i = 0; i < 4; i++)
+    int pipes[GSTD_CAPTURE_MAX][2][2];
+    for (unsigned i = 0; i < GSTD_CAPTURE_MAX; i++)
         for (unsigned j = 0; j < 2; j++)
             pipes[i][j][0] = pipes[i][j][1] = -1;
     int channels[2] = {-1, -1};
@@ -397,7 +418,7 @@ int gstd_log_capture_launch(const gstd_log_capture_input *input, gstd_log_captur
         }
     return 0;
 fail:
-    for (unsigned i = 0; i < 4; i++)
+    for (unsigned i = 0; i < GSTD_CAPTURE_MAX; i++)
         for (unsigned j = 0; j < 2; j++)
             for (unsigned k = 0; k < 2; k++)
                 if (pipes[i][j][k] >= 3)

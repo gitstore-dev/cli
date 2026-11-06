@@ -6,7 +6,8 @@ typedef struct {
     int stage, index, outcome, terminated;
     int64_t deadline_ms;
     char lifecycle[16];
-    json_t *expected, *discovered[6];
+    json_t *expected, *discovered[GSTD_ROLE_COUNT + 5];
+    unsigned oidc_volume;
     gstd_filesystem_job filesystem;
     gstd_native_job native;
 } gstd_restoration;

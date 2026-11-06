@@ -121,7 +121,7 @@ fn respond(s: &mut UnixStream, req: &Value, result: Value) {
 fn prepare(listener: &UnixListener) -> UnixStream {
     prepare_capabilities(listener, false)
 }
-fn prepare_capabilities(listener: &UnixListener, logs: bool) -> UnixStream {
+fn negotiate_capabilities(listener: &UnixListener, logs: bool, oidc: bool) -> UnixStream {
     let mut s = accept(listener);
     let req = request(&mut s);
     assert_eq!(req["method"], "system.negotiate");
@@ -145,6 +145,12 @@ fn prepare_capabilities(listener: &UnixListener, logs: bool) -> UnixStream {
         "operation.read",
         "operation.cancel"
     ]);
+    if oidc {
+        capabilities
+            .as_array_mut()
+            .unwrap()
+            .push(json!("deployment.oidc"));
+    }
     if logs {
         capabilities
             .as_array_mut()
@@ -156,6 +162,10 @@ fn prepare_capabilities(listener: &UnixListener, logs: bool) -> UnixStream {
         &req,
         json!({"selectedVersion":{"major":1,"minor":0},"capabilities":capabilities,"limits":limits}),
     );
+    s
+}
+fn prepare_capabilities(listener: &UnixListener, logs: bool) -> UnixStream {
+    let mut s = negotiate_capabilities(listener, logs, true);
     let req = request(&mut s);
     assert_eq!(req["method"], "deployment.validate");
     respond(
@@ -427,4 +437,61 @@ fn foreground_interrupt_cancels_active_start_or_stops_its_completed_generation()
         peer.join().unwrap();
         assert_eq!(f.files(), original);
     }
+}
+
+#[test]
+fn oidc_selections_preserve_standalone_and_combined_intent() {
+    for (args, components) in [
+        (vec!["oidc", "serve"], json!(["oidc"])),
+        (
+            vec!["api", "serve", "--add", "oidc"],
+            json!(["api", "oidc"]),
+        ),
+        (
+            vec!["serve", "--add", "oidc"],
+            json!(["api", "git", "controller", "oidc"]),
+        ),
+    ] {
+        let fixture = Fixture::new();
+        let before = fixture.files();
+        let mut args = args;
+        args.extend(["--deployment", "local", "--allow-provision", "--detach"]);
+        let child = fixture.command(&args).spawn().unwrap();
+        let mut peer = prepare(&fixture.listener);
+        let start = request(&mut peer);
+        assert_eq!(start["method"], "deployment.start");
+        assert_eq!(start["params"]["profileId"], "core");
+        assert_eq!(start["params"]["profileVersion"], "2");
+        assert_eq!(start["params"]["components"], components);
+        respond(
+            &mut peer,
+            &start,
+            json!({"operationId":"oidc-start","deploymentId":"local","state":"accepted"}),
+        );
+        assert!(wait(child).status.success());
+        assert_eq!(fixture.files(), before);
+    }
+}
+
+#[test]
+fn oidc_missing_capability_fails_before_validation_or_submission() {
+    let fixture = Fixture::new();
+    let before = fixture.files();
+    let child = fixture
+        .command(&[
+            "oidc",
+            "serve",
+            "--deployment",
+            "local",
+            "--allow-provision",
+            "--detach",
+        ])
+        .spawn()
+        .unwrap();
+    let mut peer = negotiate_capabilities(&fixture.listener, false, false);
+    let output = wait(child);
+    assert_eq!(output.status.code(), Some(6));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("UNSUPPORTED_CAPABILITY"));
+    assert!(read_frame(&mut peer).unwrap().is_none());
+    assert_eq!(fixture.files(), before);
 }

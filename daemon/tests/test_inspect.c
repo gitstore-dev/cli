@@ -16,6 +16,79 @@
             goto done;                                                                             \
         }                                                                                          \
     } while (0)
+static int endpoint_projection(sqlite3 *db) {
+    if (sqlite3_exec(db, "INSERT INTO profiles VALUES('core','2','source','digest','linux-arm64')",
+                     NULL, NULL, NULL) != SQLITE_OK)
+        return 1;
+    for (unsigned mode = 0; mode < 12; mode++) {
+        char deployment[32], operation[32];
+        snprintf(deployment, sizeof(deployment), "endpoints-%u", mode);
+        snprintf(operation, sizeof(operation), "endpoints-op-%u", mode);
+        int core = mode != 1;
+        json_t *ports = core ? json_pack("{s:s,s:i,s:s,s:i}", "host", "127.0.0.1", "apiPort", 32000,
+                                         "gitHost", "127.0.0.1", "gitPort", 32001)
+                             : json_pack("{s:s}", "host", "127.0.0.1");
+        if (!ports)
+            return 1;
+        if (mode) {
+            const char *names[] = {"oidcIssuerPort", "oidcBridgePort", "identityPort",
+                                   "identityUiPort", "mailPort"};
+            for (unsigned i = 0; i < 5; i++)
+                json_object_set_new(ports, names[i], json_integer(32002 + i));
+        }
+        if (mode == 3)
+            json_object_set_new(ports, "host", json_string("foreign.invalid"));
+        if (mode == 4)
+            json_object_del(ports, "mailPort");
+        if (mode == 5)
+            json_object_set_new(ports, "oidcIssuerPort", json_integer(4445));
+        if (mode == 6)
+            json_object_set_new(ports, "identityPort", json_integer(32002));
+        if (mode == 7)
+            json_object_set_new(ports, "privatePort", json_integer(4445));
+        if (mode == 11)
+            json_object_set_new(ports, "host", json_stringn("127.0.0.1\0foreign", 17));
+        json_t *result = json_pack("{s:s,s:i,s:O}", "deploymentId", deployment, "generation", 1,
+                                   "endpoints", ports);
+        char *bytes = result ? gstd_json_dump(result) : NULL;
+        json_decref(result);
+        json_decref(ports);
+        if (!bytes)
+            return 1;
+        char *sql = sqlite3_mprintf(
+            "INSERT INTO deployments VALUES(%Q,'core',%Q,'running',%u,%u,%Q,'normal','held','2026-11-03T00:00:00Z',NULL);"
+            "INSERT INTO operations VALUES(%Q,1,'deployment.start',%Q,NULL,printf('%%064d',0),'{}',"
+            "'2026-11-03T00:00:00Z','2026-11-03T00:00:00Z','succeeded','normal',%Q,NULL);"
+            "UPDATE deployments SET last_operation_id=%Q WHERE deployment_id=%Q;",
+            deployment, mode == 0 || mode == 10 ? "1" : "2", mode == 8 ? 2 : 1, mode == 8 ? 2 : 1,
+            mode == 9 ? "pending" : "ready", operation, deployment, bytes, operation, deployment);
+        free(bytes);
+        int rc = sql ? sqlite3_exec(db, sql, NULL, NULL, NULL) : SQLITE_ERROR;
+        sqlite3_free(sql);
+        if (rc != SQLITE_OK)
+            return 1;
+        json_t *params = json_pack("{s:s}", "deploymentId", deployment), *answer = NULL;
+        gstd_query_status status = gstd_inspect(db, GSTD_INSPECT, params, &answer);
+        json_decref(params);
+        const json_t *urls = json_object_get(answer, "endpoints");
+        int valid =
+            status == GSTD_QUERY_OK && (mode < 3 ? json_object_size(urls) == (mode == 0   ? 2u
+                                                                              : mode == 1 ? 5u
+                                                                                          : 7u)
+                                                 : !urls);
+        if (mode == 1 || mode == 2) {
+            const char *issuer = json_string_value(json_object_get(urls, "oidcIssuer"));
+            valid = valid && issuer && !strcmp(issuer, "http://127.0.0.1:32002/") &&
+                    !json_object_get(urls, "privatePort");
+        }
+        json_decref(answer);
+        if (!valid) {
+            fprintf(stderr, "endpoint projection mode %u\n", mode);
+            return 1;
+        }
+    }
+    return 0;
+}
 int main(void) {
     gstd_json_initialize();
     int result = 0;
@@ -174,6 +247,7 @@ int main(void) {
               NULL, NULL, NULL) == SQLITE_OK);
     CHECK(gstd_wait_poll(db, "migration-bad", "terminal", &answer) == GSTD_QUERY_OK);
     CHECK(json_object_size(json_object_get(answer, "result")) == 0);
+    CHECK(!endpoint_projection(db));
 done:
     json_decref(answer);
     json_decref(cursor);

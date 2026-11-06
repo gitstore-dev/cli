@@ -249,10 +249,44 @@ API/Git forwarding. It does not load CNI configurations or execute CNI plugins.
 CNI integration would need a separate adapter and its own rootless, cleanup and
 isolation validation; selecting libslirp does not provide CNI compatibility.
 
-OIDC, Admin UI and Storefront remain unavailable in this preview. OIDC still needs
-managed deployment lifecycle, API issuer integration and recovery. Admin UI needs
-a published reference image and verified authentication/startup/readiness mapping.
-Storefront needs a verified reference runtime, publication reads and trusted target
-selection; alpha.9's dedicated API boundary intentionally returns unavailable.
-Component selection reports
-the missing prerequisite before provisioning or credential creation.
+The optional OIDC graph uses the immutable `core` profile version `2`:
+
+```sh
+gs oidc serve --deployment identity --allow-provision --detach
+gs serve --deployment dev-oidc --add oidc --allow-provision --detach
+gs serve --deployment persistent-oidc --add oidc --datastore scylladb --allow-provision --detach
+gs deployment logs identity --component oidc
+gs deployment stop identity
+```
+
+Standalone OIDC starts SMTP, Hydra, Kratos, identity UI and the bridge. Combined
+selection adds these to the selected core services. Use a new deployment name
+when switching from `core/1` to `core/2`; profile identity is immutable. A capable
+native installation advertises `deployment.oidc`, which the CLI requires before
+submission. Non-interactive cold provisioning requires `--allow-provision` unless
+all selected assets are available through verified cache or explicitly selected
+offline layouts. Remote-only commands retain their daemon-free behavior.
+
+Provider material uses a separate credential-store purpose. An explicit protected
+fallback uses `oidcCredentialSource` in private daemon settings, independently of
+`bootstrapCredentialSource`. Private provider databases, material and selected
+port identities survive owned stop/restart. Logs support aggregate `oidc` and the
+five fixed provider selectors, with both credential families redacted.
+
+Readiness requires current native ownership, both provider writers, acknowledged
+client enrollment, fixed role health, exact issuer discovery and public JWKS.
+A final read-only provider sweep follows all selected service startup and must
+complete within 30 seconds. After manager loss, inspection omits ready endpoints;
+replacement remains blocked until ownership is reconciled and owned stop finishes.
+A missing enrollment acknowledgement never permits another creation POST.
+Unknown helper/writer ownership stays held. Local schema-upgrade commands retain
+their separately registered mappings; this graph does not upgrade alpha.8 data to
+alpha.9 or implement CLI login/browser/device authorization.
+
+Admin UI needs a published reference image and verified authentication/startup/
+readiness mapping. Storefront needs a verified reference runtime, publication
+reads and trusted target selection; alpha.9's dedicated API boundary intentionally
+returns unavailable. Component-specific errors precede provisioning and credential
+creation. The [validation record](contributing/validation/local-runtime.md) separates
+source-preview Linux arm64 evidence from native amd64, macOS, clean-host and
+binary-publication qualification.

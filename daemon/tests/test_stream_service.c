@@ -137,6 +137,26 @@ int main(void) {
     }
     CHECK(gstd_stream_service_reply(s, 3, &value, &error) == 0 && !value);
     CHECK(gstd_stream_service_next(s, 3, &value) == 0 && !value);
+    CHECK(!json_object_set_new(params, "component", json_string("oidc")));
+    CHECK(gstd_stream_service_subscribe(s, 4, params, &value, &error) == 0 && error &&
+          text(value, "code", "NOT_FOUND"));
+    json_decref(value);
+    value = NULL;
+    CHECK(sqlite3_exec(db,
+                       "INSERT INTO components VALUES('observed','oidc-bridge',NULL,"
+                       "'digest','running','running',1,'2000-01-01T00:00:00Z')",
+                       NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_logs_append(logs, "observed", "oidc-bridge", GSTD_STREAM_LOGS, payload,
+                           (int64_t)time(NULL)) == GSTD_LOG_OK);
+    CHECK(gstd_stream_service_subscribe(s, 4, params, &value, &error) == 1 && !value);
+    CHECK(reply(s, 4, &value, &error) == 1 && !error);
+    json_decref(value);
+    value = NULL;
+    CHECK(gstd_stream_service_next(s, 4, &value) == 1 && text(value, "type", "log") &&
+          text(json_object_get(value, "payload"), "component", "oidc-bridge"));
+    json_decref(value);
+    value = NULL;
+    gstd_stream_service_disconnect(s, 4);
     result = 0;
 done:
     json_decref(value);

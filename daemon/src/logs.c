@@ -3,6 +3,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "logs.h"
 #include "gitstored/protocol.h"
+#include "oidc_profile.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <sqlite3.h>
@@ -41,6 +42,8 @@ static int identifier(const char *value) {
     return value && gstd_identifier(value, strnlen(value, 65));
 }
 static int component_valid(const char *name) {
+    if (gstd_oidc_component(name))
+        return 1;
     const char *names[] = {"api", "git", "controller", "oidc", "admin", "storefront", "scylladb"};
     if (!name)
         return 1;
@@ -510,7 +513,9 @@ gstd_log_status gstd_logs_replay(gstd_logs *logs, const char *deployment, const 
         logs,
         "SELECT e.sequence,e.component,e.observed,e.payload FROM log_entries e JOIN "
         "log_segments s ON s.id=e.segment WHERE s.deployment=? AND e.sequence>? AND "
-        "e.kind=? AND (? IS NULL OR e.component=?) AND s.created>=? ORDER BY e.sequence LIMIT ?");
+        "e.kind=? AND (?4 IS NULL OR e.component=?4 OR (?4='oidc' AND "
+        "e.component IN ('oidc-smtp','oidc-hydra','oidc-kratos','oidc-ui','oidc-bridge'))) "
+        "AND s.created>=?5 ORDER BY e.sequence LIMIT ?6");
     if (!s)
         return GSTD_LOG_IO;
     bind(s, 1, deployment);
@@ -518,13 +523,11 @@ gstd_log_status gstd_logs_replay(gstd_logs *logs, const char *deployment, const 
     sqlite3_bind_int(s, 3, (int)kind);
     if (component) {
         bind(s, 4, component);
-        bind(s, 5, component);
     } else {
         sqlite3_bind_null(s, 4);
-        sqlite3_bind_null(s, 5);
     }
-    sqlite3_bind_int64(s, 6, now - (int64_t)logs->limits.max_age_seconds);
-    sqlite3_bind_int(s, 7, (int)limit);
+    sqlite3_bind_int64(s, 5, now - (int64_t)logs->limits.max_age_seconds);
+    sqlite3_bind_int(s, 6, (int)limit);
     json_t *array = json_array();
     int step = SQLITE_ERROR, valid = array != NULL, page_full = 0;
     size_t replay_bytes = 0;

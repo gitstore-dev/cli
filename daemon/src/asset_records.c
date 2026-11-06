@@ -8,6 +8,7 @@
 #include "gitstored/profiles.h"
 #include "gitstored/protocol.h"
 #include "migration_execution.h"
+#include "oidc_profile.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -176,16 +177,19 @@ static int authorized(sqlite3 *db, const json_t *manifest, const char *component
                              json_string_value(json_object_get(target, "architecture")));
     if (formatted < 0 || (size_t)formatted >= sizeof(platform))
         return -1;
-    sqlite3_stmt *s = prepare(
-        db, "SELECT "
-            "o.intent,o.caller_uid,o.method,o.state,p.server_revision,p.manifest_digest,p.platform "
-            "FROM operations o JOIN "
-            "resource_ownership r ON r.operation_id=o.operation_id AND "
-            "r.deployment_id=o.deployment_id JOIN deployments d ON d.deployment_id=o.deployment_id "
-            "JOIN profiles p ON p.profile_id=d.profile_id AND p.profile_version=d.profile_version "
-            "WHERE o.operation_id=? AND r.resource_id=? "
-            "AND r.resource_type='asset-root' AND r.ownership_state='held' AND "
-            "r.lifecycle_stage IN ('reserved','allocated','attached','running')");
+    sqlite3_stmt *s =
+        prepare(db, "SELECT "
+                    "o.intent,o.caller_uid,o.method,o.state,p.server_revision,p.manifest_"
+                    "digest,p.platform "
+                    "FROM operations o JOIN "
+                    "resource_ownership r ON r.operation_id=o.operation_id AND "
+                    "r.deployment_id=o.deployment_id JOIN deployments d ON "
+                    "d.deployment_id=o.deployment_id "
+                    "JOIN profiles p ON p.profile_id=d.profile_id AND "
+                    "p.profile_version=d.profile_version "
+                    "WHERE o.operation_id=? AND r.resource_id=? "
+                    "AND r.resource_type='asset-root' AND r.ownership_state='held' AND "
+                    "r.lifecycle_stage IN ('reserved','allocated','attached','running')");
     if (!s)
         return -1;
     text(s, 1, op);
@@ -214,13 +218,19 @@ static int authorized(sqlite3 *db, const json_t *manifest, const char *component
         json_equal(json_object_get(intent, "profileId"), json_object_get(manifest, "profileId")) &&
         json_equal(json_object_get(intent, "profileVersion"),
                    json_object_get(manifest, "profileVersion"))) {
-        json_t *components = gstd_profile_components(json_object_get(intent, "components"));
+        int oidc_profile = same(json_object_get(manifest, "profileVersion"), "2") &&
+                           !gstd_oidc_core_manifest_check(manifest);
+        json_t *components = oidc_profile
+                                 ? gstd_oidc_core_components(json_object_get(intent, "components"))
+                                 : gstd_profile_components(json_object_get(intent, "components"));
         if (components && !strcmp(component, "scylladb") &&
             same(json_object_get(intent, "datastore"), "scylladb") &&
             same(json_object_get(manifest, "datastore"), "scylladb"))
             valid = 1;
         for (size_t i = 0; i < json_array_size(components); i++)
-            if (same(json_array_get(components, i), component))
+            if (same(json_array_get(components, i), component) ||
+                (oidc_profile && same(json_array_get(components, i), "oidc") &&
+                 gstd_oidc_component(component)))
                 valid = 1;
         json_decref(components);
     }
@@ -293,7 +303,8 @@ static gstd_asset_record_status begin(sqlite3 *db, const json_t *manifest, int o
         result = GSTD_ASSET_RECORD_CONSENT;
         goto done;
     }
-    s = prepare(db, "SELECT count(*),coalesce(sum(CASE WHEN state IN ('active','evicting') THEN "
+    s = prepare(db, "SELECT count(*),coalesce(sum(CASE WHEN state IN "
+                    "('active','evicting') THEN "
                     "logical_bytes ELSE "
                     "reserved_bytes END),0) FROM assets");
     if (!s)
@@ -315,7 +326,8 @@ static gstd_asset_record_status begin(sqlite3 *db, const json_t *manifest, int o
     if (gstd_asset_stage_name(key, operation, name))
         goto done;
     s = prepare(db, "INSERT INTO "
-                    "assets(asset_key,descriptor,producer_operation_id,operation_id,staging_name,"
+                    "assets(asset_key,descriptor,producer_operation_id,operation_id,staging_"
+                    "name,"
                     "state,reserved_bytes,download_limit,merge_limit,acquisition_mode,source_"
                     "device,source_inode) "
                     "VALUES(?,?,?,?,?,'staging',?,?,?,?,?,?)");
@@ -424,10 +436,13 @@ int gstd_asset_record_identity(sqlite3 *db, const char *key, const char *op, int
     char device[32], inode[32];
     identity_strings(&info, device, inode);
     sqlite3_stmt *s =
-        prepare(db, "UPDATE assets SET staging_device=?,staging_inode=? WHERE asset_key=? AND "
+        prepare(db, "UPDATE assets SET staging_device=?,staging_inode=? WHERE "
+                    "asset_key=? AND "
                     "operation_id=? AND state='staging' AND (staging_inode IS NULL OR "
-                    "(staging_inode=? AND staging_device=?)) AND EXISTS(SELECT 1 FROM operations "
-                    "WHERE operation_id=? AND caller_uid=? AND state IN ('accepted','running'))");
+                    "(staging_inode=? AND staging_device=?)) AND EXISTS(SELECT 1 FROM "
+                    "operations "
+                    "WHERE operation_id=? AND caller_uid=? AND state IN "
+                    "('accepted','running'))");
     if (!s)
         return -1;
     text(s, 1, device);
@@ -450,13 +465,15 @@ int gstd_asset_record_verified(sqlite3 *db, const char *key, const char *op,
     char device[32], inode[32];
     snprintf(device, sizeof(device), "%" PRIu64, proof->staging_device);
     snprintf(inode, sizeof(inode), "%" PRIu64, proof->staging_inode);
-    sqlite3_stmt *s = prepare(
-        db,
-        "UPDATE assets SET "
-        "state='verified',tree_digest=?,logical_bytes=?,downloaded_bytes=?,merged_bytes=? WHERE "
-        "asset_key=? AND operation_id=? AND state IN ('staging','verified') AND staging_device=? "
-        "AND staging_inode=? AND reserved_bytes>=? AND EXISTS(SELECT 1 FROM operations WHERE "
-        "operation_id=? AND caller_uid=? AND state IN ('accepted','running'))");
+    sqlite3_stmt *s =
+        prepare(db, "UPDATE assets SET "
+                    "state='verified',tree_digest=?,logical_bytes=?,downloaded_bytes=?,"
+                    "merged_bytes=? WHERE "
+                    "asset_key=? AND operation_id=? AND state IN ('staging','verified') AND "
+                    "staging_device=? "
+                    "AND staging_inode=? AND reserved_bytes>=? AND EXISTS(SELECT 1 FROM "
+                    "operations WHERE "
+                    "operation_id=? AND caller_uid=? AND state IN ('accepted','running'))");
     if (!s)
         return -1;
     text(s, 1, proof->tree_digest);
@@ -478,9 +495,10 @@ int gstd_asset_record_active(sqlite3 *db, const char *key, const char *op, int c
     if (!mutable(db, key, op))
         return -1;
 #if defined(__linux__) && defined(SYS_openat2)
-    sqlite3_stmt *s =
-        prepare(db, "SELECT staging_name,staging_device,staging_inode,state FROM assets WHERE "
-                    "asset_key=? AND producer_operation_id=? AND state IN ('verified','active')");
+    sqlite3_stmt *s = prepare(db, "SELECT staging_name,staging_device,staging_inode,state FROM "
+                                  "assets WHERE "
+                                  "asset_key=? AND producer_operation_id=? AND state IN "
+                                  "('verified','active')");
     if (!s)
         return -1;
     text(s, 1, key);
@@ -520,10 +538,11 @@ done:
     sqlite3_finalize(s);
     if (result || active)
         return result;
-    s = prepare(
-        db, "UPDATE assets SET state='active',operation_id=NULL,reserved_bytes=0 WHERE asset_key=? "
-            "AND operation_id=? AND state='verified' AND EXISTS(SELECT 1 FROM operations WHERE "
-            "operation_id=? AND caller_uid=? AND state IN ('accepted','running'))");
+    s = prepare(db, "UPDATE assets SET state='active',operation_id=NULL,reserved_bytes=0 "
+                    "WHERE asset_key=? "
+                    "AND operation_id=? AND state='verified' AND EXISTS(SELECT 1 FROM "
+                    "operations WHERE "
+                    "operation_id=? AND caller_uid=? AND state IN ('accepted','running'))");
     if (!s)
         return -1;
     text(s, 1, key);
@@ -604,9 +623,9 @@ int gstd_asset_record_evict_begin(sqlite3 *db, const char *key, gstd_provision_r
     sqlite3_finalize(s);
     if (!valid)
         return -1;
-    s = prepare(db,
-                "UPDATE assets SET state='evicting' WHERE asset_key=? AND state IN "
-                "('active','evicting') AND NOT EXISTS(SELECT 1 FROM asset_refs WHERE asset_key=?)");
+    s = prepare(db, "UPDATE assets SET state='evicting' WHERE asset_key=? AND state IN "
+                    "('active','evicting') AND NOT EXISTS(SELECT 1 FROM asset_refs WHERE "
+                    "asset_key=?)");
     if (!s)
         return -1;
     text(s, 1, key);
@@ -661,18 +680,23 @@ int gstd_asset_record_receipt(sqlite3 *db, const char *key, const char *operatio
     int own_transaction = sqlite3_get_autocommit(db);
     if (own_transaction && sqlite3_exec(db, "BEGIN", NULL, NULL, NULL) != SQLITE_OK)
         return -1;
-    sqlite3_stmt *s = prepare(
-        db, "SELECT a.staging_device,a.staging_inode,a.tree_digest,a.logical_bytes,"
-            "a.downloaded_bytes,a.merged_bytes,o.method FROM assets a JOIN asset_refs f ON "
-            "f.asset_key=a.asset_key "
-            "JOIN resource_ownership r ON r.resource_id=f.resource_id JOIN operations o ON "
-            "o.operation_id=r.operation_id "
-            "JOIN deployments d ON d.deployment_id=r.deployment_id "
-            "WHERE a.asset_key=? AND a.state='active' AND r.resource_id=? AND r.operation_id=? "
-            "AND r.resource_type='asset-root' AND r.ownership_state='held' AND o.caller_uid=? "
-            "AND o.state IN ('accepted','running') AND "
-            "((o.method='deployment.start' AND d.last_operation_id=o.operation_id) OR "
-            "o.method='migration.start')");
+    sqlite3_stmt *s =
+        prepare(db, "SELECT a.staging_device,a.staging_inode,a.tree_digest,a.logical_bytes,"
+                    "a.downloaded_bytes,a.merged_bytes,o.method FROM assets a JOIN "
+                    "asset_refs f ON "
+                    "f.asset_key=a.asset_key "
+                    "JOIN resource_ownership r ON r.resource_id=f.resource_id JOIN "
+                    "operations o ON "
+                    "o.operation_id=r.operation_id "
+                    "JOIN deployments d ON d.deployment_id=r.deployment_id "
+                    "WHERE a.asset_key=? AND a.state='active' AND r.resource_id=? AND "
+                    "r.operation_id=? "
+                    "AND r.resource_type='asset-root' AND r.ownership_state='held' AND "
+                    "o.caller_uid=? "
+                    "AND o.state IN ('accepted','running') AND "
+                    "((o.method='deployment.start' AND d.last_operation_id=o.operation_id) "
+                    "OR "
+                    "o.method='migration.start')");
     if (!s) {
         if (own_transaction)
             sqlite3_exec(db, "ROLLBACK", NULL, NULL, NULL);

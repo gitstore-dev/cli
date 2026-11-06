@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "streams.h"
 #include "gitstored/protocol.h"
+#include "oidc_profile.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -30,6 +31,8 @@ struct gstd_streams {
     subscription subscriptions[32][8];
 };
 static int component_valid(const char *name) {
+    if (gstd_oidc_component(name))
+        return 1;
     static const char *names[] = {"api",   "git",        "controller", "oidc",
                                   "admin", "storefront", "scylladb"};
     if (!name)
@@ -178,7 +181,8 @@ static int deliver(gstd_streams *streams, const char *deployment, gstd_stream_ki
             if (target >= 0 && ((unsigned)target != connection || strcmp(s->id, id)))
                 continue;
             if (!s->active || s->kind != kind || strcmp(s->deployment, deployment) ||
-                (*s->component && (!component || strcmp(s->component, component))))
+                (*s->component && (!component || (strcmp(s->component, component) &&
+                 (strcmp(s->component, "oidc") || !gstd_oidc_component(component))))))
                 continue;
             found = 1;
             if (s->overflow) {

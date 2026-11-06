@@ -165,13 +165,22 @@ pub fn preflight(cli: &Cli) -> Result<()> {
                 if unique.len() != a.add.len() {
                     return Err(Error::usage("Optional components must be unique"));
                 }
-                let selected = a.add.first().map(String::as_str).or(match cli.command {
-                    Command::Oidc { .. } => Some("oidc"),
-                    Command::Admin { .. } => Some("admin"),
-                    Command::Storefront { .. } => Some("storefront"),
-                    _ => None,
-                });
-                if let Some(name) = selected {
+                if matches!(cli.command, Command::Oidc { .. })
+                    && a.add.iter().any(|name| name == "oidc")
+                {
+                    return Err(Error::usage("Optional components must be unique"));
+                }
+                let unavailable = a
+                    .add
+                    .iter()
+                    .map(String::as_str)
+                    .find(|name| *name != "oidc")
+                    .or(match cli.command {
+                        Command::Admin { .. } => Some("admin"),
+                        Command::Storefront { .. } => Some("storefront"),
+                        _ => None,
+                    });
+                if let Some(name) = unavailable {
                     return Err(optional_prerequisite(name));
                 }
             }
@@ -181,9 +190,6 @@ pub fn preflight(cli: &Cli) -> Result<()> {
 }
 fn optional_prerequisite(component: &str) -> Error {
     Error::unsupported(match component {
-        "oidc" => {
-            "OIDC serving is not enabled yet: managed deployment lifecycle, API issuer integration and recovery are still incomplete"
-        }
         "admin" => {
             "Admin UI serving requires a published image with verified authentication, startup configuration and readiness"
         }
@@ -243,6 +249,16 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
         None
     };
     let mut capabilities = vec![required];
+    if required == "deployment.start"
+        && params.as_ref().is_some_and(|value| {
+            value
+                .get("components")
+                .and_then(Value::as_array)
+                .is_some_and(|components| components.iter().any(|component| component == "oidc"))
+        })
+    {
+        capabilities.push("deployment.oidc");
+    }
     if required == "deployment.start" || required == "deployment.stop" {
         capabilities.extend(["deployment.validate", "operation.read", "deployment.read"]);
     }
@@ -624,7 +640,11 @@ fn validation_params(cli: &Cli) -> Result<Value> {
         .as_ref()
         .or(fallback.profile_version.as_ref())
         .map(String::as_str)
-        .unwrap_or("1");
+        .unwrap_or(if matches!(cli.command, Command::Oidc { .. }) {
+            "2"
+        } else {
+            "1"
+        });
     let datastore = selected
         .datastore
         .as_ref()
@@ -685,6 +705,8 @@ fn start_params(cli: &Cli) -> Result<Value> {
     let args = serve_args(&cli.command).ok_or_else(|| Error::usage("Serve selection missing"))?;
     let fallback = defaults()?;
     let selected = &args.selection;
+    let oidc =
+        matches!(cli.command, Command::Oidc { .. }) || args.add.iter().any(|name| name == "oidc");
     let id = selected
         .deployment
         .as_ref()
@@ -703,7 +725,7 @@ fn start_params(cli: &Cli) -> Result<Value> {
         .as_ref()
         .or(fallback.profile_version.as_ref())
         .map(String::as_str)
-        .unwrap_or("1");
+        .unwrap_or(if oidc { "2" } else { "1" });
     let datastore = selected
         .datastore
         .as_ref()
@@ -716,15 +738,25 @@ fn start_params(cli: &Cli) -> Result<Value> {
     if !matches!(datastore, "memdb" | "scylladb") {
         return Err(Error::usage("Local datastore must be memdb or scylladb"));
     }
+    if oidc && (profile != "core" || version != "2") {
+        return Err(Error::usage(
+            "OIDC requires the installed core profile version 2",
+        ));
+    }
     let mut params = json!({"deploymentId":id,"profileId":profile,"profileVersion":version,"datastore":datastore});
     let name = match cli.command {
         Command::Api { .. } => Some("api"),
         Command::Git { .. } => Some("git"),
         Command::Controller { .. } => Some("controller"),
+        Command::Oidc { .. } => Some("oidc"),
         _ => None,
     };
-    if let Some(name) = name {
-        params["components"] = json!([name]);
+    if name.is_some() || !args.add.is_empty() {
+        let mut components = name
+            .map(|name| vec![name])
+            .unwrap_or_else(|| vec!["api", "git", "controller"]);
+        components.extend(args.add.iter().map(String::as_str));
+        params["components"] = json!(components);
     }
     Ok(params)
 }

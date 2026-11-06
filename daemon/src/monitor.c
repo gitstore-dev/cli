@@ -12,14 +12,18 @@ static int64_t now_ms(void) {
 static int kernel(gstd_deployment *d, int *component) {
     *component = -1;
     int status = 0;
-    for (unsigned i = 0; i < d->count; i++) {
-        int dead = gstd_native_watch_poll(d->workloads[i].death_fd);
+    for (unsigned i = 0; i < gstd_deployment_service_count(d); i++) {
+        gstd_deployment_workload *w = gstd_deployment_service(d, i);
+        int dead = gstd_native_watch_poll(w->death_fd);
         if (dead) {
-            *component = i == 0 ? 1 : i == 1 ? 0 : 2;
+            *component = (int)i;
             if (dead < 0)
                 return -1;
             status = 1;
         }
+        if (!dead && d->oidc_enabled && i < GSTD_OIDC_SERVICE_COUNT &&
+            gstd_oidc_runtime_service_live(&d->oidc, i))
+            return -1;
     }
     if (d->persistent) {
         int dead = gstd_native_watch_poll(d->datastore.workloads[0].death_fd);
@@ -56,17 +60,18 @@ static int observation(gstd_deployment *d, int ready, int uncertain, int compone
     sqlite3_finalize(s);
     s = NULL;
     if (valid && component >= 0) {
-        static const char *names[] = {"api", "git", "controller"};
-        valid = component < 3 &&
-                sqlite3_prepare_v2(
-                    db,
-                    "UPDATE components SET "
-                    "observed_state=?,observed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE "
-                    "deployment_id=? AND generation=? AND component=? AND EXISTS(SELECT 1 FROM "
-                    "deployments d WHERE "
-                    "d.deployment_id=components.deployment_id AND d.last_operation_id=? AND "
-                    "d.desired_state='running')",
-                    -1, &s, NULL) == SQLITE_OK;
+        gstd_deployment_workload *w = gstd_deployment_service(d, (unsigned)component);
+        valid = w && sqlite3_prepare_v2(db,
+                                        "UPDATE components SET "
+                                        "observed_state=?,observed_at=strftime('%Y-"
+                                        "%m-%dT%H:%M:%SZ','now') WHERE "
+                                        "deployment_id=? AND generation=? AND "
+                                        "component=? AND EXISTS(SELECT 1 FROM "
+                                        "deployments d WHERE "
+                                        "d.deployment_id=components.deployment_id "
+                                        "AND d.last_operation_id=? AND "
+                                        "d.desired_state='running')",
+                                        -1, &s, NULL) == SQLITE_OK;
         if (valid) {
             sqlite3_bind_text(s, 1,
                               uncertain                              ? "unknown"
@@ -75,7 +80,7 @@ static int observation(gstd_deployment *d, int ready, int uncertain, int compone
                               -1, SQLITE_STATIC);
             sqlite3_bind_text(s, 2, d->target.deployment_id, -1, SQLITE_TRANSIENT);
             sqlite3_bind_int64(s, 3, (sqlite3_int64)d->target.generation);
-            sqlite3_bind_text(s, 4, names[component], -1, SQLITE_STATIC);
+            sqlite3_bind_text(s, 4, w->name, -1, SQLITE_STATIC);
             sqlite3_bind_text(s, 5, d->target.operation_id, -1, SQLITE_TRANSIENT);
             valid = sqlite3_step(s) == SQLITE_DONE;
         }
@@ -90,14 +95,14 @@ static int observation(gstd_deployment *d, int ready, int uncertain, int compone
     return 0;
 }
 static int fresh(gstd_deployment *d, int64_t now) {
-    for (unsigned i = 0; i < d->count; i++)
+    for (unsigned i = 0; i < gstd_deployment_service_count(d); i++)
         if (d->monitor.last_ready[i] <= 0 || now - d->monitor.last_ready[i] > 30000)
             return 0;
     return 1;
 }
 static int monitor_poll(gstd_deployment *d) {
-    if (!d || d->recovered || d->outcome || !d->stage || !d->environment || !d->credential_source ||
-        d->ready_at_ms <= 0)
+    if (!d || d->recovered || d->outcome || !d->stage || !d->environment ||
+        (!d->credential_source && !d->oidc_enabled) || d->ready_at_ms <= 0)
         return -1;
     int64_t now = now_ms();
     if (now < 0)
@@ -105,14 +110,15 @@ static int monitor_poll(gstd_deployment *d) {
     if (!d->monitor.initialized) {
         d->monitor.initialized = 1;
         d->monitor.reported_ready = 1;
-        for (unsigned i = 0; i < d->count; i++)
+        for (unsigned i = 0; i < gstd_deployment_service_count(d); i++)
             d->monitor.last_ready[i] = d->ready_at_ms;
         d->monitor.next_due = d->ready_at_ms + 5000;
     }
     int failed_component = -1;
     int alive = kernel(d, &failed_component);
     /* Only a positive held native death observation can request supervision.
-     * HTTP health loss and inaccessible kernel observations never authorize it. */
+     * HTTP health loss and inaccessible kernel observations never authorize it.
+     */
     if (alive > 0)
         d->monitor.exit_observed = 1;
     if (alive && failed_component >= 0)
@@ -129,7 +135,12 @@ static int monitor_poll(gstd_deployment *d) {
                 return -1;
             if (!done)
                 return 0;
-            d->monitor.status = reply.uid[0] ? GSTD_BOOT_HTTP_REJECTED : reply.status;
+            d->monitor.status =
+                reply.uid[0] ? GSTD_BOOT_HTTP_REJECTED
+                : d->oidc_enabled && (unsigned)d->monitor.index < GSTD_OIDC_SERVICE_COUNT
+                    ? (reply.status == GSTD_OIDC_HEALTH_READY ? GSTD_BOOT_HTTP_READY
+                                                              : GSTD_BOOT_HTTP_REJECTED)
+                    : reply.status;
             d->monitor.has_reply = 1;
         }
         /* A storage failure retains this lease/result for retry, never an
@@ -140,8 +151,8 @@ static int monitor_poll(gstd_deployment *d) {
         d->monitor.last_ready[index] = d->monitor.status == GSTD_BOOT_HTTP_READY ? now : 0;
         d->monitor.running = 0;
         d->monitor.has_reply = 0;
-        d->monitor.index = (index + 1) % (int)d->count;
-        d->monitor.next_due = now + 5000;
+        d->monitor.index = (index + 1) % (int)gstd_deployment_service_count(d);
+        d->monitor.next_due = now + (d->oidc_enabled ? 2500 : 5000);
         return observation(d, alive == 0 && fresh(d, now), alive < 0, index);
     }
     if (alive || now < d->monitor.next_due)
@@ -151,8 +162,13 @@ static int monitor_poll(gstd_deployment *d) {
         d->monitor.next_due = now + 1000;
         return reserved < 0 ? -1 : 0;
     }
-    static const gstd_bootstrap_http_action actions[] = {GSTD_BOOT_API_READY, GSTD_BOOT_GIT_READY,
-                                                         GSTD_BOOT_CONTROLLER_READY};
+    gstd_deployment_workload *selected = gstd_deployment_service(d, (unsigned)d->monitor.index);
+    if (!selected)
+        return -1;
+    gstd_bootstrap_http_action action = !strcmp(selected->name, "api") ? GSTD_BOOT_API_READY
+                                        : !strcmp(selected->name, "git")
+                                            ? GSTD_BOOT_GIT_READY
+                                            : GSTD_BOOT_CONTROLLER_READY;
     gstd_bootstrap_job_input input = {.kind = GSTD_BOOT_JOB_HTTP,
                                       .preparation = {.manifest = d->target.manifest,
                                                       .store_id = d->target.store_id,
@@ -164,8 +180,23 @@ static int monitor_poll(gstd_deployment *d) {
                                                       .scope_fd = d->configuration.descriptors[1]},
                                       .broker_fd = d->environment->broker_fd,
                                       .source = d->credential_source,
-                                      .action = actions[d->monitor.index],
+                                      .action = action,
                                       .network = &d->network_observed.network};
+    if (d->oidc_enabled) {
+        input.preparation.oidc_issuer_port = d->oidc_ports.issuer;
+        input.preparation.oidc_client = &d->oidc.client;
+    }
+    if (d->oidc_enabled && (unsigned)d->monitor.index < GSTD_OIDC_SERVICE_COUNT) {
+        input.kind = GSTD_BOOT_JOB_OIDC_HEALTH;
+        input.broker_fd = -1;
+        input.source = NULL;
+        input.preparation.scope_fd = d->oidc.setup.configuration.descriptors[1];
+        input.oidc_ports = d->oidc_ports;
+        input.oidc_health_role = d->monitor.index == GSTD_ROLE_HYDRA
+                                     ? GSTD_OIDC_HEALTH_ISSUER
+                                     : (gstd_oidc_health_role)gstd_workload_oidc_health(
+                                           (gstd_workload_role)d->monitor.index);
+    }
     d->monitor.running = 1;
     if (gstd_bootstrap_job_launch(&input, 5000, &d->bootstrap)) {
         d->monitor.has_reply = 1;

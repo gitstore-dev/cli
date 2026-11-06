@@ -121,7 +121,9 @@ int gstd_stream_service_subscribe(gstd_stream_service *s, unsigned connection, c
         sqlite3_prepare_v2(
             s->db,
             "SELECT 1 FROM deployments d WHERE deployment_id=? AND (? IS NULL OR EXISTS(SELECT 1 "
-            "FROM components c WHERE c.deployment_id=d.deployment_id AND c.component=?))",
+            "FROM components c WHERE c.deployment_id=d.deployment_id AND (c.component=?3 OR "
+            "(?3='oidc' AND c.component IN ('oidc-smtp','oidc-hydra','oidc-kratos',"
+            "'oidc-ui','oidc-bridge')))))",
             -1, &q, NULL) == SQLITE_OK;
     if (ok) {
         sqlite3_bind_text(q, 1, deployment, -1, SQLITE_TRANSIENT);

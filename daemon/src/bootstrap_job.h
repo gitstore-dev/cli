@@ -8,7 +8,8 @@ typedef enum {
     GSTD_BOOT_JOB_PREPARE,
     GSTD_BOOT_JOB_BIND,
     GSTD_BOOT_JOB_HTTP,
-    GSTD_BOOT_JOB_OIDC_HTTP
+    GSTD_BOOT_JOB_OIDC_HTTP,
+    GSTD_BOOT_JOB_OIDC_HEALTH
 } gstd_bootstrap_job_kind;
 typedef struct {
     gstd_bootstrap_request preparation;
@@ -17,6 +18,7 @@ typedef struct {
     const json_t *source;
     gstd_bootstrap_http_action action;
     gstd_oidc_http_action oidc_action;
+    gstd_oidc_health_role oidc_health_role;
     gstd_oidc_client oidc_client;
     gstd_oidc_ports oidc_ports;
     const gstd_network_namespace *network;

@@ -180,6 +180,37 @@ int main(void) {
         close(datastore_configuration);
         datastore_configuration = -1;
     }
+    const unsigned layouts[] = {5, 7, 8, 9};
+    for (unsigned n = 0; n < sizeof(layouts) / sizeof(*layouts); n++) {
+        char name[32];
+        snprintf(name, sizeof(name), "oidc-capture-%u", layouts[n]);
+        CHECK(!mkdirat(root_fd, name, 0700));
+        datastore_configuration = openat(root_fd, name, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+        CHECK(datastore_configuration >= 3);
+        gstd_log_capture_input selected = input;
+        selected.configuration_fd = datastore_configuration;
+        selected.deployment_id = name;
+        selected.operation_id = name;
+        selected.components = layouts[n];
+        selected.oidc = 1;
+        selected.scylladb = layouts[n] == 9;
+        CHECK(!gstd_log_capture_launch(&selected, &capture) && !await_ready(&capture));
+        const char line[] = "provider fixture-key-never-persisted-123456789 ready\n";
+        for (unsigned i = layouts[n] - 5; i < layouts[n]; i++)
+            CHECK(write(capture.output[i][0], line, sizeof(line) - 1) == sizeof(line) - 1);
+        gstd_log_capture_outputs_close(&capture);
+        CHECK(!await_child(capture.worker) && !gstd_log_capture_close(&capture));
+        CHECK(gstd_logs_replay(logs, name, "oidc", GSTD_STREAM_LOGS, NULL, 10,
+                               (int64_t)time(NULL), &page) == GSTD_LOG_OK && json_array_size(page) == 5);
+        for (unsigned i = 0; i < 5; i++)
+            CHECK(!strcmp(json_string_value(json_object_get(json_array_get(page, i), "text")),
+                          "provider [REDACTED] ready"));
+        json_decref(page); page = NULL;
+        CHECK(gstd_logs_replay(logs, name, "oidc-bridge", GSTD_STREAM_LOGS, NULL, 10,
+                               (int64_t)time(NULL), &page) == GSTD_LOG_OK && json_array_size(page) == 1);
+        json_decref(page); page = NULL;
+        close(datastore_configuration); datastore_configuration = -1;
+    }
     /* The workload writer is a transferred synthetic pipe, never a host command.
      * Kill its owner process after ready; capture must continue independently. */
     CHECK(!socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, channel));

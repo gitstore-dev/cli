@@ -3,6 +3,7 @@
 #include "bootstrap_material.h"
 #include "gitstored/assets.h"
 #include "gitstored/protocol.h"
+#include "oidc_profile.h"
 #include <string.h>
 int gstd_bootstrap_graph_begin(const json_t *manifest, const char *datastore, uint64_t generation,
                                gstd_bootstrap_graph *graph) {
@@ -28,7 +29,7 @@ int gstd_bootstrap_graph_begin(const json_t *manifest, const char *datastore, ui
             controller = 1;
         else if (!strcmp(component, "scylladb") && persistent)
             datastore_image = 1;
-        else
+        else if (!gstd_oidc_component(component))
             return -1;
     }
     if (!api || !git || datastore_image != (unsigned)persistent)
@@ -106,51 +107,73 @@ static const char api_ports[] = "[api]\nport = 4000\ngit_port = 9000\ngrpc_port 
 static const char api_common[] =
     "[api.git_service]\nuri = \"dns:///127.0.0.1:50051\"\n"
     "[api.auth.static_users]\nusers_file = \"/etc/gitstore/users.yaml\"\n"
-    "[api.auth.authn]\nchain = [\"static-users\", \"serviceaccount-assertion\", "
-    "\"serviceaccount-jwt\", \"anonymous\"]\n"
     "[api.auth.authz]\nprovider = \"rbac-local\"\n"
     "[api.auth.userdir]\nprovider = \"static-users\"\n"
     "[api.auth.rbac_local]\npolicy_file = \"/etc/gitstore/policy.yaml\"\n"
-    "[observability.otlp]\nuri = \"\"\n[log]\nlevel = \"info\"\nformat = \"json\"\n";
+    "[observability.otlp]\nuri = \"\"\n[log]\nlevel = \"info\"\nformat = "
+    "\"json\"\n";
+static const char api_chain[] = "[api.auth.authn]\nchain = [\"static-users\", "
+                                "\"serviceaccount-assertion\", "
+                                "\"serviceaccount-jwt\", \"anonymous\"]\n";
+static const char api_oidc_chain[] = "[api.auth.authn]\nchain = [\"static-users\", "
+                                     "\"serviceaccount-assertion\", "
+                                     "\"serviceaccount-jwt\", \"oidc-jwt\", \"anonymous\"]\n";
 static const char controller_base[] =
     "[controller]\nport = 5001\napi_uri = \"http://127.0.0.1:4000/graphql\"\n"
     "[controller.serviceaccount]\nname = \"gitstore-controller-manager\"\n"
     "key_ref = {kind = \"SecretRef\", name = \"controller-signing\"}\n"
-    "assertion_audience = \"gitstore-api/serviceaccount-token\"\naccess_token_audience = "
+    "assertion_audience = "
+    "\"gitstore-api/serviceaccount-token\"\naccess_token_audience = "
     "\"gitstore-api\"\n"
-    "[controller.secret_providers.bootstrap]\ntype = \"file\"\nbase_path = \"/run/gitstore\"\n"
-    "[controller.checkpoint]\ndir = \"/tmp/checkpoints\"\nflush_interval_events = 100\n"
-    "[observability.otlp]\nuri = \"\"\n[log]\nlevel = \"info\"\nformat = \"json\"\n";
+    "[controller.secret_providers.bootstrap]\ntype = \"file\"\nbase_path = "
+    "\"/run/gitstore\"\n"
+    "[controller.checkpoint]\ndir = "
+    "\"/tmp/checkpoints\"\nflush_interval_events = 100\n"
+    "[observability.otlp]\nuri = \"\"\n[log]\nlevel = \"info\"\nformat = "
+    "\"json\"\n";
 /* Versioned public RBAC vocabulary from the pinned upstream policy. Only the
- * bootstrap admin, controller and API-internal roles required by core are bound. */
+ * bootstrap admin, controller and API-internal roles required by core are
+ * bound. */
 static const char policy[] =
     "apiVersion: rbac.authorization.gitstore.dev/v1beta1\nkind: "
     "RbacLocalConfiguration\ndefaultDeny: true\n"
-    "clusterRoles:\n  cluster-admin:\n    rules:\n      - resources: ['*']\n        verbs: ['*']\n"
-    "  controller:\n    rules:\n      - resources: [namespace, repository, categoryTaxonomy, "
+    "clusterRoles:\n  cluster-admin:\n    rules:\n      - resources: ['*']\n   "
+    "     verbs: ['*']\n"
+    "  controller:\n    rules:\n      - resources: [namespace, repository, "
+    "categoryTaxonomy, "
     "product, file]\n"
     "        verbs: [read, list, watch]\n"
-    "      - resources: [namespace/status, repository/status, categoryTaxonomy/status, "
+    "      - resources: [namespace/status, repository/status, "
+    "categoryTaxonomy/status, "
     "product/status, file/status]\n"
-    "        verbs: [write]\n      - resources: [namespace, repository, categoryTaxonomy, "
+    "        verbs: [write]\n      - resources: [namespace, repository, "
+    "categoryTaxonomy, "
     "product]\n        verbs: [purge]\n"
-    "      - resources: [namespace/system-repository]\n        verbs: [provision]\n"
+    "      - resources: [namespace/system-repository]\n        verbs: "
+    "[provision]\n"
     "      - resources: [repository]\n        verbs: [create]\n"
     "      - resources: [product/management]\n        verbs: [read, list]\n"
-    "  controller-token:\n    rules:\n      - resources: [serviceAccount/token]\n        verbs: "
+    "  controller-token:\n    rules:\n      - resources: "
+    "[serviceAccount/token]\n        verbs: "
     "[issue]\n"
     "        resourceNames: [gitstore-controller-manager]\n"
-    "  system:api-internal:\n    rules:\n      - resources: [repository]\n        verbs: [create, "
+    "  system:api-internal:\n    rules:\n      - resources: [repository]\n     "
+    "   verbs: [create, "
     "delete]\n"
-    "      - resources: [repository/contents]\n        verbs: [read, write]\nroles: "
+    "      - resources: [repository/contents]\n        verbs: [read, "
+    "write]\nroles: "
     "{}\nclusterRoleBindings:\n"
-    "  - roleRef: {kind: ClusterRole, name: cluster-admin}\n    subjects: [{kind: User, name: "
+    "  - roleRef: {kind: ClusterRole, name: cluster-admin}\n    subjects: "
+    "[{kind: User, name: "
     "admin}]\n"
-    "  - roleRef: {kind: ClusterRole, name: controller}\n    subjects: [{kind: ServiceAccount, "
+    "  - roleRef: {kind: ClusterRole, name: controller}\n    subjects: [{kind: "
+    "ServiceAccount, "
     "name: gitstore-controller-manager}]\n"
-    "  - roleRef: {kind: ClusterRole, name: controller-token}\n    subjects: [{kind: "
+    "  - roleRef: {kind: ClusterRole, name: controller-token}\n    subjects: "
+    "[{kind: "
     "ServiceAccount, name: gitstore-controller-manager}]\n"
-    "  - roleRef: {kind: ClusterRole, name: 'system:api-internal'}\n    subjects: [{kind: User, "
+    "  - roleRef: {kind: ClusterRole, name: 'system:api-internal'}\n    "
+    "subjects: [{kind: User, "
     "name: 'system:api'}]\n"
     "roleBindings: []\n";
 static int scope(int fd, struct stat *info) {
@@ -332,6 +355,12 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
     }
     if (!has_api || !has_git)
         return -1;
+    int oidc = json_object_get(request->manifest, "oidcProfileDigest") != NULL;
+    if (oidc ? (gstd_oidc_core_manifest_check(request->manifest) ||
+                request->oidc_issuer_port < 1024 || request->oidc_issuer_port > 65535 ||
+                gstd_oidc_client_check(request->oidc_client))
+             : (request->oidc_issuer_port || request->oidc_client))
+        return -1;
     int exists = !fstatat(request->scope_fd, "owner.json", &marker, AT_SYMLINK_NOFOLLOW);
     if (!exists && errno != ENOENT)
         return -1;
@@ -358,7 +387,7 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
     }
     int result = -1;
     char *owner_bytes = NULL, *api = NULL, *git = NULL, *users = NULL, *signing = NULL,
-         *validator = NULL, *api_base = NULL;
+         *validator = NULL, *api_base = NULL, *oidc_config = NULL;
     char *jwt = NULL, *hmac = NULL, *issuer = NULL, *hash = NULL, *key = NULL, *key_id = NULL;
     json_t *value = gstd_json_parse(material->bytes, material->length), *owner = NULL,
            *record = NULL;
@@ -388,13 +417,30 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
         json_object_set(owner, "manifestDigest",
                         json_object_get(request->manifest, "manifestDigest")))
         goto done;
-    const char *datastore_config =
-        persistent ? "[api.datastore]\nbackend = \"scylla\"\n[api.datastore.scylla]\nauto_migrate "
-                     "= false\n"
-                     "hosts = [\"127.0.0.1:9042\"]\nkeyspace = "
-                     "\"gitstore\"\ndisable_shard_aware_port = true\n"
-                   : "[api.datastore]\nbackend = \"memdb\"\n";
-    if (asprintf(&api_base, "%s%s%s", api_ports, datastore_config, api_common) < 0)
+    char oidc_issuer[64];
+    if (oidc) {
+        snprintf(oidc_issuer, sizeof(oidc_issuer), "http://127.0.0.1:%u/",
+                 request->oidc_issuer_port);
+        json_t *mapping =
+            json_pack("{s:s,s:s,s:s}", "issuerURI", oidc_issuer, "clientId",
+                      request->oidc_client->client_id, "audience", request->oidc_client->audience);
+        int bad = !owner || !mapping || json_object_set(owner, "oidc", mapping);
+        json_decref(mapping);
+        if (bad || asprintf(&oidc_config,
+                            "[api.auth.oidc_jwt]\nissuer_uri = \"%s\"\nclient_id = "
+                            "\"%s\"\naudience = \"%s\"\n",
+                            oidc_issuer, request->oidc_client->client_id,
+                            request->oidc_client->audience) < 0)
+            goto done;
+    }
+    const char *datastore_config = persistent ? "[api.datastore]\nbackend = "
+                                                "\"scylla\"\n[api.datastore.scylla]\nauto_migrate "
+                                                "= false\n"
+                                                "hosts = [\"127.0.0.1:9042\"]\nkeyspace = "
+                                                "\"gitstore\"\ndisable_shard_aware_port = true\n"
+                                              : "[api.datastore]\nbackend = \"memdb\"\n";
+    if (asprintf(&api_base, "%s%s%s%s%s", api_ports, datastore_config,
+                 oidc ? api_oidc_chain : api_chain, api_common, oidc ? oidc_config : "") < 0)
         goto done;
     owner_bytes = owner ? gstd_json_dump(owner) : NULL;
     jwt = quote(json_string_value(json_object_get(value, "jwtSecret")));
@@ -405,16 +451,21 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
         exact_file(request->scope_fd, "owner.json", owner_bytes, !exists))
         goto done;
     if (asprintf(&api,
-                 "[api.auth.jwt]\nsecret = %s\nttl = \"24h\"\nissuer = \"gitstore\"\nrefresh_grace "
+                 "[api.auth.jwt]\nsecret = %s\nttl = \"24h\"\nissuer = "
+                 "\"gitstore\"\nrefresh_grace "
                  "= \"60s\"\n"
-                 "[api.auth.serviceaccount]\nissuer = \"gitstore\"\naudience = \"gitstore-api\"\n"
-                 "assertion_audience = \"gitstore-api/serviceaccount-token\"\nsigning_key = "
+                 "[api.auth.serviceaccount]\nissuer = \"gitstore\"\naudience = "
+                 "\"gitstore-api\"\n"
+                 "assertion_audience = "
+                 "\"gitstore-api/serviceaccount-token\"\nsigning_key = "
                  "%s\n[grpc_auth]\nhmac_secret = %s\n",
                  jwt, issuer, hmac) < 0 ||
         asprintf(&git,
-                 "[git_service]\ngrpc_port = 50051\ndata_dir = \"/var/lib/gitstore/repositories\"\n"
+                 "[git_service]\ngrpc_port = 50051\ndata_dir = "
+                 "\"/var/lib/gitstore/repositories\"\n"
                  "[git_service.catalog]\nuri = "
-                 "\"dns:///127.0.0.1:6000\"\n[git_service.validation]\ntimeout = \"10s\"\n"
+                 "\"dns:///127.0.0.1:6000\"\n[git_service.validation]\ntimeout = "
+                 "\"10s\"\n"
                  "[git_service.admission]\nbranch_pattern = "
                  "\"^refs/heads/main$\"\n[grpc_auth]\nhmac_secret = %s\n"
                  "[log]\nlevel = \"info\"\nformat = \"json\"\n",
@@ -449,8 +500,8 @@ int gstd_bootstrap_prepare(const gstd_bootstrap_request *request, const gstd_cre
         goto done;
     result = 0;
 done: {
-    char *sensitive[] = {api,  git,    users, signing, validator, jwt,
-                         hmac, issuer, hash,  key,     key_id,    api_base};
+    char *sensitive[] = {api,    git,  users, signing, validator, jwt,        hmac,
+                         issuer, hash, key,   key_id,  api_base,  oidc_config};
     for (size_t i = 0; i < sizeof(sensitive) / sizeof(sensitive[0]); i++)
         if (sensitive[i]) {
             OPENSSL_cleanse(sensitive[i], strlen(sensitive[i]));

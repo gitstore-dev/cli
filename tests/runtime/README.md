@@ -93,3 +93,13 @@ never installed into the user's system.
 When copying sources to a VM with an independent clock, extract with fresh
 timestamps (GNU tar `-m`) before rebuilding. Preserved older timestamps can leave
 Cargo/native test artifacts stale even when the source file contents changed.
+
+
+The `optional` scenario now includes public OIDC acceptance. Positive cases need
+`offlineOidcLayouts` containing the three core and five provider layouts; the
+persistent case additionally needs `offlineScyllaLayout`. Missing inputs produce
+an explicit unavailable result. Standalone selection uses only the five provider
+images. The persistent case pauses an exact bridge PIDfd during core startup to
+prove that stale provider health cannot satisfy final readiness. Run large image
+cases serially with adequate host disk headroom; preserve failed fixtures and
+canonical data, material, journals and inputs.

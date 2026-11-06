@@ -1,0 +1,12 @@
+$kind: http-request
+method: GET
+url: '{{hydra_base}}/health/ready'
+order: 1000
+settings:
+  followRedirects: false
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("HTTP readiness status", () => pm.response.to.have.status(200));
+      pm.test("Hydra readiness predicate", () => pm.expect(pm.response.json().status).to.eql("ok"));

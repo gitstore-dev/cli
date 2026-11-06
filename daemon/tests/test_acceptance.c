@@ -64,6 +64,36 @@ int main(void) {
     json_object_set_new(r.params, "deploymentId", json_string("d2"));
     CHECK(gstd_accept(db, &r, components, "repo-volume", second) ==
           GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
+    /* A provider-only deployment has no repository-volume guard. Neither an
+     * uncertain recovery nor a held writer may admit a replacement generation. */
+    json_object_set_new(r.params, "deploymentId", json_string("d3"));
+    json_object_set_new(message, "idempotencyKey", json_string("no-volume-first"));
+    CHECK(!gstd_request_parse(message, &r));
+    CHECK(gstd_accept(db, &r, components, NULL, first) == GSTD_ACCEPT_NEW);
+    CHECK(sqlite3_exec(db,
+                       "UPDATE operations SET state='running' WHERE deployment_id='d3';"
+                          "UPDATE operations SET state='succeeded' WHERE deployment_id='d3';"
+                       "UPDATE deployments SET recovery='uncertain' WHERE deployment_id='d3'",
+                       NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_accept(db, &r, components, NULL, second) == GSTD_ACCEPT_REPLAY &&
+          !strcmp(first, second));
+    json_object_set_new(message, "idempotencyKey", json_string("no-volume-replacement"));
+    CHECK(!gstd_request_parse(message, &r));
+    CHECK(gstd_accept(db, &r, components, NULL, second) == GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
+    CHECK(sqlite3_exec(db, "UPDATE deployments SET recovery='normal' WHERE deployment_id='d3'",
+                       NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_accept(db, &r, components, NULL, second) == GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
+    CHECK(sqlite3_exec(
+              db, "UPDATE deployments SET writer_ownership='released' WHERE deployment_id='d3'",
+              NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(sqlite3_exec(db, "INSERT INTO resource_ownership SELECT 'held-provider-owner','configuration',"
+                          "'d3',operation_id,'reserved',NULL,'held','2000-01-01T00:00:00Z' "
+                          "FROM operations WHERE deployment_id='d3'",
+                       NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_accept(db, &r, components, NULL, second) == GSTD_ACCEPT_OWNERSHIP_UNCERTAIN);
+    CHECK(sqlite3_exec(db, "UPDATE resource_ownership SET ownership_state='released' "
+                          "WHERE resource_id='held-provider-owner'", NULL, NULL, NULL) == SQLITE_OK);
+    CHECK(gstd_accept(db, &r, components, NULL, second) == GSTD_ACCEPT_NEW);
 done:
     json_decref(components);
     json_decref(message);

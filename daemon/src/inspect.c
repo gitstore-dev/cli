@@ -1,6 +1,7 @@
 #include "gitstored/inspect.h"
 #include "gitstored/assets.h"
 #include "migration.h"
+#include "oidc_config.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -197,6 +198,54 @@ fail:
     json_decref(record);
     return NULL;
 }
+static unsigned endpoint_port(const json_t *ports, const char *name) {
+    const json_t *value = json_object_get(ports, name);
+    json_int_t port = json_integer_value(value);
+    return json_is_integer(value) && port >= 1024 && port <= 65535 ? (unsigned)port : 0;
+}
+static json_t *endpoint_urls(const json_t *ports, int oidc_profile) {
+    const char *host = json_string_value(json_object_get(ports, "host")),
+               *git_host = json_string_value(json_object_get(ports, "gitHost"));
+    int core = json_object_get(ports, "apiPort") || json_object_get(ports, "gitPort");
+    int oidc = json_object_get(ports, "oidcIssuerPort") ||
+               json_object_get(ports, "oidcBridgePort") || json_object_get(ports, "identityPort") ||
+               json_object_get(ports, "identityUiPort") || json_object_get(ports, "mailPort");
+    if (!host || json_string_length(json_object_get(ports, "host")) != 9 ||
+        strcmp(host, "127.0.0.1") || (!core && !oidc) ||
+        json_object_size(ports) != (core ? 4u : 1u) + (oidc ? 5u : 0u) || (oidc && !oidc_profile))
+        return NULL;
+    unsigned api = endpoint_port(ports, "apiPort"), git = endpoint_port(ports, "gitPort");
+    gstd_oidc_ports selected = {(uint16_t)endpoint_port(ports, "oidcIssuerPort"),
+                                (uint16_t)endpoint_port(ports, "oidcBridgePort"),
+                                (uint16_t)endpoint_port(ports, "identityPort"),
+                                (uint16_t)endpoint_port(ports, "identityUiPort"),
+                                (uint16_t)endpoint_port(ports, "mailPort")};
+    if ((core && (!api || !git || api == git || !git_host ||
+                  json_string_length(json_object_get(ports, "gitHost")) != 9 ||
+                  strcmp(git_host, "127.0.0.1"))) ||
+        (oidc && gstd_oidc_ports_check(&selected)))
+        return NULL;
+    const unsigned values[] = {
+        api, git, selected.issuer, selected.bridge, selected.identity, selected.ui, selected.mail};
+    for (unsigned i = 0; i < 7; i++)
+        for (unsigned j = 0; values[i] && j < i; j++)
+            if (values[i] == values[j])
+                return NULL;
+    const char *names[] = {"api",      "git",        "oidcIssuer", "oidcBridge",
+                           "identity", "identityUi", "mail"};
+    json_t *urls = json_object();
+    for (unsigned i = 0; urls && i < 7; i++) {
+        if (!values[i])
+            continue;
+        char url[64];
+        snprintf(url, sizeof(url), "http://127.0.0.1:%u%s", values[i], i == 2 ? "/" : "");
+        if (json_object_set_new(urls, names[i], json_string(url))) {
+            json_decref(urls);
+            return NULL;
+        }
+    }
+    return urls;
+}
 static json_t *deployment(sqlite3 *db, sqlite3_stmt *s) {
     json_t *record = json_object();
     sqlite3_stmt *children = NULL;
@@ -286,25 +335,14 @@ static json_t *deployment(sqlite3 *db, sqlite3_stmt *s) {
             json_t *result =
                 raw ? gstd_json_parse(raw, (size_t)sqlite3_column_bytes(endpoint, 0)) : NULL;
             json_t *ports = json_object_get(result, "endpoints");
-            json_t *api = json_object_get(ports, "apiPort"),
-                   *git = json_object_get(ports, "gitPort");
-            const char *host = json_string_value(json_object_get(ports, "host"));
-            const char *git_host = json_string_value(json_object_get(ports, "gitHost"));
-            if (json_object_size(ports) == 4 && host && git_host && !strcmp(host, "127.0.0.1") &&
-                !strcmp(git_host, "127.0.0.1") && json_is_integer(api) && json_is_integer(git) &&
-                json_integer_value(api) >= 1024 && json_integer_value(api) <= 65535 &&
-                json_integer_value(git) >= 1024 && json_integer_value(git) <= 65535) {
-                char api_url[64], git_url[64];
-                snprintf(api_url, sizeof(api_url), "http://127.0.0.1:%u",
-                         (unsigned)json_integer_value(api));
-                snprintf(git_url, sizeof(git_url), "http://127.0.0.1:%u",
-                         (unsigned)json_integer_value(git));
-                json_t *urls = json_pack("{s:s,s:s}", "api", api_url, "git", git_url);
-                if (!urls || json_object_set_new(record, "endpoints", urls)) {
-                    json_decref(result);
-                    sqlite3_finalize(endpoint);
-                    goto fail;
-                }
+            const char *version = json_string_value(json_object_get(record, "profileVersion"));
+            json_t *urls = json_is_integer(json_object_get(result, "generation")) &&
+                json_equal(json_object_get(result, "generation"), json_object_get(record, "generation"))
+                ? endpoint_urls(ports, version && !strcmp(version, "2")) : NULL;
+            if (urls && json_object_set_new(record, "endpoints", urls)) {
+                json_decref(result);
+                sqlite3_finalize(endpoint);
+                goto fail;
             }
             json_decref(result);
         }

@@ -85,3 +85,17 @@ http.createServer(async (req, res) => {
   if (body.client_id.endsWith('-delay')) return setTimeout(() => reply(201, created), 2500);
   return reply(201, created);
 }).listen(process.env.PORT, '127.0.0.1');
+
+// Additional fixed health consumers in this isolated five-role fixture. These
+// opaque success bodies deliberately do not assert a provider JSON schema.
+for (const [port, path] of [[4434, '/admin/health/ready'], [24002, '/health'],
+  [24004, '/health/ready'], [24005, '/readyz']]) {
+  http.createServer((req, res) => {
+    if (req.method !== 'GET' || req.url !== path) {
+      res.writeHead(501);
+      return res.end('Outside modeled consumer contract');
+    }
+    res.writeHead(200, { 'content-type': 'text/plain' });
+    res.end('opaque health response');
+  }).listen(port, '127.0.0.1');
+}
