@@ -94,6 +94,19 @@ jobs:
             ${{ runner.temp }}/material-review/review.json
           if-no-files-found: error
           retention-days: 7
+      - name: Build complete read-only candidate and exercise archive/npm
+        run: |
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/build-release-platform.py --output "$RUNNER_TEMP/complete-candidate"
+          "$RUNNER_TEMP/package-venv/bin/python" tests/packaging/check-produced.py \
+            --candidate "$RUNNER_TEMP/complete-candidate" --output "$RUNNER_TEMP/produced-package-checks"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-production-candidate-${{ matrix.runner }}
+          path: |
+            ${{ runner.temp }}/complete-candidate/assets/*
+            ${{ runner.temp }}/produced-package-checks/measurement.json
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unpublished-control-closure-${{ matrix.runner }}
