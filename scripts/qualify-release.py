@@ -22,6 +22,7 @@ from support import owned_file
 from archive_lifecycle import unpack
 from release_candidate import qualification_rows, slot_filename, validate_bytes
 from versions import order_key
+from command_measurements import measure, validate_performance
 sys.path.remove(str(ROOT/'tests/packaging'))
 
 
@@ -138,13 +139,23 @@ def main():
         for binary in ('gs','gitstored'):
             run('closure-'+binary,[sys.executable,str(ROOT/'runtime/packaging/closure.py'),
                 '--binary',str(prefix/'bin'/binary)])
+        costs = workspace/'native-costs.json'
+        run('native-costs',[sys.executable,str(ROOT/'tests/packaging/measure-native.py'),
+            '--fixture',str(fixture),'--output',str(costs)],env)
+        performance = json.loads(costs.read_text())
+    else:
+        performance = measure(prefix/'bin',workspace/'command-costs',100)
+        executed.append('command-costs')
+        performance['sourceInputs']={name:dict(sha256=hashlib.sha256((prefix/'bin'/name).read_bytes()).hexdigest(),
+            bytes=(prefix/'bin'/name).stat().st_size) for name in ('gs','gitstored')}
+    validate_performance(performance,os_name == 'linux')
     # Emit nothing until every channel and required native case on this host passes.
     args.output.mkdir(mode=0o700)
     subjects = {a['filename']:a['sha256'] for a in value['artifacts']}
     for channel in channels:
         receipt = dict(schemaVersion=1,result='pass',tag=value['tag'],sourceRevision=args.revision,
             selection=[os_name,arch,args.host,channel],subjects=subjects,executed=executed,
-            replacements=replacements,host=platform.platform())
+            replacements=replacements,host=platform.platform(),performance=performance)
         target = args.output/(os_name+'-'+arch+'-'+args.host.replace(':','-')+'-'+channel+'.json')
         target.write_text(json.dumps(receipt,indent=2)+'\n')
         target.chmod(0o600)

@@ -7,6 +7,7 @@ import re
 
 from inventory import ROOT, snapshot_file, validate_install, validate_release
 from versions import encode, parse
+from command_measurements import validate_performance
 
 STATES = ('proposed', 'version-reviewed', 'built', 'packaged', 'validated',
           'attested', 'producer-verified', 'published')
@@ -188,6 +189,17 @@ def validate_receipts(value, root):
                 receipt['tag'] != value['tag'] or receipt['sourceRevision'] != value['sourceRevision'] or
                 receipt['subjects'] != subjects or selection not in required or selection in seen):
             raise ValueError('qualification receipt does not bind this candidate/selection')
+        performance = receipt.get('performance')
+        if not isinstance(performance,dict):
+            raise ValueError('qualification requires recorded reference-host performance')
+        validate_performance(performance,selection[0] == 'linux')
+        expected_inputs = {}
+        for binary in ('gs','gitstored'):
+            filename = slot_filename(value['version'],binary,selection[0],selection[1])
+            artifact = next(a for a in value['artifacts'] if a['filename'] == filename)
+            expected_inputs[binary] = {key:artifact[key] for key in ('sha256','bytes')}
+        if performance.get('sourceInputs') != expected_inputs:
+            raise ValueError('performance was measured on a different candidate executable pair')
         seen.add(selection)
     if seen != required:
         raise ValueError('missing selected host/channel qualification receipts')

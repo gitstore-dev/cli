@@ -1,6 +1,6 @@
 # Implementation Plan: M3 Release and Unblocked Capabilities
 
-**Branch**: `main` (actual checkout) | **Date**: 2026-11-08 | **Spec**: [spec.md](spec.md)
+**Branch**: `codex/m3-release-unblocked-capabilities` (implementation checkout) | **Date**: 2026-11-08 | **Spec**: [spec.md](spec.md)
 
 **Input**: `specs/004-release-unblocked-capabilities/spec.md`. Setup reports
 `004-release-unblocked-capabilities` as a feature identifier, not the actual branch.

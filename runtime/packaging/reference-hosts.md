@@ -69,8 +69,9 @@ The workflow does not upload retained fixture directories, credentials or arbitr
 native logs. Keep local failure evidence and inspect remaining ownership before
 cleanup. Do not globally prune a reference host to reclaim a failed run.
 
-No dedicated hosted/native reference runners are configured or dispatched by this
-file. Existing local arm64 fixture passes are explicitly scoped in
+No self-hosted native reference runner set or six-host release qualification set
+is configured or dispatched by this change. The ephemeral hosted core smoke
+fixtures described above are a separate scoped lane. Existing local arm64 fixture passes are explicitly scoped in
 [the validation record](../../docs/contributing/validation/local-runtime.md).
 Unavailable amd64, denial and hosted combinations remain unverified and are not a
 release-support list.

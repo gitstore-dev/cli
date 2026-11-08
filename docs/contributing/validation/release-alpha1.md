@@ -2,6 +2,33 @@
 
 ## Complete producer and inspection measurement — 2026-11-08
 
+Final exact-production measurement passed after the complete acceptance batch:
+`/private/tmp/gs-alpha1-complete-native-command-costs-v3.json`, owned root
+`gs-public-runtime-ps261uyg`. This uses the complete producer's `327c151e…` CLI /
+`82706d81…` daemon, 100 successful current-generation inspections (plus warm-up),
+no concurrent service-test batch and selected offline OCI inputs. Offline readiness
+was 35.047 s; inspection p95 1.657 ms. Manager RSS/HWM remained 9,367,552 bytes;
+asset cost remained 258,759,008 logical / 260,595,712 allocated bytes, state outside
+assets 259,156,926 logical / 261,197,824 allocated bytes, cache empty. These remain
+independent directory costs and manager-only memory as explained below.
+
+| Exact production warm command | Samples | p95 ms |
+| --- | ---: | ---: |
+| gs --help | 100 | 0.623 |
+| gs --version | 100 | 0.489 |
+| gitstored --help | 100 | 6.735 |
+| gitstored --version | 100 | 6.515 |
+
+Reference qualification now records these measurements on each selected host,
+checks documented distinct help/version/inspection targets and includes the exact
+pair hashes/sizes in each receipt. Producer validation rejects missing metrics,
+nonfinite/incomplete samples, missed targets, unstopped measurement owners and
+metrics for another executable pair. Twenty-four policy fixtures passed including
+the actual offline Release Please engine and these new controls; the actual
+Linux production and both hosted macOS 15 measurement records also pass the shared
+target validator. This implements repeatable measurement gates; T061 still needs
+the complete selected reference-host execution set.
+
 T012 is complete for code-library linkage/ABI/license inventory: actual hosted
 amd64 and arm64 private-static pairs passed ordinary, pinned-fd and sealed-memfd
 execution with no loader environment overrides. Both daemons require at most
@@ -135,7 +162,11 @@ before provisioning; that failure remains recorded in
 roots, preserving the daemon owner-settings policy. All seven complete clean-install cases subsequently passed in 327.953 seconds,
 including public GraphQL/Git and retained restart through the exact selected pair.
 Receipt `runtime-run-clean-install-t6dhcjn_.json`; log
-`/private/tmp/gs-alpha1-complete-clean-recovery-v2.log`. Recovery remains pending.
+`/private/tmp/gs-alpha1-complete-clean-recovery-v2.log`. All ten recovery scenarios subsequently passed in 554.329 seconds on the same
+complete production pair. Receipts were retained locally as
+`/private/tmp/gs-alpha1-complete-clean-install-receipt.json` and
+`/private/tmp/gs-alpha1-complete-recovery-receipt.json`. The native scenario roots
+remain in the dedicated fixture; no personal deployment/data was used.
 These are engineering observations, not upgrade/data-preservation guarantees.
 
 Both macOS 15 complete archive/npm lanes now passed in

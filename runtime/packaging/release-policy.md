@@ -87,3 +87,11 @@ These results establish verifier behavior, not a signed GitStore release.
 Sources: [GitHub offline verification](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline),
 [verifier policy flags](https://cli.github.com/manual/gh_attestation_verify), and
 [reviewed attestation action](https://github.com/actions/attest/tree/1e69f48acb82d1966a394da916b4c1698aa569d6).
+
+Reference-host receipts include 100-sample performance records for the exact
+candidate executable hashes and byte sizes. `validate_receipts` rejects missing,
+wrong-pair, incomplete or nonfinite metrics, target misses, and native measurement
+owners left running. macOS records local command costs and retains control-only
+scope; Linux additionally measures successful current-generation inspection and
+separate offline runtime costs. This is maintainer-owned execution evidence, not
+an attestation or a substitute for the other required host/channel checks.

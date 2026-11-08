@@ -41,3 +41,20 @@ def measure(pair, root, samples=100):
         raise ValueError('measured help/version initialized user state')
     result['daemonInspect'] = 'not measured; requires separately selected live owned deployment'
     return result
+
+
+def validate_performance(value, native):
+    commands = value['commandLatency']['commands'] if native else value['commands']
+    expected = {'gs --help','gs --version','gitstored --help','gitstored --version'}
+    if set(commands) != expected:
+        raise ValueError('record every selected executable help/version command')
+    def bounded(sample, target):
+        number = sample['p95Milliseconds']
+        return (sample['samples'] == 100 and type(number) in (int,float)
+            and math.isfinite(number) and 0 <= number < target)
+    if any(not bounded(sample,250 if name == 'gitstored --version' else 100)
+            for name,sample in commands.items()):
+        raise ValueError('reference-host help/version missed the documented p95 target')
+    if native and (value['status'] != 'passed' or value['managerChildStopped'] is not True
+            or not bounded(value['daemonInspect'],250)):
+        raise ValueError('reference-host inspection missed the documented p95 target or owned cleanup')
