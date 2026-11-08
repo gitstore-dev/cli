@@ -1,0 +1,25 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {"query":"mutation Login($input:LoginInput!){login(input:$input){token{accessToken refreshToken tokenType expiresIn scope idToken}}}","variables":{"input":{"username":"synthetic-user","password":"synthetic-password"}}}
+order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Explicit provider issues a session", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        const token = body.data.login.token;
+        pm.expect(token.tokenType).to.eql("Bearer");
+        pm.expect(token.accessToken).to.eql(token.refreshToken);
+        pm.expect(token.expiresIn).to.be.above(0);
+        pm.collectionVariables.set("sessionToken", token.accessToken);
+        pm.collectionVariables.set("previousSessionToken", token.accessToken);
+      });

@@ -26,7 +26,9 @@ int main(int argc, char **argv) {
         puts("Usage: gitstored --help | --version | --runtime-dir ABSOLUTE_PATH [--state-dir "
              "ABSOLUTE_PATH]\n"
              "Per-user manager; native execution requires linked runtime libraries and "
-             "a supported Linux user session.");
+             "a supported Linux user session.\n"
+             "Early alpha: upstream schemas change incompatibly. No upgrade compatibility, "
+             "data preservation or recovery guarantees. Keep independent backups.");
         return 0;
     }
     fputs("gitstored: invalid arguments; use --help or --version\n", stderr);

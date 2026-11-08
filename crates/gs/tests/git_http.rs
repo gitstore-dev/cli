@@ -37,6 +37,30 @@ fn setup(auth: Auth) -> (Harness, HttpGit) {
     let http = HttpGit::new(&bare, auth);
     (h, http)
 }
+
+#[test]
+#[ignore = "Explicit public HTTPS authorization-refusal fixture; synthetic Basic material only"]
+fn public_https_authentication_refusal_is_reached_without_git_executable() {
+    let h = Harness::new();
+    configure(&h, "https://github.com", "basic");
+    let config = std::fs::read_to_string(h.config()).unwrap();
+    h.write(
+        "config.toml",
+        &config.replace("namespace = \"shop\"", "namespace = \"gitstore-dev\""),
+    );
+    let destination = h.dir.path().join("public-refusal");
+    let result = h.run(&["repository", "clone", "cli", destination.to_str().unwrap()]);
+    assert_eq!(result.status.code(), Some(3), "{}", stderr(&result));
+    assert!(stderr(&result).contains("Git authentication or authorization failed"));
+    assert!(!stderr(&result).contains("password"));
+    let partial = git2::Repository::open(&destination).unwrap();
+    assert!(partial.head().is_err());
+    assert_eq!(partial.references().unwrap().count(), 0);
+    assert_eq!(
+        partial.find_remote("gitstore").unwrap().url().unwrap(),
+        "https://github.com/gitstore-dev/cli.git"
+    );
+}
 #[test]
 fn clone_and_fast_forward_sync_without_git_executable() {
     let (h, http) = setup(Auth::Basic);

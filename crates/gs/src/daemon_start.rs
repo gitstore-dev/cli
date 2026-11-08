@@ -18,14 +18,18 @@ fn failure(code: &str, message: &str) -> Box<ClientError> {
         code: code.into(),
         stage: "resolve".into(),
         message: message.into(),
-        exit: 4,
+        exit: if code == "LOCAL_TRANSPORT" {
+            8
+        } else {
+            crate::daemon_protocol::ProtocolError::code_exit_category(code)
+        },
         retryable: false,
         operation_id: None,
         deployment_id: None,
         idempotency_key: None,
     })
 }
-fn directory(path: &Path) -> Result<(), Box<ClientError>> {
+pub(crate) fn directory(path: &Path) -> Result<(), Box<ClientError>> {
     if !path.is_absolute() {
         return Err(failure(
             "INVALID_ARGUMENT",

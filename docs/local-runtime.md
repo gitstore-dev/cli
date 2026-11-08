@@ -11,6 +11,11 @@ runtime profile. Existing deployments retain their pinned images and data format
 
 ## Before you start
 
+GitStore and this CLI are early alpha. Upstream schemas continue changing
+incompatibly; upgrade compatibility, data preservation and recovery are not
+guaranteed. Use, upgrade, migration or removal may cause data loss. Keep independent
+backups and do not rely on prereleases for irreplaceable data.
+
 Local execution is a source preview, exercised on a Linux arm64 development host.
 Use matching native `gs` and `gitstored` builds installed in the same trusted
 directory; see [building from source](contributing/building.md). A control-only
@@ -22,6 +27,11 @@ controllers, a working systemd user session and bus, accessible TUN, and the pid
 and openat2 kernel interfaces. Native library dependencies must be available.
 The CLI reports missing capabilities; it does not invoke sudo or change host
 security settings. Docker and Compose are not required.
+
+Local commands, including deployment inspection/listing, start the matching
+per-user manager on first use when using the default Linux user-session socket.
+This alone does not start catalogue services or download their images. Selecting
+an explicit daemon socket is connect-only. Remote commands never start the manager.
 
 The default credential backend uses your OS secret store. Headless hosts without
 a usable store need an explicit [protected-directory configuration](local-runtime-configuration.md#credentials).

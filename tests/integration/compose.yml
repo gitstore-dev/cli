@@ -1,7 +1,8 @@
-# Isolated CLI compatibility target. Only published :latest images; no source builds.
+# Isolated published-image target. Defaults remain moving-tag compatibility;
+# the alpha.9 conformance runner supplies immutable digest references.
 services:
   credential-bootstrap:
-    image: ghcr.io/gitstore-dev/api:latest
+    image: ${GITSTORE_CI_API_IMAGE:-ghcr.io/gitstore-dev/api:latest}
     command:
       - /bin/sh
       - -ec
@@ -17,7 +18,7 @@ services:
       - controller-keys:/run/controller-secrets
 
   git-service:
-    image: ghcr.io/gitstore-dev/git-service:latest
+    image: ${GITSTORE_CI_GIT_IMAGE:-ghcr.io/gitstore-dev/git-service:latest}
     command: [/app/git-service, --config-file, /etc/gitstore/gitstore.toml]
     volumes:
       - ${GITSTORE_CI_STATE:?integration state is required}/config:/etc/gitstore:ro
@@ -29,7 +30,7 @@ services:
       retries: 60
 
   api:
-    image: ghcr.io/gitstore-dev/api:latest
+    image: ${GITSTORE_CI_API_IMAGE:-ghcr.io/gitstore-dev/api:latest}
     command:
       - /bin/sh
       - -ec
@@ -54,7 +55,7 @@ services:
       retries: 60
 
   serviceaccount-enrollment:
-    image: ghcr.io/gitstore-dev/api:latest
+    image: ${GITSTORE_CI_API_IMAGE:-ghcr.io/gitstore-dev/api:latest}
     command:
       - /bin/sh
       - -ec
@@ -74,7 +75,7 @@ services:
         condition: service_healthy
 
   controller-manager:
-    image: ghcr.io/gitstore-dev/controller-manager:latest
+    image: ${GITSTORE_CI_CONTROLLER_IMAGE:-ghcr.io/gitstore-dev/controller-manager:latest}
     command:
       - /bin/sh
       - -ec

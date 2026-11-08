@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "b5c393e37b4787de0407ac3ccc1b058c067d69d8",
+  "commit-search-depth": 500,
+  "release-search-depth": 50,
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "versioning": "prerelease",
+      "prerelease": true,
+      "prerelease-type": "alpha",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "bump-minor-pre-major": true,
+      "release-as": "0.1.0-alpha.1",
+      "draft": true,
+      "force-tag-creation": true,
+      "extra-files": [
+        {"type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version"},
+        {"type": "generic", "path": "Cargo.lock"}
+      ]
+    }
+  }
+}

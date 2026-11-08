@@ -1,0 +1,25 @@
+$kind: http-request
+name: Create Namespace with exact scoped input
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "query": "mutation Create($input:CreateNamespaceInput!){createNamespace(input:$input){namespace{id kind metadata{name} spec{tier}}}}",
+      "variables": {"input": {"apiVersion":"gitstore.dev/v1beta1","kind":"Namespace","metadata":{"name":"collection-fixture-namespace"},"spec":{"tier":"ORGANIZATION"}}}
+    }
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Namespace create returns resource identity", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(body.data.createNamespace.namespace.kind).to.eql("Namespace");
+        pm.expect(body.data.createNamespace.namespace.spec.tier).to.eql("ORGANIZATION");
+      });

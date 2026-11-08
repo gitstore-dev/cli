@@ -34,6 +34,16 @@ postman/.runtime/
 __pycache__/
 *.pyc
 
+# Distribution staging and dependency caches
+/dist/
+node_modules/
+.venv/
+*.egg-info/
+*.tmp
+*.swp
+.idea/
+.vscode/
+
 # Local Swift feasibility builds (resolved dependency locks remain tracked)
 .build/
 .swiftpm/

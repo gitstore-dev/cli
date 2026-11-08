@@ -86,5 +86,9 @@ fn alpha9_file_selector_is_explicit_and_preserves_legacy_gates() {
     assert!(selection_for_profile(&s, None, Some("gitstore-alpha9-2026-11-05")).is_err());
     s.name = None;
     s.id = Some("opaque-id".into());
-    assert!(selection_for_profile(&s, None, Some("gitstore-alpha9-2026-11-05")).is_err());
+    let by_id = selection_for_profile(&s, None, Some("gitstore-alpha9-2026-11-05")).unwrap();
+    assert_eq!(
+        by_id.envelope["variables"],
+        serde_json::json!({"by":{"id":"opaque-id"}})
+    );
 }

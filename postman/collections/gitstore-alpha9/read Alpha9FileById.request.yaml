@@ -1,0 +1,28 @@
+$kind: http-request
+name: Read File by opaque ID without a namespace
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "query": "query Read($by:FileBy!){file(by:$by){id apiVersion kind metadata{name namespace uid resourceVersion generation revision} body spec{contentType}}}",
+      "variables": {"by": {"id": "opaque-fixture-id"}}
+    }
+settings:
+  followRedirects: false
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Alpha.9 FileBy accepts an opaque ID", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(body.data.file.kind).to.eql("File");
+        pm.expect(body.data.file.id).to.eql("opaque-fixture-id");
+      });

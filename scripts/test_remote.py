@@ -20,7 +20,7 @@ try:
     with tempfile.TemporaryDirectory(prefix='gs-simulation-') as temp:
         temp = pathlib.Path(temp); token = temp/'credential'; token.write_text('synthetic-simulation-token\n'); token.chmod(0o600)
         cfg=temp/'config.toml'
-        def configure(suffix='', profile='m0-2026-10-27', endpoint_path='/graphql'):
+        def configure(suffix='', profile='m0-2026-10-27', endpoint_path='/graphql', auth=False):
             cfg.write_text(f'''version = 1
 current_context = "test"
 [contexts.test]
@@ -32,13 +32,17 @@ namespace = "shop"
 [contexts.test.accounts.test]
 issuer = "controlled-fixture"
 ''')
-        def invoke(args, code=0, suffix='', profile='m0-2026-10-27', endpoint_path='/graphql'):
-            configure(suffix, profile, endpoint_path)
+            if auth:
+                with cfg.open('a') as out:
+                    out.write('\n[contexts.test.accounts.test.auth]\nversion=1\nprovider="static-users"\nusername="synthetic-user"\n')
+        def invoke(args, code=0, suffix='', profile='m0-2026-10-27', endpoint_path='/graphql', auth=False, credential=None):
+            configure(suffix, profile, endpoint_path, auth)
             env={k:v for k,v in os.environ.items() if not k.startswith(('GITSTORE_','GIT_'))}
             env.update(HOME=str(temp),PATH='/nonexistent')
-            out=subprocess.run([str(BINARY),'--config',str(cfg),'--credential-file',str(token),'-o','json',*args],env=env,cwd=temp,capture_output=True,text=True,timeout=10)
+            out=subprocess.run([str(BINARY),'--config',str(cfg),'--credential-file',str(token if credential is None else credential),'-o','json',*args],env=env,cwd=temp,capture_output=True,text=True,timeout=10)
             assert out.returncode==code,(args,out.returncode,out.stderr)
             assert 'synthetic-simulation-token' not in out.stdout+out.stderr
+            assert 'synthetic-password' not in out.stdout+out.stderr and 'synthetic-session-' not in out.stdout+out.stderr
             return json.loads(out.stdout) if out.stdout else None
         v=invoke(['api','graphql','-f','query=query Echo($n:Int){echo}', '-F','n=3']); assert v['data']['echo']['n']==3
         v=invoke(['api','graphql','-f','query={echo}'],3,'/partial'); assert v['data']['example'] is None and v['errors'] and v['extensions']['trace']=='fixture'
@@ -55,7 +59,29 @@ issuer = "controlled-fixture"
             value=invoke(['read',kind,'fixture']); assert value['metadata']['name']=='fixture'
         alpha9 = {'profile': 'gitstore-alpha9-2026-11-05', 'endpoint_path': '/admin/graphql'}
         assert invoke(['read','file','fixture'], **alpha9)['kind'] == 'File'
+        assert invoke(['read','file','--id','opaque-fixture-id'], **alpha9)['id'] == 'opaque-fixture-id'
+        invoke(['read','file','--id','absent'], 4, **alpha9)
         invoke(['read','file','absent'], 4, **alpha9)
+        session=temp/'session'; password=temp/'password'
+        password.write_text('synthetic-password\n'); password.chmod(0o600)
+        auth_target={**alpha9,'auth':True,'credential':session}
+        assert invoke(['auth','login','--username','synthetic-user','--password-file',str(password)],**auth_target)['persisted']
+        replay=temp/'replay'; replay.write_bytes(session.read_bytes()); replay.chmod(0o600)
+        assert invoke(['auth','refresh'],**auth_target)['rotation']=='completed'
+        invoke(['auth','refresh'],3,**{**auth_target,'credential':replay})
+        assert invoke(['auth','logout','--remote'],**auth_target)['remoteInvalidation']=='confirmed'
+        assert not session.exists()
+        for kind, scope, spec in [('Namespace', '', 'tier: ORGANIZATION'),
+                                  ('Repository', '  namespace: shop\n', 'defaultBranch: main')]:
+            document=temp/(kind+'.md')
+            document.write_text(f'---\napiVersion: gitstore.dev/v1beta1\nkind: {kind}\nmetadata:\n  name: scoped-{kind.lower()}\n{scope}spec:\n  {spec}\n---\n')
+            result=invoke(['create','-f',str(document)], **alpha9)
+            assert result['items'][0]['submission']=='accepted'
+            assert result['items'][0]['resource']['kind']==kind
+            before_scoped=len(json.load(urllib.request.urlopen(address+'/calls')))
+            document.write_text(document.read_text()+'must-not-submit')
+            invoke(['create','-f',str(document)], 2, **alpha9)
+            assert len(json.load(urllib.request.urlopen(address+'/calls')))==before_scoped
         for kind in ['namespace','repository','product','category','collection']:
             value=invoke(['list',kind]); assert value['items']==[] and not value['pageInfo']['hasNextPage']
         for kind in ['Product','CategoryTaxonomy']:
@@ -99,6 +125,10 @@ Body ü\n\n''')
         print(collection.stdout, end='')
         if collection.stderr: print(collection.stderr, end='')
         assert collection.returncode == 0, 'Saved alpha.9 consumer collection failed'
+        collection = subprocess.run([shutil.which('postman') or 'postman', 'collection', 'run', str(ROOT/'postman/collections/gitstore-alpha9-auth'), '--env-var', 'baseUrl='+address, '--env-var', 'ownedDisposableFixture=true', '--no-report-events'], cwd=ROOT, text=True, capture_output=True, timeout=30)
+        print(collection.stdout, end='')
+        if collection.stderr: print(collection.stderr, end='')
+        assert collection.returncode == 0, 'Saved alpha.9 static-user collection failed'
         print(f'PASS: actual gs CLI exercised {len(recorded)} controlled GraphQL requests, failure scenarios, authoring/read/delete and zero-write gates.')
 finally:
     proc.terminate()

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "upstreamRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+  "evidence": "immutable source; controlled and shipped tests are separate receipts",
+  "sources": ["shared/schemas/admin/namespace.graphqls", "shared/schemas/admin/repository.graphqls", "shared/schemas/admin/product.graphqls", "shared/schemas/admin/category.graphqls", "shared/schemas/admin/file.graphqls", "gitstore-api/internal/admin/graph/resolver/watch.go", "gitstore-api/internal/app/graphql.go"],
+  "transport": "graphql-transport-ws",
+  "gqlgen": "v0.17.90",
+  "initPayload": "Authorization: Bearer TOKEN; token never appears in URL or checkpoint",
+  "cursor": "opaque epoch/sequence shared journal position, distinct from object resourceVersion; client checkpoints must additionally bind installation and selection",
+  "bootstrap": "per-kind high-water BOOKMARK; no initial object snapshot is implied",
+  "kinds": {
+    "namespace": {"field":"watchNamespaces","object":"namespace","namespaceArgument":false,"bootstrap":"__namespace_watch_bootstrap__"},
+    "repository": {"field":"watchRepositories","object":"repository","namespaceArgument":true,"bootstrap":"__repository_watch_bootstrap__"},
+    "product": {"field":"watchProducts","object":"product","namespaceArgument":true,"bootstrap":"__product_watch_bootstrap__"},
+    "category": {"field":"watchCategories","object":"category","namespaceArgument":true,"bootstrap":"__category_watch_bootstrap__"},
+    "file": {"field":"watchFiles","object":"file","namespaceArgument":true,"bootstrap":"__file_watch_bootstrap__"}
+  },
+  "idWatchGate": "DEP-018: no public UID selector or UID-bearing typed deletion tombstone; name/label streams remain available",
+  "collectionWatchGate": "DEP-002"
+}

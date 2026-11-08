@@ -29,6 +29,13 @@ Tracking issue state is unverified. M0 completion permits owned release prerequi
 
 Advertise each flow, usable endpoints/client metadata/scopes and installation identity independently; test proxy prefixes and explicit legacy mode. Unknown discovery fails compatibility before prompts/writes; never assume OIDC implies device/refresh/revoke.
 
+The explicit alpha.9 version-1 static-users subset now has controlled and pinned
+memdb login/refresh/remote-logout evidence through an HTTP/WebSocket proxy prefix.
+That closes its selected client work, not discovery, arbitrary OIDC or native
+credential-store provider qualification. After logout an existing watch remained
+open at the 200 ms observation point; a new connection with the revoked session
+was rejected. Do not promise immediate live-socket revocation.
+
 ## DEP-002
 
 Provide explicit public schema, authorization, input/version/completion guarantees for each write/watch. Until then only read/list are offered; internal methods are insufficient.
@@ -51,12 +58,12 @@ Publish per-operation names/scope/schemas/persistence/mappings and authorization
 
 ## DEP-007
 
-File lookup normalization to a `by` selector is pending the upstream File lifecycle
-specification (direction recorded 2026-10-29). Until it ships and its public input
-shape is verified, CMD-042 retains the source-reviewed `file(namespace, name)` mapping.
-This pending normalization does not block that existing read or imply File list,
-write or lifecycle support. Update client mappings and contract fixtures together
-when the new contract becomes available.
+Historical M0 evidence used `file(namespace, name)`. The lifecycle contract shipped
+in alpha.9 (including upstream PR #523); the explicit alpha.9 client now calls
+`file(by: FileBy!)` with exactly one ID or namespace/name. ID reads need no namespace.
+Legacy configuration retains its flat mapping. Controlled selector tests pass;
+successful shipped File hydration remains an acceptance requirement. This closes
+the client selector gap, not File list/upload/LFS or credential readiness.
 
 Confirm public list separately from upload negotiation; validate transfer auth/checksum/size/retention, manifest partial failure and LFS batch/missing objects. No payload command inferred from metadata/source types.
 
@@ -131,6 +138,21 @@ Reviewed SmartHttp GitClient.ReceivePack returns []byte. Verify actual negotiate
 Verify selected server journal readiness, authorization, opaque cursor continuity and WATCH_EXPIRED resnapshot for each typed watch. Declared subscription is source evidence; deployment readiness/reconnect behavior remains untested.
 
 ## Design versus release resolution
+
+### DEP-018 — Incarnation-safe ID watch
+
+Alpha.9 typed watches select kind, namespace and labels. ADDED/MODIFIED include
+objects, while DELETED returns a null object and only name/namespace/journal
+cursor. There is no public UID selector or UID-bearing typed tombstone. A prior
+ID read cannot prove which incarnation a later name-only tombstone describes.
+Gate `watch --id` before effects; name/label streams remain client work. Revisit
+when the public contract can correlate every event, including deletion, to the
+selected UID. This corrects the initial feature-004 assumption that read-by-ID
+also established complete ID-watch semantics.
+
+Evidence: alpha.9 `shared/schemas/admin/{namespace,repository,product,category,file}.graphqls`
+and `gitstore-api/internal/admin/graph/resolver/watch.go`, pinned at
+`68f8471edc947e417c98b6e8299a1367ab6b20da` (not the upstream working tree).
 
 DEP-008 may become resolved when the local protocol is accepted in M0. DEP-012 stays
 open until executable verification. DEP-013–DEP-015 remain open after accepting bounded

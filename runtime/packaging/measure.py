@@ -9,13 +9,17 @@ import shutil
 import stat
 import subprocess
 import sys
+from command_measurements import measure
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--gs", required=True, type=Path)
 parser.add_argument("--daemon", required=True, type=Path)
 parser.add_argument("--output-directory", required=True, type=Path)
 parser.add_argument("--runtime-costs", type=Path, help="Optional saved isolated runtime sample")
+parser.add_argument("--samples", type=int, default=100, help="Warm local command samples, default 100")
 args = parser.parse_args()
+if not 10 <= args.samples <= 1000:
+    parser.error("Select 10–1000 command samples")
 if sys.platform != "linux":
     parser.error("Select the Linux fixture; this uses GNU strip on disposable copies")
 if not args.output_directory.is_absolute() or args.output_directory.exists():
@@ -57,6 +61,7 @@ record = json.loads(package.with_name(package.name + ".json").read_bytes())
 record["sourceInputs"] = inputs
 record["acceptedBaselineBytes"] = {"gs": 5590568, "gitstored": 5723600}
 record["sizePolicy"] = "Report current sizes; published-binary optimization is deferred"
+record["commandLatency"] = measure(prefix / "bin", root / "command-fixture", args.samples)
 record["runtimeCosts"] = {"status": "unmeasured in this artifact-only run"}
 if args.runtime_costs:
     info = args.runtime_costs.lstat()

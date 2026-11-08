@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tag": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRevision": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "workflow": {
+      "const": "gitstore-dev/cli/.github/workflows/release.yml"
+    },
+    "state": {
+      "enum": [
+        "proposed",
+        "version-reviewed",
+        "built",
+        "packaged",
+        "validated",
+        "attested",
+        "producer-verified",
+        "published"
+      ]
+    },
+    "disclaimer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "filename": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.~-]+$"
+          },
+          "format": {
+            "enum": [
+              "archive",
+              "deb",
+              "rpm",
+              "npm",
+              "formula",
+              "binary",
+              "manifest",
+              "checksums",
+              "source",
+              "relink"
+            ]
+          },
+          "os": {
+            "enum": [
+              "linux",
+              "darwin",
+              "any"
+            ]
+          },
+          "arch": {
+            "enum": [
+              "x64",
+              "arm64",
+              "any"
+            ]
+          },
+          "abiFloor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "packageVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applicationVersion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceRevision": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unpackedBytes": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "installInventory": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bundle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "receipt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "filename",
+          "format",
+          "os",
+          "arch",
+          "abiFloor",
+          "packageVersion",
+          "applicationVersion",
+          "sourceRevision",
+          "sha256",
+          "bytes",
+          "unpackedBytes",
+          "installInventory",
+          "bundle",
+          "receipt"
+        ]
+      }
+    },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "version",
+    "tag",
+    "sourceRevision",
+    "workflow",
+    "state",
+    "disclaimer",
+    "requiredArtifacts",
+    "artifacts",
+    "receipts"
+  ]
+}

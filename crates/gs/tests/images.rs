@@ -1,7 +1,7 @@
 //! Opt-in acceptance target; scripts/test-integration.sh owns its disposable stack.
 use git2::{Oid, Repository};
 use serde_json::Value;
-use std::{env, path::Path, process::Command};
+use std::{env, os::unix::fs::PermissionsExt, path::Path, process::Command};
 
 fn commit(repo: &Repository, text: &str) -> Oid {
     std::fs::write(repo.workdir().unwrap().join("ci-marker.txt"), text).unwrap();
@@ -31,7 +31,7 @@ struct Fixture {
 impl Fixture {
     fn new(name: &str) -> Self {
         let _ = rustls::crypto::ring::default_provider().install_default();
-        let fixture = Self {
+        let mut fixture = Self {
             temp: tempfile::tempdir().unwrap(),
             config: env::var("GITSTORE_IMAGE_CONFIG").unwrap(),
             credential: env::var("GITSTORE_IMAGE_CREDENTIAL").unwrap(),
@@ -44,6 +44,11 @@ impl Fixture {
                     .as_nanos()
             ),
         };
+        std::fs::set_permissions(fixture.temp.path(), std::fs::Permissions::from_mode(0o700))
+            .unwrap();
+        let config = fixture.temp.path().join("config.toml");
+        std::fs::write(&config, std::fs::read(&fixture.config).unwrap()).unwrap();
+        fixture.config = config.to_str().unwrap().to_owned();
         // Each test owns a distinct remote repository; no test-order dependency.
         let input = serde_json::json!({
             "apiVersion":"gitstore.dev/v1beta1", "kind":"Repository",
@@ -147,6 +152,106 @@ impl Fixture {
             code,
         )
     }
+}
+
+#[test]
+#[ignore = "Requires scripts/test-integration.sh"]
+fn file_admitted_over_public_git_hydrates_by_name_and_id_and_emits_typed_event() {
+    let fixture = Fixture::new("file_projection");
+    let repo = fixture.clone_to("file-authoring", &[]);
+    let name = &fixture.name;
+    let checkpoint = fixture.temp.path().join("file-watch.json");
+    let mut observer = Command::new(env!("CARGO_BIN_EXE_gs"))
+        .env_clear()
+        .env("HOME", fixture.temp.path())
+        .env("PATH", "/nonexistent")
+        .args([
+            "--config",
+            &fixture.config,
+            "--credential-file",
+            &fixture.credential,
+            "--non-interactive",
+            "--timeout",
+            "20s",
+            "-o",
+            "json",
+            "watch",
+            "file",
+            name,
+            "--checkpoint-file",
+            checkpoint.to_str().unwrap(),
+            "--max-events",
+            "1",
+        ])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while !checkpoint.exists() {
+        assert!(
+            observer.try_wait().unwrap().is_none(),
+            "File watch closed before bootstrap"
+        );
+        assert!(
+            std::time::Instant::now() < deadline,
+            "File bootstrap timed out"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let path = format!("files/{name}.md");
+    std::fs::create_dir(repo.workdir().unwrap().join("files")).unwrap();
+    std::fs::write(repo.workdir().unwrap().join(&path), format!(
+        "---\napiVersion: storage.gitstore.dev/v1beta1\nkind: File\nmetadata:\n  namespace: gs-m1-ci\n  name: {name}\nspec:\n  contentType: image/jpeg\n  provider: git\n  source:\n    uri: media/fixture.jpg\n---\nCafé\n\n"
+    )).unwrap();
+    let mut index = repo.index().unwrap();
+    index.add_path(Path::new(&path)).unwrap();
+    index.write().unwrap();
+    commit(&repo, "Admit File through public Git\n");
+    fixture.sync(&repo, 0);
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(25);
+    while observer.try_wait().unwrap().is_none() {
+        if std::time::Instant::now() >= deadline {
+            observer.kill().unwrap();
+            observer.wait().unwrap();
+            panic!("File event timed out");
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let output = observer.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let events: Vec<Value> = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(events[0]["type"], "BOOKMARK");
+    let event = events
+        .iter()
+        .find(|event| event["type"] == "ADDED")
+        .unwrap();
+    assert_eq!(event["object"]["kind"], "File");
+    let by_name = fixture.cli(&["read", "file", name], fixture.temp.path(), 0);
+    let config = std::fs::read_to_string(&fixture.config).unwrap();
+    std::fs::write(
+        &fixture.config,
+        config.replace("namespace = \"gs-m1-ci\"\n", ""),
+    )
+    .unwrap();
+    let by_id = fixture.cli(
+        &["read", "file", "--id", by_name["id"].as_str().unwrap()],
+        fixture.temp.path(),
+        0,
+    );
+    assert_eq!(by_name["id"], by_id["id"]);
+    assert_eq!(by_id["body"], "Café\n\n");
+    assert_eq!(by_id["spec"]["source"]["uri"], "media/fixture.jpg");
+    assert_eq!(event["object"]["id"], by_id["id"]);
+    assert!(by_id.get("status").is_some());
 }
 
 #[test]

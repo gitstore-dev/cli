@@ -29,11 +29,23 @@ impl Secret {
 }
 pub fn key(e: &Effective, purpose: &str) -> String {
     let a = &e.context.accounts[&e.context.account];
+    if purpose == "graphql"
+        && let Some(auth) = &a.auth
+    {
+        return json!([e.context.endpoint, a.issuer, e.context.account, purpose,
+            {"provider":auth.provider,"version":auth.version,"username":auth.username}])
+        .to_string();
+    }
     json!([e.context.endpoint, a.issuer, e.context.account, purpose]).to_string()
 }
 pub trait Store {
     fn read(&self, key: &str) -> Result<Option<Secret>>;
     fn remove(&self, key: &str) -> Result<bool>;
+    fn write_session(&self, _: &str, _: &Secret) -> Result<()> {
+        Err(Error::unsupported(
+            "session persistence in this credential store",
+        ))
+    }
     /// Private runtime bootstrap only. Implementations must never replace an
     /// existing credential, unlock a collection or open an authorization UI.
     fn insert_runtime_if_absent(&self, _: &str, _: &Secret) -> Result<()> {
@@ -61,6 +73,61 @@ fn entry(key: &str) -> Result<keyring_core::Entry> {
         .map_err(|_| Error::auth("Cannot access OS credential entry"))
 }
 impl Store for Native {
+    fn write_session(&self, key: &str, value: &Secret) -> Result<()> {
+        #[cfg(target_os = "macos")]
+        {
+            entry(key)?
+                .set_password(value.expose())
+                .map_err(|_| Error::auth("OS session persistence denied or unavailable"))
+        }
+        #[cfg(target_os = "linux")]
+        {
+            use dbus_secret_service::{EncryptionType, SecretService};
+            use std::collections::HashMap;
+            let service = SecretService::connect_with_max_prompt_timeout(EncryptionType::Dh, 0)
+                .map_err(|_| Error::auth("Linux Secret Service unavailable"))?;
+            let attributes = HashMap::from([("service", "dev.gitstore.gs"), ("user", key)]);
+            let matches = service
+                .search_items(attributes.clone())
+                .map_err(|_| Error::auth("Cannot inspect session credential"))?;
+            if !matches.locked.is_empty() || matches.unlocked.len() > 1 {
+                return Err(Error::auth(
+                    "Session credential is locked or ambiguous; resolve outside gs",
+                ));
+            }
+            if let Some(item) = matches.unlocked.first() {
+                return item
+                    .set_secret(value.expose().as_bytes(), "text/plain")
+                    .map_err(|_| Error::auth("Cannot atomically update session credential"));
+            }
+            let collection = service
+                .get_default_collection()
+                .map_err(|_| Error::auth("No default session credential collection"))?;
+            if collection
+                .is_locked()
+                .map_err(|_| Error::auth("Cannot inspect credential collection"))?
+            {
+                return Err(Error::auth(
+                    "Credential collection is locked; unlock outside gs",
+                ));
+            }
+            collection
+                .create_item(
+                    "GitStore session",
+                    attributes,
+                    value.expose().as_bytes(),
+                    true,
+                    "text/plain",
+                )
+                .map_err(|_| Error::auth("Cannot persist issued session"))?;
+            Ok(())
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        {
+            let _ = (key, value);
+            Err(Error::unsupported("native session credential store"))
+        }
+    }
     fn insert_runtime_if_absent(&self, key: &str, value: &Secret) -> Result<()> {
         if self.read(key)?.is_some() {
             return Ok(());

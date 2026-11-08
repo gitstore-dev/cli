@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "GitStore alpha.9 File name lookup consumer",
+    "title": "GitStore alpha.9 File ID and namespace/name lookup consumer",
     "version": "0.1.0-alpha.9",
-    "description": "Narrow consumer contract at GitStore commit 68f8471edc947e417c98b6e8299a1367ab6b20da: shared/schemas/admin/file.graphqls and gitstore-api/internal/app/graphql.go. Other resource operations remain outside this contract. Owned disposable fixtures only."
+    "description": "Consumer GraphQL envelope at GitStore commit 68f8471edc947e417c98b6e8299a1367ab6b20da. The File operation accepts exactly one ID or namespacePath selector. CLI core resource reads use schema-verified metadata/spec/status/body projections from shared/schemas/admin; structured JSON/YAML retain these fields, bounded lists retain pageInfo without a global snapshot promise. Writes, subscriptions and other operations are outside this operation contract. Owned disposable fixtures only."
   },
   "servers": [
     {
@@ -29,7 +29,20 @@
                     "type": "string"
                   },
                   "variables": {
-                    "type": "object"
+                    "type": "object",
+                    "required": ["by"],
+                    "properties": {
+                      "by": {
+                        "oneOf": [
+                          {"type": "object", "required": ["id"], "additionalProperties": false,
+                           "properties": {"id": {"type": "string", "minLength": 1}}},
+                          {"type": "object", "required": ["namespacePath"], "additionalProperties": false,
+                           "properties": {"namespacePath": {"type": "object", "required": ["namespace", "name"], "additionalProperties": false,
+                             "properties": {"namespace": {"type": "string", "minLength": 1}, "name": {"type": "string", "minLength": 1}}}}}
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 }
               },

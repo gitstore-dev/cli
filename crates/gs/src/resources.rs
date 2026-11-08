@@ -93,6 +93,9 @@ fn namespace(n: Option<&str>) -> Result<&str> {
         .ok_or_else(|| Error::usage("Select a namespace"))
 }
 pub fn selection(s: &Selection, n: Option<&str>) -> Result<Request> {
+    selection_fields(s, n, &Kind::parse(&s.kind)?.fields())
+}
+fn selection_fields(s: &Selection, n: Option<&str>, fields: &str) -> Result<Request> {
     let k = Kind::parse(&s.kind)?;
     if s.name.is_some() == s.id.is_some() {
         return Err(Error::usage("Select exactly one name or --id"));
@@ -101,7 +104,7 @@ pub fn selection(s: &Selection, n: Option<&str>) -> Result<Request> {
     let query = if k == Kind::File {
         if s.id.is_some() {
             return Err(Error::unsupported(
-                "File by selector awaits upstream lifecycle specification",
+                "File IDs require the explicit alpha.9 contract profile",
             ));
         }
         let name = s
@@ -112,7 +115,7 @@ pub fn selection(s: &Selection, n: Option<&str>) -> Result<Request> {
         vars = json!({"namespace":namespace(n)?,"name":name});
         format!(
             "query Read($namespace:String!,$name:String!){{file(namespace:$namespace,name:$name){{{}}}}}",
-            k.fields()
+            fields
         )
     } else {
         let by = if let Some(id) = &s.id {
@@ -137,12 +140,21 @@ pub fn selection(s: &Selection, n: Option<&str>) -> Result<Request> {
             "query Read($by:{}By!){{{}(by:$by){{{}}}}}",
             k.type_name(),
             k.field(),
-            k.fields()
+            fields
         )
     };
     graphql::validate(json!({"query":query,"variables":vars}))
 }
 pub fn list_request(k: Kind, n: Option<&str>, first: u16, after: Option<&str>) -> Result<Request> {
+    list_request_for_profile(k, n, first, after, None)
+}
+pub fn list_request_for_profile(
+    k: Kind,
+    n: Option<&str>,
+    first: u16,
+    after: Option<&str>,
+    profile: Option<&str>,
+) -> Result<Request> {
     if !(1..=100).contains(&first) {
         return Err(Error::usage("Page size must be 1..100"));
     }
@@ -157,7 +169,7 @@ pub fn list_request(k: Kind, n: Option<&str>, first: u16, after: Option<&str>) -
         vars["namespace"] = json!(namespace(n)?)
     }
     graphql::validate(
-        json!({"query":format!("query List($first:Int!,$after:String{param}){{{field}({arg}first:$first,after:$after){{edges{{node{{{}}}}} pageInfo{{hasNextPage hasPreviousPage startCursor endCursor}}}}}}",k.fields()),"variables":vars}),
+        json!({"query":format!("query List($first:Int!,$after:String{param}){{{field}({arg}first:$first,after:$after){{edges{{node{{{}}}}} pageInfo{{hasNextPage hasPreviousPage startCursor endCursor}}}}}}",profile_fields(k, profile)),"variables":vars}),
     )
 }
 pub fn checked(client: &Client, r: &Request, f: Format) -> Result<Value> {
@@ -173,14 +185,37 @@ pub fn selection_for_profile(
     n: Option<&str>,
     profile: Option<&str>,
 ) -> Result<Request> {
-    let legacy = selection(s, n)?;
-    if profile != Some("gitstore-alpha9-2026-11-05") || Kind::parse(&s.kind)? != Kind::File {
-        return Ok(legacy);
+    let kind = Kind::parse(&s.kind)?;
+    if profile != Some("gitstore-alpha9-2026-11-05") || kind != Kind::File {
+        return selection_fields(s, n, &profile_fields(kind, profile));
     }
+    if s.name.is_some() == s.id.is_some() {
+        return Err(Error::usage("Select exactly one name or --id"));
+    }
+    let by = if let Some(id) = &s.id {
+        if id.is_empty() {
+            return Err(Error::usage("ID cannot be empty"));
+        }
+        json!({"id": id})
+    } else {
+        let name = s
+            .name
+            .as_deref()
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| Error::usage("Name cannot be empty"))?;
+        json!({"namespacePath": {"namespace": namespace(n)?, "name": name}})
+    };
     graphql::validate(json!({
-        "query": format!("query Read($by:FileBy!){{file(by:$by){{{}}}}}", Kind::File.fields()),
-        "variables": {"by": {"namespacePath": legacy.envelope["variables"]}}
+        "query": format!("query Read($by:FileBy!){{file(by:$by){{{}}}}}", profile_fields(kind, profile)),
+        "variables": {"by": by}
     }))
+}
+fn profile_fields(kind: Kind, profile: Option<&str>) -> String {
+    if profile == Some("gitstore-alpha9-2026-11-05") {
+        crate::projections::fields(kind)
+    } else {
+        kind.fields()
+    }
 }
 pub fn read(
     client: &Client,
@@ -211,8 +246,13 @@ pub fn list(
     first: u16,
     after: Option<&str>,
     f: Format,
+    profile: Option<&str>,
 ) -> Result<Value> {
-    let body = checked(client, &list_request(k, n, first, after)?, f)?;
+    let body = checked(
+        client,
+        &list_request_for_profile(k, n, first, after, profile)?,
+        f,
+    )?;
     let data = &body["data"][k.plural()?];
     let edges = data["edges"]
         .as_array()
@@ -222,6 +262,14 @@ pub fn list(
     }
     if !data["pageInfo"].is_object() {
         return Err(Error::remote("Missing pageInfo"));
+    }
+    if edges
+        .iter()
+        .any(|edge| !edge["node"].is_object() || edge["node"]["kind"] != k.manifest())
+    {
+        return Err(Error::remote(
+            "Connection returned a missing or wrong-kind node",
+        ));
     }
     Ok(
         json!({"items":edges.iter().map(|e|e["node"].clone()).collect::<Vec<_>>(),"pageInfo":data["pageInfo"]}),

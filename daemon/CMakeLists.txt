@@ -1,5 +1,26 @@
 cmake_minimum_required(VERSION 3.28)
-project(gitstored VERSION 0.1.0 LANGUAGES C)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../version.txt" GITSTORED_APPLICATION_VERSION LIMIT_COUNT 1)
+if(NOT GITSTORED_APPLICATION_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+(-alpha\\.[0-9]+)?$")
+  message(FATAL_ERROR "Invalid full application version")
+endif()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" GITSTORED_NUMERIC_VERSION "${GITSTORED_APPLICATION_VERSION}")
+project(gitstored VERSION "${GITSTORED_NUMERIC_VERSION}" LANGUAGES C)
+option(GITSTORED_STATIC_DISTRIBUTION "Build an explicitly selected Linux static distribution candidate" OFF)
+if(GITSTORED_STATIC_DISTRIBUTION)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "Static distribution candidates require Linux")
+  endif()
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+  set(OPENSSL_USE_STATIC_LIBS TRUE)
+  set(GITSTORED_STATIC_CURL_PREFIX "" CACHE PATH "Reviewed private HTTP-only static curl prefix")
+  if(NOT IS_ABSOLUTE "${GITSTORED_STATIC_CURL_PREFIX}" OR
+     NOT EXISTS "${GITSTORED_STATIC_CURL_PREFIX}/lib/libgitstored_curl.a")
+    message(FATAL_ERROR "Static distribution requires the reviewed build-static-curl.py prefix")
+  endif()
+  # A distinct archive name prevents earlier system -L paths selecting a distro
+  # curl with unrelated Kerberos/LDAP dependencies. Use a fresh build directory.
+  set(ENV{PKG_CONFIG_PATH} "${GITSTORED_STATIC_CURL_PREFIX}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+endif()
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -98,7 +119,7 @@ target_sources(gitstored_core PRIVATE src/restart.c)
 target_sources(gitstored_core PRIVATE src/oidc_discovery.c src/oidc_client.c src/oidc_material.c src/oidc_config.c src/oidc_enrollment.c src/oidc_profile.c src/oidc_execution.c src/oidc_preparation.c src/oidc_setup.c)
 target_sources(gitstored_core PRIVATE src/host_probe.c src/streams.c src/redaction.c src/logs.c src/log_capture.c src/log_read.c src/stream_service.c)
 target_link_libraries(gitstored_core PRIVATE gitstored_options PUBLIC jansson gitstored_sqlite)
-target_compile_definitions(gitstored_core PRIVATE GITSTORED_VERSION="${PROJECT_VERSION}")
+target_compile_definitions(gitstored_core PRIVATE GITSTORED_VERSION="${GITSTORED_APPLICATION_VERSION}")
 if(NOT APPLE)
   find_package(OpenSSL 3 REQUIRED COMPONENTS Crypto)
   target_link_libraries(gitstored_core PRIVATE OpenSSL::Crypto)
@@ -124,6 +145,16 @@ include(cmake/Slirp.cmake)
 include(cmake/Bootstrap.cmake)
 add_executable(gitstored src/main.c)
 target_link_libraries(gitstored PRIVATE gitstored_core gitstored_options)
+if(GITSTORED_STATIC_DISTRIBUTION)
+  # pkg-config's ordinary imported targets omit the private dependencies needed
+  # by static archives. Link the complete declared closure as a rescan group.
+  target_link_libraries(gitstored PRIVATE
+    "-Wl,-Bstatic,--start-group"
+    ${GITSTORED_CRUN_SYSTEM_STATIC_LDFLAGS}
+    ${GITSTORED_GLIB_STATIC_LDFLAGS}
+    ${GITSTORED_BOOTSTRAP_LIBS_STATIC_LDFLAGS}
+    "-Wl,--end-group,-Bdynamic")
+endif()
 if(GITSTORED_TESTING)
   add_executable(test_scylla_execution tests/test_scylla_execution.c)
   target_include_directories(test_scylla_execution PRIVATE src tests)

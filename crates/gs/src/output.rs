@@ -31,6 +31,24 @@ fn table(v: &Value) -> String {
     }
     match v {
         Value::Array(items) => items.iter().map(table).collect(),
+        Value::Object(_)
+            if v["metadata"].is_object()
+                && v["spec"].is_object()
+                && v["apiVersion"].is_string() =>
+        {
+            format!(
+                "{}\t{}\t{}\t{}\n",
+                cell(&v["kind"]),
+                cell(&v["metadata"]["namespace"]),
+                cell(&v["metadata"]["name"]),
+                cell(&v["spec"]["title"])
+            )
+        }
+        Value::Object(_) if v["items"].is_array() && v["pageInfo"].is_object() => {
+            let mut text = table(&v["items"]);
+            text.push_str(&format!("pageInfo\t{}\n", cell(&v["pageInfo"])));
+            text
+        }
         Value::Object(obj) => obj
             .iter()
             .map(|(k, v)| format!("{}\t{}\n", cell(&Value::String(k.clone())), cell(v)))

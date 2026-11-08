@@ -13,12 +13,16 @@ gs read product summer-shirt -o json
 ```
 
 Read/list are available for Namespace, Repository, Product, CategoryTaxonomy
-(`category`) and Collection. File metadata can be read by namespace and name;
+(`category`) and Collection. With the explicit alpha.9 profile, File metadata can
+be read by namespace/name or ID (`gs read file --id ID`, no namespace required);
 File listing is not available.
 
 List returns one page of 1–100 objects with an opaque continuation cursor. Use
-JSON for structured resource inspection. Table is the default; resource YAML,
-Markdown and lossless authoring export are not available yet.
+JSON for structured resource inspection. Table is the default. The alpha.9 profile
+supports full schema-exposed core JSON/YAML and conditional writable Markdown:
+`gs read product summer-shirt --authoring -o markdown`. Unrepresentable authoring
+fields fail explicitly; see [configuration and fidelity limits](configuration.md).
+Legacy resource YAML and plain Markdown presentation remain unavailable.
 
 ## Supply credentials for one command
 
@@ -101,8 +105,11 @@ Transient reads retry at most twice within that deadline. Mutations and pushes a
 not blindly retried. A lost response retains known identity and reports uncertain
 submission. Accepted transport does not prove server admission or readiness.
 
-Browser login, refresh, remote credential invalidation, discovery, watches,
-correlated remote waits and hydrated exports are not available yet. `auth status`
-reports local credential presence; logout reports when remote invalidation is
-unsupported. Use the installation's supported account tooling to obtain existing
-credentials before configuring this source preview.
+The explicit alpha.9 profile supports configured static-user login, refresh and
+`auth logout --remote`, exact Namespace/Repository creation, hydrated JSON/YAML,
+conditional authoring exports and [five typed name/label watches](watch.md).
+See [auth configuration](configuration.md) for protected password input and
+rotation uncertainty. `auth status` reports local presence. Default local logout
+does not invalidate a remote session. Browser/device/OIDC discovery, safe author
+updates, correlated remote waits, Collection watch/mutations, File upload/list,
+arbitrary CRDs and catalogue publication remain unavailable.

@@ -1,5 +1,6 @@
 """Run CLI acceptance checks against isolated published GitStore :latest images."""
 import json
+import argparse
 import os
 from pathlib import Path
 import secrets
@@ -18,6 +19,10 @@ IMAGES = [f'ghcr.io/gitstore-dev/{name}:latest' for name in
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--alpha9', action='store_true', help='require pinned shipped alpha.9 image identities')
+    args = parser.parse_args()
+    pinned = json.loads((FIXTURE / 'alpha9-images.json').read_text()) if args.alpha9 else None
     with tempfile.TemporaryDirectory(prefix='gs-images-') as directory:
         state = Path(directory)
         state.chmod(0o700)
@@ -38,6 +43,13 @@ def main():
         protected(state / 'config/gitstore.toml', config)
         shutil.copyfile(FIXTURE / 'policy.yaml', state / 'config/policy.yaml')
         env = dict(os.environ, GITSTORE_CI_STATE=str(state))
+        if pinned:
+            for service, variable in [('api', 'API'), ('git-service', 'GIT'), ('controller-manager', 'CONTROLLER')]:
+                env['GITSTORE_CI_' + variable + '_IMAGE'] = pinned['images'][service]
+        else:
+            # The normal compatibility lane must not inherit a caller's override.
+            for name in ('API', 'GIT', 'CONTROLLER'):
+                env.pop('GITSTORE_CI_' + name + '_IMAGE', None)
         compose = ['docker', 'compose', '--ansi', 'never', '--project-name',
                    'gs-cli-ci-' + uuid.uuid4().hex[:12], '--file', str(FIXTURE / 'compose.yml')]
 
@@ -53,13 +65,19 @@ def main():
             return value
 
         failed = False
+        proxy = None
         try:
             dc('config', '--quiet')
             dc('pull', '--policy', 'always')
-            for image in IMAGES:
+            for image in pinned['images'].values() if pinned else IMAGES:
                 # Record moving-tag provenance, without dumping container environment.
                 run(['docker', 'image', 'inspect', '--format',
                      '{{json .RepoDigests}} revision={{index .Config.Labels "org.opencontainers.image.revision"}}', image])
+                if pinned:
+                    revision = run(['docker', 'image', 'inspect', '--format',
+                        '{{index .Config.Labels "org.opencontainers.image.revision"}}', image], capture_output=True, text=True).stdout.strip()
+                    if revision != pinned['sourceRevision']:
+                        raise RuntimeError('pinned image source revision label mismatch; refusing conformance startup')
             dc('up', '--detach', '--wait', '--wait-timeout', '180')
 
             def endpoint(port):
@@ -117,10 +135,24 @@ def main():
                     raise RuntimeError('Repository storage did not become available')
                 time.sleep(1)
             protected(state / 'git-credential.json', json.dumps({'username': 'admin', 'password': password}))
+            cli_api = api
+            if pinned:
+                import importlib.util
+                proxy_spec = importlib.util.spec_from_file_location('prefix_proxy', FIXTURE / 'prefix_proxy.py')
+                proxy_module = importlib.util.module_from_spec(proxy_spec)
+                proxy_spec.loader.exec_module(proxy_module)
+                proxy = proxy_module.Proxy(api)
+                proxy.start()
+                cli_api = proxy.endpoint
+                probe = urllib.request.Request(cli_api, json.dumps({'query':'{namespaces(first:1){pageInfo{hasNextPage}}}'}).encode(),
+                    {'Content-Type':'application/json', 'Authorization':'Bearer ' + token})
+                with urllib.request.urlopen(probe, timeout=15) as response:
+                    if json.load(response).get('errors'):
+                        raise RuntimeError('owned prefix proxy preflight failed')
             protected(state / 'cli.toml', f'''version = 1
 current_context = "integration"
 [contexts.integration]
-endpoint = "{api}"
+endpoint = "{cli_api}"
 allow_loopback_http = true
 contract_profile = "gitstore-alpha9-2026-11-05"
 account = "admin"
@@ -136,14 +168,18 @@ credential_file = {json.dumps(str(state / 'git-credential.json'))}
 ''')
             env.update(GITSTORE_IMAGE_CONFIG=str(state / 'cli.toml'),
                        GITSTORE_IMAGE_CREDENTIAL=str(state / 'token'),
+                       GITSTORE_IMAGE_PASSWORD=str(state / 'admin-password'),
                        GITSTORE_IMAGE_GIT_URL=git + '/gs-m1-ci/catalog.git')
             # Complete both suites even if one fails; each reports named cases.
             failures = []
-            for name, command in [
+            suites = [
                 ('Git scenarios', ['cargo', 'test', '--locked', '-p', 'gs', '--test', 'images', '--',
                                    '--ignored', '--nocapture', '--test-threads=1']),
                 ('CLI commands', [sys.executable, 'scripts/test_image_commands.py']),
-            ]:
+            ]
+            if pinned:
+                suites.append(('Alpha.9 capabilities', [sys.executable, 'scripts/test_alpha9_commands.py']))
+            for name, command in suites:
                 print(f'Running {name}', flush=True)
                 try:
                     run(command)
@@ -151,7 +187,7 @@ credential_file = {json.dumps(str(state / 'git-credential.json'))}
                     failures.append(name)
             if failures:
                 raise RuntimeError('Failed suites: ' + ', '.join(failures))
-            print('PASS: CLI compatibility against published GitStore :latest images.', flush=True)
+            print('PASS: CLI compatibility against ' + ('pinned shipped alpha.9 images.' if pinned else 'published GitStore :latest images.'), flush=True)
         except BaseException:
             failed = True
             # Capture before printing so fixture credentials can be redacted.
@@ -162,6 +198,9 @@ credential_file = {json.dumps(str(state / 'git-credential.json'))}
                     print('Could not collect Compose diagnostics', file=sys.stderr)
             raise
         finally:
+            if proxy:
+                print('Owned prefix proxy HTTP requests:', proxy.server.request_count, flush=True)
+                proxy.close()
             try:
                 dc('down', '--volumes', '--remove-orphans', '--timeout', '10')
             except subprocess.SubprocessError:

@@ -223,7 +223,32 @@ An explicit `contract_profile = "gitstore-alpha9-2026-11-05"` selects the
 source-verified alpha.9 remote subset. Configure its Admin GraphQL endpoint
 (including `/admin/graphql`) independently from Git. File name reads use
 `file(by: {namespacePath: {namespace, name}})` with a `FileBy!` variable; the
-legacy `m0-2026-10-27` profile retains its flat File arguments. File ID reads,
-lists and writes retain their existing gates. No error triggers a fallback
+legacy `m0-2026-10-27` profile retains its flat File arguments. Alpha.9 ID reads
+use `file(by: {id: RELAY_ID})` without requiring a namespace; mixed/empty selectors
+fail before effects. File lists and writes remain unavailable. No error triggers a fallback
 request to another endpoint or selector. Evidence: [alpha.9 source contracts](../../runtime/profiles/alpha9-evidence.json).
 This does not upgrade the local runtime's alpha.8 image/schema pins.
+
+Alpha.9 now selects full schema-verified metadata/spec/status/body projections
+for core resource JSON/YAML reads and bounded lists. Tables remain concise.
+`read --authoring -o markdown` emits only representable writable projections for
+Namespace/Repository/Product/Category; it rejects unsupported kinds and nonempty
+scoped bodies. Controller status/server metadata and reference identity fields
+are excluded explicitly. Unwritable extended spec groups are rejected, not
+silently dropped. Namespace/Repository create accepts their exact public input
+fields with `gitstore.dev/v1beta1`; Namespace omits namespace selection and
+Repository requires a namespace. Neither input carries body or status. These are
+controlled-tested client additions. Pinned alpha.9 memdb/static-users conformance
+also passed; this does not qualify a binary release or an arbitrary provider.
+
+Explicit version-1 static-user auth adds password-file/redirected-stdin login,
+atomic refresh persistence and confirmed `logout --remote`; uncertain rotation is
+not blindly retried. Local status/logout keep their narrower scope. See
+[auth configuration](../configuration.md).
+
+Typed alpha.9 name/label watches cover Namespace/Repository/Product/Category/File,
+with per-kind future-change bootstrap, bounded NDJSON and bound private durable
+checkpoints. Expiry/gaps require explicit recovery; duplicates are possible.
+ID watches remain DEP-018 and Collection remains DEP-002. See
+[watch semantics](../watch.md); no snapshot or immediate existing-socket logout
+revocation guarantee is implied.

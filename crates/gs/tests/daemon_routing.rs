@@ -72,5 +72,7 @@ fn remote_wait_gate_and_help_remain_independent() {
     ] {
         assert!(run(&args).status.success(), "{args:?}");
     }
-    assert_eq!(run(&["api-resources", "-o", "json"]).status.code(), Some(6));
+    let catalog = run(&["api-resources", "-o", "json"]);
+    assert!(catalog.status.success());
+    assert!(String::from_utf8_lossy(&catalog.stdout).contains("gitstore-alpha9-2026-11-05"));
 }

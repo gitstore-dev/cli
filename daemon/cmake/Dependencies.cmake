@@ -19,6 +19,12 @@ FetchContent_MakeAvailable(jansson)
 # Jansson and libcrun's json-c expose overlapping C names. Keep the private
 # static Jansson symbols hidden so ELF cannot interpose them into json-c.
 set_target_properties(jansson PROPERTIES C_VISIBILITY_PRESET hidden)
+# Hidden visibility prevents dynamic interposition, but static json-c also
+# defines these names. Rename the private Jansson API at compile time for both
+# its implementation and consumers; never allow duplicate-definition linking.
+target_compile_definitions(jansson PUBLIC
+  json_object_get=gitstored_jansson_object_get
+  json_object_iter_next=gitstored_jansson_object_iter_next)
 include("${CMAKE_CURRENT_LIST_DIR}/PatchJansson.cmake")
 # Shadow the upstream-generated configuration with a private copy. Editing the
 # upstream output in place makes configure_file restore 2048 on every configure,

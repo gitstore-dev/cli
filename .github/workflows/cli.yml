@@ -35,4 +35,50 @@ jobs:
           echo "$RUNNER_TEMP/postman/bin" >> "$GITHUB_PATH"
       - name: Controlled public-contract simulation
         if: runner.os == 'Linux'
-        run: scripts/test-remote.sh
+        run: sh scripts/test-capabilities.sh
+      - name: Read-only package and release policy fixtures
+        run: |
+          python3 -m venv "$RUNNER_TEMP/release-policy-venv"
+          "$RUNNER_TEMP/release-policy-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/release-policy-venv/bin/python" -m unittest discover -s tests/packaging -v
+          npm install --prefix "$RUNNER_TEMP/release-please" --ignore-scripts --no-audit --no-fund release-please@17.3.0
+          GITSTORE_RELEASE_PLEASE_MODULE="$RUNNER_TEMP/release-please/node_modules/release-please" \
+            "$RUNNER_TEMP/release-policy-venv/bin/python" -m unittest discover -s tests/release -v
+  control-package:
+    name: macOS control pair ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Build matching production control pair for deployment floor
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '15.0'
+          LIBZ_SYS_STATIC: '1'
+        run: |
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$toolchain" --profile minimal
+          cargo build --workspace --release --locked
+          cmake -S daemon -B build/control -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DGITSTORED_TESTING=OFF
+          cmake --build build/control --parallel 2
+          install -d -m 700 build/control-pair
+          install -m 755 target/release/gs build/control/gitstored build/control-pair/
+          for binary in gs gitstored; do
+            python3 runtime/packaging/closure.py --binary "$PWD/build/control-pair/$binary" > "build/control-pair/$binary.closure.json"
+          done
+      - name: Installed pair policy and unavailable-runtime checks
+        run: |
+          python3 -m venv "$RUNNER_TEMP/package-venv"
+          "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
+          GITSTORE_PACKAGE_PAIR="$PWD/build/control-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
+          GITSTORED_TEST_BINARY="$PWD/build/control-pair/gitstored" cargo test --locked -p gs --test daemon_setup -- --include-ignored
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-control-closure-${{ matrix.runner }}
+          path: build/control-pair/*.closure.json
+          if-no-files-found: error
+          retention-days: 7

@@ -143,11 +143,17 @@ pub fn validate(envelope: Value) -> Result<Request> {
 pub struct Client {
     http: reqwest::blocking::Client,
     endpoint: String,
-    token: Secret,
+    token: Option<Secret>,
     deadline: Instant,
 }
 impl Client {
     pub fn new(endpoint: &str, token: Secret, timeout: Duration) -> Result<Self> {
+        Self::configured(endpoint, Some(token), timeout)
+    }
+    pub fn anonymous(endpoint: &str, timeout: Duration) -> Result<Self> {
+        Self::configured(endpoint, None, timeout)
+    }
+    fn configured(endpoint: &str, token: Option<Secret>, timeout: Duration) -> Result<Self> {
         crate::initialize_http_tls();
         let http = reqwest::blocking::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
@@ -177,13 +183,11 @@ impl Client {
                 .deadline
                 .checked_duration_since(Instant::now())
                 .ok_or_else(Error::deadline)?;
-            let sent = self
-                .http
-                .post(&self.endpoint)
-                .bearer_auth(self.token.expose())
-                .timeout(remaining)
-                .json(&request.envelope)
-                .send();
+            let mut builder = self.http.post(&self.endpoint);
+            if let Some(token) = &self.token {
+                builder = builder.bearer_auth(token.expose());
+            }
+            let sent = builder.timeout(remaining).json(&request.envelope).send();
             let mut response = match sent {
                 Ok(r) => r,
                 Err(e) => {

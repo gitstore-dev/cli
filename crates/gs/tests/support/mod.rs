@@ -10,9 +10,13 @@ pub struct Harness {
 }
 impl Harness {
     pub fn new() -> Self {
-        Self {
-            dir: tempfile::tempdir().unwrap(),
+        let dir = tempfile::tempdir().unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(dir.path(), fs::Permissions::from_mode(0o700)).unwrap();
         }
+        Self { dir }
     }
     pub fn config(&self) -> std::path::PathBuf {
         self.dir.path().join("config.toml")
@@ -52,12 +56,22 @@ issuer = "test"
         c.env_clear()
             .env("HOME", self.dir.path())
             .env("XDG_CONFIG_HOME", self.dir.path())
+            .env("XDG_STATE_HOME", self.dir.path())
+            .env("XDG_CACHE_HOME", self.dir.path())
+            .env("XDG_RUNTIME_DIR", self.dir.path())
             .env("PATH", "/nonexistent")
             .env("GIT_CONFIG_NOSYSTEM", "1")
             .arg("--config")
             .arg(self.config())
             .current_dir(self.dir.path());
         c
+    }
+    pub fn credential_cmd(&self, synthetic_token: &str) -> Command {
+        let mut command = self.cmd();
+        command
+            .arg("--credential-file")
+            .arg(self.write("synthetic-credential", synthetic_token));
+        command
     }
     pub fn run(&self, args: &[&str]) -> Output {
         self.cmd().args(args).output().unwrap()

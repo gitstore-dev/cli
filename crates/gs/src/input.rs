@@ -10,6 +10,22 @@ use std::{
     path::Path,
 };
 pub const LIMIT: usize = 16 * 1024 * 1024;
+pub fn password(file: Option<&Path>, stdin: bool) -> Result<crate::credentials::Secret> {
+    use std::io::IsTerminal;
+    let value = zeroize::Zeroizing::new(match (file, stdin) {
+        (Some(path), false) => protected(path)?,
+        (None, true) if !io::stdin().is_terminal() => read("-")?,
+        _ => {
+            return Err(Error::usage(
+                "Supply a protected --password-file or redirected --password-stdin",
+            ));
+        }
+    });
+    if value.len() > 4096 {
+        return Err(Error::usage("Password input exceeds 4 KiB"));
+    }
+    crate::credentials::Secret::new(value.to_string())
+}
 pub fn read(path: &str) -> Result<String> {
     if path == "-" {
         bounded(io::stdin().lock())

@@ -24,6 +24,7 @@ fn effective() -> Effective {
             Account {
                 issuer: "test".into(),
                 credential_source: "os-store".into(),
+                auth: None,
             },
         )]),
     };

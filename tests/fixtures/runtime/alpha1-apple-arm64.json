@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "fixtureName": "gs-cli-alpha1-linux-20261108",
+  "disposableUid": 11000,
+  "dedicatedTestAccount": true,
+  "fixtureParent": "/home/gitstorefixture/experiments",
+  "gs": "/home/gitstorefixture/cli-alpha1/target/release/gs",
+  "daemon": "/home/gitstorefixture/cli-alpha1/build/native-release/gitstored",
+  "sourceRoot": "/home/gitstorefixture/cli-alpha1",
+  "purpose": "Disposable alpha.1 native dependency/re-execution qualification; service image fixtures must be selected separately"
+}

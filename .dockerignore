@@ -1,0 +1,11 @@
+.git/
+target/
+build/
+node_modules/
+__pycache__/
+*.pyc
+.env*
+*.log
+postman/.runtime/
+.postman/
+coverage/

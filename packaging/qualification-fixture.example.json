@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "cleanHost": true,
+  "disposableHost": true,
+  "dedicatedTestAccount": true,
+  "disposableUid": 11000,
+  "selection": [
+    "linux",
+    "arm64",
+    "ubuntu:24.04"
+  ],
+  "fixtureParent": "/home/gitstorefixture/experiments",
+  "brewSource": "/home/linuxbrew/.linuxbrew/Homebrew",
+  "brewRevision": "REVIEWED_40_CHARACTER_TOOL_REVISION",
+  "systemFixture": "/home/gitstorefixture/experiments/system-fixture.json",
+  "nativeFixture": "/home/gitstorefixture/experiments/native-fixture.json",
+  "mismatchDaemon": "/home/gitstorefixture/experiments/next-alpha/bin/gitstored",
+  "replacements": {
+    "archive": {
+      "path": "/home/gitstorefixture/experiments/next-alpha/package.tar.gz",
+      "sha256": "REVIEWED_FULL_SHA256",
+      "version": "0.1.0-alpha.2"
+    },
+    "deb": {
+      "path": "/home/gitstorefixture/experiments/next-alpha/package.deb",
+      "sha256": "REVIEWED_FULL_SHA256",
+      "version": "0.1.0-alpha.2"
+    },
+    "homebrew": {
+      "path": "/home/gitstorefixture/experiments/next-alpha/package.tar.gz",
+      "sha256": "REVIEWED_FULL_SHA256",
+      "version": "0.1.0-alpha.2",
+      "formula": "/home/gitstorefixture/experiments/next-alpha/gitstore.rb",
+      "formulaSha256": "REVIEWED_FULL_SHA256"
+    },
+    "npm": {
+      "path": "/home/gitstorefixture/experiments/next-alpha/package.tgz",
+      "sha256": "REVIEWED_FULL_SHA256",
+      "version": "0.1.0-alpha.2"
+    }
+  }
+}

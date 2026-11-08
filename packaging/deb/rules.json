@@ -1,0 +1,8 @@
+{
+  "privatePrefix": "/usr/libexec/gitstore",
+  "publicLinks": ["/usr/bin/gs", "/usr/bin/gitstored"],
+  "fixture": "Ubuntu 24.04",
+  "qualification": "pending clean package lifecycle",
+  "scriptlets": [],
+  "rootDaemon": false
+}

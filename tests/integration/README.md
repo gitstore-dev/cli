@@ -8,6 +8,37 @@ cargo build --locked -p gs
 scripts/test-integration.sh
 ```
 
+For the pinned shipped alpha.9 capability lane:
+
+```sh
+scripts/test-integration.sh --alpha9
+```
+
+This selects [exact image index digests](alpha9-images.json), refuses a source
+revision label mismatch before startup and routes CLI GraphQL/typed watches
+through a disposable `/gitstore/admin/graphql` loopback prefix proxy. The current
+CI matrix runs this separately from the moving-tag lane. It reports **41 named
+checks**: seven Rust Git/File tests, 30 existing Python command cases and four
+alpha.9 capability cases with per-kind subcases. The extra Rust File case also
+runs in the moving-tag lane, bringing that lane to 37 named checks.
+
+The File fixture is authored/admitted over public Git with libgit2, then read by
+name and ID without namespace selection and observed on its typed watch.
+Alpha.9 cases cover exact Namespace/Repository create, hydrated reads,
+Product/Category writable export fidelity, five per-kind bootstrap bookmarks,
+four API-authored ADDED streams, explicit static-user login/refresh/consumed-token
+replay/logout, and revoked-session reconnect refusal without checkpoint mutation.
+Each auth case owns a separate protected-file session and never revokes the shared
+bootstrap identity. Existing watch sockets remained open at the 200 ms post-logout
+observation point; only reconnect rejection is asserted. Controlled socket-fault,
+expiry/backpressure and persistence-failure coverage remains in the Rust suites.
+
+These are memdb/static-users/loopback checks. Native OS credential stores,
+external OIDC/HTTPS and package/native-host support need their own receipts.
+See [current evidence](../../docs/contributing/validation/release-alpha1.md).
+The older checkpoint description below retains its original 36-case scope; its
+statements about planned login/watch/export do not describe the alpha.9 increment.
+
 The [CI workflow](../../.github/workflows/ci-integration.yml) runs this target on
 relevant pushes and pull requests to main and on manual dispatch. It always pulls
 `ghcr.io/gitstore-dev/{api,git-service,controller-manager}:latest` and prints their

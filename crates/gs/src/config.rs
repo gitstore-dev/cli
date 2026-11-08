@@ -43,6 +43,14 @@ pub struct Account {
     pub issuer: String,
     #[serde(default = "store_default")]
     pub credential_source: String,
+    pub auth: Option<StaticAuth>,
+}
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct StaticAuth {
+    pub version: u32,
+    pub provider: String,
+    pub username: String,
 }
 fn store_default() -> String {
     "os-store".into()
@@ -138,6 +146,16 @@ impl Config {
                 if name.is_empty() || a.issuer.is_empty() || a.credential_source != "os-store" {
                     return Err(Error::usage(
                         "Account name/issuer must be nonempty and credential_source must be os-store",
+                    ));
+                }
+                if let Some(auth) = &a.auth
+                    && (auth.provider.is_empty()
+                        || auth.username.is_empty()
+                        || auth.username.contains(':')
+                        || auth.username.chars().any(char::is_control))
+                {
+                    return Err(Error::usage(
+                        "Explicit auth needs a provider and a nonempty Basic-compatible username",
                     ));
                 }
             }

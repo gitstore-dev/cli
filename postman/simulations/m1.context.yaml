@@ -10,7 +10,7 @@ limitations:
   - Does not validate real provider credentials, admission, readiness or production compatibility
   - Returns 501 for routes outside the fixture contract
 alpha9:
-  scope: Explicit profile File name lookups at /admin/graphql only; missing File returns null
+  scope: Explicit profile File ID and namespace/name lookups at /admin/graphql; missing File returns null
   source: shared/schemas/admin/file.graphqls at 68f8471edc947e417c98b6e8299a1367ab6b20da
   contract: postman/specs/gitstore-alpha9.openapi.json
-  verification: scripts/test_remote.py; separate published-image run required for live compatibility
+  verification: scripts/test-capabilities.sh passed 48 actual CLI requests and three saved collections (10 assertions total) on 2026-11-08; separate pinned-image run required for live compatibility

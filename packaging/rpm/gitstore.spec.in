@@ -1,0 +1,31 @@
+Name: gitstore
+Version: @VERSION@
+Release: @RELEASE@
+Summary: GitStore early-alpha CLI and ordinary-user daemon
+License: @LICENSE@
+URL: https://github.com/gitstore-dev/cli
+Source0: payload.tar.gz
+BuildArch: @ARCH@
+Requires: glibc >= 2.39, libgcc, ca-certificates, systemd >= 255, dbus-daemon
+AutoReqProv: no
+%global debug_package %{nil}
+%global _build_id_links none
+# All stripping precedes inventory generation. RPM must retain those exact bytes.
+%global __os_install_post %{nil}
+
+%description
+GitStore and upstream are early alpha; schemas change incompatibly.
+No upgrade compatibility, data preservation or recovery guarantees.
+Keep independent backups and avoid irreplaceable data.
+
+%prep
+%build
+%install
+mkdir -p %{buildroot}
+tar -xzf %{SOURCE0} -C %{buildroot}
+
+%files
+/usr/bin/gs
+/usr/bin/gitstored
+/usr/libexec/gitstore
+/usr/lib/systemd/user/gitstored.service

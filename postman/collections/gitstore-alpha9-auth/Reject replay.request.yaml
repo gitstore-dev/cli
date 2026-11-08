@@ -1,0 +1,18 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {"query":"mutation Refresh($input:RefreshTokenInput!){refreshToken(input:$input){token{accessToken refreshToken tokenType expiresIn}}}","variables":{"input":{"refreshToken":"{{previousSessionToken}}"}}}
+order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Consumed session cannot be replayed", () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.json().errors).to.be.an("array").that.is.not.empty;
+      });

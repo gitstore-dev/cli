@@ -64,7 +64,7 @@ def verify(artifact, bundle, trusted_root, source_ref, source_digest, expected_s
         raise ValueError("maintainer GitHub CLI is unavailable")
     with tempfile.TemporaryDirectory(prefix="gitstore-release-verification-") as directory:
         root = Path(directory)
-        digest = snapshot(artifact, root / "artifact", 128 * 1024 * 1024)
+        digest = snapshot(artifact, root / "artifact", 1024 * 1024 * 1024)
         if digest != expected_sha256:
             raise ValueError("artifact digest mismatch")
         snapshot(bundle, root / "bundle.jsonl", 4 * 1024 * 1024)
