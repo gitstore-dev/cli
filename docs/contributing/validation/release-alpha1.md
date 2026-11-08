@@ -148,7 +148,12 @@ The first hosted Linux native smoke preparation passed user/cgroup/TUN setup but
 failed when UID 11000 could not traverse the runner's private checkout ancestor.
 The helper now copies only committed public test/profile inputs into the new
 account's private home; runner-home permissions and .git/token state stay intact.
-The next hosted run must prove the corrected native path.
+The next hosted run must prove the corrected native path. A separate manual
+unsigned development review lane is prepared to test Homebrew on actual macOS 15
+arm64/x86_64 using four real same-source archive hashes. It requires successful
+ordinary CLI/runtime run IDs and emits no trusted release qualification. Its
+execution is pending the corrected complete Linux producer jobs. New negative
+run-selection fixtures pass; release-policy fixtures now total 22 cases.
 
 Integration run 42522472015 exposed a controller/Namespace resource-version race:
 the CLI correctly returned CONFLICT. The disposable delete fixture now waits for

@@ -6,6 +6,14 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      review_cli_run:
+        description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
+        required: false
+        type: string
+      review_linux_run:
+        description: 'Same-source successful unsigned Linux candidate run; requires review_cli_run'
+        required: false
+        type: string
       native_fixture:
         description: 'Owned mode-0600 fixture manifest on dedicated reference runners; empty skips workloads'
         required: false
@@ -30,7 +38,7 @@ permissions:
   contents: read
 jobs:
   libraries:
-    if: github.event_name != 'workflow_dispatch' || inputs.candidate_run == ''
+    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '')
     name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
@@ -422,3 +430,90 @@ jobs:
           name: release-qualification
           path: receipts/*.json
           if-no-files-found: error
+
+  package-review-inputs:
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && inputs.review_cli_run != '' && inputs.review_linux_run != '' && inputs.candidate_run == ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Select successful same-source unsigned candidates only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CLI_RUN: ${{ inputs.review_cli_run }}
+          LINUX_RUN: ${{ inputs.review_linux_run }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/review-venv"
+          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/python" scripts/prepare-package-review.py \
+            --cli-run "$CLI_RUN" --linux-run "$LINUX_RUN" --output "$RUNNER_TEMP/package-review"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unsigned-package-review
+          path: |
+            ${{ runner.temp }}/package-review/review.json
+            ${{ runner.temp }}/package-review/gitstore.rb
+            ${{ runner.temp }}/package-review/darwin-*/complete-candidate/assets/gitstore-0.*-darwin-*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+  homebrew-review:
+    needs: package-review-inputs
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel]
+        include:
+          - {runner: macos-15, arch: arm64}
+          - {runner: macos-15-intel, arch: x64}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: unsigned-package-review
+          path: ${{ runner.temp }}/package-review
+      - name: Install/remove exact complete Homebrew candidate in private prefix
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          review_parent="$HOME/.gitstore-package-review-$GITHUB_RUN_ID"
+          mkdir -m 700 "$review_parent"
+          export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+          git init "$review_parent/brew-source"
+          git -C "$review_parent/brew-source" remote add origin https://github.com/Homebrew/brew.git
+          git -C "$review_parent/brew-source" fetch --depth 1 origin bf464f57275cae0be106b43d190c98564ac59b0e
+          git -C "$review_parent/brew-source" checkout --detach FETCH_HEAD
+          python3 -m venv "$RUNNER_TEMP/review-venv"
+          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/python" - "$RUNNER_TEMP/package-review" "$review_parent" <<'PY'
+          import hashlib, json, os, pathlib, subprocess, sys
+          root, parent = map(pathlib.Path,sys.argv[1:])
+          record = json.loads((root/'review.json').read_text())
+          artifact = root/('darwin-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-darwin-'+os.environ['ARCH']+'.tar.gz')
+          subprocess.run([sys.executable,'tests/packaging/run.py','--channel','homebrew',
+              '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
+              '--version',record['version'],'--fixture-parent',str(parent),
+              '--formula',str(root/'gitstore.rb'),'--formula-sha256',hashlib.sha256((root/'gitstore.rb').read_bytes()).hexdigest(),
+              '--brew-source',str(parent/'brew-source'),'--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e'],check=True)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: unsigned-homebrew-review-${{ matrix.runner }}
+          path: |
+            ${{ runner.temp }}/package-review/review.json
+            ${{ runner.temp }}/package-review/gitstore.rb
+            /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
+            /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
+          if-no-files-found: warn
+          retention-days: 7

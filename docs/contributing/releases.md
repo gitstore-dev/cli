@@ -183,3 +183,22 @@ including all exact signed identity constraints. An own hosted signed positive,
 App-trigger evidence and complete platform qualification remain required before
 calling alpha.1 ready. No public tag/release creation or publication was performed
 while preparing this workflow.
+
+## Unsigned development package review
+
+Before a release tag exists, maintainers can dispatch `runtime.yml` with
+`review_cli_run` and `review_linux_run` selecting successful same-source ordinary
+CLI/runtime runs. This runs only ephemeral hosted review jobs; leave candidate,
+native and denial fixture inputs empty. `prepare-package-review.py` checks both
+run repository/workflow/source identities, verifies all four installed inventories
+agree on actual checkout revision/version, and renders a private formula from the
+four actual archive digests. It retains branch-head and PR-merge checkout identities
+separately. No synthetic unused-platform digests are accepted by this path.
+
+The two macOS 15 jobs install/remove their exact complete candidate through an
+isolated Homebrew checkout/prefix and retain scoped receipts/logs. Tooling is pinned
+to Homebrew revision `bf464f57275cae0be106b43d190c98564ac59b0e`; it may acquire its
+own Ruby/tool metadata in that private fixture. All product invocations retain the
+empty-tool PATH boundary. The formula remains a review artifact, never a tap update.
+These outputs are named unsigned development review, contain no release receipts
+or attestations, and cannot replace the trusted qualification/publication path.
