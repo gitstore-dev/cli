@@ -1,0 +1,11 @@
+{
+  "cynic-parser@0.11.2": [
+    {
+      "path": "packaging/notices/supplemental/cynic-parser-0.11.2.LICENSE",
+      "url": "https://raw.githubusercontent.com/obmarg/cynic/adc3685ebae599e713e49ee7fa39abebf8c9b676/LICENSE",
+      "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5",
+      "gitBlob": "a612ad9813b006ce81d1ee438dd784da99a54007",
+      "reason": "Published crate omits the workspace license file; copied from its recorded immutable VCS revision."
+    }
+  ]
+}

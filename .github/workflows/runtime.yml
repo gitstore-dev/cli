@@ -112,6 +112,46 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/package-venv"
           "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
           GITSTORE_PACKAGE_PAIR="$PWD/build/closure-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
+      - name: Collect actual native archive, source and full-notice review inputs
+        if: matrix.mode == 'normal'
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, platform
+          uri = 'https://ports.ubuntu.com/ubuntu-ports' if platform.machine() == 'aarch64' else 'https://archive.ubuntu.com/ubuntu'
+          pathlib.Path(os.environ['RUNNER_TEMP'],'gitstore-source.sources').write_text(
+              'Types: deb-src\nURIs: '+uri+'\nSuites: noble noble-updates noble-security\n'
+              'Components: main universe\nSigned-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg\n')
+          PY
+          sudo apt-get -o "Dir::Etc::sourcelist=$RUNNER_TEMP/gitstore-source.sources" \
+            -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=false \
+            -o Acquire::Retries=0 -o Acquire::https::Timeout=30 update --error-on=any
+          material_target=$(rustc --version --verbose | awk '/^host: / {print $2}')
+          cargo metadata --locked --format-version 1 --filter-platform "$material_target" > "$RUNNER_TEMP/cli-material-metadata.json"
+          cargo metadata --locked --format-version 1 --filter-platform "$material_target" \
+            --manifest-path daemon/image-backend/Cargo.toml > "$RUNNER_TEMP/image-material-metadata.json"
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/collect-rust-materials.py \
+            --metadata "$RUNNER_TEMP/cli-material-metadata.json" --lockfile Cargo.lock \
+            --metadata "$RUNNER_TEMP/image-material-metadata.json" --lockfile daemon/image-backend/Cargo.lock \
+            --output "$RUNNER_TEMP/rust-material-review"
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/prepare-relink-kit.py \
+            --build-dir "$PWD/build/distribution" --output "$RUNNER_TEMP/relink-review"
+          mkdir -m 700 "$RUNNER_TEMP/distro-source-cache"
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/collect-native-materials.py \
+            --rust-review "$RUNNER_TEMP/rust-material-review" --build-dir "$PWD/build/distribution" \
+            --relink-json "$RUNNER_TEMP/relink-review/relink.json" --distro-sources "$RUNNER_TEMP/distro-source-cache" \
+            --apt-sources "$RUNNER_TEMP/gitstore-source.sources" --output "$RUNNER_TEMP/material-review"
+      - name: Archive proposed material inputs for review, never a release
+        if: matrix.mode == 'normal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-material-review-linux-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/material-review/notices.json
+            ${{ runner.temp }}/material-review/closure.json
+            ${{ runner.temp }}/material-review/materials.json
+            ${{ runner.temp }}/material-review/review.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Archive closure diagnostics only, not a qualified release
         if: matrix.mode == 'normal'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

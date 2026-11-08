@@ -44,8 +44,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--build-dir', required=True, type=Path)
     parser.add_argument('--output', required=True, type=Path)
+    parser.add_argument('--release-material',action='store_true',help='Prepare a final-byte material subject from a clean committed production checkout; does not publish')
     args = parser.parse_args()
     build, output = args.build_dir, args.output
+    if args.release_material and subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'],cwd=ROOT):
+        raise ValueError('release relink material requires a clean committed checkout')
     if (sys.platform != 'linux' or os.geteuid() == 0 or not build.is_absolute()
             or build.is_symlink() or not output.is_absolute() or output.exists()):
         parser.error('select non-root Linux, an ordinary production build and a new absolute output')
@@ -112,7 +115,10 @@ for name, record in manifest["materials"].items():
 subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, check=True)
 '''
     payload['relink.py'] = (script.encode(), 0o755)
-    payload['README.txt'] = (('UNQUALIFIED REVIEW MATERIAL; NOT A RELEASE.\n'
+    qualification = ('production relink material; final release qualification remains required' if args.release_material
+        else 'unqualified relink review material')
+    payload['README.txt'] = ((('Production relink material; use with matching source/notices subjects.\n' if args.release_material
+        else 'UNQUALIFIED REVIEW MATERIAL; NOT A RELEASE.\n')+
         'Contains actual production application objects and private native archives.\n'
         'Full corresponding patched sources and license notices must accompany a release.\n'
         'Requires the matching Linux architecture, C toolchain and libc development files.\n'
@@ -120,11 +126,14 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
         'Run: python3 relink.py --cc /usr/bin/cc --output /absolute/new/gitstored\n'
         'To replace a library, rebuild its archive from corresponding source with the recorded build recipe,\n'
         'replace its objects/ entry and update that entry in relink.json after reviewing the change.\n'
-        'Do not install or publish unreviewed modified outputs. No compatibility or data preservation is guaranteed.\n').encode(), 0o644)
-    manifest = dict(schemaVersion=1, qualification='unqualified relink review material',
+        'Test modified outputs independently. The supplied licenses govern modification and redistribution.\n'
+        'No compatibility or data preservation is guaranteed.\n').encode(), 0o644)
+    manifest = dict(schemaVersion=1, qualification=qualification,
         machine=platform.machine(), compiler=subprocess.check_output([str(compiler),'--version'],text=True).splitlines()[0],
         arguments=command, materials=recorded,
         originalSha256=hashlib.sha256(ordinary(build/'gitstored')).hexdigest())
+    if args.release_material:
+        manifest['sourceRevision'] = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     payload['relink.json'] = ((json.dumps(manifest,indent=2)+'\n').encode(), 0o644)
     output.mkdir(mode=0o700)
     for name,(data,mode) in payload.items():
@@ -137,7 +146,7 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
     subprocess.run([str(rebuilt),'--version'],env={'PATH':'/nonexistent'},check=True)
     subprocess.run([sys.executable,str(ROOT/'runtime/packaging/closure.py'),'--binary',str(rebuilt)],check=True)
     # The executable is a test output; publishable kit inputs contain only objects/instructions.
-    archive = output/'UNQUALIFIED-relink-kit.tar.gz'
+    archive = output/('gitstored-relink-kit.tar.gz' if args.release_material else 'UNQUALIFIED-relink-kit.tar.gz')
     write_new(archive,tar_bytes(payload))
     print(json.dumps(dict(kit=str(archive), sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),
         relinkedSha256=hashlib.sha256(rebuilt.read_bytes()).hexdigest(), materials=len(recorded),

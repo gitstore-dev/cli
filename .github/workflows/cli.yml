@@ -76,6 +76,24 @@ jobs:
           "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
           GITSTORE_PACKAGE_PAIR="$PWD/build/control-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
           GITSTORED_TEST_BINARY="$PWD/build/control-pair/gitstored" cargo test --locked -p gs --test daemon_setup -- --include-ignored
+      - name: Collect source and notice review inputs for this actual architecture
+        run: |
+          material_target=$(rustc --version --verbose | awk '/^host: / {print $2}')
+          cargo metadata --locked --format-version 1 --filter-platform "$material_target" > "$RUNNER_TEMP/cli-material-metadata.json"
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/collect-rust-materials.py \
+            --metadata "$RUNNER_TEMP/cli-material-metadata.json" --lockfile Cargo.lock --output "$RUNNER_TEMP/rust-material-review"
+          "$RUNNER_TEMP/package-venv/bin/python" scripts/collect-native-materials.py \
+            --rust-review "$RUNNER_TEMP/rust-material-review" --build-dir "$PWD/build/control" --output "$RUNNER_TEMP/material-review"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-material-review-${{ matrix.runner }}
+          path: |
+            ${{ runner.temp }}/material-review/notices.json
+            ${{ runner.temp }}/material-review/closure.json
+            ${{ runner.temp }}/material-review/materials.json
+            ${{ runner.temp }}/material-review/review.json
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unpublished-control-closure-${{ matrix.runner }}
