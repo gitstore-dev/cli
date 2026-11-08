@@ -54,6 +54,16 @@ materialized image/rootfs paths; these independent directory costs must not be
 summed as globally deduplicated storage. This is one real fixture sample, not
 all-reference-host performance acceptance. T061 remains open.
 
+A first clean Linux producer run failed at final linkage because lzma-sys
+selected a host development library rather than embedding its locked source.
+The CMake image-library command now explicitly selects static LZMA and zlib
+builds; their complete nested notices/sources are already in the Rust packet.
+The failed output/log is retained at `alpha1-production-pipeline` in the dedicated
+fixture and `/private/tmp/gs-alpha1-production-pipeline-linux-arm64.log`.
+A fresh complete producer run is required before claiming this fix verified.
+Hosted Ubuntu normal lanes now also prepare an explicitly ephemeral UID 11000
+fixture and run one real core lifecycle case; those results remain pending.
+
 The native measurement script is retained for repeatable selected-fixture runs.
 The hosted macOS jobs now additionally build complete read-only candidates and
 exercise their archive/npm installation, relocation and warm commands. Neither
