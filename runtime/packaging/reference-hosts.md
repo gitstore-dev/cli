@@ -15,9 +15,14 @@ core pair, package bytes and distinct host-library closure. Production symbol
 checks reject test facilities. Build headers/tools are CI prerequisites; no
 developer executable or workload image is put into the measured package.
 
-These lanes have not been run on GitHub at this checkpoint. The current local
-Linux arm64 production build and native/sanitizer checks have their own recorded
-evidence; they do not stand in for hosted amd64/arm64 results.
+Ordinary/sanitized hosted builds and library checks passed on both architectures;
+see the current [evidence record](../../docs/contributing/validation/release-alpha1.md).
+The normal lanes now also prepare a separate UID 11000 on the ephemeral GitHub
+Ubuntu VM and execute one real owned core start/readiness/stop case. Preparation
+refuses non-hosted, foreign-repository, persistent, non-Ubuntu or existing-account
+hosts. It grants TUN and user-namespace prerequisites only to that disposable
+fixture. This scoped core result does not qualify the full Linux package matrix.
+Missing kernel/systemd prerequisites fail the job; they are not a passing skip.
 
 ## Explicit native reference fixtures
 

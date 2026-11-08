@@ -112,6 +112,18 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/package-venv"
           "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
           GITSTORE_PACKAGE_PAIR="$PWD/build/closure-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
+      - name: Real owned core lifecycle on ephemeral hosted Linux only
+        if: matrix.mode == 'normal'
+        env:
+          GITSTORE_DISPOSABLE_FIXTURE: github-hosted-ubuntu24
+        run: |
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY_ID,GITHUB_RUN_ID,GITHUB_SHA,GITSTORE_DISPOSABLE_FIXTURE \
+            sh tests/packaging/prepare-hosted-linux-fixture.sh "$PWD/build/closure-pair" "$PWD"
+          sudo -u gitstorefixture python3 tests/packaging/check-linux-fixture.py \
+            --fixture /home/gitstorefixture/experiments/hosted.json
+          sudo -u gitstorefixture python3 tests/runtime/run.py --scenario core-memdb \
+            --case test_authorized_cold_start_requires_current_generation_health \
+            --fixture /home/gitstorefixture/experiments/hosted.json
       - name: Collect actual native archive, source and full-notice review inputs
         if: matrix.mode == 'normal'
         run: |

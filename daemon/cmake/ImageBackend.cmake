@@ -12,8 +12,11 @@ if(GITSTORED_IMAGE_SDK)
     list(APPEND image_features --features instrumented-host)
   endif()
   file(GLOB image_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/image-backend/src/*.rs")
+  # A Rust staticlib does not propagate native dynamic link flags to its C host.
+  # Always embed the locked compression crate sources, independent of whether
+  # the build host happens to have liblzma/zlib development headers installed.
   add_custom_command(OUTPUT "${image_archive}"
-    COMMAND "${CMAKE_COMMAND}" -E env CARGO_BUILD_JOBS=2 "${GITSTORED_CARGO}" build
+    COMMAND "${CMAKE_COMMAND}" -E env CARGO_BUILD_JOBS=2 LZMA_API_STATIC=1 LIBZ_SYS_STATIC=1 "${GITSTORED_CARGO}" build
       --manifest-path "${image_manifest}" --locked --release ${image_features}
       --target-dir "${CMAKE_CURRENT_BINARY_DIR}/image-sdk"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
