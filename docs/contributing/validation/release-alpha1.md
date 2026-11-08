@@ -2,6 +2,25 @@
 
 ## Complete producer and inspection measurement — 2026-11-08
 
+T012 is complete for code-library linkage/ABI/license inventory: actual hosted
+amd64 and arm64 private-static pairs passed ordinary, pinned-fd and sealed-memfd
+execution with no loader environment overrides. Both daemons require at most
+GLIBC 2.38 and only host libc/libm/libgcc plus the OS loader; both CLIs require at
+most GLIBC 2.39 and host libc/libgcc. Actual macOS 15 arm64/x86_64 control pairs
+use OS libraries and deployment target 15.0. All four native/Rust material sets
+are committed. This closes the selected linkage design, not clean-host lifecycle,
+complete source/notices release acceptance, full tuple producers or signed support.
+
+| Hosted Linux pair (`65d5cc8`) | gs SHA-256 | gitstored SHA-256 |
+| --- | --- | --- |
+| amd64 | `4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e` | `8663e65daf7d75986aa80f3f7deb94f6e5565e05ce490d5e05cab85e2773a2f7` |
+| arm64 | `eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7` | `d1ee08c9ed417f18302330b5e942021493a953529fbfb78f95f0dad7c2ffb6b4` |
+
+Retained closure packets: `/private/tmp/gs-alpha1-reviewed-hosted-closure-amd64`
+and `/private/tmp/gs-alpha1-reviewed-hosted-closure-arm64`. The newer explicit
+compression-link setting also passed the clean Linux arm64 producer/core result
+below; current hosted runs recheck that exact configuration.
+
 A clean detached checkout of `b300471` completed the full macOS arm64 producer,
 including 177 source-bound components, 352 full notice texts, a corresponding
 source archive and 361 installed files. Host: macOS 26.6.1 arm64; this does not
@@ -100,6 +119,47 @@ venv's jsonschema. `check-produced.py` now preserves its exact Python interprete
 when launching the package harness. This was a test-tool dependency error, not
 an installed-binary runtime dependency. The next hosted run must pass lifecycle
 checks; failed check artifacts are retained as unsigned diagnostics.
+With the complete production pair, missing-native-library rejection, running
+alpha.2 daemon refusal without stopping/replacing it (exit category 6), and
+concurrent first-use autostart through public executable links all passed.
+Log `/private/tmp/gs-alpha1-complete-native-package-boundaries.log`; retained
+roots `package-version-refusal-aguhibte` and `package-autostart-wy2nocta`.
+
+Offline core acceptance passed in 35.555 seconds using copies of this turn's
+already verified selected cache images, with no new images/network fallback.
+Receipt `runtime-run-core-offline-qebbq37w.json`, root `gs-public-runtime-8u0yv1v9`;
+log `/private/tmp/gs-alpha1-complete-offline-core-v3.log`. The first fixture
+preparation used non-private layout roots and correctly failed at manager startup
+before provisioning; that failure remains recorded in
+`runtime-run-core-offline-c6podnvt.json`. The helper now creates mode-0700 layout
+roots, preserving the daemon owner-settings policy. All seven complete clean-install cases subsequently passed in 327.953 seconds,
+including public GraphQL/Git and retained restart through the exact selected pair.
+Receipt `runtime-run-clean-install-t6dhcjn_.json`; log
+`/private/tmp/gs-alpha1-complete-clean-recovery-v2.log`. Recovery remains pending.
+These are engineering observations, not upgrade/data-preservation guarantees.
+
+Both macOS 15 complete archive/npm lanes now passed in
+[run 42521831875](https://github.com/gitstore-dev/cli/actions/runs/42521831875),
+including final native source/notices generation, installation/removal, relocation,
+unsupported-runtime behavior and 100 warm samples. Homebrew/replacement and the
+complete reference matrix remain T025.
+
+The first hosted Linux native smoke preparation passed user/cgroup/TUN setup but
+failed when UID 11000 could not traverse the runner's private checkout ancestor.
+The helper now copies only committed public test/profile inputs into the new
+account's private home; runner-home permissions and .git/token state stay intact.
+The next hosted run must prove the corrected native path.
+
+Integration run 42522472015 exposed a controller/Namespace resource-version race:
+the CLI correctly returned CONFLICT. The disposable delete fixture now waits for
+public Ready/current-generation status and performs one delete, preserving the
+no-mutation-retry policy. Exact pinned upstream schema/reconciler source was
+checked at `68f8471…`. The actual pinned alpha.9 image suite passed locally after
+this fixture change: 30 command checks plus four alpha.9 capability checks, with
+its live contract suite also passing. Log
+`/private/tmp/gs-alpha1-stable-namespace-integration.log`. Postman skill status was
+current; no endpoint or API contract changed.
+
 Hosted Ubuntu normal lanes now also prepare an explicitly ephemeral UID 11000
 fixture and run one real core lifecycle case; those results remain pending.
 
@@ -190,7 +250,7 @@ Linux producers are now part of ordinary read-only CI, in addition to both macOS
 producers. These artifacts remain unsigned review inputs and cannot enter the
 trusted release promotion path.
 
-Implementation state: **54/64 checked, 10 open**. Full all-tuple input review,
+Implementation state: **55/64 checked, 9 open**. Full all-tuple producer acceptance,
 canonical packages/formula, clean-host manager/native acceptance, remaining
 measurements, own hosted signed positive/App trigger and final inventory remain.
 No public tag, release or registry/formula publication occurred.

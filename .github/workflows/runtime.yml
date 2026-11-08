@@ -119,9 +119,9 @@ jobs:
         run: |
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY_ID,GITHUB_RUN_ID,GITHUB_SHA,GITSTORE_DISPOSABLE_FIXTURE \
             sh tests/packaging/prepare-hosted-linux-fixture.sh "$PWD/build/closure-pair" "$PWD"
-          sudo -u gitstorefixture python3 tests/packaging/check-linux-fixture.py \
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/check-linux-fixture.py \
             --fixture /home/gitstorefixture/experiments/hosted.json
-          sudo -u gitstorefixture python3 tests/runtime/run.py --scenario core-memdb \
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
             --case test_authorized_cold_start_requires_current_generation_health \
             --fixture /home/gitstorefixture/experiments/hosted.json
       - name: Collect actual native archive, source and full-notice review inputs

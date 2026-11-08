@@ -25,6 +25,16 @@ useradd --uid 11000 --user-group --create-home --shell /bin/bash gitstorefixture
 chmod 700 /home/gitstorefixture
 install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments /home/gitstorefixture/bin
 install -m 500 -o 11000 -g 11000 "$1/gs" "$1/gitstored" /home/gitstorefixture/bin/
+# The hosted checkout's ancestor directories can be private to the runner user.
+# Copy committed public test inputs; never widen runner-home permissions or copy
+# its .git directory, token configuration, environment or arbitrary build tree.
+test "$(git -c safe.directory="$2" -C "$2" rev-parse HEAD)" = "$GITHUB_SHA"
+install -d -m 700 /home/gitstorefixture/source
+git -c safe.directory="$2" -C "$2" archive --format=tar \
+    --output=/home/gitstorefixture/test-inputs.tar HEAD \
+    tests/runtime tests/packaging/check-linux-fixture.py runtime/profiles
+tar -xf /home/gitstorefixture/test-inputs.tar -C /home/gitstorefixture/source
+chown -Rh 11000:11000 /home/gitstorefixture/source
 if test ! -e /dev/net/tun; then
     install -d -m 755 /dev/net
     mknod /dev/net/tun c 10 200
@@ -37,9 +47,10 @@ if test -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then
 fi
 loginctl enable-linger gitstorefixture
 systemctl start user@11000.service
-python3 - "$2" <<'PY'
+python3 - <<'PY'
 import json, os, pathlib, sys
-source=pathlib.Path(sys.argv[1]).resolve(strict=True)
+source=pathlib.Path('/home/gitstorefixture/source').resolve(strict=True)
+assert (source/'tests/runtime/run.py').is_file()
 revision=os.environ['GITHUB_SHA']
 assert len(revision)==40 and all(c in '0123456789abcdef' for c in revision)
 value=dict(schemaVersion=1,fixtureName='github-hosted-ubuntu24-'+os.environ['GITHUB_RUN_ID'],
