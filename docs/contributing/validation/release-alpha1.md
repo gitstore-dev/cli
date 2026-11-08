@@ -19,8 +19,21 @@ The arm64 Homebrew job failed at cache/formula resolution before installation;
 its hidden private-home log directory was unintentionally excluded from upload.
 The upload now explicitly includes only those selected log/receipt paths, including
 their hidden parent, so the next disposable review can expose the actual cause.
+The retained log then confirmed Homebrew refused an untrusted formula: the
+shallow pinned checkout reports a generic `>=4.3.0` version, so version parsing
+incorrectly skipped Homebrew 7's formula trust. The harness now detects the actual
+reviewed `cmd/trust.rb` capability and trusts only the exact private fixture formula.
 No global Homebrew prefix, trust store, sandbox or user configuration was changed.
-Separate hosted-native review run 42527079575 retains workload failures as failures. Actual fixture/schema/native input review and full-byte
+Separate hosted-native review run 42527079575 retains workload failures as failures.
+Both Azure-kernel 7.0.0-1017 Ubuntu fixtures acquired/activated the first selected
+image, then failed workload start. Safe diagnostics show a failed start operation,
+owned cleanup success and released workload/resource ownership, not an image/TLS
+acquisition failure. The static-OpenSSL bounded TLS builder passed on both
+architectures. Artifacts are retained under
+`/private/tmp/gs-alpha1-hosted-native-diagnostics`; x64 probe log
+`/private/tmp/gs-alpha1-hosted-native-tls-x64.log`. Actual native workload support
+on those hosted environments remains unqualified; the Apple kernel 6.18.35 arm64
+full acceptance results are separate. Actual fixture/schema/native input review and full-byte
 coverage were checked; validators do not establish legal sufficiency by themselves.
 
 Final exact-production measurement passed after the complete acceptance batch:

@@ -176,8 +176,10 @@ def run(args):
         command('git','-C',str(tap),'-c','user.name=Fixture','-c','user.email=fixture@example.invalid',
                 'commit','-m','Controlled package version fixture')
         tooling_version = command(brew,'--version')
-        major = re.search(r'Homebrew ([0-9]+)\.', tooling_version)
-        if major and int(major[1]) >= 7:
+        receipt['toolingVersion'] = tooling_version
+        # Shallow pinned checkouts report a generic >=4.3 version, even for
+        # Homebrew 7. Detect the reviewed command capability from its source.
+        if (source/'Library/Homebrew/cmd/trust.rb').is_file():
             # Homebrew 7's formula trust stays in this fixture's XDG config.
             # Trust only the exact binary-only template checked above.
             command(brew,'trust','--formula',formula_name)
