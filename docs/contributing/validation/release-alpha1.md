@@ -60,7 +60,33 @@ The CMake image-library command now explicitly selects static LZMA and zlib
 builds; their complete nested notices/sources are already in the Rust packet.
 The failed output/log is retained at `alpha1-production-pipeline` in the dedicated
 fixture and `/private/tmp/gs-alpha1-production-pipeline-linux-arm64.log`.
-A fresh complete producer run is required before claiming this fix verified.
+The fresh clean producer at `97c00fe` subsequently passed, including exact
+source/lock/native archive binding, all full notices, ordinary/fd/memfd execution
+and packaging. Output `alpha1-production-pipeline-v2`; log
+`/private/tmp/gs-alpha1-production-pipeline-linux-arm64-v2.log`.
+
+| Complete Linux arm64 candidate | Bytes | SHA-256 |
+| --- | ---: | --- |
+| archive | 11,871,821 | `5daaf1de913906f1d1abeffe9be8f2fb6c39f37721c99d7b48b4582f66b7b5e5` |
+| npm | 11,871,920 | `861de1758dddadea18d805e27bc5a0c983c9998a207428790f1688124234f563` |
+| Debian | 9,193,112 | `cce3a6feda328472f61a86dc99a92d09de93e87fc8b5b65b1b05f22a0d33c1f6` |
+| RPM | 11,996,168 | `343806ed806ab3b4574df0d2c814df4a12c810266103fb0a061d69685e33d728` |
+| corresponding source | 92,295,730 | `50cefed99df67e150a13e554509be9c919119623325467ef6b23bb58d0aa7e2c` |
+| relink kit | 28,583,874 | `91794925657346b60c01f6f24712cc7ebde7eeecb82771aca5a4d5d4c358d7c1` |
+
+The final daemon is `82706d816848dd9fe0fdad13e843408005b0a91f9582aae69430a1b68349e52f`;
+CLI remains `327c151e1e8130c8059b2d1d46139150dc97e6c38889343ac446c3aefb50e3ad`.
+The separate relinked daemon (`4c32cccd…`) passed execution checks. Exact complete
+archive/npm install/relocate/remove passed; receipt parent
+`alpha1-complete-produced-checks-v2`. Distro installation and real service startup
+using these new exact bytes remain separate checks.
+
+The hosted macOS 15 arm64 complete producer also passed, but its subsequent
+archive harness selected system Python through a shell wrapper and lacked the
+venv's jsonschema. `check-produced.py` now preserves its exact Python interpreter
+when launching the package harness. This was a test-tool dependency error, not
+an installed-binary runtime dependency. The next hosted run must pass lifecycle
+checks; failed check artifacts are retained as unsigned diagnostics.
 Hosted Ubuntu normal lanes now also prepare an explicitly ephemeral UID 11000
 fixture and run one real core lifecycle case; those results remain pending.
 
