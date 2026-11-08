@@ -1,8 +1,10 @@
 # Validation Guide: Release and Unblocked Capabilities
 
-This is a future implementation validation guide. Commands for new package scripts
-and commands below describe planned targets, not commands already executed.
-Use disposable test accounts, synthetic credentials and isolated state only.
+The implementation and fixture tools exist. This guide defines the required
+validation; it does not claim every host/channel or trusted release gate passed.
+See [current evidence](../../docs/contributing/validation/release-alpha1.md) for
+actual commands, hashes, results and unavailable combinations. Use disposable
+test accounts, synthetic credentials and isolated state only.
 
 ## Prerequisites and scope
 
@@ -52,7 +54,10 @@ it. Run collections with approved Keychain access or on Linux and record actual 
 ## 2. Capability acceptance
 
 Use a private disposable configuration and explicitly selected credential input;
-never inherit the user's config/credential store. Exercise:
+never inherit the user's config/credential store. Select
+`contract_profile = "gitstore-alpha9-2026-11-05"` in the recorded context for new
+capability positives and separately exercise the legacy negative boundaries.
+Exercise:
 
 ```sh
 gs read file --id SYNTHETIC_RELAY_ID -o json
@@ -87,16 +92,16 @@ effects with named gates. Retain library clone/sync regression coverage.
 
 ## 3. Installed-package acceptance
 
-After implementation creates a complete candidate asset inventory, install it in
+After generating a complete candidate asset inventory, install it in
 fresh fixtures using the selected channel (placeholder assets below must be
 replaced by the candidate's exact version/architecture):
 
 ```sh
-brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli
+brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git
 brew install gitstore-dev/cli/gitstore
 sudo apt install ./gitstore_0.1.0~alpha.1-1_amd64.deb
 sudo dnf install ./gitstore-0.1.0-0.alpha.1.1.x86_64.rpm
-npm install --global --ignore-scripts /absolute/assets/cli-linux-x64-0.1.0-alpha.1.tgz
+npm install --global --ignore-scripts /absolute/assets/gitstore-npm-0.1.0-alpha.1-linux-x64.tgz
 ```
 
 These are alternatives on separate fixtures; do not install every channel into
@@ -140,5 +145,5 @@ fixtures until actual publication is explicitly authorized.
 
 Record source/version, exact artifact hashes, commands/results, fixture OS/arch,
 package dependencies, source/live/simulated distinction, performance and separate
-package/library/cache costs. Mark unavailable combinations honestly. Completing
-this guide is later implementation evidence, not an outcome of writing it.
+package/library/cache costs. Mark unavailable combinations honestly. Writing or updating this guide establishes no acceptance; only executed checks
+with recorded fixture identities and results supply evidence.

@@ -43,6 +43,23 @@ class Commands(unittest.TestCase):
         self.assertNotIn('errors', response)
         return response['data']
 
+    def wait_namespace_ready(self, identity):
+        # Alpha.9's namespace controller writes SystemRepoReady/Ready status.
+        # Let this fixture finish reconciliation before the single optimistic
+        # delete; the CLI must still surface conflicts rather than retry writes.
+        deadline = time.monotonic() + 15
+        while True:
+            current = self.graphql('query($id:ID!){namespace(by:{id:$id}){metadata{generation}'
+                'status{observedGeneration conditions{type status observedGeneration}}}}', {'id': identity})['namespace']
+            generation = current['metadata']['generation']
+            status = current['status']
+            if status['observedGeneration'] == generation and any(
+                    condition['type'] == 'Ready' and condition['status'] == 'TRUE'
+                    and condition['observedGeneration'] == generation for condition in status['conditions']):
+                break
+            self.assertLess(time.monotonic(), deadline, 'Disposable Namespace did not finish initial reconciliation')
+            time.sleep(.1)
+
 
 class LocalCommands(Commands):
     def test_context_list(self):
@@ -203,21 +220,7 @@ class LifecycleCommands(Commands):
                                 {'input': {'apiVersion': 'gitstore.dev/v1beta1', 'kind': 'Namespace',
                                            'metadata': {'name': name}, 'spec': {'title': 'Disposable', 'tier': 'ORGANIZATION'}}})
         identity = resource['createNamespace']['namespace']['id']
-        # Alpha.9's namespace controller writes SystemRepoReady/Ready status.
-        # Let this fixture finish reconciliation before the single optimistic
-        # delete; the CLI must still surface conflicts rather than retry writes.
-        deadline = time.monotonic() + 15
-        while True:
-            current = self.graphql('query($id:ID!){namespace(by:{id:$id}){metadata{generation}'
-                'status{observedGeneration conditions{type status observedGeneration}}}}', {'id': identity})['namespace']
-            generation = current['metadata']['generation']
-            status = current['status']
-            if status['observedGeneration'] == generation and any(
-                    condition['type'] == 'Ready' and condition['status'] == 'TRUE'
-                    and condition['observedGeneration'] == generation for condition in status['conditions']):
-                break
-            self.assertLess(time.monotonic(), deadline, 'Disposable Namespace did not finish initial reconciliation')
-            time.sleep(.1)
+        self.wait_namespace_ready(identity)
         result = self.invoke(['delete', 'namespace', '--id', identity])
         self.assertIn(result['outcome'], ['TERMINATION_STARTED', 'ALREADY_TERMINATING'])
 
