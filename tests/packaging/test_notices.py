@@ -10,6 +10,29 @@ import notices
 
 
 class NoticeTests(unittest.TestCase):
+    def test_same_package_version_cannot_hide_a_changed_git_commit_or_registry_checksum(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve()
+            (root/'source').write_bytes(b'synthetic full source and notice')
+            entry=dict(path='source',sha256=hashlib.sha256((root/'source').read_bytes()).hexdigest())
+            source='git+https://github.com/example/library?rev='+('a'*40)+'#'+('a'*40)
+            component=dict(id='example@1.0.0',license='MIT',source='https://codeload.github.com/example/library/tar.gz/'+('a'*40),
+                licenses=[entry],sourceArchive=entry,cargoSource=source)
+            package=dict(name='example',version='1.0.0',source=source)
+            notices.generate(root,dict(components=[component]),dict(packages=[package]),[],root/'git-positive')
+            package['source']=source.replace('a'*40,'b'*40)
+            with self.assertRaises(ValueError):
+                notices.generate(root,dict(components=[component]),dict(packages=[package]),[],root/'stale-git')
+            component['cargoSource']=package['source']
+            with self.assertRaises(ValueError):
+                notices.generate(root,dict(components=[component]),dict(packages=[package]),[],root/'stale-archive')
+            package.update(source='registry+https://github.com/rust-lang/crates.io-index',sourceChecksum=entry['sha256'])
+            component.update(cargoSource=package['source'],source='https://static.crates.io/crates/example/example-1.0.0.crate')
+            notices.generate(root,dict(components=[component]),dict(packages=[package]),[],root/'registry-positive')
+            package['sourceChecksum']='0'*64
+            with self.assertRaises(ValueError):
+                notices.generate(root,dict(components=[component]),dict(packages=[package]),[],root/'stale-registry')
+
     def test_coverage_full_text_and_lgpl_material(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()

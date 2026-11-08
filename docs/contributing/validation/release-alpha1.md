@@ -1,5 +1,81 @@
 # Alpha.1 implementation evidence
 
+## Hosted CI and material preparation — 2026-11-08
+
+Draft PR #12, source `6e84b822ad911295045a971e79be2766f2a0a60d`, passed all
+ordinary hosted checks. [CLI run](https://github.com/gitstore-dev/cli/actions/runs/42513240390)
+passed Rust checks on Ubuntu/macOS plus production control-pair policy checks on
+actual macOS 15 arm64/x86_64. Both report deployment target 15.0, OS libraries only
+and the explicit unavailable-runtime boundary. T021 is complete for this scoped
+binary behavior; this is not complete package-manager acceptance under T025.
+
+| Hosted macOS 15 executable | SHA-256 |
+| --- | --- |
+| arm64 gs | `a584661b4bb414fff94e700d5ccde0d60ba7cdfb8981bc2e4f68a66eefeecbae` |
+| arm64 gitstored | `1dda7205444dd89d04ba1ab989182b149c584937cc894f220f5ae66ae21db0a1` |
+| x86_64 gs | `977eb2228b13969dbf9f591e760ddeef611de5e9bd9ca063cef8b24162f80452` |
+| x86_64 gitstored | `b75125b0018b04b85695842fc9df30bf5ae36eec707221391312c5cd4bce66de` |
+
+[Runtime library run](https://github.com/gitstore-dev/cli/actions/runs/42513240368)
+passed normal/sanitized checks on amd64 and arm64, private-static closure, ordinary/
+fd/memfd execution and package policy. [Daemon run](https://github.com/gitstore-dev/cli/actions/runs/42513240347)
+and [latest/alpha.9 integration](https://github.com/gitstore-dev/cli/actions/runs/42513240345)
+also passed. Dedicated native/signing/promotion jobs correctly did not execute
+for the PR. These results supersede earlier unavailable hosted-build observations,
+not the still-open clean-host release matrix or own attestation gate.
+
+Source material preparation now follows the actual production graph. The macOS
+arm64 packet has 174 external Cargo packages, the standard library, Jansson and
+SQLite: 177 components, 352 full notice texts, no unresolved entries. The complete
+local archive/npm payload was generated with 361 inventoried files plus a separate
+source asset in `/private/tmp/gs-alpha1-complete-package-macos`. It is a controlled
+source-build checkpoint, not a published/qualified release. The corresponding
+input JSON sets are committed under `packaging/release-inputs/darwin-arm64`
+and `packaging/release-inputs/linux-arm64` for their respective observed closures.
+
+The Linux packet combines both workspaces and actual native source packages:
+271 components, 744 full notice texts, 306 material records, no unresolved entries.
+Retained `/home/gitstorefixture/experiments/alpha1-complete-materials-v3`; output
+`/private/tmp/gs-alpha1-native-materials-linux-v3.log`. All eight distro source sets
+were authenticated through signed Ubuntu source indexes and checked against their
+SHA-512 entries. PCRE2's complete added copyright file was reconstructed from its
+Debian source diff. Libxcrypt's installed copyright exactly matched the source
+template plus LICENSING; referenced native file-header terms were also retained.
+Rust registry archives matched lock checksums; the OCI Git archive matched every
+pinned Git object. The Cynic license missing from its crate matched its recorded
+upstream commit's blob `a612ad9813b006ce81d1ee438dd784da99a54007`.
+
+Producer staging now builds binaries first, creates source/relink subjects from
+reviewed inputs and exact objects, resolves final hashes, then generates notices
+and packages. It no longer requires a prepublished copy of its own relink kit.
+Source subjects retain all selected Rust/native sources and patches, committed
+application source and full notices. Static system archives must match their
+reviewed hashes; compiled native archives are hashed after building from pinned
+sources. Standard-library attribution uses a conservative complete rlib-set index.
+A changed Cargo Git revision/checksum with the same package version fails notice
+generation. Private linkage keeps OS math/resolver/runtime flags outside -Bstatic;
+the rebuilt arm64 daemon passed ordinary/fd/memfd closure with only host libraries.
+Its selected real native cold-start/readiness/cleanup case passed in 44.088 s
+(`/private/tmp/gs-alpha1-native-host-libraries-core.log`, receipt
+`runtime-run-core-memdb-a99dtx9n.json`, owned root `gs-public-runtime-7tr4b230`).
+The new daemon digest is `43b35e76419834a9001eb0c524a0c281aab69feabc0fbe34f591f625fe4e781e`.
+New hosted collection will provide proposed per-architecture material inputs;
+those remain distinct from release qualification and signing.
+
+Changed material checks: 62 portable package cases, 57 passed/five explicit fixture
+skips with the actual macOS pair; 21 producer fixtures passed with the pinned
+Release Please engine. The actual 177-component macOS source/lock/native binding
+passed notice generation. Retained logs: `/private/tmp/gs-alpha1-source-packaging-tests.log`,
+`/private/tmp/gs-alpha1-material-release-tests.log`. New tests reject stale Git
+commits/registry checksums even when a package version is unchanged, partial
+Debian copyright patches, missing relink objects, source-name collisions, altered
+source/license bytes and source ZIP/tar links/traversal.
+
+Implementation state: **54/64 checked, 10 open**. Full all-tuple input review,
+canonical packages/formula, clean-host manager/native acceptance, remaining
+measurements, own hosted signed positive/App trigger and final inventory remain.
+No public tag, release or registry/formula publication occurred.
+
 ## Current qualification checkpoint — 2026-11-08
 
 This section supersedes older not-run observations below; their historical hashes

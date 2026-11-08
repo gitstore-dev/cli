@@ -2,7 +2,8 @@
 
 Run `runtime/packaging/notices.py` against an explicit reviewed manifest and a
 combined Cargo metadata package list for **both** the CLI and image-backend
-workspaces. Each third-party `name@version` and each non-system native closure
+workspaces. Use target-filtered production/build Cargo edges; dev-only dependencies are not
+distributed components. Each third-party `name@version` and each non-system native closure
 name must occur exactly once. Include all applicable full license/copyright
 texts as ordinary files with SHA-256 identities, SPDX expressions and immutable
 HTTPS source pointers. Do not infer native obligations from Cargo metadata.
@@ -38,3 +39,12 @@ relinks a separate daemon and runs ordinary/fd/memfd closure checks. Its output 
 explicitly unqualified review material. A successful relink does not supply the
 missing corresponding patched sources, full notices or an obligation review;
 do not add this draft kit to reviewed release inputs without completing those.
+
+The producer also checks source archive bytes against the actual production
+Cargo.lock checksum or pinned Git commit. Full standard-library notices are a
+separate native-closure component. Source/relink selectors can reference generated
+subjects; see [reviewed inputs](../release-inputs/README.md). This avoids requiring
+our own release assets to be hosted before the release can be built. Rust source
+archives, pinned native sources, distribution patches and committed project source
+form the source subject; actual Linux application objects and private archives
+form the relink subject. Both are checked before final package hashes are frozen.

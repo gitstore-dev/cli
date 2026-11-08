@@ -14,6 +14,8 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+import tomllib
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'runtime/packaging'))
@@ -22,21 +24,34 @@ from notices import generate, read_file
 from stage import inspect_layout, archive_layout
 from formats import npm, deb, rpm
 from release_candidate import platforms, slots, slot_filename, safe_name
+from source_materials import expand, normalize_source, locked_packages, rlib_inventory
+from release_materials import generate as generate_materials, resolve_closure
 
 
 def run(*args):
     return subprocess.run(args, cwd=ROOT, check=True, capture_output=False)
 
 
-def fetch(url, destination, digest):
-    if not url.startswith('https://') or destination.exists() or destination.is_symlink():
-        raise ValueError('select a reviewed HTTPS source and new destination')
+def download(url,digest,normalization=None):
+    parsed = urlsplit(url)
+    if parsed.scheme != 'https' or parsed.username or parsed.password:
+        raise ValueError('select a reviewed public HTTPS source')
     with urllib.request.urlopen(url, timeout=60) as response:
         if not response.url.startswith('https://'):
             raise ValueError('source download redirected outside HTTPS')
         payload = response.read(512 * 1024 * 1024 + 1)
-    if len(payload) > 512 * 1024 * 1024 or hashlib.sha256(payload).hexdigest() != digest:
+    if len(payload) > 512 * 1024 * 1024:
+        raise ValueError('reviewed source exceeds bounds')
+    payload = normalize_source(payload,normalization)
+    if hashlib.sha256(payload).hexdigest() != digest:
         raise ValueError('reviewed source material digest mismatch')
+    return payload
+
+
+def fetch(url, destination, digest):
+    if destination.exists() or destination.is_symlink():
+        raise ValueError('select a new source destination')
+    payload = download(url,digest)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(payload)
 
@@ -66,9 +81,17 @@ def main():
     output.mkdir(mode=0o700)
     inputs = output / 'reviewed-materials'
     inputs.mkdir(mode=0o700)
+    rust_target = ('aarch64' if arch == 'arm64' else 'x86_64') + ('-apple-darwin' if os_name == 'darwin' else '-unknown-linux-gnu')
+    sysroot = Path(subprocess.check_output(['rustc','--print','sysroot'],cwd=ROOT,text=True).strip())
     for entry in materials:
         relative(entry['path'])
-        fetch(entry['url'], inputs / entry['path'], entry['sha256'])
+        if 'toolchainFile' in entry:
+            payload = read_file(sysroot,dict(path=entry['toolchainFile'],sha256=entry['sha256']))
+        elif entry.get('toolchainInventory') is True:
+            _,payload = rlib_inventory(sysroot,rust_target)
+        else:
+            payload = download(entry['url'],entry['sha256'],entry.get('normalization'))
+        expand(inputs,entry,payload)
     os.environ['LIBZ_SYS_STATIC'] = '1'
     if os_name == 'darwin':
         os.environ['MACOSX_DEPLOYMENT_TARGET'] = '15.0'
@@ -78,11 +101,10 @@ def main():
     packages = []
     manifests = ['Cargo.toml'] + (['daemon/image-backend/Cargo.toml'] if os_name == 'linux' else [])
     for cargo in manifests:
-        metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--locked', '--format-version', '1', '--manifest-path', cargo], cwd=ROOT))
-        packages += metadata['packages']
-    generate(inputs, manifest, {'packages': packages}, closure, support / 'notices')
+        metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--locked', '--format-version', '1', '--filter-platform',rust_target,'--manifest-path', cargo], cwd=ROOT))
+        packages += locked_packages(metadata,tomllib.loads((ROOT/Path(cargo).with_name('Cargo.lock')).read_text()))
     command = ['sh', str(ROOT / 'scripts/build-release-candidate.sh'), '--build-dir', str(output / 'native'),
-               '--prefix', str(output / 'prefix'), '--share-dir', str(support)]
+               '--prefix', str(output / 'prefix'), '--binaries-only']
     if os_name == 'linux':
         source_cache = output / 'curl-sources'
         source_cache.mkdir()
@@ -95,6 +117,18 @@ def main():
         command += ['--static-curl-prefix', str(curl)]
     run(*command)
     prefix = output / 'prefix'
+    relink, relink_bytes = None,None
+    if os_name == 'linux':
+        run(sys.executable,str(ROOT/'scripts/prepare-relink-kit.py'),
+            '--build-dir',str(output/'native'),'--output',str(output/'relink'),'--release-material')
+        relink = json.loads((output/'relink/relink.json').read_text())
+        relink_bytes = (output/'relink/gitstored-relink-kit.tar.gz').read_bytes()
+    closure = resolve_closure(closure,output/'native',inputs,sysroot=sysroot,target=rust_target,relink=relink,
+        build_roots={'static-curl':output/'static-curl'} if os_name=='linux' else {},project=ROOT)
+    manifest,_ = generate_materials(manifest,materials,inputs,project=ROOT,output=inputs/'generated',
+        version=version,os_name=os_name,arch=arch,relink_bytes=relink_bytes)
+    generate(inputs,manifest,{'packages':packages},closure,support/'notices')
+    shutil.copytree(support,prefix/'share')
     inventory = inspect_layout(prefix, version, revision, os_name, arch, row['abiFloor'], library_closure=closure)
     assets = output / 'assets'
     assets.mkdir(mode=0o700)
@@ -117,8 +151,8 @@ def main():
             installInventory=inventory_name, unpackedBytes=sum(f['bytes'] for f in inventory['files'])))
     extra = {}
     for component in manifest['components']:
-        if 'LGPL' in component['license']:
-            for field, kind in [('correspondingSource', 'source'), ('relinkKit', 'relink')]:
+        for field, kind in [('correspondingSource', 'source'), ('relinkKit', 'relink')]:
+            if field in component:
                 entry = component[field]
                 name = safe_name(entry['releaseAsset'])
                 payload = read_file(inputs, entry)

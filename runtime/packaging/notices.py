@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+from urllib.parse import urlsplit
 
 DISCLAIMER = ('Early-alpha software: no upgrade compatibility, data preservation '
     'or recovery guarantees. Upstream GitStore is also early alpha and its schemas '
@@ -40,6 +41,7 @@ def generate(root, manifest, cargo_metadata, closure, output):
                 if p.get('source') is not None}
     # Both independent Rust workspaces must be included in producer metadata.
     native = {item['name'] for item in closure if item['delivery'] != 'system'}
+    cargo = {p['name']+'@'+p['version']:p for p in cargo_metadata['packages'] if p.get('source') is not None}
     components = manifest['components']
     ids = [item['id'] for item in components]
     if len(ids) != len(set(ids)) or set(ids) != expected | native:
@@ -51,18 +53,36 @@ def generate(root, manifest, cargo_metadata, closure, output):
             raise ValueError('invalid component identity')
         if not component['source'].startswith('https://') or not component['license']:
             raise ValueError('each component requires reviewed source and license identity')
+        package=cargo.get(identity)
+        if package and package['source'].startswith(('registry+','git+')):
+            if component.get('cargoSource')!=package['source'] or 'sourceArchive' not in component:
+                raise ValueError('notice does not bind the actual resolved Cargo source')
+            if package['source'].startswith('registry+') and (
+                    not package.get('sourceChecksum') or component['sourceArchive']['sha256']!=package['sourceChecksum']):
+                raise ValueError('registry source notice differs from the production Cargo.lock checksum')
+            if package['source'].startswith('git+'):
+                source=urlsplit(package['source'].removeprefix('git+'))
+                expected='https://codeload.github.com'+source.path.removesuffix('.git')+'/tar.gz/'+source.fragment
+                if source.hostname!='github.com' or not re.fullmatch('[0-9a-f]{40}',source.fragment) or component['source']!=expected:
+                    raise ValueError('Git source notice differs from the production Cargo commit')
         if not component['licenses']:
             raise ValueError('full license notices required')
         for index, entry in enumerate(component['licenses']):
             payloads[f'{identity}/LICENSE-{index}.txt'] = read_file(root, entry)
+        if 'sourceArchive' in component:
+            read_file(root,component['sourceArchive'])
         if 'LGPL' in component['license']:
             # Reviewed source + relink kit are separate release subjects. Do not
             # pretend a link to upstream alone satisfies static-link obligations.
             for field in ['correspondingSource', 'relinkKit']:
+                if field not in component:
+                    raise KeyError(field)
+        for field in ['correspondingSource','relinkKit']:
+            if field in component:
                 entry = component[field]
-                read_file(root, entry)
-                if not re.fullmatch(r'[A-Za-z0-9_.~-]+', entry.get('releaseAsset', '')):
-                    raise ValueError('LGPL material must name its release asset')
+                read_file(root,entry)
+                if not re.fullmatch(r'[A-Za-z0-9_.~-]+',entry.get('releaseAsset','')):
+                    raise ValueError('source/relink material must name its release asset')
     payloads['components.json'] = (json.dumps(manifest, indent=2) + '\n').encode()
     output.mkdir(mode=0o755)
     for name, payload in payloads.items():

@@ -148,12 +148,24 @@ target_link_libraries(gitstored PRIVATE gitstored_core gitstored_options)
 if(GITSTORED_STATIC_DISTRIBUTION)
   # pkg-config's ordinary imported targets omit the private dependencies needed
   # by static archives. Link the complete declared closure as a rescan group.
-  target_link_libraries(gitstored PRIVATE
-    "-Wl,-Bstatic,--start-group"
+  set(gitstored_private_flags
     ${GITSTORED_CRUN_SYSTEM_STATIC_LDFLAGS}
     ${GITSTORED_GLIB_STATIC_LDFLAGS}
-    ${GITSTORED_BOOTSTRAP_LIBS_STATIC_LDFLAGS}
-    "-Wl,--end-group,-Bdynamic")
+    ${GITSTORED_BOOTSTRAP_LIBS_STATIC_LDFLAGS})
+  set(gitstored_host_flags)
+  foreach(flag IN LISTS gitstored_private_flags)
+    if(flag MATCHES "^(-l(m|dl|pthread|rt|resolv|c|gcc|gcc_s)|-pthread)$")
+      list(APPEND gitstored_host_flags "${flag}")
+    endif()
+  endforeach()
+  # The OS supplies libc, math, resolver and runtime libraries. Keep these flags
+  # outside -Bstatic so a private dependency cannot absorb static glibc code.
+  list(FILTER gitstored_private_flags EXCLUDE REGEX "^(-l(m|dl|pthread|rt|resolv|c|gcc|gcc_s)|-pthread)$")
+  target_link_libraries(gitstored PRIVATE
+    "-Wl,-Bstatic,--start-group"
+    ${gitstored_private_flags}
+    "-Wl,--end-group,-Bdynamic"
+    ${gitstored_host_flags})
 endif()
 if(GITSTORED_TESTING)
   add_executable(test_scylla_execution tests/test_scylla_execution.c)
