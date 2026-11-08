@@ -547,6 +547,7 @@ jobs:
           run-id: ${{ inputs.hosted_native_run }}
           github-token: ${{ github.token }}
       - name: Validate exact pair and prepare owned ephemeral host
+        id: owned-host
         env:
           ARCH: ${{ matrix.arch }}
           GITSTORE_DISPOSABLE_FIXTURE: github-hosted-ubuntu24
@@ -574,6 +575,20 @@ jobs:
           sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
             --case test_authorized_cold_start_requires_current_generation_health \
             --fixture /home/gitstorefixture/experiments/hosted.json
+      - name: Diagnose bounded TLS initialization without network or credentials
+        if: failure() && steps.owned-host.outcome == 'success'
+        run: |
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$toolchain" --profile minimal
+          sudo apt-get update --error-on=any
+          sudo apt-get install -y libssl-dev zlib1g-dev pkg-config
+          OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
+            CARGO_TARGET_DIR="$RUNNER_TEMP/tls-diagnostic-target" cargo build --release --locked \
+            --manifest-path daemon/image-backend/Cargo.toml --example runtime_tls_probe
+          sudo install -o 11000 -g 11000 -m 500 \
+            "$RUNNER_TEMP/tls-diagnostic-target/release/examples/runtime_tls_probe" /home/gitstorefixture/experiments/native-tls-probe
+          sudo -u gitstorefixture env -i PATH=/nonexistent HOME=/home/gitstorefixture/experiments LANG=C \
+            /home/gitstorefixture/experiments/native-tls-probe --fixture /home/gitstorefixture/experiments/hosted.json
       - name: Retain only bounded safe native diagnostic metadata
         if: always()
         run: |

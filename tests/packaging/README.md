@@ -134,3 +134,12 @@ config and every layer digest/size before copying ordinary files, uses private
 mode-0700 layout roots, and downloads no images. Supply its `layouts.json` mapping
 as `offlineLayouts` in a fresh dedicated fixture manifest. The native importer
 must independently verify the copies; preparation alone is not offline acceptance.
+
+Hosted native smoke is explicitly selected with the runtime workflow's
+`hosted_native_run` input. It consumes complete unsigned CI candidates, validates
+actual pair hashes, and prepares fresh ephemeral Ubuntu accounts. A failed native
+job stays failed. `diagnose-native.py` retains bounded operation enums, resource
+counts and limit metadata only; intents, result bodies, raw messages, service logs,
+configuration/credentials and database files are never uploaded. A contributor-only
+network-free TLS builder probe may run after failure; it is outside installed
+packages and requires the explicit dedicated fixture.
