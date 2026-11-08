@@ -205,6 +205,12 @@ unsigned candidate; ordinary package builds and source collection make no worklo
 claim. Failed native jobs retain only safe diagnostic enums/counts/limits, never
 raw database, operation messages, configuration, service logs or credentials.
 A sentinel fixture test verifies sensitive intent/result/message content is omitted.
+A separate contributor-only `runtime_tls_probe` example can diagnose Tokio/native
+TLS builder initialization under the same finite worker limits without configuring
+any URL, request or credential. It is never compiled into/installed with gitstored.
+The static-OpenSSL probe passed in the owned arm64 fixture; its opt-in hosted step
+runs only after a native smoke failure with successful host preparation. This does
+not convert the original workload failure into a pass.
 
 The native measurement script is retained for repeatable selected-fixture runs.
 The hosted macOS jobs now additionally build complete read-only candidates and
