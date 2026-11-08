@@ -2,6 +2,40 @@
 
 ## Complete producer and inspection measurement — 2026-11-08
 
+T019 is implementation-complete as the generated formula target. The task's
+literal path is clarified to match the approved plan and `Formula/README.md`:
+render the complete real-hash formula for review/testing, then commit
+`Formula/gitstore.rb` only after verified matching asset promotion. Committing the
+current review formula ahead of the eventual release tag would advertise stale
+archive digests because inventories bind the actual build commit. The renderer,
+private sibling/completion install, explicit Git URL tap, optional-service boundary,
+post-promotion update/idempotence and real-hash macOS installations are verified.
+The publication action and qualified release support remain separate open gates.
+
+Repository-level CI variable names, secret names, environments and releases were
+read again on 2026-11-08: each list was empty. No secret value was requested/read.
+The required protected `release-publication` environment is absent, and no own
+trusted tagged attestation/App-trigger positive has been run. Organization-level
+App configuration/installation was not established by these repository reads.
+No public tag/release/tap update or external registry publication was performed.
+
+T025 is complete for clean macOS 15 remote/control package acceptance. Both
+arm64 and Intel Homebrew lanes passed with the exact complete candidates and
+real four-platform archive hashes in
+[run 42527666842](https://github.com/gitstore-dev/cli/actions/runs/42527666842).
+They used independent private prefixes/taps/caches/trust stores, preserved the
+inventory and sibling links/completions, verified help/version with no tools on
+PATH, checked explicit unsupported local runtime, and removed selected code.
+Archive/npm control, relocation and removal already passed on both actual macOS
+15 architectures. This establishes that scoped package behavior; it does not
+supply the trusted six-host release receipts, complete next-alpha replacement
+matrix, native Linux support or publication approval. Scoped receipts/logs are
+retained under `/private/tmp/gs-alpha1-homebrew-qualified-control-receipts`:
+arm64 macOS 15.8.2 root `brew-lifecycle-vaeni_fw`; Intel macOS 15.7.9 root
+`brew-lifecycle-hg10cjyy`. Both report the pinned tooling commit even though shallow
+checkout version output is generic. Their exact archive/formula digests match the
+four-platform review inventory.
+
 T015 and T018 are complete: all four production tuples built with full actual
 source/lock/native bindings, complete notices and source/relink subjects, then
 passed exact archive/npm installation/removal and command checks. Selected runs
@@ -343,9 +377,12 @@ Linux producers are now part of ordinary read-only CI, in addition to both macOS
 producers. These artifacts remain unsigned review inputs and cannot enter the
 trusted release promotion path.
 
-Implementation state: **57/64 checked, 7 open**. Full release qualification,
-canonical packages/formula, clean-host manager/native acceptance, remaining
-measurements, own hosted signed positive/App trigger and final inventory remain.
+Implementation state: **59/64 checked, 5 open**. T024/T061 still require the
+complete selected Linux/reference-host lifecycle and performance matrix; Azure
+kernel-7 workload start failed and is not waived. T038 needs the configured,
+authorized exact-tag App/signing run and own signed positive. T039/T064 need the
+final tag-bound inventory/bundles and remaining qualification/guide review.
+Implementation and controlled package acceptance do not make alpha.1 release-ready.
 No public tag, release or registry/formula publication occurred.
 
 ## Current qualification checkpoint — 2026-11-08
