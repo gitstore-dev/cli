@@ -1,4 +1,6 @@
 //! GitStore remote CLI. Resource writes use only public GraphQL.
+pub mod auth;
+pub mod auth_storage;
 pub mod authoring;
 pub mod cli;
 pub mod config;
@@ -8,13 +10,20 @@ pub mod daemon_protocol;
 pub mod daemon_start;
 pub mod deployment;
 pub mod error;
+pub mod export;
 pub mod git;
 pub mod graphql;
 pub mod input;
 pub mod output;
+pub mod projections;
+pub mod reference;
+pub mod resource_catalog;
 pub mod resources;
 #[cfg(unix)]
 pub mod runtime_credentials;
+pub mod scoped_authoring;
+pub mod watch;
+pub mod watch_checkpoint;
 use clap::Parser;
 use cli::*;
 use credentials::Store;
@@ -59,6 +68,15 @@ pub fn run() -> i32 {
     }
 }
 fn dispatch(cli: &Cli) -> Result<()> {
+    if matches!(
+        cli.command,
+        Command::ApiResources { .. } | Command::Explain { .. }
+    ) {
+        return resource_catalog::dispatch(cli);
+    }
+    if matches!(cli.command, Command::Completion { .. } | Command::Reference) {
+        return reference::dispatch(cli);
+    }
     if deployment::is_local(&cli.command) {
         return deployment::dispatch(cli);
     }
@@ -71,7 +89,13 @@ fn dispatch(cli: &Cli) -> Result<()> {
         None
     };
     match &cli.command {
-        Command::Read(s) | Command::Delete(s) => {
+        Command::Read(args) => {
+            let _ = resources::Kind::parse(&args.selection.kind)?;
+            if args.selection.name.is_none() && args.selection.id.is_none() {
+                return Err(Error::usage("Select a name or --id"));
+            }
+        }
+        Command::Delete(s) => {
             let k = resources::Kind::parse(&s.kind)?;
             if matches!(cli.command, Command::Delete(_)) {
                 k.can_delete()?;
@@ -153,10 +177,20 @@ fn dispatch(cli: &Cli) -> Result<()> {
             json!({"present":present,"verified":false,"account":e.context.account,"endpoint":e.context.endpoint})
         }
         Command::Auth {
-            command: AuthCommand::Logout,
+            command: AuthCommand::Logout { remote: false },
         } => {
-            json!({"localRemoved":credentials::Native.remove(&credentials::key(&e,"graphql"))?,"remoteInvalidation":"unsupported"})
+            let key = credentials::key(&e, "graphql");
+            let removed = if e.context.accounts[&e.context.account].auth.is_some() {
+                auth_storage::Storage::prepare(None, key)?.remove()?
+            } else {
+                credentials::Native.remove(&key)?
+            };
+            json!({"localRemoved":removed,"remoteInvalidation":"unsupported"})
         }
+        Command::Auth {
+            command:
+                AuthCommand::Login(_) | AuthCommand::Refresh | AuthCommand::Logout { remote: true },
+        } => auth::dispatch(cli, &e)?,
         Command::Auth {
             command: AuthCommand::Token,
         } => {
@@ -179,8 +213,23 @@ fn dispatch(cli: &Cli) -> Result<()> {
             output::emit(&reply.body, cli.format())?;
             return reply.error.map_or(Ok(()), Err);
         }
-        Command::Read(s) => {
+        Command::Read(args) => {
+            let s = &args.selection;
             e.profile()?;
+            if args.authoring
+                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+            {
+                return Err(Error::unsupported(
+                    "Authoring export requires the alpha.9 profile",
+                ));
+            }
+            if cli.format() == Format::Yaml
+                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+            {
+                return Err(Error::unsupported(
+                    "DEP-005: hydrated YAML requires the alpha.9 profile",
+                ));
+            }
             let r = resources::selection_for_profile(
                 s,
                 e.context.namespace.as_deref(),
@@ -192,16 +241,31 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 credentials::token(cli, &e)?,
                 cli.timeout(),
             )?;
-            resources::read(
+            let value = resources::read(
                 &client,
                 s,
                 e.context.namespace.as_deref(),
-                cli.format(),
+                if args.authoring {
+                    Format::Json
+                } else {
+                    cli.format()
+                },
                 e.context.contract_profile.as_deref(),
-            )?
+            )?;
+            if args.authoring {
+                return export::emit(&value);
+            }
+            value
         }
         Command::List(a) => {
             e.profile()?;
+            if cli.format() == Format::Yaml
+                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+            {
+                return Err(Error::unsupported(
+                    "DEP-005: hydrated YAML requires the alpha.9 profile",
+                ));
+            }
             let kind = resources::Kind::parse(&a.kind)?;
             let _ = resources::list_request(
                 kind,
@@ -221,6 +285,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 a.first,
                 a.after.as_deref(),
                 cli.format(),
+                e.context.contract_profile.as_deref(),
             )?
         }
         Command::Delete(s) => {
@@ -235,10 +300,11 @@ fn dispatch(cli: &Cli) -> Result<()> {
         }
         Command::Create(a) => {
             e.profile()?;
-            let docs = authoring::load(
+            let docs = authoring::load_for_profile(
                 &a.files,
                 e.context.namespace.as_deref(),
                 cli.namespace.is_some(),
+                e.context.contract_profile.as_deref(),
             )?;
             let client = graphql::Client::new(
                 &e.context.endpoint,
@@ -250,6 +316,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
             return error.map_or(Ok(()), Err);
         }
         Command::Repository { command } => git::dispatch(cli, &e, command)?,
+        Command::Watch(args) => return watch::dispatch(cli, &e, args),
         _ => return Err(Error::unsupported("M1 remote implementation pending")),
     };
     output::emit(&value, cli.format())

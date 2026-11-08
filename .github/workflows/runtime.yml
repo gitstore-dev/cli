@@ -14,10 +14,23 @@ on:
         description: 'Separate disposable fixture with actual TUN denial; empty skips denial workloads'
         required: false
         type: string
+      candidate_run:
+        description: 'Exact-source successful release.yml run to qualify; empty runs development checks'
+        required: false
+        type: string
+      candidate_tag:
+        description: 'Exact reviewed candidate v-tag (qualification only)'
+        required: false
+        type: string
+      qualification_fixture:
+        description: 'Owned private qualification manifest at this path on EACH dedicated clean reference host'
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
   libraries:
+    if: github.event_name != 'workflow_dispatch' || inputs.candidate_run == ''
     name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
@@ -69,6 +82,44 @@ jobs:
           scripts/measure-runtime-size.sh --gs "$PWD/target/release/gs" \
             --daemon "$PWD/build/production/gitstored" --output-directory "$PWD/build/measurement"
           python3 runtime/experiments/cli-provenance/test_policy.py
+      - name: Private-static closure for movable packages (unqualified build check)
+        if: matrix.mode == 'normal'
+        run: |
+          sudo apt-get install -y dpkg-dev libpcre2-dev patchelf
+          python3 - <<'PY'
+          import hashlib, json, pathlib, urllib.request
+          lock = json.loads(pathlib.Path('packaging/curl-source.json').read_text())
+          root = pathlib.Path('build/curl-sources').resolve()
+          root.mkdir()
+          for name, digest in lock['files'].items():
+              with urllib.request.urlopen('https://archive.ubuntu.com/ubuntu/pool/main/c/curl/' + name, timeout=60) as source:
+                  payload = source.read(64 * 1024 * 1024)
+              assert hashlib.sha256(payload).hexdigest() == digest
+              (root / name).write_bytes(payload)
+          PY
+          python3 scripts/build-static-curl.py --source-cache "$PWD/build/curl-sources" \
+            --build-dir "$PWD/build/curl-build" --prefix "$PWD/build/static-curl"
+          LIBZ_SYS_STATIC=1 cargo build --release --workspace --locked
+          cmake -S daemon -B build/distribution -DCMAKE_BUILD_TYPE=MinSizeRel -DGITSTORED_TESTING=OFF \
+            -DGITSTORED_IMAGE_SDK=ON -DGITSTORED_LIBCRUN=ON -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON \
+            -DGITSTORED_STATIC_DISTRIBUTION=ON -DGITSTORED_STATIC_CURL_PREFIX="$PWD/build/static-curl"
+          cmake --build build/distribution --parallel 2
+          install -d -m 700 build/closure-pair
+          install -m 755 target/release/gs build/distribution/gitstored build/closure-pair/
+          for binary in gs gitstored; do
+            python3 runtime/packaging/closure.py --binary "$PWD/build/closure-pair/$binary" > "build/closure-pair/$binary.closure.json"
+          done
+          python3 -m venv "$RUNNER_TEMP/package-venv"
+          "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
+          GITSTORE_PACKAGE_PAIR="$PWD/build/closure-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
+      - name: Archive closure diagnostics only, not a qualified release
+        if: matrix.mode == 'normal'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unpublished-closure-${{ matrix.arch }}
+          path: build/closure-pair/*.closure.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Archive development measurement only
         if: matrix.mode == 'normal'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -193,3 +244,112 @@ jobs:
           FIXTURE: ${{ env.QUALIFIED_DENIED_FIXTURE }}
           GITSTORE_EXPECT_MISSING_TUN: '1'
         run: scripts/test-runtime.sh --scenario host-unmet --fixture "$FIXTURE"
+  qualification-input:
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && github.ref == 'refs/heads/main' && inputs.candidate_run != ''
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Require reviewed same-source candidate before using reference hosts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+          FIXTURE: ${{ inputs.qualification_fixture }}
+        run: |
+          test -n "$FIXTURE"
+          python3 scripts/check-release-run.py --run-id "$CANDIDATE_RUN" --workflow release.yml --revision "$GITHUB_SHA" --tag "$CANDIDATE_TAG"
+  qualification:
+    needs: qualification-input
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {host: 'ubuntu:24.04', arch: x64, labels: 'gitstore-release-ubuntu24', os: Linux}
+          - {host: 'ubuntu:24.04', arch: arm64, labels: 'gitstore-release-ubuntu24', os: Linux}
+          - {host: 'fedora:44', arch: x64, labels: 'gitstore-release-fedora44', os: Linux}
+          - {host: 'fedora:44', arch: arm64, labels: 'gitstore-release-fedora44', os: Linux}
+          - {host: macos-15, arch: arm64, labels: 'gitstore-release-macos15', os: macOS}
+          - {host: macos-15-intel, arch: x64, labels: 'gitstore-release-macos15', os: macOS}
+    runs-on: [self-hosted, '${{ matrix.os }}', '${{ matrix.labels }}', '${{ matrix.arch }}']
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      actions: read
+    concurrency:
+      group: release-reference-${{ matrix.labels }}-${{ matrix.arch }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-candidate
+          path: ${{ runner.temp }}/release-candidate
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+      - name: Execute exact-byte package and native acceptance on selected clean host
+        env:
+          FIXTURE: ${{ inputs.qualification_fixture }}
+          HOST: ${{ matrix.host }}
+          TAG: ${{ inputs.candidate_tag }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/qualification-venv"
+          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
+          chmod 700 "$RUNNER_TEMP/release-candidate"
+          "$RUNNER_TEMP/qualification-venv/bin/python" scripts/qualify-release.py \
+            --candidate "$RUNNER_TEMP/release-candidate" --fixture "$FIXTURE" --host "$HOST" \
+            --revision "$GITHUB_SHA" --tag "$TAG" --output "$RUNNER_TEMP/qualification-receipts"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qualification-${{ matrix.labels }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/qualification-receipts/*.json
+          if-no-files-found: error
+  qualification-complete:
+    needs: qualification
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-candidate
+          path: candidate
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: qualification-*
+          path: receipts
+          merge-multiple: true
+      - name: Validate the complete selected host/channel set before emitting evidence
+        run: |
+          python3 -m venv "$RUNNER_TEMP/qualification-venv"
+          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/qualification-venv/bin/python" - <<'PY'
+          import json, pathlib, shutil, sys
+          sys.path.insert(0,'runtime/packaging')
+          from release_candidate import validate_receipts
+          root = pathlib.Path('candidate').resolve()
+          value = json.loads((root/'candidate.json').read_text())
+          value['receipts'] = []
+          for path in pathlib.Path('receipts').glob('*.json'):
+              assert not (root/path.name).exists()
+              shutil.copyfile(path,root/path.name)
+              value['receipts'].append(path.name)
+          validate_receipts(value,root)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-qualification
+          path: receipts/*.json
+          if-no-files-found: error

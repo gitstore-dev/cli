@@ -1,11 +1,13 @@
 use crate::error::{Error, Result};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::{path::PathBuf, time::Duration};
+const PRERELEASE_NOTICE: &str = "Early alpha: upstream GitStore schemas continue changing incompatibly. No upgrade compatibility, data preservation or recovery guarantees. Keep independent backups; do not use prereleases for irreplaceable data.";
 #[derive(Parser)]
 #[command(
     name = "gs",
     version,
-    about = "GitStore remote catalogue CLI",
+    about = "GitStore CLI",
+    after_long_help = PRERELEASE_NOTICE,
     disable_help_subcommand = true
 )]
 pub struct Cli {
@@ -57,6 +59,13 @@ pub enum Format {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Generate a shell completion script without accessing configuration.
+    Completion {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
+    /// Generate the Markdown command reference without accessing configuration.
+    Reference,
     Context {
         #[command(subcommand)]
         command: ContextCommand,
@@ -73,7 +82,7 @@ pub enum Command {
         #[command(subcommand)]
         command: ApiCommand,
     },
-    Read(Selection),
+    Read(ReadArgs),
     List(ListArgs),
     Delete(Selection),
     Create(CreateArgs),
@@ -82,9 +91,7 @@ pub enum Command {
         command: RepositoryCommand,
     },
     Update(CreateArgs),
-    Watch {
-        kind: String,
-    },
+    Watch(WatchArgs),
     Serve(ServeArgs),
     Deployment {
         #[command(subcommand)]
@@ -111,9 +118,14 @@ pub enum Command {
         #[command(subcommand)]
         command: ComponentCommand,
     },
-    ApiResources,
+    ApiResources {
+        #[arg(long, default_value = "gitstore-alpha9-2026-11-05", value_parser = ["gitstore-alpha9-2026-11-05", "m0-2026-10-27"])]
+        profile: String,
+    },
     Explain {
         resource: String,
+        #[arg(long, default_value = "gitstore-alpha9-2026-11-05", value_parser = ["gitstore-alpha9-2026-11-05", "m0-2026-10-27"])]
+        profile: String,
     },
 }
 #[derive(Subcommand)]
@@ -130,10 +142,50 @@ pub enum ConfigCommand {
 pub enum AuthCommand {
     Status,
     Token,
-    Logout,
-    Switch { account: String },
-    Login,
+    Logout {
+        #[arg(long)]
+        remote: bool,
+    },
+    Switch {
+        account: String,
+    },
+    Login(LoginArgs),
     Refresh,
+}
+#[derive(Args)]
+pub struct LoginArgs {
+    #[arg(long)]
+    pub username: String,
+    #[arg(
+        long,
+        required_unless_present = "password_stdin",
+        conflicts_with = "password_stdin"
+    )]
+    pub password_file: Option<PathBuf>,
+    #[arg(long, conflicts_with = "password_file")]
+    pub password_stdin: bool,
+}
+#[derive(Args)]
+pub struct WatchArgs {
+    pub kind: String,
+    #[arg(conflicts_with = "id")]
+    pub name: Option<String>,
+    /// ID watches are unavailable until deletion events identify the incarnation.
+    #[arg(long, conflicts_with = "name")]
+    pub id: Option<String>,
+    /// JSON LabelSelectorInput; matchLabels and matchExpressions only.
+    #[arg(long)]
+    pub selector: Option<String>,
+    /// Resume the exact cursor recorded by the matching local checkpoint.
+    #[arg(long)]
+    pub resource_version: Option<String>,
+    /// Private checkpoint path; defaults to per-selection user state.
+    #[arg(long)]
+    pub checkpoint_file: Option<PathBuf>,
+    #[arg(long, value_parser = clap::value_parser!(u32).range(1..=1_000_000))]
+    pub max_events: Option<u32>,
+    #[arg(long, default_value_t = 1_048_576, value_parser = clap::value_parser!(u32).range(1024..=16_777_216))]
+    pub max_frame_bytes: u32,
 }
 #[derive(Subcommand)]
 pub enum ApiCommand {
@@ -231,6 +283,14 @@ pub struct GraphqlArgs {
     pub input: Option<String>,
 }
 #[derive(Args)]
+pub struct ReadArgs {
+    #[command(flatten)]
+    pub selection: Selection,
+    /// Export only the exact writable authoring projection.
+    #[arg(long)]
+    pub authoring: bool,
+}
+#[derive(Args)]
 pub struct Selection {
     pub kind: String,
     #[arg(conflicts_with = "id")]
@@ -281,7 +341,7 @@ impl Cli {
                 self.command,
                 Command::Api {
                     command: ApiCommand::Graphql(_)
-                }
+                } | Command::Watch(_)
             ) {
                 Format::Json
             } else {
@@ -325,22 +385,31 @@ impl Cli {
             _ => {}
         }
         let f = self.format();
-        match &self.command {
-            Command::Auth {
-                command: AuthCommand::Login | AuthCommand::Refresh,
-            } => return Err(Error::unsupported("DEP-001")),
-            Command::Update(_) => return Err(Error::unsupported("DEP-009")),
-            Command::Watch { .. } => return Err(Error::unsupported("DEP-017")),
-            Command::ApiResources | Command::Explain { .. } => {
-                return Err(Error::unsupported("DEP-001/DEP-006"));
+        if let Command::Read(args) = &self.command
+            && args.authoring
+        {
+            if f != Format::Markdown {
+                return Err(Error::usage("--authoring requires -o markdown"));
             }
+            if !matches!(
+                args.selection.kind.as_str(),
+                "namespace" | "repository" | "product" | "category"
+            ) {
+                return Err(Error::unsupported(
+                    "No writable authoring export for this kind",
+                ));
+            }
+        }
+        match &self.command {
+            Command::Update(_) => return Err(Error::unsupported("DEP-009")),
+            Command::Watch(args) => crate::watch::preflight(self, args)?,
             Command::Auth {
                 command: AuthCommand::Token,
             } if self.output.is_some() => {
                 return Err(Error::usage("auth token accepts raw output only"));
             }
             Command::Auth {
-                command: AuthCommand::Logout,
+                command: AuthCommand::Logout { remote: false },
             } if self.credential_file.is_some() || self.credential_stdin => {
                 return Err(Error::usage(
                     "Logout removes only the selected OS-store credential; external input is not removed",
@@ -351,6 +420,8 @@ impl Cli {
             } if f != Format::Json => {
                 return Err(Error::usage("GraphQL accepts JSON output only"));
             }
+            Command::Read(args) if args.authoring => {}
+            Command::Read(_) | Command::List(_) if f == Format::Yaml => {}
             Command::Read(_) | Command::List(_) | Command::Create(_) | Command::Delete(_)
                 if matches!(f, Format::Yaml | Format::Markdown) =>
             {
@@ -362,6 +433,19 @@ impl Cli {
                 ));
             }
             _ => {}
+        }
+        if matches!(
+            self.command,
+            Command::Auth {
+                command: AuthCommand::Login(_)
+                    | AuthCommand::Refresh
+                    | AuthCommand::Logout { remote: true }
+            }
+        ) && self.credential_stdin
+        {
+            return Err(Error::usage(
+                "Session persistence/removal requires an OS store or explicit protected file, not credential stdin",
+            ));
         }
         let consumers = usize::from(self.credential_stdin)
             + match &self.command {
@@ -375,6 +459,9 @@ impl Cli {
                             .count()
                 }
                 Command::Create(a) => a.files.iter().filter(|s| s.as_str() == "-").count(),
+                Command::Auth {
+                    command: AuthCommand::Login(a),
+                } => usize::from(a.password_stdin),
                 _ => 0,
             };
         if consumers > 1 {

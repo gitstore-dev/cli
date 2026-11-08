@@ -1,0 +1,254 @@
+name: Prepare and publish prerelease
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Build read-only candidates or promote a previously qualified build; dispatch at the exact reviewed tag'
+        type: choice
+        options: [build, promote]
+        default: build
+      candidate_run:
+        description: 'Successful release.yml build run at this exact tag/source (promotion only)'
+        type: string
+      qualification_run:
+        description: 'Successful manually selected runtime.yml run at this exact source, with complete release-qualification receipts'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  identity:
+    if: github.repository_id == '1431005655' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - id: identity
+        name: Require synchronized reviewed alpha tag
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, re, subprocess, tomllib
+          root = pathlib.Path.cwd()
+          version = (root / 'version.txt').read_text().strip()
+          assert re.fullmatch(r'0\.1\.0-alpha\.[1-9][0-9]*', version)
+          assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version
+          assert subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip() == os.environ['GITHUB_SHA']
+          assert json.loads((root / '.release-please-manifest.json').read_text())['.'] == version
+          assert tomllib.loads((root / 'Cargo.toml').read_text())['workspace']['package']['version'] == version
+          assert [p['version'] for p in tomllib.loads((root / 'Cargo.lock').read_text())['package'] if p['name'] == 'gs'] == [version]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('version=' + version + '\n')
+          PY
+  build:
+    needs: identity
+    if: github.event_name == 'push' || inputs.phase == 'build'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: linux, arch: x64, runner: ubuntu-24.04}
+          - {os: linux, arch: arm64, runner: ubuntu-24.04-arm}
+          - {os: darwin, arch: arm64, runner: macos-15}
+          - {os: darwin, arch: x64, runner: macos-15-intel}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install build tools (never included in installed packages)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-18 cmake make pkg-config meson ninja-build dpkg-dev rpm \
+            libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev libssl-dev libcurl4-openssl-dev libcrypt-dev libpcre2-dev
+      - name: Install pinned producer tools
+        run: |
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$toolchain" --profile minimal
+          python3 -m venv "$RUNNER_TEMP/release-venv"
+          "$RUNNER_TEMP/release-venv/bin/pip" install jsonschema==4.26.0
+          echo "$RUNNER_TEMP/release-venv/bin" >> "$GITHUB_PATH"
+      - name: Build production pair, notices and packages from reviewed inputs
+        run: python3 scripts/build-release-platform.py --output "$RUNNER_TEMP/platform"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: platform-${{ matrix.os }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/platform/assets/
+          if-no-files-found: error
+          retention-days: 14
+  assemble:
+    needs: [identity, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: platform-*
+          path: builds
+      - name: Freeze complete final-byte candidate
+        env:
+          VERSION: ${{ needs.identity.outputs.version }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/python" scripts/assemble-release.py --builds "$PWD/builds" \
+            --output "$RUNNER_TEMP/candidate" --version "$VERSION" --revision "$GITHUB_SHA"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-candidate
+          path: ${{ runner.temp }}/candidate/
+          if-no-files-found: error
+          retention-days: 14
+  qualify:
+    needs: identity
+    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'promote'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Reject PR, foreign, wrong-source and failed input runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+          QUALIFICATION_RUN: ${{ inputs.qualification_run }}
+        run: |
+          python3 scripts/check-release-run.py --run-id "$CANDIDATE_RUN" --workflow release.yml --revision "$GITHUB_SHA" --tag "$GITHUB_REF_NAME"
+          python3 scripts/check-release-run.py --run-id "$QUALIFICATION_RUN" --workflow runtime.yml --revision "$GITHUB_SHA" --tag "$GITHUB_REF_NAME"
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-candidate
+          path: candidate
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: release-qualification
+          path: receipts
+          run-id: ${{ inputs.qualification_run }}
+          github-token: ${{ github.token }}
+      - name: Require all exact-byte host/channel receipts
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/python" - <<'PY'
+          import json, os, pathlib, shutil, sys
+          sys.path.insert(0, 'runtime/packaging')
+          from release_candidate import advance, safe_name
+          root = pathlib.Path('candidate').resolve()
+          root.chmod(0o700)
+          value = json.loads((root / 'candidate.json').read_text())
+          assert value['state'] == 'packaged' and value['sourceRevision'] == os.environ['GITHUB_SHA']
+          assert value['tag'] == os.environ['GITHUB_REF_NAME']
+          value['receipts'] = []
+          for receipt in pathlib.Path('receipts').glob('*.json'):
+              name = safe_name(receipt.name)
+              assert not (root / name).exists()
+              shutil.copyfile(receipt, root / name)
+              value['receipts'].append(name)
+          value = advance(value, 'validated', root)
+          (root / 'validated.json').write_text(json.dumps(value, indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: validated-candidate
+          path: candidate/
+          if-no-files-found: error
+  attest:
+    needs: [identity, qualify]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: validated-candidate
+          path: candidate
+      - id: subjects
+        name: Select all final subjects, including inventory, formula and checksum file
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path('candidate').resolve()
+          value = json.loads((root / 'validated.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write('paths<<FINAL_SUBJECTS\n')
+              for artifact in value['artifacts']:
+                  stream.write(str(root / artifact['filename']) + '\n')
+              stream.write('FINAL_SUBJECTS\n')
+          PY
+      - id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4, reviewed action.yml
+        with:
+          subject-path: ${{ steps.subjects.outputs.paths }}
+          push-to-registry: false
+          create-storage-record: false
+      - name: Preserve standard bundles and verify producer identity
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/python" - <<'PY'
+          import json, os, pathlib, shutil, sys
+          sys.path.insert(0, 'runtime/packaging')
+          from release_candidate import advance
+          root = pathlib.Path('candidate').resolve()
+          value = json.loads((root / 'validated.json').read_text())
+          for artifact in value['artifacts']:
+              shutil.copyfile(os.environ['BUNDLE'], root / (artifact['filename'] + '.sigstore.jsonl'))
+          value = advance(value, 'attested', root)
+          value = advance(value, 'producer-verified', root, trusted_root=pathlib.Path(os.environ['RUNNER_TEMP']) / 'trusted-root.jsonl')
+          (root / 'verified.json').write_text(json.dumps(value, indent=2))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: verified-candidate
+          path: candidate/
+          if-no-files-found: error
+  publish:
+    needs: [identity, attest]
+    runs-on: ubuntu-24.04
+    environment: release-publication
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: verified-candidate
+          path: candidate
+      - name: Reverify current bytes, resume matching draft, promote, then update tap
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          chmod 700 candidate
+          gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/python" scripts/publish-release.py --candidate "$PWD/candidate/verified.json" \
+            --asset-dir "$PWD/candidate" --trusted-root "$RUNNER_TEMP/trusted-root.jsonl" --update-tap

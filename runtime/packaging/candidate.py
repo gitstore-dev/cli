@@ -11,6 +11,15 @@ import re
 import stat
 import subprocess
 import tarfile
+import sys
+
+# Preserve the historical measurement CLI. New release staging uses the stricter
+# cross-platform inventory/archive contract, not this fixture-specific ldd report.
+if '--release-stage' in sys.argv:
+    sys.argv.remove('--release-stage')
+    from stage import main
+    main()
+    raise SystemExit(0)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--prefix", required=True, type=Path)

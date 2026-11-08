@@ -2,6 +2,109 @@
 mod daemon;
 
 #[test]
+fn explicit_missing_socket_never_starts_a_manager_or_loads_remote_credentials() {
+    let root = tempfile::tempdir().unwrap();
+    let socket = root.path().join("missing.sock");
+    let result = std::process::Command::new(env!("CARGO_BIN_EXE_gs"))
+        .env_clear()
+        .env("PATH", "/nonexistent")
+        .env("HOME", root.path())
+        .env("XDG_CONFIG_HOME", root.path())
+        .env("XDG_STATE_HOME", root.path())
+        .env("XDG_RUNTIME_DIR", root.path())
+        .arg("--daemon-socket")
+        .arg(&socket)
+        .args(["deployment", "list", "-o", "json"])
+        .output()
+        .unwrap();
+    assert!(!result.status.success());
+    assert!(result.stdout.is_empty());
+    assert!(!socket.exists());
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+    let error: serde_json::Value = serde_json::from_slice(&result.stderr).unwrap();
+    assert_ne!(error["stage"], "auth");
+}
+
+#[test]
+fn automatic_connection_refuses_a_running_mismatched_application_without_mutation() {
+    use gs::daemon_protocol::{read_frame, write_frame};
+    use serde_json::{Value, json};
+    use std::os::unix::{fs::PermissionsExt, net::UnixListener};
+    use std::time::Duration;
+
+    let root = tempfile::tempdir().unwrap();
+    std::fs::set_permissions(root.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    let path = root.path().canonicalize().unwrap().join("manager.sock");
+    let listener = UnixListener::bind(&path).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    let examples: Vec<Value> = serde_json::from_slice(include_bytes!(
+        "../../../tests/fixtures/daemon/examples.json"
+    ))
+    .unwrap();
+    let limits = examples
+        .iter()
+        .find(|item| item["example"] == "EX-001" && item["kind"] == "response")
+        .unwrap()["message"]["result"]["limits"]
+        .clone();
+    let server = std::thread::spawn(move || {
+        let (mut stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(3)))
+            .unwrap();
+        let request = read_frame(&mut stream).unwrap().unwrap();
+        assert_eq!(request["method"], "system.negotiate");
+        write_frame(&mut stream, &json!({"version":{"major":1,"minor":0},
+            "requestId":request["requestId"],"result":{
+            "selectedVersion":{"major":1,"minor":0},"capabilities":["system.read"],"limits":limits}})).unwrap();
+        let request = read_frame(&mut stream).unwrap().unwrap();
+        assert_eq!(request["method"], "system.capabilities");
+        write_frame(
+            &mut stream,
+            &json!({"version":{"major":1,"minor":0},
+            "requestId":request["requestId"],"result":{"implementationVersion":"0.0.0-mismatch"}}),
+        )
+        .unwrap();
+        assert!(read_frame(&mut stream).unwrap().is_none());
+    });
+    let error = gs::daemon_start::connect(&path, &["system.read"], Duration::from_secs(2), true)
+        .err()
+        .unwrap();
+    assert_eq!(error.code, "INCOMPATIBLE_VERSION");
+    assert_eq!(error.exit, 6);
+    server.join().unwrap();
+    assert!(
+        path.exists(),
+        "must not remove or replace the old manager socket"
+    );
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn automatic_macos_runtime_is_explicitly_unsupported_without_user_state() {
+    let root = tempfile::tempdir().unwrap();
+    let canonical = root.path().canonicalize().unwrap();
+    let result = std::process::Command::new(env!("CARGO_BIN_EXE_gs"))
+        .env_clear()
+        .env("HOME", &canonical)
+        .env("PATH", "/nonexistent")
+        .env("XDG_RUNTIME_DIR", &canonical)
+        .env("XDG_STATE_HOME", &canonical)
+        .args(["deployment", "list", "-o", "json"])
+        .output()
+        .unwrap();
+    assert_eq!(
+        result.status.code(),
+        Some(6),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let error: serde_json::Value = serde_json::from_slice(&result.stderr).unwrap();
+    assert_eq!(error["code"], "UNSUPPORTED_HOST");
+    assert!(result.stdout.is_empty());
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+}
+
+#[test]
 #[ignore = "requires explicitly built C daemon; run scripts/test-daemon.sh"]
 fn isolated_daemon_setup_and_gated_execution() {
     let f = daemon::DaemonFixture::new();

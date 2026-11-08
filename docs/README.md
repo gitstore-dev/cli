@@ -6,8 +6,10 @@ are not available yet. See [building from source](contributing/building.md).
 
 | I want to… | Guide |
 | --- | --- |
+| Review planned GitHub-hosted package installation | [Installation and qualification status](installation.md) |
 | Select a remote installation and supply credentials | [Configuration](configuration.md) |
 | Inspect resources, submit GraphQL, clone or sync a repository | [Remote commands](remote-cli.md) |
+| Observe typed future changes and resume a journal | [Typed watches](watch.md) |
 | Start, inspect or stop a local deployment | [Local deployments](local-runtime.md) |
 | Configure local selection, credentials or offline images | [Local runtime configuration](local-runtime-configuration.md) |
 | Build, test or change the implementation | [Contributing](contributing/README.md) |

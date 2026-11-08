@@ -1,0 +1,11 @@
+Package: gitstore
+Version: @VERSION@
+Architecture: @ARCH@
+Maintainer: GitStore contributors
+Section: devel
+Priority: optional
+Depends: libc6 (>= 2.39), libgcc-s1, ca-certificates, systemd (>= 255), dbus-user-session
+Homepage: https://github.com/gitstore-dev/cli
+Description: GitStore early-alpha CLI and ordinary-user daemon
+ Upstream schemas change incompatibly. No upgrade compatibility, data preservation
+ or recovery guarantees. Keep independent backups; avoid irreplaceable data.

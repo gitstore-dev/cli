@@ -1,0 +1,30 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "GitStore alpha.9 scoped authoring consumer", "version": "0.1.0-alpha.9",
+    "description": "Public GraphQL createNamespace/createRepository at 68f8471edc947e417c98b6e8299a1367ab6b20da shared/schemas/admin/{namespace,repository}.graphqls. Namespace is cluster scoped; Repository is namespaced. Input envelopes contain apiVersion=gitstore.dev/v1beta1, exact kind, writable metadata and schema input spec. Neither input accepts body or status. CLI rejects nonempty Markdown body, unknown fields and scope conflicts before side effects. This documents the GraphQL transport, not a REST resource API."},
+  "servers": [{"url": "http://127.0.0.1:4000"}],
+  "paths": {"/admin/graphql": {"post": {
+    "operationId": "createScopedResource",
+    "requestBody": {"required": true, "content": {"application/json": {"schema": {
+      "type": "object", "required": ["query", "variables"], "properties": {
+        "query": {"type": "string"}, "variables": {"type": "object", "required": ["input"],
+          "properties": {"input": {"type": "object", "required": ["apiVersion", "kind", "metadata", "spec"],
+            "additionalProperties": false, "properties": {
+              "apiVersion": {"const": "gitstore.dev/v1beta1"}, "kind": {"enum": ["Namespace", "Repository"]},
+              "metadata": {"type": "object", "required": ["name"], "properties": {
+                "name": {"type": "string", "minLength": 1}, "namespace": {"type": "string"},
+                "labels": {"type": ["object", "null"]}, "annotations": {"type": ["object", "null"]}}, "additionalProperties": false},
+              "spec": {"oneOf": [
+                {"type": "object", "required": ["tier"], "properties": {
+                  "title": {"type": "string"}, "tier": {"enum": ["USER", "ORGANIZATION"]},
+                  "repositoryDefaults": {"type": "object", "properties": {"visibility": {"enum": ["PUBLIC", "PRIVATE", "INTERNAL"]}, "defaultBranch": {"type": "string"}}, "additionalProperties": false},
+                  "pushPolicyDefaults": {"type": "object", "properties": {"maxPackSizeBytes": {"type": "integer", "format": "int64"}, "maxFileSizeBytes": {"type": "integer", "format": "int64"}}, "additionalProperties": false}}, "additionalProperties": false},
+                {"type": "object", "properties": {"defaultBranch": {"type": "string"}, "visibility": {"enum": ["PUBLIC", "PRIVATE", "INTERNAL"]}, "storageClass": {"type": "string"}}, "additionalProperties": false}
+              ]}
+            }}}
+        }
+      }, "additionalProperties": false
+    }}}},
+    "responses": {"200": {"description": "GraphQL data/errors envelope. HTTP success alone does not establish successful creation, admission or readiness."}}
+  }}}
+}

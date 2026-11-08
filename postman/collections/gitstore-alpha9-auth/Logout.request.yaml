@@ -1,0 +1,21 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: 'Bearer {{sessionToken}}'
+body:
+  type: json
+  content: |-
+    {"query":"mutation Logout{logout{success}}","variables":{}}
+order: 4000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Current bearer session is invalidated", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(body.data.logout.success).to.eql(true);
+      });

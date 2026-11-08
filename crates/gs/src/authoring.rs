@@ -98,9 +98,22 @@ pub struct Document {
     pub input: Value,
 }
 pub fn parse(s: &str, namespace: Option<&str>) -> Result<Document> {
-    parse_resolved(s, namespace, true)
+    parse_resolved(s, namespace, true, None)
 }
-fn parse_resolved(s: &str, namespace: Option<&str>, explicit: bool) -> Result<Document> {
+pub fn parse_for_profile(
+    s: &str,
+    namespace: Option<&str>,
+    explicit: bool,
+    profile: Option<&str>,
+) -> Result<Document> {
+    parse_resolved(s, namespace, explicit, profile)
+}
+fn parse_resolved(
+    s: &str,
+    namespace: Option<&str>,
+    explicit: bool,
+    profile: Option<&str>,
+) -> Result<Document> {
     if s.len() > input::LIMIT {
         return Err(Error::usage("Input exceeds 16 MiB"));
     }
@@ -136,14 +149,40 @@ fn parse_resolved(s: &str, namespace: Option<&str>, explicit: bool) -> Result<Do
     let kind = match front.kind.as_str() {
         "Product" => Kind::Product,
         "CategoryTaxonomy" => Kind::Category,
+        "Namespace" if profile == Some("gitstore-alpha9-2026-11-05") => Kind::Namespace,
+        "Repository" if profile == Some("gitstore-alpha9-2026-11-05") => Kind::Repository,
         "Namespace" | "Repository" => return Err(Error::unsupported("DEP-005")),
         "Collection" => return Err(Error::unsupported("DEP-002")),
         _ => return Err(Error::unsupported("DEP-006")),
     };
-    if front.api_version != "catalog.gitstore.dev/v1beta1" || front.metadata.name.is_empty() {
+    let scoped = matches!(kind, Kind::Namespace | Kind::Repository);
+    let expected_api = if scoped {
+        "gitstore.dev/v1beta1"
+    } else {
+        "catalog.gitstore.dev/v1beta1"
+    };
+    if front.api_version != expected_api || front.metadata.name.is_empty() {
         return Err(Error::usage(
             "Author document needs supported apiVersion and nonempty name",
         ));
+    }
+    if scoped && !after_open[body_start..].is_empty() {
+        return Err(Error::usage(
+            "Namespace and Repository create inputs cannot carry body",
+        ));
+    }
+    if kind == Kind::Namespace {
+        if front.metadata.namespace.is_some() || (explicit && namespace.is_some()) {
+            return Err(Error::usage(
+                "Namespace is cluster scoped; omit namespace selection",
+            ));
+        }
+        return Ok(Document {
+            kind,
+            input: json!({"apiVersion": front.api_version,
+            "kind": front.kind, "metadata": front.metadata,
+            "spec": crate::scoped_authoring::project(kind, front.spec)?}),
+        });
     }
     if let Some(n) = namespace {
         if explicit
@@ -171,7 +210,14 @@ fn parse_resolved(s: &str, namespace: Option<&str>, explicit: bool) -> Result<Do
             "Namespaced author document requires namespace",
         ));
     }
-    let spec = if kind == Kind::Product {
+    let spec = if kind == Kind::Repository {
+        return Ok(Document {
+            kind,
+            input: json!({"apiVersion":front.api_version,
+            "kind":front.kind,"metadata":front.metadata,
+            "spec":crate::scoped_authoring::project(kind, front.spec)?}),
+        });
+    } else if kind == Kind::Product {
         let spec: ProductSpec = serde_json::from_value(front.spec)
             .map_err(|_| Error::usage("Invalid Product author spec"))?;
         if spec.title.is_empty() {
@@ -193,6 +239,14 @@ fn parse_resolved(s: &str, namespace: Option<&str>, explicit: bool) -> Result<Do
     })
 }
 pub fn load(files: &[String], namespace: Option<&str>, explicit: bool) -> Result<Vec<Document>> {
+    load_for_profile(files, namespace, explicit, None)
+}
+pub fn load_for_profile(
+    files: &[String],
+    namespace: Option<&str>,
+    explicit: bool,
+    profile: Option<&str>,
+) -> Result<Vec<Document>> {
     if files.is_empty() || files.len() > 100 {
         return Err(Error::usage("Supply 1..100 author documents"));
     }
@@ -205,7 +259,7 @@ pub fn load(files: &[String], namespace: Option<&str>, explicit: bool) -> Result
         if total > input::LIMIT {
             return Err(Error::usage("Author batch exceeds 16 MiB"));
         }
-        let document = parse_resolved(&s, namespace, explicit)?;
+        let document = parse_resolved(&s, namespace, explicit, profile)?;
         expanded += serde_json::to_vec(&document.input)
             .map_err(|_| Error::usage("Invalid author projection"))?
             .len();

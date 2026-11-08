@@ -1,0 +1,25 @@
+$kind: http-request
+name: Create Repository with exact namespaced input
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "query": "mutation Create($input:CreateRepositoryInput!){createRepository(input:$input){repository{id kind metadata{name namespace} spec{defaultBranch}}}}",
+      "variables": {"input": {"apiVersion":"gitstore.dev/v1beta1","kind":"Repository","metadata":{"name":"collection-fixture-repository","namespace":"shop"},"spec":{"defaultBranch":"main"}}}
+    }
+order: 4000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Repository create returns scoped resource identity", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        pm.expect(body.data.createRepository.repository.metadata.namespace).to.eql("shop");
+        pm.expect(body.data.createRepository.repository.spec.defaultBranch).to.eql("main");
+      });

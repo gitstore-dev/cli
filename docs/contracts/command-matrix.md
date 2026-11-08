@@ -1,6 +1,6 @@
 # Command and Operation Matrix
 
-**Baseline reviewed**: 2026-10-27. **Scoped implementation update**: 2026-11-05.
+**Baseline reviewed**: 2026-10-27. **Scoped implementation update**: 2026-11-08.
 `gs`/`gitstored` source exists; native runtime evidence is Linux arm64 (EVD-024),
 with no published CLI/daemon release.
 
@@ -11,6 +11,25 @@ Deferred means later scope even where some underlying contract exists. M0 classi
 M1–M3 targets; it does not execute them.
 
 ## Profiles inherited by each row
+
+The 84 baseline records below preserve their original upstream evidence. The
+following explicit alpha.9 overlay takes precedence for implemented client
+behavior. It uses source `68f8471edc947e417c98b6e8299a1367ab6b20da`; controlled
+tests and shipped-image acceptance are separate in
+[the current evidence record](../contributing/validation/release-alpha1.md).
+No row establishes a qualified binary release or closes unrelated dependencies.
+
+| Records / slice | Implemented alpha.9 behavior | Remaining boundary |
+| --- | --- | --- |
+| CMD-006–008 | Explicit version-1 static-users login, refresh and `logout --remote`; protected password input, scoped atomic persistence | Provider/discovery and native-store acceptance remain separate; uncertain refresh is never retried blindly |
+| CMD-012–013 | Local `api-resources` and `explain KIND.FIELD`, explicit profile/source and implemented operation/field availability | No server discovery or callable CRD mapping (DEP-001/006) |
+| CMD-014/019 | Namespace/Repository create with exact public inputs | Nonempty body, unknown/status fields and unsafe updates rejected (DEP-005/009) |
+| CMD-042 | `file(by: FileBy!)`: ID or namespace/name; ID namespace-free | Legacy keeps flat selector; no list/upload inferred (DEP-007) |
+| CMD-029/035/043 plus Namespace/Repository watch | Five typed name/label streams, NDJSON, per-kind future-change bootstrap, bound checkpoints/reconnect | Collection unavailable; ID watch requires UID-bearing tombstones (DEP-018); expiry requires explicit restart/resnapshot (DEP-017) |
+| CMD-079/080 | Full schema-exposed core spec/status/body JSON/YAML read and bounded list | No File list or implicit multi-page snapshot; legacy YAML stays unsupported |
+| CMD-082 | `read KIND NAME --authoring -o markdown` for representable writable projections | Refuse lossy/unrepresentable fields; plain Markdown/body presentation CMD-081 remains gated |
+
+See [configuration](../configuration.md) and [watch semantics](../watch.md).
 
 Each row inherits owner, input/output, authorization, concurrency and completion from
 its profile below, together with scope, exact mapping and exceptions in the row.

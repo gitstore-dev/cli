@@ -1,0 +1,16 @@
+{
+  "openapi":"3.1.0",
+  "info":{"title":"GitStore alpha.9 explicit static-user authentication consumer","version":"0.1.0-alpha.9",
+    "description":"Pinned source 68f8471edc947e417c98b6e8299a1367ab6b20da: shared/schemas/admin/auth.graphqls, resolver/auth_service.go, middleware/security/graphql.go and staticusers/provider.go. login and refreshToken may execute anonymously; omit Authorization so an expired bearer does not prevent refresh. logout requires current Bearer authentication. For this explicit provider, accessToken and refreshToken are the same opaque issued session token. Refresh consumes the old JTI before issuing the replacement; never retry an uncertain refresh. No scopes, discovery, device login or arbitrary OIDC provider support is inferred."},
+  "servers":[{"url":"http://127.0.0.1:4000"}],
+  "paths":{"/admin/graphql":{"post":{
+    "operationId":"explicitStaticUserSession",
+    "requestBody":{"required":true,"content":{"application/json":{"schema":{"type":"object","required":["query","variables"],"properties":{"query":{"type":"string"},"variables":{"type":"object"}},"additionalProperties":false},
+      "examples":{
+        "login":{"value":{"query":"mutation Login($input:LoginInput!){login(input:$input){token{accessToken refreshToken tokenType expiresIn scope idToken}}}","variables":{"input":{"username":"synthetic-user","password":"synthetic-password"}}}},
+        "refresh":{"value":{"query":"mutation Refresh($input:RefreshTokenInput!){refreshToken(input:$input){token{accessToken refreshToken tokenType expiresIn scope idToken}}}","variables":{"input":{"refreshToken":"synthetic-session-token"}}}},
+        "logout":{"value":{"query":"mutation Logout{logout{success}}","variables":{}}}
+      }}}},
+    "responses":{"200":{"description":"GraphQL data/errors envelope; HTTP 200 alone is not success. Validate token payload or logout.success, persist rotation atomically and never print secret response bodies."},"401":{"description":"Rejected authentication"},"403":{"description":"Rejected authorization"}}
+  }}}
+}

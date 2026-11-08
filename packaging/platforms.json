@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "qualification": "not-run",
+  "minimumLibraries": {
+    "systemd": "255",
+    "libseccomp": "2.5.5",
+    "json-c": "0.17",
+    "openssl": "3",
+    "libcurl": "8.5.0",
+    "libxcrypt": "4.4.36"
+  },
+  "rows": [
+    {
+      "os": "linux",
+      "arch": "x64",
+      "fixtures": [
+        "ubuntu:24.04",
+        "fedora:44"
+      ],
+      "channels": [
+        "archive",
+        "homebrew",
+        "deb",
+        "rpm",
+        "npm"
+      ],
+      "runtime": "native-linux",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "fixtureChannels": {
+        "ubuntu:24.04": [
+          "archive",
+          "homebrew",
+          "deb",
+          "npm"
+        ],
+        "fedora:44": [
+          "archive",
+          "homebrew",
+          "rpm",
+          "npm"
+        ]
+      }
+    },
+    {
+      "os": "linux",
+      "arch": "arm64",
+      "fixtures": [
+        "ubuntu:24.04",
+        "fedora:44"
+      ],
+      "channels": [
+        "archive",
+        "homebrew",
+        "deb",
+        "rpm",
+        "npm"
+      ],
+      "runtime": "native-linux",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "fixtureChannels": {
+        "ubuntu:24.04": [
+          "archive",
+          "homebrew",
+          "deb",
+          "npm"
+        ],
+        "fedora:44": [
+          "archive",
+          "homebrew",
+          "rpm",
+          "npm"
+        ]
+      }
+    },
+    {
+      "os": "darwin",
+      "arch": "arm64",
+      "fixtures": [
+        "macos-15"
+      ],
+      "channels": [
+        "archive",
+        "homebrew",
+        "npm"
+      ],
+      "runtime": "control-only",
+      "abiFloor": "macOS 15",
+      "fixtureChannels": {
+        "macos-15": [
+          "archive",
+          "homebrew",
+          "npm"
+        ]
+      }
+    },
+    {
+      "os": "darwin",
+      "arch": "x64",
+      "fixtures": [
+        "macos-15-intel"
+      ],
+      "channels": [
+        "archive",
+        "homebrew",
+        "npm"
+      ],
+      "runtime": "control-only",
+      "abiFloor": "macOS 15",
+      "fixtureChannels": {
+        "macos-15-intel": [
+          "archive",
+          "homebrew",
+          "npm"
+        ]
+      }
+    }
+  ],
+  "requiredFixtureInputs": [
+    "exact OS/image identity",
+    "production artifact digests",
+    "synthetic protected credentials",
+    "dedicated non-root account for native workloads",
+    "explicit private fixtureParent",
+    "offline OCI layouts for native execution"
+  ],
+  "deferred": [
+    "nix",
+    "windows",
+    "macos-workload-backend"
+  ],
+  "sources": [
+    "https://www.fedoraproject.org/workstation/download/",
+    "docs/contributing/building.md"
+  ]
+}

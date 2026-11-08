@@ -1,0 +1,9 @@
+{
+  "version": "8.5.0-2ubuntu10.16",
+  "source": "Ubuntu noble-security signed Sources index; pool/main/c/curl",
+  "files": {
+    "curl_8.5.0-2ubuntu10.16.dsc": "ff4ae5226e471829f638b94b1b8bb74bb2f7e57ca999353f6ad7274bf43a8abf",
+    "curl_8.5.0.orig.tar.gz": "05fc17ff25b793a437a0906e0484b82172a9f4de02be5ed447e0cab8c3475add",
+    "curl_8.5.0-2ubuntu10.16.debian.tar.xz": "4ccc6c6a0c4b41c4d753d60c2991541c7f2a41d81c0000f582cf6b4901c746a4"
+  }
+}

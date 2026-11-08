@@ -552,7 +552,10 @@ pub struct ProtocolError {
 }
 impl ProtocolError {
     pub fn exit_category(&self) -> i32 {
-        match self.code.as_str() {
+        Self::code_exit_category(&self.code)
+    }
+    pub(crate) fn code_exit_category(code: &str) -> i32 {
+        match code {
             "INVALID_ARGUMENT" | "NEGOTIATION_REQUIRED" | "MALFORMED_FRAME" => 2,
             "UNAUTHORIZED_PEER" => 3,
             "NOT_FOUND" => 4,

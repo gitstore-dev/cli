@@ -279,7 +279,9 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
     ) {
         capabilities.push("operation.read");
     }
-    let automatic = cli.daemon_socket.is_none() && required == "deployment.start";
+    // Installed local commands share first-use user-manager setup. An explicit
+    // socket (including its environment override) is always connect-only.
+    let automatic = cli.daemon_socket.is_none();
     let mut client =
         crate::daemon_start::connect(&socket(cli)?, &capabilities, cli.timeout(), automatic)
             .map_err(|e| local_error(&e))?;

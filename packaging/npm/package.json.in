@@ -1,0 +1,10 @@
+{
+  "name": "RENDERED_PLATFORM_NAME",
+  "version": "0.0.0",
+  "description": "GitStore early-alpha CLI and user daemon; see share/notices/PRERELEASE.txt",
+  "license": "MIT",
+  "repository": "https://github.com/gitstore-dev/cli",
+  "bin": {"gs": "bin/gs", "gitstored": "bin/gitstored"},
+  "preferGlobal": true,
+  "files": ["bin", "lib", "share"]
+}

@@ -5,6 +5,33 @@ Historical implementation checkpoints for contributors. For usage, read the
 see [contributor documentation](../README.md). Older measurements and claims below
 apply to their recorded checkpoints, not automatically to the current build.
 
+## Alpha.9 client increment — 2026-11-08
+
+`sh scripts/test-capabilities.sh` passed 29 focused Rust cases, 48 actual CLI
+controlled GraphQL requests and all three saved Postman collections (2 + 4 + 4
+requests/assertions, zero failed). Rust cases cover authoring/export fidelity,
+static-user login/consuming refresh/confirmed logout, real persistence I/O failure,
+scope isolation, all five typed watch protocols, duplicate reconnect, expiry,
+pre-bookmark gap, wrong scope, oversized frames, slow readers and interruption.
+
+Actual CLI output:
+
+```text
+PASS: actual gs CLI exercised 48 controlled GraphQL requests, failure scenarios, authoring/read/delete and zero-write gates.
+```
+
+Saved collection summaries printed 2/4/4 executed requests and assertions, each
+with zero failed. Postman also printed exactly:
+
+```text
+No authorization data found. Please use the `postman login` command.
+```
+
+Local execution still passed. No login, cloud push or publication occurred. Full
+stdout was retained locally at `/private/tmp/gs-alpha1-capabilities-current.log`.
+These are controlled receipts; the separate pinned-image result and exact image
+identities are recorded in [release-alpha1.md](release-alpha1.md).
+
 **Recorded**: 2026-10-29. **Scope**: the unblocked increment in
 [specs/002-m1-remote-cli](../../../specs/002-m1-remote-cli/spec.md), not full PRD M1 release.
 
@@ -85,12 +112,13 @@ to a cloud workspace.
 | SC-005: truthful outcomes | Pass in exercised API/Git cases; waits remain unsupported before writes |
 | SC-006: checks/documentation/provenance | Development checks and scope documentation pass; release provenance remains open |
 
-The full milestone still needs discovery/advertised auth flows (DEP-001/006), safe
+At the historical M1 baseline, the full milestone still needed discovery/advertised auth flows (DEP-001/006), safe
 updates (DEP-009), Namespace/Repository authoring and export fidelity (DEP-005),
 Collection mutations (DEP-002), watch conformance (DEP-017), correlated waits (DEP-004)
-and verified streaming claims (DEP-016), as applicable. File lookup remains
-`file(namespace,name)` until the upstream File lifecycle specification ships the
-normalized `by` contract. No new File list/write/lifecycle operation is inferred.
+and verified streaming claims (DEP-016), as applicable. File lookup then used
+`file(namespace,name)`. The later alpha.9 profile supports the shipped normalized
+`by` contract; current scoped progress is recorded below. No File list/write
+operation is inferred from that selector change.
 
 Before publication, DEP-013/ADR 0003 requires exact digest-bound producer/workflow/
 source verification and tampering/wrong-identity/missing-evidence/offline-trust cases.

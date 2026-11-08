@@ -1,0 +1,23 @@
+$kind: http-request
+url: '{{baseUrl}}/admin/graphql'
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {"query":"mutation Refresh($input:RefreshTokenInput!){refreshToken(input:$input){token{accessToken refreshToken tokenType expiresIn scope idToken}}}","variables":{"input":{"refreshToken":"{{sessionToken}}"}}}
+order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Anonymous refresh returns a different session", () => {
+        pm.response.to.have.status(200);
+        const body = pm.response.json();
+        pm.expect(body.errors).to.eql(undefined);
+        const token = body.data.refreshToken.token;
+        pm.expect(token.accessToken).to.eql(token.refreshToken);
+        pm.expect(token.accessToken).not.to.eql(pm.collectionVariables.get("previousSessionToken"));
+        pm.collectionVariables.set("sessionToken", token.accessToken);
+      });

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "tag": "0.1.0-alpha.9",
+  "sourceRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+  "images": {
+    "api": "ghcr.io/gitstore-dev/api@sha256:db4625a6ac98807b5481533756959f6bfe7dcd28a3a3843039cdb41e49053760",
+    "git-service": "ghcr.io/gitstore-dev/git-service@sha256:f9477be489b5c734d695764059fcbddf74417a629f06e16f2d733082c718ec97",
+    "controller-manager": "ghcr.io/gitstore-dev/controller-manager@sha256:fba3c6ad27eeac7587e75ba59231ba6f6c65a9d6085f9bfb3915aaed537be2da"
+  }
+}

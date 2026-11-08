@@ -1,0 +1,1677 @@
+{
+  "schemaVersion": 1,
+  "reviewDate": "2026-11-08",
+  "upstreamRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+  "upstreamTag": "v0.1.0-alpha.9",
+  "evidenceLevel": "source-only",
+  "sources": [
+    {
+      "path": "shared/schemas/admin/file.graphqls",
+      "gitBlob": "07b8ca37941a0f06f721f3127be10ea4b2e0b69c"
+    },
+    {
+      "path": "shared/schemas/admin/namespace.graphqls",
+      "gitBlob": "f16c662dd2a3359f3a8cf82593129d57a5d86cb0"
+    },
+    {
+      "path": "shared/schemas/admin/repository.graphqls",
+      "gitBlob": "508e35469eceda72c492b256637d40b9ac9a9bfc"
+    },
+    {
+      "path": "shared/schemas/admin/product.graphqls",
+      "gitBlob": "c8f1a2e6ace0907edff0d481268552cadbe48a83"
+    },
+    {
+      "path": "shared/schemas/admin/category.graphqls",
+      "gitBlob": "b2e070a24af3064019e1dd4673a22bde24df8719"
+    },
+    {
+      "path": "shared/schemas/admin/collection.graphqls",
+      "gitBlob": "f5c978513b9198344c913affb07d517e7b1951ce"
+    },
+    {
+      "path": "shared/schemas/admin/schema.graphqls",
+      "gitBlob": "0f264195aa6a1562bc36c9684103fd41e1c45050"
+    },
+    {
+      "path": "shared/schemas/admin/auth.graphqls",
+      "gitBlob": "1489193d99d227f7b1a98a8a63e25b823038f516"
+    },
+    {
+      "path": "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+      "gitBlob": "22b67b32126b4558d79e950ef04fd0f88889a22e"
+    },
+    {
+      "path": "gitstore-api/internal/auth/provider/staticusers/provider.go",
+      "gitBlob": "7481de73cd749772072b2b786727af739b0f19f2"
+    }
+  ],
+  "commands": [
+    {
+      "id": "CMD-001",
+      "command": "gs context list",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-002",
+      "command": "gs context show",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-003",
+      "command": "gs context use",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-004",
+      "command": "gs config validate",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-005",
+      "command": "gs <component> config validate",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-006",
+      "command": "gs auth login",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-007",
+      "command": "gs auth logout",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-008",
+      "command": "gs auth refresh",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-009",
+      "command": "gs auth status",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-010",
+      "command": "gs auth switch",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-011",
+      "command": "gs auth token",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/auth.graphqls",
+        "gitstore-api/internal/admin/graph/resolver/auth_service.go",
+        "gitstore-api/internal/auth/provider/staticusers/provider.go"
+      ],
+      "clientPath": "crates/gs/src/credentials.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-012",
+      "command": "gs api-resources",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-013",
+      "command": "gs explain <resource>[.<field>]",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-014",
+      "command": "gs create -f <namespace.md>",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/namespace.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-015",
+      "command": "gs read namespace <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/namespace.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-016",
+      "command": "gs list namespace",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/namespace.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-017",
+      "command": "gs update -f <namespace.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/namespace.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-009, DEP-005",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-018",
+      "command": "gs delete namespace <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/namespace.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-019",
+      "command": "gs create -f <repository.md>",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/repository.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-020",
+      "command": "gs read repository <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/repository.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-021",
+      "command": "gs list repository",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/repository.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-022",
+      "command": "gs update -f <repository.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/repository.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-009, DEP-005",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-023",
+      "command": "gs delete repository <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/repository.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-024",
+      "command": "gs create -f <product.md>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-025",
+      "command": "gs read product <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-026",
+      "command": "gs list product",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-027",
+      "command": "gs update -f <product.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-009",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-028",
+      "command": "gs delete product <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-029",
+      "command": "gs watch product",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/product.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-030",
+      "command": "gs create -f <category.md>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-031",
+      "command": "gs read category <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-032",
+      "command": "gs list category",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-033",
+      "command": "gs update -f <category.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-009",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-034",
+      "command": "gs delete category <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-035",
+      "command": "gs watch category",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/category.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-036",
+      "command": "gs create -f <collection.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-002",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-037",
+      "command": "gs read collection <name>",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-038",
+      "command": "gs list collection",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-039",
+      "command": "gs update -f <collection.md>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-002",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-040",
+      "command": "gs delete collection <name>",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-002",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-041",
+      "command": "gs watch collection",
+      "milestone": "M1",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/collection.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-002, DEP-017",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-042",
+      "command": "gs read file <name>",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/file.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-043",
+      "command": "gs watch file",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/file.graphqls"
+      ],
+      "clientPath": "crates/gs/src/resources.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-044",
+      "command": "gs api graphql",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-045",
+      "command": "gs repository sync [repository]",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/git.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": [
+        {
+          "operation": "wait",
+          "classification": "external-contract",
+          "gate": "DEP-004: submitted-revision correlation; stale Ready is insufficient"
+        }
+      ]
+    },
+    {
+      "id": "CMD-046",
+      "command": "gs serve",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-047",
+      "command": "gs api serve",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-048",
+      "command": "gs git serve",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-049",
+      "command": "gs controller serve",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-050",
+      "command": "gs oidc serve",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-051",
+      "command": "gs admin serve",
+      "milestone": "M2",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-008, DEP-012, DEP-013, DEP-014, DEP-015",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-052",
+      "command": "gs storefront serve",
+      "milestone": "M2",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-008, DEP-012, DEP-013, DEP-014, DEP-015",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-053",
+      "command": "gs migrate",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-054",
+      "command": "gs deployment list",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-055",
+      "command": "gs deployment inspect <deployment-id>",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-056",
+      "command": "gs deployment stop <deployment-id>",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-057",
+      "command": "gs deployment logs <deployment-id>",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-058",
+      "command": "gs transfer product <name> (destination syntax gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-010",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-059",
+      "command": "gs file upload -f <blob> (remaining syntax gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-007",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-060",
+      "command": "gs list file (not offered)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-007",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-061",
+      "command": "gs create mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-062",
+      "command": "gs read mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-063",
+      "command": "gs list mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-064",
+      "command": "gs update mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-065",
+      "command": "gs delete mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-066",
+      "command": "gs watch mediaasset (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-067",
+      "command": "gs create <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-068",
+      "command": "gs read <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-069",
+      "command": "gs list <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-070",
+      "command": "gs update <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-071",
+      "command": "gs delete <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-072",
+      "command": "gs watch <crd-kind> (syntax/capability gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-006",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-073",
+      "command": "publish workflow (command grammar gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-011",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-074",
+      "command": "release workflow (command grammar gated)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-011",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-075",
+      "command": "CSI volume profile (configuration, not CRUD command)",
+      "milestone": "M3",
+      "classification": "deferred",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-076",
+      "command": "Git LFS integration (through repository sync)",
+      "milestone": "M3",
+      "classification": "external-contract",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "DEP-007",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-077",
+      "command": "gs --help",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-078",
+      "command": "gs --version",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-079",
+      "command": "gs read <kind> <name> -o yaml",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-080",
+      "command": "gs list <kind> -o yaml",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-081",
+      "command": "gs read <kind> <name> -o markdown",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-082",
+      "command": "Authoring Markdown export (syntax gated)",
+      "milestone": "M1",
+      "classification": "client-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/lib.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-083",
+      "command": "Registry credential setup (syntax gated)",
+      "milestone": "M2",
+      "classification": "validation-work",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/deployment.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    },
+    {
+      "id": "CMD-084",
+      "command": "gs repository clone <repository> [directory] [--remote <name>]",
+      "milestone": "M1",
+      "classification": "implemented",
+      "sources": [
+        "shared/schemas/admin/schema.graphqls"
+      ],
+      "clientPath": "crates/gs/src/git.rs",
+      "result": "source-reviewed",
+      "gate": "conformance and release qualification pending",
+      "tests": [
+        "controlled behavior",
+        "shipped-version conformance where applicable"
+      ],
+      "overlays": []
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+self-hosted-runner:
+  labels: [amd64, gitstore-runtime, gitstore-runtime-denied, gitstore-release-ubuntu24, gitstore-release-fedora44, gitstore-release-macos15]
