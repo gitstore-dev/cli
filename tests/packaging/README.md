@@ -126,3 +126,11 @@ Without offline layouts, cold readiness explicitly includes asset preparation.
 Directory allocations deduplicate inodes within each category; materialized image
 paths can appear outside assets, so categories are not a globally deduplicated sum.
 Neither manager-only RSS nor these samples establishes full workload peak memory.
+
+`prepare-offline-cache.py --cache /absolute/owned-state/assets --output /absolute/new-root`
+prepares developer-only OCI inputs from an explicitly selected prior verified
+core cache. It checks the committed profile's architecture-specific manifest,
+config and every layer digest/size before copying ordinary files, uses private
+mode-0700 layout roots, and downloads no images. Supply its `layouts.json` mapping
+as `offlineLayouts` in a fresh dedicated fixture manifest. The native importer
+must independently verify the copies; preparation alone is not offline acceptance.

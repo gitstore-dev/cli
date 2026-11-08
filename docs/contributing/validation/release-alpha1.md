@@ -79,7 +79,20 @@ CLI remains `327c151e1e8130c8059b2d1d46139150dc97e6c38889343ac446c3aefb50e3ad`.
 The separate relinked daemon (`4c32cccd…`) passed execution checks. Exact complete
 archive/npm install/relocate/remove passed; receipt parent
 `alpha1-complete-produced-checks-v2`. Distro installation and real service startup
-using these new exact bytes remain separate checks.
+using these new exact bytes subsequently passed too: the actual non-root core
+start/current-generation readiness/owned-stop case passed in 45.018 seconds,
+retained root `gs-public-runtime-h6n82gzq`; receipt
+`/private/tmp/gs-alpha1-complete-native-core-v2-receipt.json`. Exact complete Debian
+install/remove passed on Ubuntu 24.04 arm64; receipt
+`/private/tmp/gs-alpha1-complete-debian-v2-receipt.json`. Exact complete RPM
+install/remove passed on Fedora 44 arm64 userspace/container kernel; receipt
+`/private/tmp/gs-alpha1-complete-fedora-rpm-receipt.json`. The latter is package
+acceptance only, not native workload support. Both package runners invoked
+product checks as UID 11000, never root. The disposable Fedora container
+`gs-cli-alpha1-complete-rpm-20261108` used cached image
+`sha256:15da97ed9aa94dd3d92c3925eb89520f6c80e07ea7ee24cba848d1f8b6912b3e`,
+with no host mounts/ports; only that container was removed after retaining its
+receipt. The Apple Linux fixture and its retained roots remain available.
 
 The hosted macOS 15 arm64 complete producer also passed, but its subsequent
 archive harness selected system Python through a shell wrapper and lacked the
@@ -167,6 +180,15 @@ passed notice generation. Retained logs: `/private/tmp/gs-alpha1-source-packagin
 commits/registry checksums even when a package version is unchanged, partial
 Debian copyright patches, missing relink objects, source-name collisions, altered
 source/license bytes and source ZIP/tar links/traversal.
+
+The amd64 packet from the successful collector in
+[run 42520966643](https://github.com/gitstore-dev/cli/actions/runs/42520966643)
+adds 272 components, 746 full texts and 307 materials with zero unresolved entries.
+All four per-platform input sets are now committed; Linux amd64 adds the same
+architecture-specific core_detect crate observed on Darwin Intel. Actual complete
+Linux producers are now part of ordinary read-only CI, in addition to both macOS
+producers. These artifacts remain unsigned review inputs and cannot enter the
+trusted release promotion path.
 
 Implementation state: **54/64 checked, 10 open**. Full all-tuple input review,
 canonical packages/formula, clean-host manager/native acceptance, remaining
