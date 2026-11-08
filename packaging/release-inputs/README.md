@@ -1,8 +1,9 @@
 # Reviewed per-platform inputs
 
 Production release jobs require `OS-ARCH/{notices,closure,materials}.json` for
-linux-x64, linux-arm64, darwin-x64 and darwin-arm64. The darwin-arm64 and linux-arm64 sets have
-source-bound controlled verification; the remaining sets are not committed yet.
+linux-x64, linux-arm64, darwin-x64 and darwin-arm64. Both Darwin sets and linux-arm64 have source-bound controlled verification.
+The Darwin inputs also match actual macOS 15 hosted builds. The linux-x64 set
+is not committed yet.
 The producer fails on missing inputs. Do not substitute empty manifests or
 synthetic integration notices to make a release job pass.
 

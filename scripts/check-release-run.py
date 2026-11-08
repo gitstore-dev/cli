@@ -14,7 +14,7 @@ def validate(run, workflow, revision, tag):
             or run['status'] != 'completed' or run['conclusion'] != 'success'
             or run['event'] not in ('push', 'workflow_dispatch')
             or workflow == 'release.yml' and run['head_branch'] != tag
-            or workflow == 'runtime.yml' and (run['event'] != 'workflow_dispatch' or run['head_branch'] != 'main')):
+            or workflow == 'runtime.yml' and (run['event'] != 'workflow_dispatch' or run['head_branch'] not in ('main', tag))):
         raise ValueError('run is not an approved successful same-repository/source release input')
 
 

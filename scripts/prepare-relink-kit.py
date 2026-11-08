@@ -18,6 +18,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'runtime/packaging'))
 from formats import tar_bytes, write_new
+from release_candidate import DISCLAIMER
 
 SYSTEM = {'m', 'dl', 'pthread', 'rt', 'resolv', 'c', 'gcc', 'gcc_s'}
 FLAGS = {'-Os', '-DNDEBUG', '-Wl,--gc-sections', '-Wl,-Bstatic,--start-group',
@@ -81,6 +82,10 @@ def main():
         if token == '-o':
             skip = True
             continue
+        # Newer CMake asks the linker to emit build dependency metadata. It
+        # does not affect linked bytes and its build-local output is omitted.
+        if token == '-Wl,--dependency-file=CMakeFiles/gitstored.dir/link.d':
+            continue
         if token.startswith('-L'):
             continue
         if token.startswith('-l') and token[2:] not in SYSTEM:
@@ -118,7 +123,7 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
     qualification = ('production relink material; final release qualification remains required' if args.release_material
         else 'unqualified relink review material')
     payload['README.txt'] = ((('Production relink material; use with matching source/notices subjects.\n' if args.release_material
-        else 'UNQUALIFIED REVIEW MATERIAL; NOT A RELEASE.\n')+
+        else 'UNQUALIFIED REVIEW MATERIAL; NOT A RELEASE.\n')+DISCLAIMER+'\n\n'+
         'Contains actual production application objects and private native archives.\n'
         'Full corresponding patched sources and license notices must accompany a release.\n'
         'Requires the matching Linux architecture, C toolchain and libc development files.\n'
@@ -127,7 +132,7 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
         'To replace a library, rebuild its archive from corresponding source with the recorded build recipe,\n'
         'replace its objects/ entry and update that entry in relink.json after reviewing the change.\n'
         'Test modified outputs independently. The supplied licenses govern modification and redistribution.\n'
-        'No compatibility or data preservation is guaranteed.\n').encode(), 0o644)
+        'The release producer must qualify its final byte set before promotion.\n').encode(), 0o644)
     manifest = dict(schemaVersion=1, qualification=qualification,
         machine=platform.machine(), compiler=subprocess.check_output([str(compiler),'--version'],text=True).splitlines()[0],
         arguments=command, materials=recorded,

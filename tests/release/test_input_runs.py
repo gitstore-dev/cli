@@ -33,6 +33,12 @@ class InputRuns(unittest.TestCase):
             module.validate(self.run, 'runtime.yml', 'a' * 40, 'v0.1.0-alpha.1')
         self.run['event'] = 'workflow_dispatch'
         module.validate(self.run, 'runtime.yml', 'a' * 40, 'v0.1.0-alpha.1')
+        self.run['head_branch'] = 'v0.1.0-alpha.1'
+        module.validate(self.run, 'runtime.yml', 'a' * 40, 'v0.1.0-alpha.1')
+        self.run['head_sha'] = 'b' * 40
+        with self.assertRaises(ValueError):
+            module.validate(self.run, 'runtime.yml', 'a' * 40, 'v0.1.0-alpha.1')
+        self.run['head_sha'] = 'a' * 40
         self.run['head_branch'] = 'other'
         with self.assertRaises(ValueError):
             module.validate(self.run, 'runtime.yml', 'a' * 40, 'v0.1.0-alpha.1')
