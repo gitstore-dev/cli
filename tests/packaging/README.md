@@ -109,3 +109,20 @@ private experiment parent. Workflow credentials and user config are not inherite
 by test commands. The collector requires all 22 host/channel records, each bound
 to every candidate subject digest, before producing `release-qualification` for
 promotion. An unavailable lane fails rather than becoming a skip/pass receipt.
+
+## Complete producer and runtime measurements
+
+`check-produced.py --candidate /absolute/producer-output --output /absolute/new-private-root`
+exercises the complete producer's exact archive/npm packages and records 100 warm
+samples for each executable's help/version commands with isolated configuration.
+It does not sign, publish or qualify a host. Hosted macOS 15 jobs retain these
+read-only assets and measurements for review.
+
+`measure-native.py --fixture /absolute/owned-private-fixture.json --output /absolute/new-receipt.json`
+uses only the selected dedicated non-root Linux account. It creates its own memdb
+deployment, measures 100 successful current-generation inspections, records asset,
+state and cache directory costs, and stops only its owned deployment/manager.
+Without offline layouts, cold readiness explicitly includes asset preparation.
+Directory allocations deduplicate inodes within each category; materialized image
+paths can appear outside assets, so categories are not a globally deduplicated sum.
+Neither manager-only RSS nor these samples establishes full workload peak memory.

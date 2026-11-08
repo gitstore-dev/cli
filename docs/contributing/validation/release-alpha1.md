@@ -1,5 +1,66 @@
 # Alpha.1 implementation evidence
 
+## Complete producer and inspection measurement — 2026-11-08
+
+A clean detached checkout of `b300471` completed the full macOS arm64 producer,
+including 177 source-bound components, 352 full notice texts, a corresponding
+source archive and 361 installed files. Host: macOS 26.6.1 arm64; this does not
+substitute for the macOS 15 clean-host matrix. Output:
+`/private/tmp/gs-alpha1-production-pipeline-darwin-arm64`.
+
+| Final local candidate | Bytes | SHA-256 |
+| --- | ---: | --- |
+| archive | 3,519,492 | `874765d598253247d7efb66987a809e7c6ecfa782d9dbabe4ae1c33f6457588e` |
+| npm | 3,519,749 | `302efda519dc5fc0609efd7193f2bafcf42132478582bf7d008c54580e15244b` |
+| corresponding source | 25,243,662 | `6700bcf07cf43767510d6cd1aa4f791b4a8893a5fffef821f53a251e0d4a6056` |
+
+Archive relocation and npm `--ignore-scripts` installation/removal passed with
+these exact complete packages. Receipts are retained under
+`/private/tmp/gs-alpha1-production-package-lifecycle`. These are unsigned local
+candidates; no tag, registry upload or release support claim follows.
+
+The actual hosted macOS 15 arm64 material packet exactly matches all three
+committed arm64 JSON inputs. The Intel packet has 178 components, 354 full texts,
+192 material records and zero unresolved entries; it is now committed under
+`packaging/release-inputs/darwin-x64`. Both came from the successful
+[hosted control/material run](https://github.com/gitstore-dev/cli/actions/runs/42519281219).
+Linux ordinary/sanitized behavior and linkage passed, but that run's new material
+collection failed on newer CMake's exact dependency-file metadata option. The
+parser now omits only that exact output-metadata argument; unknown linker options
+remain rejected. A fresh hosted run must establish the collector result.
+
+`tests/packaging/measure-native.py` passed on the dedicated Ubuntu 24.04 arm64
+fixture using the exact `327c151e…` CLI and `43b35e76…` daemon recorded below.
+It created its own three-service memdb deployment, verified current-generation
+readiness for every successful inspection, stopped its own deployment and manager,
+and used isolated configuration with no personal data. Receipt:
+`/private/tmp/gs-alpha1-native-command-costs-v2.json`; retained fixture
+`gs-public-runtime-5f6xzlpy`. Cold readiness including asset preparation: 42.107 s.
+
+| Warm command (100 measured samples plus one warm-up) | p95 ms |
+| --- | ---: |
+| gs --help | 0.592 |
+| gs --version | 0.507 |
+| gitstored --help | 8.031 |
+| gitstored --version | 8.422 |
+| gs deployment inspect performance -o json | 2.121 |
+
+Inspection wall time includes CLI startup and socket negotiation. Manager RSS/HWM
+was 9,367,552 bytes, excluding worker/service memory. Asset files occupied
+258,759,008 logical / 260,595,712 allocated bytes; state paths outside the asset
+subtree occupied 259,156,631 logical / 261,197,824 allocated bytes; cache was empty.
+Each category deduplicates allocated bytes by inode internally. State can contain
+materialized image/rootfs paths; these independent directory costs must not be
+summed as globally deduplicated storage. This is one real fixture sample, not
+all-reference-host performance acceptance. T061 remains open.
+
+The native measurement script is retained for repeatable selected-fixture runs.
+The hosted macOS jobs now additionally build complete read-only candidates and
+exercise their archive/npm installation, relocation and warm commands. Neither
+job signs or publishes PR artifacts. Qualification can be dispatched at the exact
+reviewed tag after `main` advances; repository, workflow, event and full source-SHA
+checks still apply. No candidate tag was created to exercise that path.
+
 ## Hosted CI and material preparation — 2026-11-08
 
 Draft PR #12, source `6e84b822ad911295045a971e79be2766f2a0a60d`, passed all
