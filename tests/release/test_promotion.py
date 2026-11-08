@@ -154,9 +154,27 @@ class Promotion(unittest.TestCase):
             receipt = dict(schemaVersion=1, result='pass', tag=value['tag'],
                            sourceRevision=value['sourceRevision'], selection=list(row),
                            subjects={a['filename']: a['sha256'] for a in value['artifacts']})
+            commands={key:dict(samples=100,p95Milliseconds=1) for key in
+                ('gs --help','gs --version','gitstored --help','gitstored --version')}
+            performance=(dict(status='passed',managerChildStopped=True,commandLatency=dict(commands=commands),
+                daemonInspect=dict(samples=100,p95Milliseconds=1)) if row[0]=='linux' else dict(commands=commands))
+            performance['sourceInputs']={binary:{key:next(a for a in value['artifacts'] if a['filename']==
+                candidate.slot_filename(value['version'],binary,row[0],row[1]))[key] for key in ('sha256','bytes')}
+                for binary in ('gs','gitstored')}
+            receipt['performance']=performance
             (self.root / name).write_text(json.dumps(receipt))
             receipts.append(name)
         value['receipts'] = receipts
+        first=self.root/receipts[0]
+        original=first.read_text()
+        for change in ('missing-performance','wrong-pair'):
+            altered=json.loads(original)
+            if change=='missing-performance':del altered['performance']
+            else:altered['performance']['sourceInputs']['gs']['sha256']='0'*64
+            first.write_text(json.dumps(altered))
+            with self.subTest(change=change),self.assertRaises(ValueError):
+                candidate.advance(value,'validated',self.root)
+        first.write_text(original)
         value = candidate.advance(value, 'validated', self.root)
         with self.assertRaises((ValueError, OSError)):
             candidate.advance(value, 'attested', self.root)

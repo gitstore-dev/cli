@@ -110,7 +110,11 @@ Receipts are maintainer-owned execution evidence, not a cryptographic signature.
 They must come from actual tests of those exact bytes. Structural fixture tests
 do not supply qualification. The dedicated runtime workflow now produces the
 `release-qualification` artifact only after all six selected clean reference hosts
-pass. Dispatch the exact reviewed candidate tag (or `main` while it still points
+pass. Each host also records 100 warm help/version samples; Linux measures 100
+current-generation inspections and distinct runtime costs with offline assets.
+Missed documented p95 targets fail before host receipts are emitted. Measurements
+remain embedded in those maintainer-owned execution receipts.
+Dispatch the exact reviewed candidate tag (or `main` while it still points
 to the exact candidate source SHA) with
 `candidate_run`, `candidate_tag` and `qualification_fixture` (an owned private
 manifest at that path on each host). It rejects foreign/PR/wrong-source runs before
