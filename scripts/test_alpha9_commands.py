@@ -67,6 +67,8 @@ class Alpha9(Commands):
                         self.assertTrue(markdown.endswith('Café\n\n'))
                         self.assertNotIn('observedGeneration:', markdown)
                 finally:
+                    if kind == 'Namespace':
+                        self.wait_namespace_ready(created['id'])
                     self.invoke(['delete', command, '--id', created['id']])
 
     def watch(self, kind, name=None, credential=None):

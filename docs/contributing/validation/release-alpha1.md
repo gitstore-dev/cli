@@ -2,6 +2,27 @@
 
 ## Complete producer and inspection measurement — 2026-11-08
 
+T015 and T018 are complete: all four production tuples built with full actual
+source/lock/native bindings, complete notices and source/relink subjects, then
+passed exact archive/npm installation/removal and command checks. Selected runs
+at branch revision `a682c1961fb42136d247fbf3e051dbf258f777c8`:
+[Linux ordinary/sanitized/complete producers](https://github.com/gitstore-dev/cli/actions/runs/42525026876)
+and [both macOS 15 complete producers](https://github.com/gitstore-dev/cli/actions/runs/42525026870).
+The outputs remain unsigned review candidates, not release-qualified support.
+The same-source review coordinator passed in
+[run 42527077092](https://github.com/gitstore-dev/cli/actions/runs/42527077092),
+confirming actual PR-merge checkout `69983e60d6fad73f03d942405d106f7ab47688ad`
+for all four tuples. Real-hash review formula SHA-256:
+`05517f36d91d188eb798ff39197b9004a3b90e9712f6645f6d6a87317a362d73`.
+Retained `/private/tmp/gs-alpha1-four-platform-review/{gitstore.rb,review.json}`.
+The arm64 Homebrew job failed at cache/formula resolution before installation;
+its hidden private-home log directory was unintentionally excluded from upload.
+The upload now explicitly includes only those selected log/receipt paths, including
+their hidden parent, so the next disposable review can expose the actual cause.
+No global Homebrew prefix, trust store, sandbox or user configuration was changed.
+Separate hosted-native review run 42527079575 retains workload failures as failures. Actual fixture/schema/native input review and full-byte
+coverage were checked; validators do not establish legal sufficiency by themselves.
+
 Final exact-production measurement passed after the complete acceptance batch:
 `/private/tmp/gs-alpha1-complete-native-command-costs-v3.json`, owned root
 `gs-public-runtime-ps261uyg`. This uses the complete producer's `327c151e…` CLI /
@@ -152,6 +173,12 @@ concurrent first-use autostart through public executable links all passed.
 Log `/private/tmp/gs-alpha1-complete-native-package-boundaries.log`; retained
 roots `package-version-refusal-aguhibte` and `package-autostart-wy2nocta`.
 
+Truncated offline blob refusal passed; receipt `runtime-run-exp-003b-qbpnm9y8.json`,
+root `gs-public-runtime-6iry6moy`. Warm-cache tamper refusal passed in 35.744 s;
+receipt `runtime-run-exp-003b-ts5zymdx.json`, root `gs-public-runtime-4xex_3j4`.
+Both used the complete production pair and only modified their new private copies;
+log `/private/tmp/gs-alpha1-complete-integrity-v2.log`.
+
 Offline core acceptance passed in 35.555 seconds using copies of this turn's
 already verified selected cache images, with no new images/network fallback.
 Receipt `runtime-run-core-offline-qebbq37w.json`, root `gs-public-runtime-8u0yv1v9`;
@@ -192,7 +219,11 @@ public Ready/current-generation status and performs one delete, preserving the
 no-mutation-retry policy. Exact pinned upstream schema/reconciler source was
 checked at `68f8471…`. The actual pinned alpha.9 image suite passed locally after
 this fixture change: 30 command checks plus four alpha.9 capability checks, with
-its live contract suite also passing. Log
+its live contract suite also passing. A later run found the same race in the
+separate alpha.9 create/read fixture's cleanup; both now share the same bounded
+Ready/current-generation wait. The repeated actual image suite passed too, log
+`/private/tmp/gs-alpha1-alpha9-reconciled-cleanup.log`. Both paths still demand an
+accepted delete and issue it only once; conflicts were not accepted as success. Log
 `/private/tmp/gs-alpha1-stable-namespace-integration.log`. Postman skill status was
 current; no endpoint or API contract changed.
 
@@ -299,7 +330,7 @@ Linux producers are now part of ordinary read-only CI, in addition to both macOS
 producers. These artifacts remain unsigned review inputs and cannot enter the
 trusted release promotion path.
 
-Implementation state: **55/64 checked, 9 open**. Full all-tuple producer acceptance,
+Implementation state: **57/64 checked, 7 open**. Full release qualification,
 canonical packages/formula, clean-host manager/native acceptance, remaining
 measurements, own hosted signed positive/App trigger and final inventory remain.
 No public tag, release or registry/formula publication occurred.

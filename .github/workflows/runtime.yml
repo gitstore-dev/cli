@@ -502,6 +502,7 @@ jobs:
         if: always()
         with:
           name: unsigned-homebrew-review-${{ matrix.runner }}
+          include-hidden-files: true
           path: |
             ${{ runner.temp }}/package-review/review.json
             ${{ runner.temp }}/package-review/gitstore.rb
