@@ -285,7 +285,7 @@ jobs:
           GITSTORE_EXPECT_MISSING_TUN: '1'
         run: scripts/test-runtime.sh --scenario host-unmet --fixture "$FIXTURE"
   qualification-input:
-    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && github.ref == 'refs/heads/main' && inputs.candidate_run != ''
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && (github.ref == 'refs/heads/main' || github.ref == format('refs/tags/{0}', inputs.candidate_tag)) && inputs.candidate_run != ''
     runs-on: ubuntu-24.04
     permissions:
       contents: read
