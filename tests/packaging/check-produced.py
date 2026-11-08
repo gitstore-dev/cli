@@ -33,7 +33,7 @@ def main():
             raise ValueError('candidate package name must be an ordinary basename')
         artifact=args.candidate/'assets'/name
         digest=hashlib.sha256(artifact.read_bytes()).hexdigest()
-        subprocess.run(['sh',str(ROOT/'scripts/test-packages.sh'),'--channel',channel,
+        subprocess.run([sys.executable,str(ROOT/'tests/packaging/run.py'),'--channel',channel,
             '--artifact',str(artifact),'--sha256',digest,'--version',version,
             '--fixture-parent',str(args.output)],check=True)
         tested.append(dict(channel=channel,filename=name,sha256=digest,bytes=artifact.stat().st_size))
