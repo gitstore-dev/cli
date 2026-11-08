@@ -196,8 +196,15 @@ its live contract suite also passing. Log
 `/private/tmp/gs-alpha1-stable-namespace-integration.log`. Postman skill status was
 current; no endpoint or API contract changed.
 
-Hosted Ubuntu normal lanes now also prepare an explicitly ephemeral UID 11000
-fixture and run one real core lifecycle case; those results remain pending.
+The next hosted attempt at `1867800` passed dedicated-user/kernel/cgroup/TUN/
+namespace prerequisites on amd64 but the real core start failed in 3.286 seconds
+with OPERATION_FAILED/unavailable. No amd64 native support is claimed. Log
+`/private/tmp/gs-alpha1-hosted-native-source-failure.log`. Native smoke is now a
+separate explicit `hosted_native_run` dispatch consuming an exact successful
+unsigned candidate; ordinary package builds and source collection make no workload
+claim. Failed native jobs retain only safe diagnostic enums/counts/limits, never
+raw database, operation messages, configuration, service logs or credentials.
+A sentinel fixture test verifies sensitive intent/result/message content is omitted.
 
 The native measurement script is retained for repeatable selected-fixture runs.
 The hosted macOS jobs now additionally build complete read-only candidates and

@@ -32,7 +32,7 @@ test "$(git -c safe.directory="$2" -C "$2" rev-parse HEAD)" = "$GITHUB_SHA"
 install -d -m 700 /home/gitstorefixture/source
 git -c safe.directory="$2" -C "$2" archive --format=tar \
     --output=/home/gitstorefixture/test-inputs.tar HEAD \
-    tests/runtime tests/packaging/check-linux-fixture.py runtime/profiles
+    tests/runtime tests/packaging/check-linux-fixture.py tests/packaging/diagnose-native.py runtime/profiles
 tar -xf /home/gitstorefixture/test-inputs.tar -C /home/gitstorefixture/source
 chown -Rh 11000:11000 /home/gitstorefixture/source
 if test ! -e /dev/net/tun; then

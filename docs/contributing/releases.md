@@ -206,3 +206,11 @@ own Ruby/tool metadata in that private fixture. All product invocations retain t
 empty-tool PATH boundary. The formula remains a review artifact, never a tap update.
 These outputs are named unsigned development review, contain no release receipts
 or attestations, and cannot replace the trusted qualification/publication path.
+
+For a separate ephemeral Linux native smoke, dispatch `runtime.yml` with only
+`hosted_native_run` selecting a successful unsigned runtime candidate run. It
+validates the exact downloaded native pair, prepares its own non-root account,
+runs prerequisites and one real core case, and retains bounded diagnostic enums/
+counts on failure. It neither signs nor produces release qualification receipts.
+Ordinary library/package builds do not assert native workload support; an explicit
+native job failure stays a failure and cannot be used as release acceptance.

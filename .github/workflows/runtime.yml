@@ -6,6 +6,10 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
+      hosted_native_run:
+        description: 'Successful unsigned Linux build run for explicit ephemeral native smoke; no release qualification'
+        required: false
+        type: string
       review_cli_run:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
@@ -38,7 +42,7 @@ permissions:
   contents: read
 jobs:
   libraries:
-    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '')
+    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '' && inputs.hosted_native_run == '')
     name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
@@ -120,18 +124,6 @@ jobs:
           python3 -m venv "$RUNNER_TEMP/package-venv"
           "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
           GITSTORE_PACKAGE_PAIR="$PWD/build/closure-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
-      - name: Real owned core lifecycle on ephemeral hosted Linux only
-        if: matrix.mode == 'normal'
-        env:
-          GITSTORE_DISPOSABLE_FIXTURE: github-hosted-ubuntu24
-        run: |
-          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY_ID,GITHUB_RUN_ID,GITHUB_SHA,GITSTORE_DISPOSABLE_FIXTURE \
-            sh tests/packaging/prepare-hosted-linux-fixture.sh "$PWD/build/closure-pair" "$PWD"
-          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/check-linux-fixture.py \
-            --fixture /home/gitstorefixture/experiments/hosted.json
-          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
-            --case test_authorized_cold_start_requires_current_generation_health \
-            --fixture /home/gitstorefixture/experiments/hosted.json
       - name: Collect actual native archive, source and full-notice review inputs
         if: matrix.mode == 'normal'
         run: |
@@ -515,5 +507,83 @@ jobs:
             ${{ runner.temp }}/package-review/gitstore.rb
             /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
             /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  hosted-native-review:
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && inputs.hosted_native_run != '' && inputs.candidate_run == '' && inputs.review_cli_run == ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x64, label: amd64, runner: ubuntu-24.04}
+          - {arch: arm64, label: arm64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Validate selected unsigned Linux source run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_RUN: ${{ inputs.hosted_native_run }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/review-venv"
+          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
+          import importlib.util, os
+          spec = importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')
+          module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+          module.selected_run(int(os.environ['SELECTED_RUN']),'runtime.yml')
+          PY
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: unpublished-production-candidate-linux-${{ matrix.label }}
+          path: ${{ runner.temp }}/native-candidate
+          run-id: ${{ inputs.hosted_native_run }}
+          github-token: ${{ github.token }}
+      - name: Validate exact pair and prepare owned ephemeral host
+        env:
+          ARCH: ${{ matrix.arch }}
+          GITSTORE_DISPOSABLE_FIXTURE: github-hosted-ubuntu24
+        run: |
+          "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
+          import hashlib, json, os, pathlib, shutil, sys
+          sys.path.insert(0,'runtime/packaging')
+          from inventory import validate_install
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])/'native-candidate/complete-candidate/assets'
+          choices = list(root.glob('*.install.json')); assert len(choices) == 1
+          inventory = json.loads(choices[0].read_text()); validate_install(inventory)
+          assert (inventory['os'],inventory['arch']) == ('linux',os.environ['ARCH'])
+          pair = pathlib.Path(os.environ['RUNNER_TEMP'])/'native-pair'; pair.mkdir(mode=0o700)
+          for name in ('gs','gitstored'):
+              path = root/(name+'-'+inventory['applicationVersion']+'-linux-'+inventory['arch'])
+              assert hashlib.sha256(path.read_bytes()).hexdigest() == inventory['executables'][name]['sha256']
+              shutil.copyfile(path,pair/name); (pair/name).chmod(0o755)
+          PY
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY_ID,GITHUB_RUN_ID,GITHUB_SHA,GITSTORE_DISPOSABLE_FIXTURE \
+            sh tests/packaging/prepare-hosted-linux-fixture.sh "$RUNNER_TEMP/native-pair" "$PWD"
+      - name: Real owned core lifecycle, never a passing skip
+        run: |
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/check-linux-fixture.py \
+            --fixture /home/gitstorefixture/experiments/hosted.json
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
+            --case test_authorized_cold_start_requires_current_generation_health \
+            --fixture /home/gitstorefixture/experiments/hosted.json
+      - name: Retain only bounded safe native diagnostic metadata
+        if: always()
+        run: |
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/diagnose-native.py \
+            --fixture /home/gitstorefixture/experiments/hosted.json --output /home/gitstorefixture/experiments/diagnostic.json
+          sudo install -m 644 /home/gitstorefixture/experiments/diagnostic.json "$RUNNER_TEMP/native-diagnostic.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: unsigned-native-review-${{ matrix.arch }}
+          path: ${{ runner.temp }}/native-diagnostic.json
           if-no-files-found: warn
           retention-days: 7

@@ -17,12 +17,20 @@ developer executable or workload image is put into the measured package.
 
 Ordinary/sanitized hosted builds and library checks passed on both architectures;
 see the current [evidence record](../../docs/contributing/validation/release-alpha1.md).
-The normal lanes now also prepare a separate UID 11000 on the ephemeral GitHub
-Ubuntu VM and execute one real owned core start/readiness/stop case. Preparation
-refuses non-hosted, foreign-repository, persistent, non-Ubuntu or existing-account
-hosts. It grants TUN and user-namespace prerequisites only to that disposable
-fixture. This scoped core result does not qualify the full Linux package matrix.
-Missing kernel/systemd prerequisites fail the job; they are not a passing skip.
+Native service smoke is a separate explicit maintainer dispatch using
+`hosted_native_run`, selecting a successful unsigned Linux candidate build. It
+runs on ephemeral GitHub Ubuntu VMs, validates the exact downloaded pair and
+prepares a separate UID 11000. Preparation refuses non-hosted, foreign-repository,
+persistent, non-Ubuntu or existing-account hosts. It grants TUN and user-namespace
+prerequisites only to that disposable fixture, copies committed public test inputs
+into its private home, and runs one real owned core start/readiness/stop case.
+This scoped result does not qualify the full Linux package matrix. Missing kernel/
+systemd prerequisites and failed workloads fail that explicitly selected job;
+none becomes a passing skip. The first amd64 attempt passed prerequisites but
+failed service acquisition with OPERATION_FAILED/unavailable; support remains
+unqualified. A bounded diagnostic helper emits only operation enums, resource
+counts and host limit metadata, never raw messages, database/configuration or
+service/credential contents.
 
 ## Explicit native reference fixtures
 
