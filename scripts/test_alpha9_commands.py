@@ -147,6 +147,7 @@ class Alpha9(Commands):
                         process.wait(timeout=5)
                         self.assertEqual(process.returncode, 0, process.stderr.read().decode())
                     finally:
+                        self.wait_resource_ready(kind, created['id'])
                         self.invoke(['delete', kind, '--id', created['id']])
                 # stdout is emitted before durable checkpoint replacement. Wait
                 # for that boundary before deliberately interrupting the stream.

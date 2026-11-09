@@ -18,6 +18,20 @@ all-target release Clippy passes. Logs:
 `/private/tmp/gs-alpha1-sdk-file-modes-{before,after,clippy-linux}.log`.
 Fresh hosted acquisition/reconstruction and rebuilt production-native acceptance
 are required before declaring this host failure resolved.
+Fresh SDK acquisition and both C-wrapped/SDK-only reconstruction now pass on both
+hosted architectures in
+[run 42591136414](https://github.com/gitstore-dev/cli/actions/runs/42591136414).
+Each fresh layer is asserted mode `0600`; the earlier candidate's `0664` cache
+remains rejected. Retained logs:
+`/private/tmp/gs-alpha1-hosted-private-cache-fix-{x64,arm64}.log`.
+The fixed Linux SDK also passed all four explicit synthetic-registry cases
+(basic authentication/resume/platform/quota, expired auth, denied scope and
+redirect credential policy), then the complete 15-case unit/security suite.
+Retained `/private/tmp/gs-alpha1-sdk-fixed-controlled-registry.log`.
+These are SDK/probe results; exact rebuilt production workload acceptance is
+still a separate gate. The opt-in `hosted_native_full` lane now prepares existing
+clean-install/recovery/integrity and 100-sample cost suites with exact candidate
+and test-source identities; its executable run remains pending.
 
 The exact hosted Linux arm64 candidate from run 42525026876 also passed on the
 retained disposable Apple Linux VM (kernel 6.18.35, Ubuntu 24.04): offline core
@@ -81,6 +95,10 @@ uses enclosing status observedGeneration because its pinned Ready condition does
 not populate that field. All 34 pinned-image checks passed again (30 commands in
 3.299 s; four alpha.9 cases in 2.441 s), retained at
 `/private/tmp/gs-alpha1-all-resources-ready-integration.log`.
+The watch-authoring fixture had a separate cleanup path; the same readiness check
+now precedes its single delete. The latest full pinned-image rerun passed all 34
+checks (30 command checks in 2.706 s and four capability checks in 2.276 s):
+`/private/tmp/gs-alpha1-watch-cleanup-ready-integration.log`.
 
 The previous ordinary amd64 runtime job failed while fetching native corresponding
 source with HTTP 503, after native compilation, package checks and actual relinking
