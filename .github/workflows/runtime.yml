@@ -10,6 +10,11 @@ on:
         description: 'Successful unsigned Linux build run for explicit ephemeral native smoke; no release qualification'
         required: false
         type: string
+      hosted_native_full:
+        description: 'Also run owned clean-install, recovery, integrity and performance suites; no release qualification'
+        required: false
+        default: false
+        type: boolean
       review_cli_run:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
@@ -530,7 +535,7 @@ jobs:
           - {arch: x64, label: amd64, runner: ubuntu-24.04}
           - {arch: arm64, label: arm64, runner: ubuntu-24.04-arm}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
+    timeout-minutes: ${{ inputs.hosted_native_full && 60 || 15 }}
     permissions:
       contents: read
       actions: read
@@ -572,6 +577,7 @@ jobs:
           inventory = json.loads(choices[0].read_text()); validate_install(inventory)
           assert (inventory['os'],inventory['arch']) == ('linux',os.environ['ARCH'])
           pair = pathlib.Path(os.environ['RUNNER_TEMP'])/'native-pair'; pair.mkdir(mode=0o700)
+          (pair/'install-inventory.json').write_text(json.dumps(inventory))
           for name in ('gs','gitstored'):
               path = root/(name+'-'+inventory['applicationVersion']+'-linux-'+inventory['arch'])
               assert hashlib.sha256(path.read_bytes()).hexdigest() == inventory['executables'][name]['sha256']
@@ -586,6 +592,34 @@ jobs:
           sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
             --case test_authorized_cold_start_requires_current_generation_health \
             --fixture /home/gitstorefixture/experiments/hosted.json
+      - name: Prepare explicit helpers for complete owned native acceptance
+        if: inputs.hosted_native_full && success()
+        run: |
+          sudo apt-get update --error-on=any
+          sudo apt-get install -y cmake make pkg-config libssl-dev zlib1g-dev
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          export RUSTUP_HOME="$RUNNER_TEMP/diagnostic-rustup" RUSTUP_TOOLCHAIN="$toolchain"
+          printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
+          CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$RUNNER_TEMP/full-native-helpers" \
+            cargo build --release --locked -p gs --example runtime_repository_probe
+          cmake -S daemon -B "$RUNNER_TEMP/control-negative" -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=OFF -DGITSTORED_LIBCRUN=OFF \
+            -DGITSTORED_SLIRP=OFF -DGITSTORED_BOOTSTRAP=OFF
+          cmake --build "$RUNNER_TEMP/control-negative" --parallel 2 --target gitstored
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/control-negative/gitstored" \
+            /home/gitstorefixture/experiments/unsupported-gitstored
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/full-native-helpers/release/examples/runtime_repository_probe" \
+            /home/gitstorefixture/experiments/repository-probe
+      - name: Complete owned clean-install recovery integrity and cost checks
+        if: inputs.hosted_native_full && success()
+        run: |
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/hosted-native-acceptance.py \
+            --fixture /home/gitstorefixture/experiments/hosted.json \
+            --inventory /home/gitstorefixture/experiments/install-inventory.json \
+            --unsupported-daemon /home/gitstorefixture/experiments/unsupported-gitstored \
+            --repository-probe /home/gitstorefixture/experiments/repository-probe \
+            --output /home/gitstorefixture/experiments/native-acceptance.json
       - name: Diagnose bounded TLS initialization without network or credentials
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
@@ -684,10 +718,15 @@ jobs:
           sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/diagnose-native.py \
             --fixture /home/gitstorefixture/experiments/hosted.json --output /home/gitstorefixture/experiments/diagnostic.json
           sudo install -m 644 /home/gitstorefixture/experiments/diagnostic.json "$RUNNER_TEMP/native-diagnostic.json"
+          if sudo test -f /home/gitstorefixture/experiments/native-acceptance.json; then
+            sudo install -m 644 /home/gitstorefixture/experiments/native-acceptance.json "$RUNNER_TEMP/native-acceptance.json"
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: unsigned-native-review-${{ matrix.arch }}
-          path: ${{ runner.temp }}/native-diagnostic.json
+          path: |
+            ${{ runner.temp }}/native-diagnostic.json
+            ${{ runner.temp }}/native-acceptance.json
           if-no-files-found: warn
           retention-days: 7

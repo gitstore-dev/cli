@@ -25,6 +25,7 @@ useradd --uid 11000 --user-group --create-home --shell /bin/bash gitstorefixture
 chmod 700 /home/gitstorefixture
 install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments /home/gitstorefixture/bin
 install -m 500 -o 11000 -g 11000 "$1/gs" "$1/gitstored" /home/gitstorefixture/bin/
+install -m 400 -o 11000 -g 11000 "$1/install-inventory.json" /home/gitstorefixture/experiments/install-inventory.json
 # The hosted checkout's ancestor directories can be private to the runner user.
 # Copy committed public test inputs; never widen runner-home permissions or copy
 # its .git directory, token configuration, environment or arbitrary build tree.
@@ -32,7 +33,9 @@ test "$(git -c safe.directory="$2" -C "$2" rev-parse HEAD)" = "$GITHUB_SHA"
 install -d -m 700 /home/gitstorefixture/source
 git -c safe.directory="$2" -C "$2" archive --format=tar \
     --output=/home/gitstorefixture/test-inputs.tar HEAD \
-    tests/runtime tests/packaging/check-linux-fixture.py tests/packaging/diagnose-native.py runtime/profiles
+    tests/runtime tests/packaging/check-linux-fixture.py tests/packaging/diagnose-native.py \
+    tests/packaging/hosted-native-acceptance.py tests/packaging/prepare-offline-cache.py \
+    tests/packaging/measure-native.py runtime/packaging/command_measurements.py runtime/profiles
 tar -xf /home/gitstorefixture/test-inputs.tar -C /home/gitstorefixture/source
 chown -Rh 11000:11000 /home/gitstorefixture/source
 if test ! -e /dev/net/tun; then

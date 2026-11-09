@@ -26,11 +26,25 @@ prerequisites only to that disposable fixture, copies committed public test inpu
 into its private home, and runs one real owned core start/readiness/stop case.
 This scoped result does not qualify the full Linux package matrix. Missing kernel/
 systemd prerequisites and failed workloads fail that explicitly selected job;
-none becomes a passing skip. The first amd64 attempt passed prerequisites but
-failed service acquisition with OPERATION_FAILED/unavailable; support remains
-unqualified. A bounded diagnostic helper emits only operation enums, resource
+none becomes a passing skip. The first amd64 attempt passed prerequisites and
+acquired its first image, then failed cache reconstruction. The SDK now creates
+private cache files explicitly; fresh acquisition/reconstruction probes pass on
+both architectures. Exact rebuilt production-native acceptance remains required.
+A bounded diagnostic helper emits only operation enums, resource
 counts and host limit metadata, never raw messages, database/configuration or
 service/credential contents.
+
+Set `hosted_native_full=true` with an explicit successful `hosted_native_run` to
+extend the ephemeral Ubuntu lane after its exact-pair cold start passes. It then
+prepares separate developer-only control-negative/maintained-Git probes, copies
+only reverified public cache blobs into private offline OCI layouts, and runs
+the existing seven clean-install, ten recovery, truncated/tampered-input and
+100-sample command/inspection cost checks. Test processes remain UID 11000;
+developer helpers stay outside the installed pair. The bounded summary binds
+both candidate source and test-source revisions and exact executable hashes.
+Only summary/diagnostic JSON is uploaded, never scenario state or credentials.
+This remains unsigned native Ubuntu evidence; it does not qualify other package
+channels, Fedora, trusted tag receipts or release support.
 
 ## Explicit native reference fixtures
 
