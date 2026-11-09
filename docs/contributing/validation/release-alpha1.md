@@ -2,6 +2,23 @@
 
 ## CI follow-up — 2026-11-09
 
+Hosted layer auditing isolated the startup failure to cache file permissions:
+all four Git-image layer blobs on both architectures had mode `0664`, one link
+and matching declared sizes. The SDK correctly refused group-writable source
+files; digest checks were deliberately not performed after policy rejection
+(a false digest audit field in that case is not evidence of corrupted content).
+Logs: `/private/tmp/gs-alpha1-hosted-layer-audit-{x64,arm64}.log`,
+[run 42589804349](https://github.com/gitstore-dev/cli/actions/runs/42589804349).
+SDK metadata and network blob creation now explicitly request `0600`, rather
+than depending on ambient umask. Existing invalid cache inputs remain rejected.
+An isolated umask-0002 regression failed before the fix (actual `0664`, expected
+`0600`) and passes afterward with an in-memory maintained-client registry stream.
+The full Linux SDK suite passes: 15 tests, two explicit opt-in fixture ignores;
+all-target release Clippy passes. Logs:
+`/private/tmp/gs-alpha1-sdk-file-modes-{before,after,clippy-linux}.log`.
+Fresh hosted acquisition/reconstruction and rebuilt production-native acceptance
+are required before declaring this host failure resolved.
+
 The exact hosted Linux arm64 candidate from run 42525026876 also passed on the
 retained disposable Apple Linux VM (kernel 6.18.35, Ubuntu 24.04): offline core
 lifecycle 36.247 s and online cold start/current-generation readiness 45.353 s.

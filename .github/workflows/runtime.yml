@@ -81,6 +81,16 @@ jobs:
           ASAN_OPTIONS: detect_leaks=1
           UBSAN_OPTIONS: halt_on_error=1
         run: ctest --test-dir build/reference --output-on-failure
+      - name: Image SDK unit and private cache creation regression checks
+        if: matrix.mode == 'normal'
+        env:
+          CARGO_BUILD_JOBS: 2
+          LIBZ_SYS_STATIC: 1
+          LZMA_API_STATIC: 1
+          CARGO_TARGET_DIR: ${{ github.workspace }}/build/reference/image-sdk
+        run: |
+          cargo test --release --locked --manifest-path daemon/image-backend/Cargo.toml
+          cargo clippy --release --locked --manifest-path daemon/image-backend/Cargo.toml --all-targets -- -D warnings
       - name: Production package and no test facilities
         if: matrix.mode == 'normal'
         run: |
@@ -646,6 +656,28 @@ jobs:
             --fixture /home/gitstorefixture/experiments/hosted.json \
             --provision-probe /home/gitstorefixture/experiments/provision-probe \
             --output /home/gitstorefixture/experiments/materialization-diagnostic.json
+      - name: Verify fresh pinned image acquisition and reconstruction
+        if: failure() && steps.owned-host.outcome == 'success'
+        run: |
+          sudo -u gitstorefixture env -i PATH=/usr/bin:/bin HOME=/home/gitstorefixture/experiments LANG=C python3 - <<'PY'
+          import json, os, pathlib, stat, subprocess, tempfile
+          parent=pathlib.Path('/home/gitstorefixture/experiments')
+          assert os.geteuid()==11000 and parent.stat().st_uid==11000 and stat.S_IMODE(parent.stat().st_mode)==0o700
+          cache=pathlib.Path(tempfile.mkdtemp(prefix='fresh-pinned-image-',dir=parent))
+          probe=parent/'provision-probe'
+          # Explicit fixture-only consent to download the probe's compiled,
+          # immutable public Git image. No workload command is executed.
+          for mode in ('download','materialize','materialize-sdk'):
+              target=cache if mode=='download' else pathlib.Path(tempfile.mkdtemp(prefix='fresh-pinned-work-',dir=parent))
+              command=[str(probe),'git',str(target),'180000']
+              if mode!='download': command += [str(cache),mode]
+              result=subprocess.run(command,env=dict(PATH='/nonexistent',HOME=str(target),LANG='C'),capture_output=True,text=True,timeout=190)
+              value=json.loads(result.stdout)
+              print(json.dumps(dict(mode=mode,exit=result.returncode,status=value['status'],root=target.name)),flush=True)
+              assert result.returncode==0 and value['status']==0
+          layers=list((cache/'blobs').iterdir()); assert 0<len(layers)<=128
+          assert all(stat.S_ISREG(p.lstat().st_mode) and stat.S_IMODE(p.lstat().st_mode)==0o600 for p in layers)
+          PY
       - name: Retain only bounded safe native diagnostic metadata
         if: always()
         run: |
