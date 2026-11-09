@@ -29,6 +29,11 @@ on:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
         type: string
+      review_fedora_only:
+        description: 'Run only the explicit Fedora Homebrew review after selecting the same-source inputs'
+        required: false
+        default: false
+        type: boolean
       review_linux_run:
         description: 'Same-source successful unsigned Linux candidate run; requires review_cli_run'
         required: false
@@ -478,6 +483,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   homebrew-review:
+    if: inputs.review_fedora_only != true
     needs: package-review-inputs
     strategy:
       fail-fast: false
@@ -537,6 +543,68 @@ jobs:
             /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
             /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
             /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  fedora-homebrew-review:
+    needs: package-review-inputs
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: x64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: quay.io/fedora/fedora@sha256:526646a990bb8442f936827d98253677dd7a4c28fad33f938e32c7ffdadb72c1
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Prepare disposable Fedora package tooling and account
+        run: |
+          dnf -y install git curl tar gzip bzip2 patch procps-ng findutils python3-jsonschema shadow-utils util-linux
+          useradd --uid 11000 --create-home gitstorefixture
+          chmod 700 /home/gitstorefixture
+          install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: unsigned-package-review
+          path: /home/gitstorefixture/review
+      - name: Exercise exact Fedora Homebrew package as non-root
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+          git init /home/gitstorefixture/brew-source
+          git -C /home/gitstorefixture/brew-source remote add origin https://github.com/Homebrew/brew.git
+          git -C /home/gitstorefixture/brew-source fetch --depth 1 origin bf464f57275cae0be106b43d190c98564ac59b0e
+          git -C /home/gitstorefixture/brew-source checkout --detach FETCH_HEAD
+          chown -R 11000:11000 /home/gitstorefixture/review /home/gitstorefixture/brew-source
+          runuser -u gitstorefixture -- env -i PATH=/usr/bin:/bin HOME=/home/gitstorefixture ARCH="$ARCH" SOURCE="$GITHUB_WORKSPACE" python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, sys
+          root = pathlib.Path('/home/gitstorefixture/review')
+          record = json.loads((root/'review.json').read_text())
+          artifact = root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-linux-'+os.environ['ARCH']+'.tar.gz')
+          subprocess.run([sys.executable,os.environ['SOURCE']+'/tests/packaging/run.py','--channel','homebrew',
+              '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
+              '--version',record['version'],'--fixture-parent','/home/gitstorefixture/experiments',
+              '--formula',str(root/'gitstore.rb'),'--formula-sha256',hashlib.sha256((root/'gitstore.rb').read_bytes()).hexdigest(),
+              '--brew-source','/home/gitstorefixture/brew-source','--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e'],check=True)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: unsigned-homebrew-review-fedora44-${{ matrix.arch }}
+          path: |
+            /home/gitstorefixture/review/review.json
+            /home/gitstorefixture/review/gitstore.rb
+            /home/gitstorefixture/experiments/brew-lifecycle-*/receipt.json
+            /home/gitstorefixture/experiments/brew-lifecycle-*/logs/*.log
           if-no-files-found: warn
           retention-days: 7
 
