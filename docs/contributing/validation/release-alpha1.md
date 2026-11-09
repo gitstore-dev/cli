@@ -109,9 +109,66 @@ trusted root, subject and result are retained at
 all three cases. No version tag, release, package registry upload or tap
 publication occurred.
 
+### Reference measurement completion (T061)
+
+T061 is complete as a measurement task; it does not certify package channels or
+promote a release. The Ubuntu and Fedora native tables above record 100 samples
+per command/inspection and separate cold image readiness, manager RSS, image
+assets and state. macOS has no supported workload backend, so native image and
+inspection measurements are inapplicable there rather than passing skips.
+
+The current green [CLI run 42635622429](https://github.com/gitstore-dev/cli/actions/runs/42635622429)
+measured actual macOS control packages. Both install inventories bind actual
+checkout `12c8721ed3a2b47dd865fce89fbbe0e4d0918201` (branch head
+`8146a1f`), distinct from the earlier Linux native candidate. All command entries
+have 100 wall-time samples including process startup:
+
+| macOS measurement | x86_64 / 15.7.9 | arm64 / 15.8.2 |
+| --- | ---: | ---: |
+| `gs` help/version p95 (ms) | 23.103 / 24.330 | 15.403 / 15.108 |
+| `gitstored` help/version p95 (ms) | 8.038 / 8.197 | 8.333 / 7.906 |
+| `gs` executable bytes | 5,661,052 | 5,354,512 |
+| `gitstored` control executable bytes | 1,388,112 | 1,378,296 |
+| Archive bytes | 3,685,825 | 3,530,411 |
+| npm archive bytes | 3,686,231 | 3,530,882 |
+
+These macOS inventories contain no private `lib/` payload; system dependency
+closure is recorded separately by the control-closure artifacts. The Linux
+[build/measurement run 42635622614](https://github.com/gitstore-dev/cli/actions/runs/42635622614)
+uses `runtime/packaging/measure.py` on stripped disposable copies of the ordinary
+library build. These costs describe that experiment, **not** the larger static
+image-SDK native release daemon or a complete installable package:
+
+| Linux ordinary library measurement | amd64 | arm64 |
+| --- | ---: | ---: |
+| Stripped `gs` bytes | 6,489,368 | 5,983,816 |
+| Stripped `gitstored` bytes | 6,560,656 | 6,315,000 |
+| Minimal core archive bytes | 5,852,582 | 5,663,851 |
+| Unique host library closure bytes (reused) | 26,349,824 | 25,611,792 |
+| `gs` help/version p95 (ms) | 1.780 / 1.574 | 2.587 / 2.503 |
+| `gitstored` help/version p95 (ms) | 16.718 / 16.188 | 13.990 / 14.194 |
+
+Actual complete native executable hashes/sizes and runtime image/state costs
+remain in the earlier Ubuntu/Fedora tables; they must not be replaced by the
+smaller library experiment. Warm command p95 is below 100 ms and native
+inspection/version p95 below 250 ms on the recorded hosts. Performance results
+are host-specific. The accepted arm64 stripped baseline remains 5,590,568-byte
+`gs` and 5,723,600-byte `gitstored`; binary-size optimization stays deferred, with
+no claim that current binaries meet the original 5 MiB target.
+
+Retained measurement inputs are under
+`/private/tmp/gs-alpha1-measurement-review-8146/`. SHA-256 of downloaded measurement
+JSON (artifact IDs: macOS arm64 `13683321771`, x86_64 `13683233380`; Linux amd64
+`13685040902`, arm64 `13683469727`):
+
+- `linux-arm64-measurement.json`: `14aeeeeb564ed82b5791e5a1367b109c35e4a4423d409389cc1fdb0eba8e88a8`.
+- `linux-x64-measurement.json`: `725821f1356bdbd2576742f98fece769bc5b43420d5dfede91bbbc770ff958ec`.
+- `macos-arm64-measurement.json`: `b8048654de5c98b538b855d15193fe4d704c0ee09487e545b199277dab5b26bc`.
+- `macos-x64-measurement.json`: `5805fd1944bb4e6e72c29db6bf7e7ea53bf8469092b82b0b02367d765da19929`.
+
 ### Earlier Ubuntu native acceptance
 
-Current implementation checkpoint: **59/64 tasks checked; five acceptance gates
+Current implementation checkpoint: **60/64 tasks checked; four acceptance gates
 remain open**. Both exact Linux package pairs pass the complete hosted native
 suite in [run 42605030100](https://github.com/gitstore-dev/cli/actions/runs/42605030100).
 Each architecture passed the real public cold start, seven clean-install cases,
@@ -137,8 +194,8 @@ all four successful scenario records and `validate_performance(..., True)`.
 
 These Ubuntu 24.04/glibc 2.39, Azure-kernel-7.0.0-1017 runs are unsigned review
 evidence, not the required trusted six-host/channel qualification. APT and DNF
-arm64 installed-path controls below also pass. T024/T061 remain open for the
-complete reference matrix; T038 still needs authorized tag-bound signing and
+arm64 installed-path controls below also pass. T024 remains open for the
+complete package reference matrix; T061 measurements are complete; T038 still needs authorized tag-bound signing and
 actual App-trigger evidence; T039/T064 retain final tag-bound inventory/guide gates.
 No tag, release, registry/tap publication or merge was performed.
 Retained `/private/tmp/gs-alpha1-final-native-{x64,arm64}.log` and
