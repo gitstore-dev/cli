@@ -72,6 +72,16 @@ synthetic HOME/XDG state. Only the bounded lifecycle receipt is copied out;
 private fixture permissions remain intact. Replacement-order controls and trusted
 tag qualification remain separate from these install/remove review jobs.
 
+To test next-alpha replacement, also select `review_replacement_cli_run` and
+`review_replacement_linux_run` from successful same-source producer jobs. Both
+are required together. The original candidate source and the replacement fixture
+source are recorded separately. The coordinator checks all four real replacement
+archive identities and renders the next formula from their actual hashes; it
+never invents unused-platform digests. APT, DNF, Homebrew, Fedora archive and npm
+checks then install alpha.1, replace it with the selected next alpha and remove it.
+These deliberately unqualified replacement packages never enter canonical release
+subject groups or generate trusted release receipts.
+
 ## Explicit Fedora review
 
 `fedora_native_run` selects a successful same-repository unsigned Linux producer
