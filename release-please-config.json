@@ -12,12 +12,18 @@
       "include-component-in-tag": false,
       "include-v-in-tag": true,
       "bump-minor-pre-major": true,
-      "release-as": "0.1.0-alpha.1",
       "draft": true,
       "force-tag-creation": true,
       "extra-files": [
-        {"type": "toml", "path": "Cargo.toml", "jsonpath": "$.workspace.package.version"},
-        {"type": "generic", "path": "Cargo.lock"}
+        {
+          "type": "toml",
+          "path": "Cargo.toml",
+          "jsonpath": "$.workspace.package.version"
+        },
+        {
+          "type": "generic",
+          "path": "Cargo.lock"
+        }
       ]
     }
   }
