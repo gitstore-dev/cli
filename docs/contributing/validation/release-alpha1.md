@@ -2,6 +2,42 @@
 
 ## CI follow-up — 2026-11-09
 
+Current implementation checkpoint: **59/64 tasks checked; five acceptance gates
+remain open**. Both exact Linux package pairs pass the complete hosted native
+suite in [run 42605030100](https://github.com/gitstore-dev/cli/actions/runs/42605030100).
+Each architecture passed the real public cold start, seven clean-install cases,
+all ten recovery cases, truncated/tampered-image controls and 100-sample command
+and inspection measurements. Both owned managers exited. The test revision is
+`b230563e4c6dda39cd781b47574f8bbdd38d8d93`; candidate source remains the actual
+producer merge checkout `7c6f8a806a55ee3c7527f6aa149900f25006e049`, with exact
+executable hashes in the table below. Receipts were checked against those hashes,
+all four successful scenario records and `validate_performance(..., True)`.
+
+| Latest hosted measurement | amd64 | arm64 |
+| --- | ---: | ---: |
+| Online cold-start test (s) | 39.692 | 42.033 |
+| Complete clean-install batch (s) | 334.265 | 340.764 |
+| Complete recovery batch (s) | 575.945 | 582.235 |
+| Cold offline readiness (s) | 37.044 | 37.346 |
+| Inspection p95, 100 samples (ms) | 3.064 | 2.587 |
+| `gs` help/version p95 (ms) | 1.670 / 1.545 | 2.464 / 2.346 |
+| `gitstored` help/version p95 (ms) | 21.478 / 21.471 | 14.108 / 14.154 |
+| Manager RSS/HWM only (bytes) | 10,039,296 | 9,371,648 |
+| Assets, logical bytes | 276,079,776 | 258,759,008 |
+| State excluding assets, logical bytes | 276,479,175 | 259,157,108 |
+
+These Ubuntu 24.04/glibc 2.39, Azure-kernel-7.0.0-1017 runs are unsigned review
+evidence, not the required trusted six-host/channel qualification. APT and DNF
+arm64 installed-path controls below also pass. T024/T061 remain open for the
+complete reference matrix; T038 needs authorized/configured trusted signing and
+App-trigger evidence; T039/T064 retain final tag-bound inventory/guide gates.
+No tag, release, registry/tap publication or merge was performed.
+Retained `/private/tmp/gs-alpha1-final-native-{x64,arm64}.log` and
+`/private/tmp/gs-alpha1-final-native-{x64,arm64}-acceptance.json`.
+
+The following records preserve the failures and corrective evidence leading to
+that result.
+
 The rebuilt exact-source candidates from
 [run 42592043866](https://github.com/gitstore-dev/cli/actions/runs/42592043866)
 passed all four Linux producer lanes. Real core acceptance then progressed past
@@ -16,9 +52,9 @@ It does not relax root binding or change archive child-file permissions.
 All 16 SDK unit/security cases pass, along with all four controlled registry
 cases and all-target Linux release Clippy. Retained
 `/private/tmp/gs-alpha1-root-mode-{before,after,clippy,controlled-registry}.log`.
-Exact rebuilt production-native and complete host/channel acceptance remain open;
-a production-source cold-start diagnostic is distinct from selected-candidate
-qualification and cannot satisfy trusted release receipts.
+At that stage, rebuilt production-native and complete host/channel acceptance
+were still open. Production-source diagnostics remain distinct from selected
+package-candidate qualification and cannot satisfy trusted release receipts.
 The normal production-source daemon with this fix passed the complete public
 cold-start/current-generation-health case on hosted Ubuntu arm64 in 43.213 s and
 x86_64 in 44.831 s in
@@ -50,8 +86,8 @@ Its independent permissive-umask regression rejects the former `0664` output and
 passes with explicit private creation; the complete portable suite passes
 67 cases with seven explicit fixture skips. Private-JSON failures expose only
 bounded scalar file metadata, and startup diagnostics run only after a failed
-core smoke. Extended exact-pair acceptance still requires a successful retry;
-none of these unsigned runs supplies trusted release qualification.
+core smoke. Extended exact-pair acceptance then required the successful retries
+recorded above; none of these unsigned runs supplies trusted release qualification.
 
 The extended retry
 [run 42601616548](https://github.com/gitstore-dev/cli/actions/runs/42601616548)
@@ -77,11 +113,66 @@ before observing CREATE, confirms SIGSTOP while that snapshot remains open, and
 captures assertions from that same snapshot. It computes the material path
 before interruption, avoiding further database reads while the writer is frozen.
 No daemon locking or recovery behavior changed. Four corrected isolated
-owned Ubuntu/Apple-kernel runs passed (6.798 / 5.404 / 5.229 / 5.021 s); hosted
-verification is pending.
+owned Ubuntu/Apple-kernel runs passed (6.798 / 5.404 / 5.229 / 5.021 s). The
+complete hosted retry above now verifies this correction on both architectures.
 Retained `/private/tmp/gs-alpha1-pinned-read-recovery-local.log`,
 `/private/tmp/gs-alpha1-exact-native-{x64,arm64}-retry.log` and
 `/private/tmp/gs-alpha1-native-{x64,arm64}-acceptance.json`.
+
+Actual DNF 5.4.7 installation/removal also passed on a separate disposable Fedora
+44 arm64 package fixture, kernel 6.18.35, with no host mounts, SSH forwarding or
+published ports. The base is `quay.io/fedora/fedora:44`, index digest
+`sha256:526646a990bb8442f936827d98253677dd7a4c28fad33f938e32c7ffdadb72c1`;
+Fedora's [44 release record](https://fedoraproject.org/wiki/Fedora_Linux_44_Release_Party_Schedule) and the
+fixture's `/etc/os-release` identify the selected distribution. The unsigned RPM
+from producer 42597509009 is `gitstore-0.1.0-0.alpha.1.1.aarch64.rpm`, SHA-256
+`2a14d6374bbe694ab833f3292502061e5c5122d8d5f66222a78dfa9205d2755b`.
+`dnf --assumeyes install /tmp/gitstore-candidate/<RPM>` resolved the declared
+dependencies without a skip-dependency override. `rpm -V gitstore` passed; both
+installed executable hashes matched the arm64 inventory above. The four
+help/version controls passed as UID 11000 with an empty PATH and private empty
+HOME/XDG directories, which remained empty. `dnf --assumeyes remove gitstore`
+removed both command links, the private payload and the user unit. This is
+package-manager/control evidence only, not Fedora native workload qualification.
+The new `gs-cli-alpha1-fedora44-20261109` fixture is stopped and retained; the
+existing Ubuntu fixture was retained. Receipt:
+`/private/tmp/gs-alpha1-fedora44-package-receipt.json`; logs:
+`/private/tmp/gs-alpha1-fedora44-{dnf-install,dnf-remove,package-commands}.log`.
+The actual installed-path concurrent-first-use control also passed on Fedora
+in 0.050 s, using the same test adapter described below and a separate private
+fixture manifest. Both `/usr/bin/gs deployment list` calls converged on one
+owned manager with mode-0700 runtime directory and mode-0600 socket. Python was
+installed as test tooling only. The exact installed hashes were rechecked;
+pidfd cleanup stopped the manager, DNF removed the product again, and the
+fixture was stopped. Log: `/private/tmp/gs-alpha1-fedora44-installed-autostart.log`.
+This exercises manager control without a workload and retains the Fedora native
+workload qualification gate.
+
+APT 2.8.3 also installed and removed the same producer's arm64 Debian package on
+the owned Ubuntu 24.04 fixture. APT checked declared dependencies without an
+override; these prerequisites were already installed. The package
+is `gitstore_0.1.0~alpha.1-1_arm64.deb`, SHA-256
+`52df42e071142c0370b70c1fe54922ffddf45a89ad2e40f42efde8d9f15a1146`.
+Preflight confirmed no global product installation. `dpkg --verify gitstore`
+passed and both executable hashes matched the table above. UID 11000 help/version
+controls used separate private empty HOME/XDG directories with no tools on PATH;
+all four passed without initializing them. APT removal removed both command
+links, payload and user unit. Existing private fixture binaries, datasets and
+sources were retained. Receipt:
+`/private/tmp/gs-alpha1-ubuntu24-package-receipt.json`; logs:
+`/private/tmp/gs-alpha1-ubuntu24-{apt-install,apt-remove,package-commands}.log`.
+This records package-manager/control behavior, not complete host/channel or
+trusted release qualification.
+An additional actual-installed-path check also passed in 0.062 s: the existing
+concurrent-first-launch test was run with its command target set to
+`/usr/bin/gs`. Two concurrent first `deployment list` calls converged on one
+owned manager, with mode-0700 runtime directory and mode-0600 socket. Exact
+installed hashes were rechecked, and pidfd-scoped cleanup stopped that manager.
+The package was removed again and the public command links, payload and socket
+were absent. The test's fresh private state was retained; no existing deployment
+was selected. Retained `/private/tmp/gs-alpha1-installed-autostart.py` and
+`/private/tmp/gs-alpha1-ubuntu24-installed-autostart.log`; its script hash and
+results are included in the APT receipt above.
 
 Hosted layer auditing isolated the startup failure to cache file permissions:
 all four Git-image layer blobs on both architectures had mode `0664`, one link
@@ -98,7 +189,7 @@ The full Linux SDK suite passes: 15 tests, two explicit opt-in fixture ignores;
 all-target release Clippy passes. Logs:
 `/private/tmp/gs-alpha1-sdk-file-modes-{before,after,clippy-linux}.log`.
 Fresh hosted acquisition/reconstruction and rebuilt production-native acceptance
-are required before declaring this host failure resolved.
+were required before declaring this host failure resolved; both are recorded above.
 Fresh SDK acquisition and both C-wrapped/SDK-only reconstruction now pass on both
 hosted architectures in
 [run 42591136414](https://github.com/gitstore-dev/cli/actions/runs/42591136414).
@@ -109,10 +200,10 @@ The fixed Linux SDK also passed all four explicit synthetic-registry cases
 (basic authentication/resume/platform/quota, expired auth, denied scope and
 redirect credential policy), then the complete 15-case unit/security suite.
 Retained `/private/tmp/gs-alpha1-sdk-fixed-controlled-registry.log`.
-These are SDK/probe results; exact rebuilt production workload acceptance is
-still a separate gate. The opt-in `hosted_native_full` lane now prepares existing
+Those were SDK/probe results; exact rebuilt production workload acceptance was
+a separate gate. The opt-in `hosted_native_full` lane prepares existing
 clean-install/recovery/integrity and 100-sample cost suites with exact candidate
-and test-source identities; its executable run remains pending.
+and test-source identities; its complete successful run is recorded above.
 
 The exact hosted Linux arm64 candidate from run 42525026876 also passed on the
 retained disposable Apple Linux VM (kernel 6.18.35, Ubuntu 24.04): offline core
