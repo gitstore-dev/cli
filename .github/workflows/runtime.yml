@@ -153,7 +153,7 @@ jobs:
             python3 runtime/packaging/closure.py --binary "$PWD/build/closure-pair/$binary" > "build/closure-pair/$binary.closure.json"
           done
           python3 -m venv "$RUNNER_TEMP/package-venv"
-          "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/package-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           GITSTORE_PACKAGE_PAIR="$PWD/build/closure-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
       - name: Collect actual native archive, source and full-notice review inputs
         if: matrix.mode == 'normal'
@@ -409,7 +409,7 @@ jobs:
       - name: Prepare pinned schema validator
         run: |
           python3 -m venv "$RUNNER_TEMP/qualification-venv"
-          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/qualification-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: release-candidate
@@ -465,7 +465,7 @@ jobs:
       - name: Validate the complete selected host/channel set before emitting evidence
         run: |
           python3 -m venv "$RUNNER_TEMP/qualification-venv"
-          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/qualification-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/qualification-venv/bin/python" - <<'PY'
           import json, pathlib, shutil, sys
           sys.path.insert(0,'runtime/packaging')
@@ -503,7 +503,7 @@ jobs:
           UPGRADES: ${{ inputs.review_upgrades }}
         run: |
           python3 -m venv "$RUNNER_TEMP/review-venv"
-          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
           import os, re, subprocess, sys
           command = [sys.executable,'scripts/prepare-package-review.py',
@@ -565,7 +565,7 @@ jobs:
           git -C "$review_parent/brew-source" fetch --depth 1 origin bf464f57275cae0be106b43d190c98564ac59b0e
           git -C "$review_parent/brew-source" checkout --detach FETCH_HEAD
           python3 -m venv "$RUNNER_TEMP/review-venv"
-          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/review-venv/bin/python" tests/packaging/check-review-channels.py \
             --review "$RUNNER_TEMP/package-review" --parent "$review_parent" \
             --channel homebrew --brew-source "$review_parent/brew-source"
@@ -620,7 +620,7 @@ jobs:
           sudo chmod 700 /home/gitstorefixture
           sudo install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments
           python3 -m venv "$RUNNER_TEMP/apt-review-venv"
-          "$RUNNER_TEMP/apt-review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/apt-review-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           sudo apt-get update
           sudo env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LANG=C \
             GITHUB_ACTIONS=true RUNNER_ENVIRONMENT=github-hosted GITHUB_REPOSITORY_ID=1431005655 \
@@ -721,7 +721,7 @@ jobs:
           SELECTED_RUN: ${{ inputs.hosted_native_run }}
         run: |
           python3 -m venv "$RUNNER_TEMP/review-venv"
-          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
           import importlib.util, os
           spec = importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')
@@ -980,7 +980,7 @@ jobs:
         run: |
           test -z "$OTHER_SELECTION"
           python3 -m venv "$RUNNER_TEMP/review-venv"
-          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
           import importlib.util, os
           spec=importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')

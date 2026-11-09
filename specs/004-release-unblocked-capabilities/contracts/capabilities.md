@@ -79,7 +79,8 @@ Extend grammar to `gs watch KIND [NAME | --id ID] [--resource-version CURSOR]`
 with namespace/selector support verified for each kind. Emit NDJSON for machine
 streams, metadata and progress only on stderr. Implement authenticated
 `graphql-transport-ws`, bounded frames/queues and reconnect with a deadline/backoff
-budget. Pin exact accepted protocol from shipped handlers before activation.
+budget. An idle read poll does not close a healthy subscription or consume a
+reconnect attempt; continue waiting within the requested overall deadline. Pin exact accepted protocol from shipped handlers before activation.
 Kinds: Namespace, Repository, Product, CategoryTaxonomy (CLI category), File.
 No Collection watch. Journal cursor is opaque and differs from object version.
 

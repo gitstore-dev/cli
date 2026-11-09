@@ -77,6 +77,21 @@ Nix remains deferred. Linux/macOS platform qualification and release publication
 are still open; consult the evidence record rather than inferring support from
 package templates.
 
+## Packaging Python dependency policy
+
+`packaging/requirements.txt` locks the complete validator dependency closure to
+exact versions and SHA-256 wheel hashes. All workflow installs and isolated
+qualification-account installs use `--require-hashes --only-binary=:all:`. There
+is no source-build or floating-transitive fallback. Updates require reviewing the
+exact-version PyPI wheel metadata and checking resolution on both architectures
+for Ubuntu/Fedora and macOS before committing new hashes.
+
+The publish job installs this closure in a separate step with no `GH_TOKEN` in
+its environment. Only the subsequent verified-publication step receives the
+Contents-write token; no dependency installation occurs there. Hash locking also
+covers the signing job so later imports cannot silently select new dependency
+code while attestation permissions are available.
+
 ## Candidate preparation and recovery
 
 `release.yml` builds only on an exact reviewed alpha tag. An ordinary tag push

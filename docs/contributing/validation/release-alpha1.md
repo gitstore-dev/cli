@@ -2,6 +2,44 @@
 
 ## CI follow-up — 2026-11-09
 
+### Automated review follow-up — 2026-11-09
+
+Both findings on PR #12 were validated and fixed before merge:
+
+- Idle WebSocket reads previously converted a healthy 15-second inactivity poll
+  into `WATCH_DISCONNECTED`. WouldBlock/TimedOut/Interrupted now continue within
+  the overall deadline. A real controlled subscription stays silent for 16 seconds,
+  then emits an event; the CLI keeps the same connection, advances its journal
+  cursor and records zero reconnect attempts. Existing watch failure/deadline
+  behavior also passes. The existing transport contract documents this client
+  behavior; no new endpoint or upstream protocol was invented.
+- The publication step previously installed jsonschema with floating transitive
+  dependencies while its Contents-write `GH_TOKEN` was exposed. The entire six-
+  package closure is now exact-version/SHA-256 locked, wheel-only, across all
+  workflows and isolated qualification-account installs. Dependency installation
+  is separate from the step that receives the publish token. All six reference
+  OS/architecture/Python combinations resolve six matching locked wheels; a
+  deliberately altered wheel is rejected before installing dependency code, with
+  no token supplied. The lock retains the acceptance-tested validator versions.
+
+Pinned Rust fmt, all-target Clippy, full locked workspace tests and build pass;
+all nine watch tests pass, including the real idle boundary. The clean locked
+Python environment passes 90 package-policy cases (seven explicit fixture skips)
+and 29 release-policy cases (one optional fixture skip). All six wheel resolutions
+pass; `pip check` finds no broken requirements. Postman syntax lint reports no
+issues. Governance lint requires a Postman login and was not claimed; saved
+consumer collections ran locally against the disposable HTTP fixture, ending
+`PASS: actual gs CLI exercised 48 controlled GraphQL requests, failure scenarios, authoring/read/delete and zero-write gates.`
+No collection/spec was published to a cloud workspace. Local evidence is under
+`/private/tmp/gs-pr12-{locked-validator,wheel-closure,tampered-wheel}/` and
+`/private/tmp/gs-pr12-reviewed-{package-tests,release-tests,postman}.log`.
+
+The preceding 22-selection package/native receipts retain their original source
+and byte identities. This later watch fix changes the CLI source; it does not
+turn those development receipts into final tag qualification. The trusted release
+workflow still requires fresh exact-source/tag/byte evidence before promotion.
+CI and review-thread state must pass on the new head before the authorized merge.
+
 ### Current pre-tag completion — 61/64 tasks
 
 T024 is complete. [The upgrade evidence](alpha1-upgrade-review.json) accounts for
@@ -50,7 +88,8 @@ All required PR checks passed at code checkpoint `1268716`: Rust on Ubuntu/macOS
 ordinary/sanitized daemon suites and PR-title policy. The remaining full ordinary
 library producers/macOS Intel refresh were still running when this evidence was
 written; earlier complete producer and live integration receipts remain above.
-Current changes after that checkpoint only record documentation/task evidence.
+At that checkpoint, the subsequent commit only recorded documentation/task evidence;
+the automated-review follow-up above records the later watch/dependency changes.
 
 Remaining tasks are **T038, T039 and T064**: actual Release Please PR/tag event
 acceptance, trusted tag-bound signing/qualification, then final qualified inventory,

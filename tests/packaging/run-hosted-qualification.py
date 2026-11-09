@@ -99,7 +99,7 @@ def main():
     setup=[['git','clone','--no-checkout',account+'/qualification-input/source.bundle',account+'/qualification-source'],
         ['git','-C',account+'/qualification-source','checkout','--detach',revision],
         ['python3','-m','venv',account+'/qualification-input/venv'],
-        [account+'/qualification-input/venv/bin/pip','install','--disable-pip-version-check','--no-cache-dir','jsonschema==4.26.0']]
+        [account+'/qualification-input/venv/bin/pip','install','--disable-pip-version-check','--no-cache-dir','--require-hashes','--only-binary=:all:','-r',account+'/qualification-source/packaging/requirements.txt']]
     if args.host=='ubuntu:24.04':
         prefix=args.output/'pair'
         archive=slot_filename(value['version'],'archive','linux',arch)

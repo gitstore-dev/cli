@@ -75,7 +75,7 @@ jobs:
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           rustup toolchain install "$toolchain" --profile minimal
           python3 -m venv "$RUNNER_TEMP/release-venv"
-          "$RUNNER_TEMP/release-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/release-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           echo "$RUNNER_TEMP/release-venv/bin" >> "$GITHUB_PATH"
       - name: Build production pair, notices and packages from reviewed inputs
         run: python3 scripts/build-release-platform.py --output "$RUNNER_TEMP/platform"
@@ -139,7 +139,7 @@ jobs:
           VERSION: ${{ needs.identity.outputs.version }}
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/venv/bin/python" scripts/assemble-release.py --builds "$PWD/builds" \
             --output "$RUNNER_TEMP/candidate" --version "$VERSION" --revision "$GITHUB_SHA"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -186,7 +186,7 @@ jobs:
       - name: Require all exact-byte host/channel receipts
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/venv/bin/python" - <<'PY'
           import json, os, pathlib, shutil, sys
           sys.path.insert(0, 'runtime/packaging')
@@ -252,7 +252,7 @@ jobs:
         run: |
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
           python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/venv/bin/python" - <<'PY'
           import json, os, pathlib, shutil, sys
           sys.path.insert(0, 'runtime/packaging')
@@ -284,13 +284,15 @@ jobs:
         with:
           name: verified-candidate
           path: candidate
+      - name: Install hash-locked publication dependencies without the write token
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
       - name: Reverify current bytes, resume matching draft, promote, then update tap
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           chmod 700 candidate
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
-          python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install jsonschema==4.26.0
           "$RUNNER_TEMP/venv/bin/python" scripts/publish-release.py --candidate "$PWD/candidate/verified.json" \
             --asset-dir "$PWD/candidate" --trusted-root "$RUNNER_TEMP/trusted-root.jsonl" --update-tap
