@@ -14,12 +14,15 @@ import resource
 import signal
 import sqlite3
 import stat
+import subprocess
+import tempfile
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fixture',required=True,type=Path)
     p.add_argument('--output',required=True,type=Path)
+    p.add_argument('--provision-probe',type=Path,help='Explicit developer-only offline materialization probe')
     args=p.parse_args()
     info=args.fixture.lstat()
     if os.geteuid()==0 or info.st_uid!=os.geteuid() or not stat.S_ISREG(info.st_mode) or info.st_mode&0o077:
@@ -30,6 +33,10 @@ def main():
     parent=Path(settings['fixtureParent'])
     if parent.is_symlink() or parent.stat().st_uid!=os.geteuid() or parent.stat().st_mode&0o077:
         p.error('select an owned private parent')
+    if args.provision_probe:
+        probe=args.provision_probe.lstat()
+        if not args.provision_probe.is_absolute() or not stat.S_ISREG(probe.st_mode) or probe.st_uid!=os.geteuid() or probe.st_mode&0o022 or not probe.st_mode&0o100:
+            p.error('select an owned ordinary developer probe')
     record=dict(scope='unsigned native fixture diagnostic enums/counts only; never release qualification',
         host=platform.platform(),uid=os.geteuid(),sigchld=('default' if signal.getsignal(signal.SIGCHLD)==signal.SIG_DFL else
             'ignored' if signal.getsignal(signal.SIGCHLD)==signal.SIG_IGN else 'handler'),
@@ -59,8 +66,28 @@ def main():
                 if isinstance(value,dict):
                     for key in milestones:
                         milestones[key]+=isinstance(value.get(key),dict)
+            materialization=[]
+            if args.provision_probe:
+                for key,descriptor in db.execute("SELECT asset_key,descriptor FROM assets WHERE state='active' LIMIT 8"):
+                    if not re.fullmatch('[a-f0-9]{64}',key) or len(descriptor)>65536:
+                        continue
+                    component=json.loads(descriptor).get('component')
+                    if component not in ('api','git','controller'):
+                        continue
+                    cache=root/'state/assets'/key
+                    cached=cache.lstat()
+                    if not stat.S_ISDIR(cached.st_mode) or cached.st_uid!=os.geteuid() or stat.S_IMODE(cached.st_mode)!=0o700:
+                        continue
+                    target=Path(tempfile.mkdtemp(prefix='image-materialization-probe-',dir=parent))
+                    result=subprocess.run([str(args.provision_probe),component,str(target),'180000',str(cache),'materialize'],
+                        env=dict(PATH='/nonexistent',LANG='C',HOME=str(target)),capture_output=True,text=True,timeout=190)
+                    value=json.loads(result.stdout) if 0<len(result.stdout)<=4096 else {}
+                    # Only fixed numeric SDK/provisioning outcomes; no raw child diagnostics.
+                    materialization.append(dict(component=component,target=target.name,exit=result.returncode,
+                        status=value.get('status') if isinstance(value.get('status'),int) else None,
+                        stderrCharacters=len(result.stderr)))
         record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned,
-            workloadMilestoneCounts=milestones))
+            workloadMilestoneCounts=milestones,materializationProbes=materialization))
     fd=os.open(args.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
     with os.fdopen(fd,'w') as stream:
         json.dump(record,stream,indent=2);stream.write('\n')
