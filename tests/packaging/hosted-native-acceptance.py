@@ -20,7 +20,9 @@ from command_measurements import validate_performance
 def private_json(path,maximum=65536):
     info=path.lstat()
     if not path.is_absolute() or not stat.S_ISREG(info.st_mode) or info.st_uid!=os.geteuid() or info.st_mode&0o077 or info.st_nlink!=1 or not 0<info.st_size<=maximum:
-        raise ValueError('Select an owned bounded private ordinary JSON file')
+        raise ValueError('Select an owned bounded private ordinary JSON file: '+json.dumps(dict(
+            absolute=path.is_absolute(),regular=stat.S_ISREG(info.st_mode),owned=info.st_uid==os.geteuid(),
+            mode=oct(stat.S_IMODE(info.st_mode)),links=info.st_nlink,bytes=info.st_size,maximum=maximum)))
     return json.loads(path.read_bytes())
 
 

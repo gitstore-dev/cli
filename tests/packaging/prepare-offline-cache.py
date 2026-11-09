@@ -15,6 +15,12 @@ import stat
 ROOT=Path(__file__).resolve().parents[2]
 
 
+def write_private(path,data):
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+    with os.fdopen(fd,'wb') as stream:
+        stream.write(data)
+
+
 def read(path,expected=None,size=None):
     fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC)
     with os.fdopen(fd,'rb') as stream:
@@ -75,12 +81,12 @@ def main():
         (root/'blobs').mkdir(mode=0o700)
         (root/'blobs/sha256').mkdir(mode=0o700)
         for digest,data in files.items():
-            (root/'blobs/sha256'/digest).write_bytes(data)
-        (root/'oci-layout').write_text('{"imageLayoutVersion":"1.0.0"}\n')
-        (root/'index.json').write_text(json.dumps(dict(schemaVersion=2,manifests=[dict(
-            mediaType=manifest['mediaType'],digest=pin['digest'],size=size)]))+'\n')
+            write_private(root/'blobs/sha256'/digest,data)
+        write_private(root/'oci-layout',b'{"imageLayoutVersion":"1.0.0"}\n')
+        write_private(root/'index.json',(json.dumps(dict(schemaVersion=2,manifests=[dict(
+            mediaType=manifest['mediaType'],digest=pin['digest'],size=size)]))+'\n').encode())
         layouts[name]=str(root)
-    (args.output/'layouts.json').write_text(json.dumps(layouts,indent=2)+'\n')
+    write_private(args.output/'layouts.json',(json.dumps(layouts,indent=2)+'\n').encode())
     print(json.dumps(dict(layouts=layouts,scope='copied verified selected core cache; importer acceptance still required')))
 
 

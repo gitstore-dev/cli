@@ -586,6 +586,7 @@ jobs:
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT,GITHUB_REPOSITORY_ID,GITHUB_RUN_ID,GITHUB_SHA,GITSTORE_DISPOSABLE_FIXTURE \
             sh tests/packaging/prepare-hosted-linux-fixture.sh "$RUNNER_TEMP/native-pair" "$PWD"
       - name: Real owned core lifecycle, never a passing skip
+        id: core-smoke
         run: |
           sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/packaging/check-linux-fixture.py \
             --fixture /home/gitstorefixture/experiments/hosted.json
@@ -621,7 +622,7 @@ jobs:
             --repository-probe /home/gitstorefixture/experiments/repository-probe \
             --output /home/gitstorefixture/experiments/native-acceptance.json
       - name: Diagnose bounded TLS initialization without network or credentials
-        if: failure() && steps.owned-host.outcome == 'success'
+        if: failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           export RUSTUP_HOME="$RUNNER_TEMP/diagnostic-rustup" RUSTUP_TOOLCHAIN="$toolchain"
@@ -637,7 +638,7 @@ jobs:
           sudo -u gitstorefixture env -i PATH=/nonexistent HOME=/home/gitstorefixture/experiments LANG=C \
             /home/gitstorefixture/experiments/native-tls-probe --fixture /home/gitstorefixture/experiments/hosted.json
       - name: Diagnose libcrun with a synthetic credential-free payload
-        if: failure() && steps.owned-host.outcome == 'success'
+        if: failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           sudo apt-get install -y cmake make meson ninja-build pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev
           cmake -S daemon -B "$RUNNER_TEMP/libcrun-diagnostic" -DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -658,7 +659,7 @@ jobs:
             --delegated --registered --network --seccomp "/home/gitstorefixture/source/runtime/profiles/seccomp/${{ matrix.label }}.json" \
             --keep --fixture-parent /home/gitstorefixture/experiments
       - name: Diagnose confined reads of synthetic owned mode-zero files
-        if: failure() && steps.owned-host.outcome == 'success'
+        if: failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -672,7 +673,7 @@ jobs:
           sudo -u gitstorefixture env -i PATH=/nonexistent HOME=/home/gitstorefixture/experiments LANG=C \
             /home/gitstorefixture/experiments/test-owned-read
       - name: Diagnose offline materialization from the owned failed cache
-        if: failure() && steps.owned-host.outcome == 'success'
+        if: failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
             CARGO_TARGET_DIR="$RUNNER_TEMP/tls-diagnostic-target" cargo build --release --locked \
@@ -691,7 +692,7 @@ jobs:
             --provision-probe /home/gitstorefixture/experiments/provision-probe \
             --output /home/gitstorefixture/experiments/materialization-diagnostic.json
       - name: Verify fresh pinned image acquisition and reconstruction
-        if: failure() && steps.owned-host.outcome == 'success'
+        if: failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           sudo -u gitstorefixture env -i PATH=/usr/bin:/bin HOME=/home/gitstorefixture/experiments LANG=C python3 - <<'PY'
           import json, os, pathlib, stat, subprocess, tempfile
@@ -713,7 +714,7 @@ jobs:
           assert all(stat.S_ISREG(p.lstat().st_mode) and stat.S_IMODE(p.lstat().st_mode)==0o600 for p in layers)
           PY
       - name: Check current production source after a selected candidate failure
-        if: inputs.hosted_native_full && failure() && steps.owned-host.outcome == 'success'
+        if: inputs.hosted_native_full && failure() && steps.owned-host.outcome == 'success' && steps.core-smoke.outcome == 'failure'
         run: |
           sudo apt-get install -y libcurl4-openssl-dev libcrypt-dev
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \

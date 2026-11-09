@@ -19,6 +19,37 @@ cases and all-target Linux release Clippy. Retained
 Exact rebuilt production-native and complete host/channel acceptance remain open;
 a production-source cold-start diagnostic is distinct from selected-candidate
 qualification and cannot satisfy trusted release receipts.
+The normal production-source daemon with this fix passed the complete public
+cold-start/current-generation-health case on hosted Ubuntu arm64 in 43.213 s and
+x86_64 in 44.831 s in
+[run 42598449439](https://github.com/gitstore-dev/cli/actions/runs/42598449439)
+(jobs `129096749594` / `129096749023`, source
+`f12c10485fb6e08c58529fe5fab4bbe9c2143795`).
+This diagnostic used the selected earlier CLI and a freshly built daemon with
+host system libraries; it is not the private-static package pair. The selected
+earlier candidate failed as expected before this diagnostic, so the overall
+jobs remain failed. Retained
+`/private/tmp/gs-alpha1-root-fixed-source-{arm64,x64}.log`.
+All four normal/sanitized Linux producer lanes then passed with the root fix in
+[run 42597509009](https://github.com/gitstore-dev/cli/actions/runs/42597509009),
+source `68b07f3239a55372141be1081926954d8fdfb587`. Both complete normal candidates
+passed the 66-case package suite (three explicit unrelated fixture skips).
+Retained `/private/tmp/gs-alpha1-root-fixed-{arm64,amd64}-producer.log`.
+Their exact-binary full native follow-up is
+[run 42600566017](https://github.com/gitstore-dev/cli/actions/runs/42600566017);
+both package pairs passed the real public cold-start/current-generation-health
+case (amd64 38.556 s, arm64 43.101 s). The extended runner then rejected its
+generated offline manifest at the strict private-file gate, before scenarios ran.
+The run was cancelled after both extended steps failed, stopping redundant
+startup diagnostics. Logs are retained at
+`/private/tmp/gs-alpha1-exact-native-{x64,arm64}-initial.log`.
+The offline fixture generator now creates every file explicitly mode `0600`.
+Its independent permissive-umask regression rejects the former `0664` output and
+passes with explicit private creation; the complete portable suite passes
+67 cases with seven explicit fixture skips. Private-JSON failures expose only
+bounded scalar file metadata, and startup diagnostics run only after a failed
+core smoke. Extended exact-pair acceptance still requires a successful retry;
+none of these unsigned runs supplies trusted release qualification.
 
 Hosted layer auditing isolated the startup failure to cache file permissions:
 all four Git-image layer blobs on both architectures had mode `0664`, one link
