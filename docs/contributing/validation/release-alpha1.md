@@ -1,5 +1,23 @@
 # Alpha.1 implementation evidence
 
+## CI follow-up — 2026-11-09
+
+Pinned alpha.9 integration passed all 34 tests locally after waiting for initial
+Repository reconciliation before fixture cleanup, matching the existing Namespace
+readiness check. The previous hosted integration failure was an optimistic-delete
+conflict while the Repository controller was writing initial status. Fixtures now
+observe public current-generation `Ready` before issuing the single delete;
+production mutation/conflict behavior is unchanged. Retained log:
+`/private/tmp/gs-alpha1-repository-ready-integration.log`.
+
+The previous ordinary amd64 runtime job failed while fetching native corresponding
+source with HTTP 503, after native compilation, package checks and actual relinking
+passed. Source collection now retries selected transient HTTP responses at most
+three times, with 1 s/2 s backoff. HTTPS, byte bounds and authenticated/pinned digest
+checks remain required; permanent HTTP errors and policy failures are not retried.
+Three download failure/recovery checks and four source/relink binding checks pass.
+Retained failed job log: `/private/tmp/gs-alpha1-latest-runtime-failure.log`.
+
 ## Complete producer and inspection measurement — 2026-11-08
 
 T019 is implementation-complete as the generated formula target. The task's

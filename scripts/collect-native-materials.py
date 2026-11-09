@@ -12,6 +12,8 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
+from urllib.error import HTTPError
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,10 +42,19 @@ def digest(data):
 def download(url):
     if not url.startswith('https://'):
         raise ValueError('source material must use public HTTPS')
-    with urlopen(url,timeout=60) as response:
-        if not response.url.startswith('https://'):
-            raise ValueError('source redirect left HTTPS')
-        data = response.read(512*1024*1024+1)
+    for attempt in range(3):
+        try:
+            with urlopen(url,timeout=60) as response:
+                if not response.url.startswith('https://'):
+                    raise ValueError('source redirect left HTTPS')
+                data = response.read(512*1024*1024+1)
+            break
+        except HTTPError as error:
+            retryable = error.code in (429, 500, 502, 503, 504)
+            error.close()
+            if not retryable or attempt == 2:
+                raise
+            time.sleep(2**attempt)
     if len(data)>512*1024*1024:
         raise ValueError('source material exceeds bounds')
     return data
