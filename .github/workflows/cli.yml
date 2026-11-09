@@ -99,6 +99,19 @@ jobs:
           "$RUNNER_TEMP/package-venv/bin/python" scripts/build-release-platform.py --output "$RUNNER_TEMP/complete-candidate"
           "$RUNNER_TEMP/package-venv/bin/python" tests/packaging/check-produced.py \
             --candidate "$RUNNER_TEMP/complete-candidate" --output "$RUNNER_TEMP/produced-package-checks"
+      - name: Check actual next-alpha replacement and native refusal controls
+        run: |
+          "$RUNNER_TEMP/package-venv/bin/python" tests/packaging/check-produced-replacement.py \
+            --candidate "$RUNNER_TEMP/complete-candidate" --output "$RUNNER_TEMP/replacement-checks"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unqualified-replacement-${{ matrix.runner }}
+          path: |
+            ${{ runner.temp }}/replacement-checks/result.json
+            ${{ runner.temp }}/replacement-checks/built/UNQUALIFIED.json
+            ${{ runner.temp }}/replacement-checks/packages/UNQUALIFIED*
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

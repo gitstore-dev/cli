@@ -72,6 +72,21 @@ notices or synthetic unused-platform formula hashes must never enter release
 inventories. Production candidates require reviewed full notices and real hashes
 for every advertised platform.
 
+## Producer replacement checks
+
+Each production candidate CI job also runs `check-produced-replacement.py`.
+It requires the candidate's exact current source/version, builds next-alpha
+executables in a private copy, and exercises actual original archive/npm packages
+through replacement and removal. Linux additionally runs missing-library and
+running-version refusal controls against the original production pair. Tooling
+must be present; these selected negative controls cannot become passing skips.
+
+Replacement packages deliberately use `UNQUALIFIED-ONLY` names and incomplete
+fixture notices. They are uploaded in separate `unqualified-replacement-*`
+artifacts, never canonical production subject groups. They can support controlled
+APT/DNF/Homebrew replacement tests but cannot be promoted or used as release
+qualification receipts. The original source/native build remains unchanged.
+
 ## Exact-byte workflow qualification
 
 The manual `runtime.yml` qualification lane consumes a successful same-source
