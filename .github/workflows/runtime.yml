@@ -613,6 +613,20 @@ jobs:
             /home/gitstorefixture/experiments/native_adapter_probe /home/gitstorefixture/experiments/native_registered_payload \
             --delegated --registered --network --seccomp "/home/gitstorefixture/source/runtime/profiles/seccomp/${{ matrix.label }}.json" \
             --keep --fixture-parent /home/gitstorefixture/experiments
+      - name: Diagnose confined reads of synthetic owned mode-zero files
+        if: failure() && steps.owned-host.outcome == 'success'
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ('apparmor_restrict_unprivileged_userns','apparmor_restrict_unprivileged_unconfined'):
+              path=Path('/proc/sys/kernel')/name
+              print(name+': '+(path.read_text().strip() if path.is_file() else 'unavailable'))
+          PY
+          cmake --build "$RUNNER_TEMP/libcrun-diagnostic" --parallel 2 --target test_owned_read
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/libcrun-diagnostic/test_owned_read" \
+            /home/gitstorefixture/experiments/test-owned-read
+          sudo -u gitstorefixture env -i PATH=/nonexistent HOME=/home/gitstorefixture/experiments LANG=C \
+            /home/gitstorefixture/experiments/test-owned-read
       - name: Diagnose offline materialization from the owned failed cache
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
