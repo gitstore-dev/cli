@@ -104,13 +104,27 @@ def main():
             owned=[dict(type=atom(kind),stage=atom(stage),ownership=atom(ownership),count=count) for kind,stage,ownership,count in db.execute(
                 'SELECT resource_type,lifecycle_stage,ownership_state,count(*) FROM resource_ownership GROUP BY resource_type,lifecycle_stage,ownership_state')]
             milestones={key:0 for key in ('execution','population','native')}
-            for (identity,) in db.execute("SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' LIMIT 32"):
+            directories=[]
+            store=db.execute('SELECT store_id FROM query_meta LIMIT 1').fetchone()[0]
+            for resource_id,identity in db.execute("SELECT resource_id,backend_identity FROM resource_ownership WHERE resource_type='workload' LIMIT 32"):
                 if not isinstance(identity,str) or len(identity)>65536:
                     continue
                 value=json.loads(identity)
                 if isinstance(value,dict):
                     for key in milestones:
                         milestones[key]+=isinstance(value.get(key),dict)
+                if not re.fullmatch('[a-f0-9]{32}',store) or not re.fullmatch('[A-Za-z0-9][A-Za-z0-9_-]{0,63}',resource_id):
+                    continue
+                scope=root/'state'/('resources-'+store)/resource_id
+                inspected={}
+                for label,suffix in [('scope','.'),('execution','execution'),('bundle','bundle'),('rootfs','execution/rootfs')]:
+                    try:
+                        info=(scope/suffix).lstat()
+                        inspected[label]=dict(directory=stat.S_ISDIR(info.st_mode),owned=info.st_uid==os.geteuid(),
+                            callerGroup=info.st_gid==os.getegid(),mode=stat.S_IMODE(info.st_mode))
+                    except FileNotFoundError:
+                        inspected[label]=dict(present=False)
+                directories.append(inspected)
             materialization=[]
             if args.provision_probe:
                 for key,descriptor in db.execute("SELECT asset_key,descriptor FROM assets WHERE state='active' LIMIT 8"):
@@ -140,7 +154,7 @@ def main():
                             status=value.get('status') if isinstance(value.get('status'),int) else None,
                             phases=phases,blobChecks=blob_checks,stderrCharacters=len(result.stderr)))
         record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned,
-            workloadMilestoneCounts=milestones,materializationProbes=materialization))
+            workloadMilestoneCounts=milestones,workloadDirectories=directories,materializationProbes=materialization))
     fd=os.open(args.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
     with os.fdopen(fd,'w') as stream:
         json.dump(record,stream,indent=2);stream.write('\n')
