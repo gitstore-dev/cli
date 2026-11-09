@@ -1,0 +1,709 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Unsigned pre-tag package replacement review; never trusted release qualification",
+  "originalAndReplacementReview": {
+    "qualification": "UNSIGNED DEVELOPMENT PACKAGE REVIEW ONLY; NEVER RELEASE QUALIFICATION",
+    "branchRevision": "ac028d2bf1c851c9a383a5516d7c82c8a9631274",
+    "sourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+    "version": "0.1.0-alpha.1",
+    "cliRun": 42667856070,
+    "linuxRun": 42667856064,
+    "archives": [
+      {
+        "os": "darwin",
+        "arch": "arm64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-0.1.0-alpha.1-darwin-arm64.tar.gz",
+        "sha256": "f36983fb14045bcad70100040f4719d6651bb854cce740de73e2b0427a6bb06e"
+      },
+      {
+        "os": "darwin",
+        "arch": "x64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-0.1.0-alpha.1-darwin-x64.tar.gz",
+        "sha256": "dd15df024e5f48810a1d49d009749566b440836a1d4bc781caa806fb83c2a177"
+      },
+      {
+        "os": "linux",
+        "arch": "arm64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-0.1.0-alpha.1-linux-arm64.tar.gz",
+        "sha256": "d3e115d85a90a9a05fd872ba8f67a8ce91cfc52bd7bf61f875d1675a886a1b2b"
+      },
+      {
+        "os": "linux",
+        "arch": "x64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-0.1.0-alpha.1-linux-x64.tar.gz",
+        "sha256": "c02553fd668ac75f80468eb2bb2d28c2bb2782fe7bede7c9eb32b6207b60c84e"
+      }
+    ],
+    "replacementVersion": "0.1.0-alpha.2",
+    "replacementSourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+    "replacementCliRun": 42667856070,
+    "replacementLinuxRun": 42667856064,
+    "replacementArchives": [
+      {
+        "os": "darwin",
+        "arch": "arm64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.2/gitstore-0.1.0-alpha.2-darwin-arm64.tar.gz",
+        "sha256": "88c2f86fdce6eeb78d00fe5f94cf0ea3ef86a01b606be5deeeb2d8f6d50dd5cb"
+      },
+      {
+        "os": "darwin",
+        "arch": "x64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.2/gitstore-0.1.0-alpha.2-darwin-x64.tar.gz",
+        "sha256": "d6186bd94f4c4f29df30d7e508c9fa6b18104f6bb25b0a9ac5f2e2776e333ee8"
+      },
+      {
+        "os": "linux",
+        "arch": "arm64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.2/gitstore-0.1.0-alpha.2-linux-arm64.tar.gz",
+        "sha256": "93d499e1a44ff56704769f0457e56912873715bffd53b58d1985ee04e0b2efc7"
+      },
+      {
+        "os": "linux",
+        "arch": "x64",
+        "url": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.2/gitstore-0.1.0-alpha.2-linux-x64.tar.gz",
+        "sha256": "925ecb76ef9db819b82d6b1dddbeef67007b54fdb29763ddef62e422edf07ebe"
+      }
+    ]
+  },
+  "receipts": [
+    {
+      "label": "macos-arm64",
+      "run": 42675431393,
+      "artifactId": 13700910978,
+      "receiptSha256": "2ae3f1eb08d567dbbdc9166390fa3c0e2b9a4a2ac1400d7f55e9ec37e627937b",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/Users/runner/.gitstore-package-review-42675431393/brew-lifecycle-v4t2gfcs",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "f36983fb14045bcad70100040f4719d6651bb854cce740de73e2b0427a6bb06e",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "88c2f86fdce6eeb78d00fe5f94cf0ea3ef86a01b606be5deeeb2d8f6d50dd5cb",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "macos-x64",
+      "run": 42675431393,
+      "artifactId": 13699782884,
+      "receiptSha256": "3ec8a4fea2026100e829c2026f0e72ee11b5dad32c6423e7bd35e9709b5eebb0",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/Users/runner/.gitstore-package-review-42675431393/brew-lifecycle-3mzpiiu1",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "dd15df024e5f48810a1d49d009749566b440836a1d4bc781caa806fb83c2a177",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "d6186bd94f4c4f29df30d7e508c9fa6b18104f6bb25b0a9ac5f2e2776e333ee8",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "ubuntu-homebrew-x64",
+      "run": 42675431393,
+      "artifactId": 13699658073,
+      "receiptSha256": "75665561fa973b7887a7804ca5ddf58ccd09d1c91cc056d914b1052bc064dcf5",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/runner/.gitstore-package-review-42675431393/brew-lifecycle-p5v8_fib",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "c02553fd668ac75f80468eb2bb2d28c2bb2782fe7bede7c9eb32b6207b60c84e",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "925ecb76ef9db819b82d6b1dddbeef67007b54fdb29763ddef62e422edf07ebe",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "ubuntu-homebrew-arm64",
+      "run": 42675431393,
+      "artifactId": 13700396357,
+      "receiptSha256": "0650f7bb75f78e882032719c6f09145a587598167406c623bc8cd8e81918a346",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/runner/.gitstore-package-review-42675431393/brew-lifecycle-n2gby0if",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "d3e115d85a90a9a05fd872ba8f67a8ce91cfc52bd7bf61f875d1675a886a1b2b",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "93d499e1a44ff56704769f0457e56912873715bffd53b58d1985ee04e0b2efc7",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "fedora-arm64",
+      "run": 42675726927,
+      "artifactId": 13701095538,
+      "receiptSha256": "b9595cc3e2de86e2b437a0a4947d16d9bf604a262d041dc545d415e1146749fc",
+      "receipt": {
+        "channel": "archive",
+        "fixture": "/home/gitstorefixture/experiments/archive-lifecycle-0j42_u3y",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "d3e115d85a90a9a05fd872ba8f67a8ce91cfc52bd7bf61f875d1675a886a1b2b",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "93d499e1a44ff56704769f0457e56912873715bffd53b58d1985ee04e0b2efc7",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled archive lifecycle only; not release qualification",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "archive"
+      ]
+    },
+    {
+      "label": "fedora-arm64",
+      "run": 42675726927,
+      "artifactId": 13701095538,
+      "receiptSha256": "af1137e35f3be6c27ef0ac028d6859fdc6998b872b7e4e639f317ebb99a877c2",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/gitstorefixture/experiments/brew-lifecycle-lp9y1z31",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "d3e115d85a90a9a05fd872ba8f67a8ce91cfc52bd7bf61f875d1675a886a1b2b",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "93d499e1a44ff56704769f0457e56912873715bffd53b58d1985ee04e0b2efc7",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "fedora-arm64",
+      "run": 42675726927,
+      "artifactId": 13701095538,
+      "receiptSha256": "44c00a6d5e16d3f2c04082bd65cf3f66deed929a4563eab22105916bc6e7acb1",
+      "receipt": {
+        "channel": "npm",
+        "fixture": "/home/gitstorefixture/experiments/npm-lifecycle-53uu_531",
+        "qualification": "controlled package lifecycle only",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "77146ccdd10278c2f22dd3382ab65e68744522941d552d5e10fc91c3bb3ea823",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "478d801a011b3654316dca0e27b061e21f92d3e80f701656c68d8e751ab0092a",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "consumerVerifier": "absent from command PATH",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "npm"
+      ]
+    },
+    {
+      "label": "fedora-arm64",
+      "run": 42675726927,
+      "artifactId": 13701095538,
+      "receiptSha256": "7c7ca95db3a39d402c5796ad902708aa10a57f11030576b2febdf4d42c7cc8c3",
+      "receipt": {
+        "channel": "rpm",
+        "fixture": "/home/gitstorefixture/experiments/system-package-1mpbj7lu",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "8cf97da392fa08527e7049c027618ee88ba0f237c728192468fbcf15e4501667",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "2d068501c080170babf73564cf6d28cddd70fbc76e6013951fd70015be93217b",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "rpm"
+      ]
+    },
+    {
+      "label": "fedora-x64",
+      "run": 42675726927,
+      "artifactId": 13700550982,
+      "receiptSha256": "f4c83388825bec226520d152804f6f872dfc674499a26273ea1d950e576a577b",
+      "receipt": {
+        "channel": "archive",
+        "fixture": "/home/gitstorefixture/experiments/archive-lifecycle-_vc3wexl",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "c02553fd668ac75f80468eb2bb2d28c2bb2782fe7bede7c9eb32b6207b60c84e",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "925ecb76ef9db819b82d6b1dddbeef67007b54fdb29763ddef62e422edf07ebe",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled archive lifecycle only; not release qualification",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "archive"
+      ]
+    },
+    {
+      "label": "fedora-x64",
+      "run": 42675726927,
+      "artifactId": 13700550982,
+      "receiptSha256": "1122f8b0392a50ddfb3769ccc4eb318e2a5b52945777840183cc7cbce205f297",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/gitstorefixture/experiments/brew-lifecycle-hh0djblu",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "c02553fd668ac75f80468eb2bb2d28c2bb2782fe7bede7c9eb32b6207b60c84e",
+            "formulaSha256": "2a762fb638b5b487259dd111bbcb0659f404b92034a804e02cf910be0adab8cf",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "925ecb76ef9db819b82d6b1dddbeef67007b54fdb29763ddef62e422edf07ebe",
+            "formulaSha256": "34cbbc6134401cb05d5bc0e5fa1344bdff67202e2c7e615e99dcca9e9eb1b120",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "homebrew"
+      ]
+    },
+    {
+      "label": "fedora-x64",
+      "run": 42675726927,
+      "artifactId": 13700550982,
+      "receiptSha256": "c3c6325da956e5898209db60ec323fac095c11065b81fc3d0b72b388ebbe2f08",
+      "receipt": {
+        "channel": "npm",
+        "fixture": "/home/gitstorefixture/experiments/npm-lifecycle-bliq8ifr",
+        "qualification": "controlled package lifecycle only",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "6588cbd5de6b9e1fc35d1abfbb6875ece3589aa270f5e6006a649d7ab90ebf0b",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "9ce2f78468124cab36c9094068571e65fc4499be4ec28efa38335644b50c8b93",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "consumerVerifier": "absent from command PATH",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "npm"
+      ]
+    },
+    {
+      "label": "fedora-x64",
+      "run": 42675726927,
+      "artifactId": 13700550982,
+      "receiptSha256": "6af31fbf39ef9974971781ab7bbe151ec84ddd7d90d27f971882297a67269820",
+      "receipt": {
+        "channel": "rpm",
+        "fixture": "/home/gitstorefixture/experiments/system-package-4spazsa0",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "artifacts": [
+          {
+            "sha256": "7798dcc6d429eee46291dcd07dae8da2d9f8501a282177841db48a3ca9ea24f4",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "2527c9a895cc04069d9fbcf800860482cd5bbf427eab5d4ca944b17d98b311e1",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "rpm"
+      ]
+    },
+    {
+      "label": "apt-arm64",
+      "run": 42675726927,
+      "artifactId": 13701120321,
+      "receiptSha256": "22790911c213facb8c01ab03c1649f7ec95baf9b29f5115b13d600c8612a117a",
+      "receipt": {
+        "channel": "deb",
+        "fixture": "/home/gitstorefixture/experiments/system-package-9ldw5yv7",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+        "artifacts": [
+          {
+            "sha256": "fed8c47a35e6cba7ec2ecb427559289f739cfcfe8ce74f6d40938250e4f14349",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "4890e252e8ddadf083e7b1b2c7c0509c1cc4ab4c656f95ebef020015751ce749",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true,
+        "candidateSourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "replacementSourceRevision": "e9396279255302be0dfb4f90c416693141435ce8"
+      },
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "deb"
+      ]
+    },
+    {
+      "label": "apt-x64",
+      "run": 42675726927,
+      "artifactId": 13700865546,
+      "receiptSha256": "238c84ccd50fc8f0743b95ce3d8e565b146dbda98464c67896e43bb6b6b88dbe",
+      "receipt": {
+        "channel": "deb",
+        "fixture": "/home/gitstorefixture/experiments/system-package-t41q57iy",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "artifacts": [
+          {
+            "sha256": "42f273238713923ab871058003648c82f22104ebb080a9d44457e34b320cfe7f",
+            "applicationVersion": "0.1.0-alpha.1"
+          },
+          {
+            "sha256": "ee22e6dab31d0d7815d77e3d6e63679bb0fe87a3f0973ef28ddd446af8938842",
+            "applicationVersion": "0.1.0-alpha.2"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true,
+        "candidateSourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "replacementSourceRevision": "e9396279255302be0dfb4f90c416693141435ce8"
+      },
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "deb"
+      ]
+    }
+  ],
+  "byteEquivalence": [
+    {
+      "os": "linux",
+      "arch": "x64",
+      "previousSource": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+      "currentSource": "e9396279255302be0dfb4f90c416693141435ce8",
+      "sha256": {
+        "bin/gitstored": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155",
+        "bin/gs": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e"
+      }
+    },
+    {
+      "os": "linux",
+      "arch": "arm64",
+      "previousSource": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+      "currentSource": "e9396279255302be0dfb4f90c416693141435ce8",
+      "sha256": {
+        "bin/gitstored": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df",
+        "bin/gs": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7"
+      }
+    },
+    {
+      "os": "darwin",
+      "arch": "x64",
+      "previousSource": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+      "currentSource": "e9396279255302be0dfb4f90c416693141435ce8",
+      "sha256": {
+        "bin/gitstored": "b75125b0018b04b85695842fc9df30bf5ae36eec707221391312c5cd4bce66de",
+        "bin/gs": "977eb2228b13969dbf9f591e760ddeef611de5e9bd9ca063cef8b24162f80452"
+      }
+    },
+    {
+      "os": "darwin",
+      "arch": "arm64",
+      "previousSource": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+      "currentSource": "e9396279255302be0dfb4f90c416693141435ce8",
+      "sha256": {
+        "bin/gitstored": "1dda7205444dd89d04ba1ab989182b149c584937cc894f220f5ae66ae21db0a1",
+        "bin/gs": "a584661b4bb414fff94e700d5ccde0d60ba7cdfb8981bc2e4f68a66eefeecbae"
+      }
+    }
+  ],
+  "producerChecks": [
+    {
+      "selections": [
+        [
+          "linux",
+          "x64",
+          "ubuntu:24.04",
+          "archive"
+        ],
+        [
+          "linux",
+          "x64",
+          "ubuntu:24.04",
+          "npm"
+        ]
+      ],
+      "run": 42667856064,
+      "resultSha256": "f71f4e32dd826a833b9b9b511de6295ca4b0173266995d535a9fc8249db41ce8",
+      "result": {
+        "status": "passed",
+        "qualification": "UNQUALIFIED replacement test only; never release qualification",
+        "sourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "sourceVersion": "0.1.0-alpha.1",
+        "replacementVersion": "0.1.0-alpha.2",
+        "executed": [
+          "archive",
+          "npm",
+          "missing-native-library",
+          "running-version-mismatch"
+        ],
+        "replacement": {
+          "qualification": "UNQUALIFIED next-alpha package version fixture; never publish",
+          "version": "0.1.0-alpha.2",
+          "sourceVersion": "0.1.0-alpha.1",
+          "sha256": {
+            "gs": "94590d3c2b5a2992fdc8c272ee64547e036b9ecf743341951a1c8c1a3dc2ec76",
+            "gitstored": "14dc138bf16dc7c6fea188d65a2a5dae5e178880c3a893727c364728f0b1375a"
+          }
+        }
+      }
+    },
+    {
+      "selections": [
+        [
+          "linux",
+          "arm64",
+          "ubuntu:24.04",
+          "archive"
+        ],
+        [
+          "linux",
+          "arm64",
+          "ubuntu:24.04",
+          "npm"
+        ]
+      ],
+      "run": 42667856064,
+      "resultSha256": "e175f59d0f9a0083a07bbb37d12a924f714bbf43c9c97e7ddc9d85b6bcc67358",
+      "result": {
+        "status": "passed",
+        "qualification": "UNQUALIFIED replacement test only; never release qualification",
+        "sourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "sourceVersion": "0.1.0-alpha.1",
+        "replacementVersion": "0.1.0-alpha.2",
+        "executed": [
+          "archive",
+          "npm",
+          "missing-native-library",
+          "running-version-mismatch"
+        ],
+        "replacement": {
+          "qualification": "UNQUALIFIED next-alpha package version fixture; never publish",
+          "version": "0.1.0-alpha.2",
+          "sourceVersion": "0.1.0-alpha.1",
+          "sha256": {
+            "gs": "6d6e3d794fe502d78fab7834000cb6967bbcaed37e21a52353ff5653982fdf57",
+            "gitstored": "cff8f930360a2c04fafc41cacaba9d04df04c2cd54fb5df5370e8c5826af4f6c"
+          }
+        }
+      }
+    },
+    {
+      "selections": [
+        [
+          "darwin",
+          "x64",
+          "macos-15-intel",
+          "archive"
+        ],
+        [
+          "darwin",
+          "x64",
+          "macos-15-intel",
+          "npm"
+        ]
+      ],
+      "run": 42667856070,
+      "resultSha256": "ee9ef0a03f762eaabb3d75f9fbc25d7046a3275217196503b749d4576c90a66f",
+      "result": {
+        "status": "passed",
+        "qualification": "UNQUALIFIED replacement test only; never release qualification",
+        "sourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "sourceVersion": "0.1.0-alpha.1",
+        "replacementVersion": "0.1.0-alpha.2",
+        "executed": [
+          "archive",
+          "npm"
+        ],
+        "replacement": {
+          "qualification": "UNQUALIFIED next-alpha package version fixture; never publish",
+          "version": "0.1.0-alpha.2",
+          "sourceVersion": "0.1.0-alpha.1",
+          "sha256": {
+            "gs": "5b4148e2f5d50ceb347123bbb605ed72b8006e6ae2d8ed40bcdba09727cb7cf8",
+            "gitstored": "bd2fd03f13e38dd7875eb9b1502493b0501882961f993f25fd95a1148ff49216"
+          }
+        }
+      }
+    },
+    {
+      "selections": [
+        [
+          "darwin",
+          "arm64",
+          "macos-15",
+          "archive"
+        ],
+        [
+          "darwin",
+          "arm64",
+          "macos-15",
+          "npm"
+        ]
+      ],
+      "run": 42667856070,
+      "resultSha256": "51ad93dbeb25ac1d69ea89d8707e4ab8f37f2cab9a80931418d0a66bee17ddd1",
+      "result": {
+        "status": "passed",
+        "qualification": "UNQUALIFIED replacement test only; never release qualification",
+        "sourceRevision": "e9396279255302be0dfb4f90c416693141435ce8",
+        "sourceVersion": "0.1.0-alpha.1",
+        "replacementVersion": "0.1.0-alpha.2",
+        "executed": [
+          "archive",
+          "npm"
+        ],
+        "replacement": {
+          "qualification": "UNQUALIFIED next-alpha package version fixture; never publish",
+          "version": "0.1.0-alpha.2",
+          "sourceVersion": "0.1.0-alpha.1",
+          "sha256": {
+            "gs": "e215eb227c2b9298de0c7c04c3c0481e6954859e6797eb3aa774522e871339dd",
+            "gitstored": "9734f8c52d93f2d50b5fa1a3416d40b8a56d93cd96115617e8c154df1e5d29e5"
+          }
+        }
+      }
+    }
+  ],
+  "requiredPreTagSelections": 22,
+  "observedPreTagSelections": 22,
+  "qualificationStatus": "Pre-tag execution only; no trusted tag receipts, signing bundles or release promotion"
+}

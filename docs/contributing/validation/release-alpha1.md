@@ -2,6 +2,64 @@
 
 ## CI follow-up — 2026-11-09
 
+### Current pre-tag completion — 61/64 tasks
+
+T024 is complete. [The upgrade evidence](alpha1-upgrade-review.json) accounts for
+all **22 required OS/architecture/host/channel selections** using actual executed
+install → alpha.2 replacement → remove operations. Four producer cases provide
+the eight Ubuntu/macOS archive/npm selections; 14 package-manager receipts supply
+the remaining selections. Every package receipt was checked against the actual
+original and replacement file digests, both reported application versions and
+successful removal. These are pre-tag execution records, not trusted release
+qualification receipts.
+
+- Homebrew upgrades passed on all six hosts in
+  [42675431393](https://github.com/gitstore-dev/cli/actions/runs/42675431393).
+- Fedora archive/npm/RPM/Homebrew upgrades passed on both architectures in
+  [42675726927](https://github.com/gitstore-dev/cli/actions/runs/42675726927).
+- Actual APT upgrades passed on Ubuntu amd64 and arm64 in that corrected run.
+  The preceding APT attempt rejected runner-owned inputs at the root ownership
+  boundary before package installation; the corrected staging copies only
+  ordinary bounded producer-owned files, refuses links/overwrites, preserves
+  byte identity and gives privileged installation its own read-only inputs.
+- All four producer archive/npm replacements and Linux missing-library/active-
+  mismatched-manager controls passed in
+  [CLI 42667856070](https://github.com/gitstore-dev/cli/actions/runs/42667856070) and
+  [Linux 42667856064](https://github.com/gitstore-dev/cli/actions/runs/42667856064).
+
+Original and replacement packages for this upgrade matrix both bind actual source
+`e9396279255302be0dfb4f90c416693141435ce8` (producer branch checkpoint `ac028d2`).
+Every executable and private library on all four platforms is byte-identical to
+its corresponding native/control-tested original from
+`12c8721ed3a2b47dd865fce89fbbe0e4d0918201`. The explicit hash comparison is included
+in the upgrade evidence; the two source identities are not relabeled as equal.
+Earlier complete Ubuntu/Fedora native receipts therefore exercise those exact
+executable/library bytes. Their original source/test identities remain intact.
+
+The workflow's final simple selection is `review_upgrades=true`: originals and
+next-alpha fixtures must come from the same two selected successful CLI/Linux
+producer runs. The working coordinator validates both versions, all four real
+archive hashes and actual shared source. A baseline without replacements passed
+while earlier replacement-input dispatches hit GitHub planner internal errors.
+The streamlined selection now runs successfully; no unsupported input-limit or
+workflow-size claim is inferred from those server errors. No runs were cancelled.
+
+Final changed checks: 90 package-policy cases, 83 passed/seven explicit native
+fixture skips; 27 release-policy cases, 26 passed/one optional fixture skip.
+All required PR checks passed at code checkpoint `1268716`: Rust on Ubuntu/macOS,
+ordinary/sanitized daemon suites and PR-title policy. The remaining full ordinary
+library producers/macOS Intel refresh were still running when this evidence was
+written; earlier complete producer and live integration receipts remain above.
+Current changes after that checkpoint only record documentation/task evidence.
+
+Remaining tasks are **T038, T039 and T064**: actual Release Please PR/tag event
+acceptance, trusted tag-bound signing/qualification, then final qualified inventory,
+bundles and guide review. App installation and the protected alpha-tag publication
+environment are configured. The user-selected six-host hosted orchestration is
+implemented with unchanged exact-source/tag/byte and 22-selection gates; it still
+needs its real trusted-tag execution. No feature/release PR was merged, and no
+version tag, public release, registry upload or tap update was created.
+
 ### Hosted qualification preparation and exact-byte native confirmation
 
 The pinned review candidate at `12c8721ed3a2b47dd865fce89fbbe0e4d0918201` passed
@@ -312,8 +370,8 @@ JSON (artifact IDs: macOS arm64 `13683321771`, x86_64 `13683233380`; Linux amd64
 
 ### Earlier Ubuntu native acceptance
 
-Current implementation checkpoint: **60/64 tasks checked; four acceptance gates
-remain open**. Both exact Linux package pairs pass the complete hosted native
+At this earlier checkpoint, **60/64 tasks were checked; four acceptance gates
+remained open**. Both exact Linux package pairs pass the complete hosted native
 suite in [run 42605030100](https://github.com/gitstore-dev/cli/actions/runs/42605030100).
 Each architecture passed the real public cold start, seven clean-install cases,
 all ten recovery cases, truncated/tampered-image controls and 100-sample command
@@ -967,7 +1025,7 @@ Linux producers are now part of ordinary read-only CI, in addition to both macOS
 producers. These artifacts remain unsigned review inputs and cannot enter the
 trusted release promotion path.
 
-Implementation state: **59/64 checked, 5 open**. T024/T061 still require the
+Earlier implementation state: **59/64 checked, 5 open**. T024/T061 still require the
 complete selected Linux/reference-host lifecycle and performance matrix; Azure
 kernel-7 workload start failed and is not waived. T038 needs the configured,
 authorized exact-tag App/signing run and own signed positive. T039/T064 need the
@@ -1238,35 +1296,32 @@ rather than changing checklist markers or implying those markers qualify code.
 | FR-004 | File namespace/name compatibility and namespace-free Relay ID read passed against pinned alpha.9 |
 | FR-005 | Public Git/GraphQL/daemon boundaries; body round trips, scoped credentials, bounded watch/backpressure and transport uncertainty tests |
 | FR-006 | Release Please 17.3 offline alpha.1→alpha.2, synchronized versions and workflow policy; actual App trigger pending T038 |
-| FR-007 | Four manager renderers and arm64 operation checks above; Nix deferred; no registry publication; complete canonical matrix pending |
-| FR-008 | Inventory, real sibling pair, inert user-unit and notices guards; complete reviewed notices T015 and all-host evidence T024/T025 pending |
+| FR-007 | All 22 pre-tag install/replace/remove selections passed; GitHub-hosted Homebrew/deb/RPM/npm; Nix deferred; trusted tag promotion remains open |
+| FR-008 | Real matching pairs, inert user unit, full reviewed notices/source/relink materials and all-host pre-tag package evidence passed; final tag-bound inventory remains open |
 | FR-009 | Private first-use paths, owned socket, credential separation and no-state help/version; selected Linux native receipts above |
-| FR-010 | Concurrent first local use converged to one owned manager; explicit socket/mismatch refusal; all packaged native tuples still pending |
-| FR-011 | Standard hosted attestation and strict producer verification implemented; consumers optional; own signed positive T038 pending |
+| FR-010 | Four Linux native tuples passed exact-byte cold/clean/recovery/integrity checks; concurrent first use and active version mismatch controls passed; macOS stays control-only |
+| FR-011 | Real own branch signing positive and four negative controls passed; strict producer identity/SAN policy; consumer verification optional; trusted tag signing remains T038 |
 | FR-012 | 16 producer fixtures cover incomplete/conflicting/retry/tap-failure and wrong identities; actual hosted negative/positive evidence pending |
-| FR-013 | Controlled arm64 checks above; Linux x64, macOS 15 arm64/x64 and remaining manager/host matrix unavailable; no full support claim |
+| FR-013 | All 22 pre-tag host/channel selections passed, including both architectures on Ubuntu/Fedora/macOS; complete trusted tag qualification remains open |
 | FR-014 | Lifecycle documentation and actual install/replace/remove effects; no preservation/recovery guarantee; no supported migration claim |
-| FR-015 | Selected Linux closure/fd/memfd/native startup receipts; final all-host qualification and T061 measurements remain incomplete |
+| FR-015 | Four Linux native tuples and all reference-host T061 measurements passed; exact costs/bytes recorded; trusted tag-qualified release remains open |
 | FR-016 | Payload/LFS/CRD/MediaAsset/transfer/publication/CSI prerequisites remain explicit; no speculative endpoints |
 | FR-017 | CLI/daemon help, generated reference, package notices/descriptions, formula caveats, install guide and per-draft publisher disclaimer |
 | SC-001 | Reviewed 84-command classification plus capability contract and named remaining gates |
-| SC-002 | Controlled package operations passed on selected arm64 hosts; full canonical exact-byte matrix incomplete |
-| SC-003 | Selected dedicated Linux ordinary-user lifecycle passed; other advertised tuples not qualified; macOS workload runtime unavailable |
-| SC-004 | Structural/negative controls passed; final own hosted signed positive and complete subjects not yet available |
+| SC-002 | All 22 required pre-tag package lifecycle selections passed; final trusted tag/subject qualification remains separate |
+| SC-003 | Complete native ordinary-user lifecycle passed on both Ubuntu/Fedora architectures; macOS remote/control packages passed and local runtime remains unavailable |
+| SC-004 | Actual branch signing positive/negative controls passed; complete tag-bound signed release subjects remain unavailable before authorized tag execution |
 | SC-005 | Production pair/fixture metadata alpha.1 and engine alpha.2 passed; reviewed public tag/published release not created |
 | SC-006 | Selected alpha.9 operations passed controlled failures and pinned live checks; native store checked separately; unsupported providers explicit |
 | SC-007 | All selected documentation/package/generated-reference surfaces audited; publisher requires notice in each draft before promotion |
 
-Remaining release prerequisites are concrete: T012/T015 actual closure license,
-source and relink materials; T018/T019 final complete canonical packages/formula;
-T021/T024/T025 missing host tuples and execution of the new qualification workflow;
-T038 configured repository
-App and authorized reviewed tag for own hosted attestation/trigger evidence;
-T039 final inventory/bundles/readiness; T061 measurements and T064 final guide.
-No repository App client-ID variable was configured at the latest read-only check.
-The candidate workflow deliberately fails before builds when reviewed inputs are
-missing and refuses promotion without complete exact-byte receipts. Publication
-is a separate explicitly authorized operation after these gates pass.
+Remaining release prerequisites are T038 actual App-created release PR/tag and
+trusted signing/qualification, T039 final qualified subjects/bundles/readiness,
+and T064 final guide review. Reviewed source/license/relink materials and all 22
+pre-tag package selections are complete. Inherited App settings, installation
+access and the required-reviewer publication environment are verified. The
+candidate workflow still refuses promotion without complete exact-source/tag
+receipts; publication remains a separate explicitly authorized operation.
 
 ## Baseline — 2026-11-08
 
