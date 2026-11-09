@@ -69,8 +69,11 @@ def verify(artifact, bundle, trusted_root, source_ref, source_digest, expected_s
             raise ValueError("artifact digest mismatch")
         snapshot(bundle, root / "bundle.jsonl", 4 * 1024 * 1024)
         snapshot(trusted_root, root / "trusted_root.jsonl", 4 * 1024 * 1024)
+        # gh's identity selectors are mutually exclusive. The exact certificate
+        # SAN binds both workflow and tag; a second --signer-workflow selector
+        # causes argument rejection before any cryptographic check.
         command = [gh, "attestation", "verify", str(root / "artifact"),
-                   "--repo", REPOSITORY, "--signer-workflow", WORKFLOW,
+                   "--repo", REPOSITORY,
                    "--cert-identity", f"https://github.com/{WORKFLOW}@{source_ref}",
                    "--cert-oidc-issuer", "https://token.actions.githubusercontent.com",
                    "--source-ref", source_ref, "--source-digest", source_digest,

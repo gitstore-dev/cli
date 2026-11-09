@@ -42,7 +42,7 @@ def main():
             GH_HOST='github.com',GH_TOKEN='offline-verification-placeholder',GH_PROMPT_DISABLED='1',
             LANG='C',NO_COLOR='1')
         command=[gh,'attestation','verify',str(artifact),'--repo',REPOSITORY,
-            '--signer-workflow',WORKFLOW,'--cert-identity',f'https://github.com/{WORKFLOW}@{args.source_ref}',
+            '--cert-identity',f'https://github.com/{WORKFLOW}@{args.source_ref}',
             '--cert-oidc-issuer','https://token.actions.githubusercontent.com','--source-ref',args.source_ref,
             '--source-digest',args.source_digest,'--deny-self-hosted-runners',
             '--predicate-type','https://slsa.dev/provenance/v1','--bundle',str(bundle),
@@ -57,7 +57,7 @@ def main():
         controls=[]
         for name,flag,value in (
                 ('altered-artifact',None,str(altered)),
-                ('wrong-workflow','--signer-workflow',REPOSITORY+'/.github/workflows/release.yml'),
+                ('wrong-workflow','--cert-identity',f'https://github.com/{REPOSITORY}/.github/workflows/release.yml@{args.source_ref}'),
                 ('wrong-source','--source-digest','0'*40),
                 ('missing-bundle','--bundle',str(root/'absent.jsonl'))):
             negative=list(command)

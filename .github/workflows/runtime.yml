@@ -22,8 +22,9 @@ on:
       release_preflight:
         description: 'Check the configured release App and sign/verify an unqualified text fixture; no release or tag'
         required: false
-        default: false
-        type: boolean
+        default: none
+        type: choice
+        options: [none, app, signing, all]
       review_cli_run:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
@@ -56,7 +57,7 @@ permissions:
   contents: read
 jobs:
   libraries:
-    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '' && inputs.hosted_native_run == '' && inputs.fedora_native_run == '' && !inputs.release_preflight)
+    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '' && inputs.hosted_native_run == '' && inputs.fedora_native_run == '' && inputs.release_preflight == 'none')
     name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
@@ -813,7 +814,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SELECTED_RUN: ${{ inputs.fedora_native_run }}
-          OTHER_SELECTION: ${{ inputs.release_preflight && 'release-preflight' || inputs.hosted_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
+          OTHER_SELECTION: ${{ inputs.release_preflight != 'none' && 'release-preflight' || inputs.hosted_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
         run: |
           test -z "$OTHER_SELECTION"
           python3 -m venv "$RUNNER_TEMP/review-venv"
@@ -870,7 +871,7 @@ jobs:
           retention-days: 7
 
   release-app-preflight:
-    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && inputs.release_preflight && startsWith(github.ref, 'refs/heads/')
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && (inputs.release_preflight == 'app' || inputs.release_preflight == 'all') && startsWith(github.ref, 'refs/heads/')
     name: Release App preflight (read API only)
     runs-on: ubuntu-24.04
     permissions:
@@ -912,7 +913,7 @@ jobs:
           retention-days: 7
 
   signing-preflight:
-    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && inputs.release_preflight && startsWith(github.ref, 'refs/heads/')
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && (inputs.release_preflight == 'signing' || inputs.release_preflight == 'all') && startsWith(github.ref, 'refs/heads/')
     name: Own signing fixture preflight (not a release)
     runs-on: ubuntu-24.04
     permissions:
