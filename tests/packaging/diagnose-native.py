@@ -51,7 +51,16 @@ def main():
             assets=[dict(state=atom(state),count=count) for state,count in db.execute('SELECT state,count(*) FROM assets GROUP BY state')]
             owned=[dict(type=atom(kind),stage=atom(stage),ownership=atom(ownership),count=count) for kind,stage,ownership,count in db.execute(
                 'SELECT resource_type,lifecycle_stage,ownership_state,count(*) FROM resource_ownership GROUP BY resource_type,lifecycle_stage,ownership_state')]
-        record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned))
+            milestones={key:0 for key in ('execution','population','native')}
+            for (identity,) in db.execute("SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' LIMIT 32"):
+                if not isinstance(identity,str) or len(identity)>65536:
+                    continue
+                value=json.loads(identity)
+                if isinstance(value,dict):
+                    for key in milestones:
+                        milestones[key]+=isinstance(value.get(key),dict)
+        record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned,
+            workloadMilestoneCounts=milestones))
     fd=os.open(args.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
     with os.fdopen(fd,'w') as stream:
         json.dump(record,stream,indent=2);stream.write('\n')

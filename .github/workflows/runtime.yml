@@ -595,7 +595,7 @@ jobs:
       - name: Diagnose libcrun with a synthetic credential-free payload
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
-          sudo apt-get install -y cmake make pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev
+          sudo apt-get install -y cmake make meson ninja-build pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev
           cmake -S daemon -B "$RUNNER_TEMP/libcrun-diagnostic" -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DGITSTORED_TESTING=ON -DGITSTORED_LIBCRUN=ON -DGITSTORED_IMAGE_SDK=OFF \
             -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=OFF
