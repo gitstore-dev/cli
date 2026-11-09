@@ -232,7 +232,7 @@ empty-tool PATH boundary. The formula remains a review artifact, never a tap upd
 These outputs are named unsigned development review, contain no release receipts
 or attestations, and cannot replace the trusted qualification/publication path.
 
-For controlled replacement, additionally set `review_replacement_runs=CLI_RUN:LINUX_RUN` to successful producer runs containing separate
+For controlled replacement, additionally set `review_upgrades=true` with producer runs containing separate
 `unqualified-replacement-*` artifacts. The coordinator requires a complete actual
 four-platform next-alpha set, retains its distinct source revision, and renders
 the next formula using real hashes. The selected APT/DNF/Homebrew and Fedora
