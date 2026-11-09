@@ -32,7 +32,9 @@ jobs remain failed. Retained
 `/private/tmp/gs-alpha1-root-fixed-source-{arm64,x64}.log`.
 All four normal/sanitized Linux producer lanes then passed with the root fix in
 [run 42597509009](https://github.com/gitstore-dev/cli/actions/runs/42597509009),
-source `68b07f3239a55372141be1081926954d8fdfb587`. Both complete normal candidates
+branch head `68b07f3239a55372141be1081926954d8fdfb587`; the actual package source
+is PR merge checkout `7c6f8a806a55ee3c7527f6aa149900f25006e049`, as recorded in
+both validated install inventories. Both complete normal candidates
 passed the 66-case package suite (three explicit unrelated fixture skips).
 Retained `/private/tmp/gs-alpha1-root-fixed-{arm64,amd64}-producer.log`.
 Their exact-binary full native follow-up is
@@ -50,6 +52,36 @@ passes with explicit private creation; the complete portable suite passes
 bounded scalar file metadata, and startup diagnostics run only after a failed
 core smoke. Extended exact-pair acceptance still requires a successful retry;
 none of these unsigned runs supplies trusted release qualification.
+
+The extended retry
+[run 42601616548](https://github.com/gitstore-dev/cli/actions/runs/42601616548)
+uses that same exact candidate pair, with test source
+`e06769b6ea92f2d427b21c73652d2c5e8952a7b4`. Its amd64 job passed all seven
+clean-install cases (361.637 s), all ten recovery cases (620.561 s), both
+truncated/tampered-image cases and complete 100-sample measurements. Inspect p95
+was 2.418 ms; help/version p95 values were 1.376 / 1.319 ms for `gs` and
+14.640 / 14.537 ms for `gitstored`. Cold offline readiness was 39.816 s, manager
+RSS/HWM 10,416,128 bytes, assets 276,079,776 logical bytes, state excluding assets
+276,479,197 logical bytes; the owned manager exited. The exact executable hashes:
+
+| Architecture | `gs` SHA-256 | `gitstored` SHA-256 |
+| --- | --- | --- |
+| amd64 | `4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e` | `b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155` |
+| arm64 | `eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7` | `8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df` |
+
+The arm64 job passed all seven clean-install cases (344.177 s) and nine recovery
+cases, but its native-CREATE interruption test opened a new SQLite reader after
+SIGSTOP and hit the stopped writer's lock. It did not reach the subsequent
+integrity/measurement steps. The test now pins a committed read transaction
+before observing CREATE, confirms SIGSTOP while that snapshot remains open, and
+captures assertions from that same snapshot. It computes the material path
+before interruption, avoiding further database reads while the writer is frozen.
+No daemon locking or recovery behavior changed. Four corrected isolated
+owned Ubuntu/Apple-kernel runs passed (6.798 / 5.404 / 5.229 / 5.021 s); hosted
+verification is pending.
+Retained `/private/tmp/gs-alpha1-pinned-read-recovery-local.log`,
+`/private/tmp/gs-alpha1-exact-native-{x64,arm64}-retry.log` and
+`/private/tmp/gs-alpha1-native-{x64,arm64}-acceptance.json`.
 
 Hosted layer auditing isolated the startup failure to cache file permissions:
 all four Git-image layer blobs on both architectures had mode `0664`, one link

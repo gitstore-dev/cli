@@ -154,6 +154,7 @@ class Recovery(unittest.TestCase):
     def test_manager_loss_after_native_create_before_reply_recovers_partial_graph(self):
         f = Fixture(offline="verified")
         self.addCleanup(f.close)
+        material = f.credential_path("lost-create")
         accepted = f.start("lost-create", key="before-native-reply")
         frozen = [False]
         def resume_manager():
@@ -164,39 +165,40 @@ class Recovery(unittest.TestCase):
         deadline = time.monotonic() + 60
         while True:
             with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+                # Pin committed state before stopping the writer. A new reader
+                # after SIGSTOP can block behind the stopped writer's lock.
+                database.execute("BEGIN")
                 store, = database.execute("SELECT store_id FROM query_meta").fetchone()
                 row = database.execute("SELECT resource_id,backend_identity FROM resource_ownership WHERE operation_id=? AND resource_type='workload' AND json_extract(backend_identity,'$.native.component')='api'", (accepted["operationId"],)).fetchone()
                 start_state, = database.execute("SELECT state FROM operations WHERE operation_id=?", (accepted["operationId"],)).fetchone()
-            self.assertNotIn(start_state, {"failed", "cancelled"}, "Startup failed before native CREATE; inspect the retained operation")
-            native = json.loads(row[1]).get("native", {}) if row else {}
-            if row and native.get("pid") == 0:
-                status_path = f.root / "state" / f"native-{store}" / row[0] / "status"
-                try:
-                    status = json.loads(status_path.read_bytes())
-                except (FileNotFoundError, ValueError):
-                    status = {}
-                if status.get("pid", 0) > 0:
-                    f.process.send_signal(signal.SIGSTOP)
-                    frozen[0] = True
-                    break
+                self.assertNotIn(start_state, {"failed", "cancelled"}, "Startup failed before native CREATE; inspect the retained operation")
+                native = json.loads(row[1]).get("native", {}) if row else {}
+                if row and native.get("pid") == 0:
+                    status_path = f.root / "state" / f"native-{store}" / row[0] / "status"
+                    try:
+                        status = json.loads(status_path.read_bytes())
+                    except (FileNotFoundError, ValueError):
+                        status = {}
+                    if status.get("pid", 0) > 0:
+                        f.process.send_signal(signal.SIGSTOP)
+                        frozen[0] = True
+                        stop_deadline = time.monotonic() + 3
+                        while True:
+                            raw = Path(f"/proc/{f.process.pid}/stat").read_bytes()
+                            if raw[raw.rindex(b")") + 2:].split()[0] in {b"T", b"t"}:
+                                break
+                            self.assertLess(time.monotonic(), stop_deadline, "Owned manager did not enter the stopped state")
+                            time.sleep(0.001)
+                        record, = database.execute("SELECT backend_identity FROM resource_ownership WHERE resource_id=?", (row[0],)).fetchone()
+                        source_state, = database.execute("SELECT state FROM operations WHERE operation_id=?", (accepted["operationId"],)).fetchone()
+                        controller, = database.execute("SELECT backend_identity FROM resource_ownership WHERE operation_id=? AND resource_id LIKE 'run-controller-%'", (accepted["operationId"],)).fetchone()
+                        break
             self.assertLess(time.monotonic(), deadline, "Did not observe native CREATE before its manager reply")
             time.sleep(0.001)
-        deadline = time.monotonic() + 3
-        while True:
-            raw = Path(f"/proc/{f.process.pid}/stat").read_bytes()
-            if raw[raw.rindex(b")") + 2:].split()[0] in {b"T", b"t"}:
-                break
-            self.assertLess(time.monotonic(), deadline, "Owned manager did not enter the stopped state")
-            time.sleep(0.001)
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
-            record, = database.execute("SELECT backend_identity FROM resource_ownership WHERE resource_id=?", (row[0],)).fetchone()
-            source_state, = database.execute("SELECT state FROM operations WHERE operation_id=?", (accepted["operationId"],)).fetchone()
-            controller, = database.execute("SELECT backend_identity FROM resource_ownership WHERE operation_id=? AND resource_id LIKE 'run-controller-%'", (accepted["operationId"],)).fetchone()
         self.assertEqual(source_state, "running")
         self.assertEqual(json.loads(record)["native"]["pid"], 0, "Manager already committed the native reply")
         self.assertNotIn("native", json.loads(controller))
         self.assertEqual(process_identity(status["pid"]), status["process-start-time"])
-        material = f.credential_path("lost-create")
         material_hash = f.digest(material)
         assets = f.assets()
         f.process.kill()
