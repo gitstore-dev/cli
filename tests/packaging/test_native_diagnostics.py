@@ -1,5 +1,6 @@
 """Native diagnostics must never print fixture intents, results or raw messages."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import sqlite3
@@ -41,8 +42,16 @@ class NativeDiagnostic(unittest.TestCase):
                 db.execute("UPDATE assets SET state='active'")
             (state/'assets').mkdir()
             (state/'assets'/('a'*64)).mkdir(mode=0o700)
+            cache=state/'assets'/('a'*64)
+            (cache/'blobs').mkdir(mode=0o700)
+            data=secret.encode()
+            (cache/'blobs/layer-0').write_bytes(data)
+            (cache/'blobs/layer-0').chmod(0o600)
+            (cache/'manifest.json').write_text(json.dumps(dict(layers=[dict(size=len(data),digest='sha256:'+hashlib.sha256(data).hexdigest())])))
             probe=root/'synthetic-probe'
-            probe.write_text('#!'+sys.executable+'\nimport json,sys\nprint(json.dumps(dict(status=4,unrelated='+repr(secret)+')))\nprint('+repr(secret)+',file=sys.stderr)\n')
+            probe.write_text('#!'+sys.executable+'\nimport json,sys\nprint(json.dumps(dict(status=4,unrelated='+repr(secret)+')))\nprint('+repr(secret)+',file=sys.stderr)\n'
+                'print("GSTD_IMAGE_DIAGNOSTIC phase=manifest-read status=4",file=sys.stderr)\n'
+                'print("GSTD_IMAGE_DIAGNOSTIC phase="+'+repr(secret)+'+" status=4",file=sys.stderr)\n')
             probe.chmod(0o500)
             second=root/'materialization.json'
             reply=subprocess.run([sys.executable,str(Path(__file__).with_name('diagnose-native.py')),
@@ -51,6 +60,8 @@ class NativeDiagnostic(unittest.TestCase):
             self.assertNotIn(secret,reply.stdout+reply.stderr+second.read_text())
             row=json.loads(second.read_text())['fixtures'][0]['materializationProbes'][0]
             self.assertEqual((row['component'],row['exit'],row['status']),('git',0,4))
+            self.assertEqual(row['phases'],[dict(phase='manifest-read',status=4)])
+            self.assertEqual(row['blobChecks'],[dict(index=0,policy=True,mode=0o600,links=1,sizeMatches=True,digestMatches=True)])
 
 
 if __name__=='__main__':
