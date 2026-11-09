@@ -2,6 +2,115 @@
 
 ## CI follow-up — 2026-11-09
 
+### Fedora and signing continuation
+
+The DNF-installed arm64 candidate also passed the complete native suite on a
+separate Fedora 44 Apple VM: core cold start/current-generation health 53.514 s,
+seven clean-install cases 327.404 s, ten recovery cases 548.659 s, both integrity
+cases and all 100-sample measurements. Offline readiness was 34.855 s; inspection
+p95 2.312 ms; `gs` help/version p95 0.458 / 0.416 ms; `gitstored` help/version p95
+5.208 / 5.341 ms. Manager RSS/HWM was 9,551,872 bytes; it exited. Assets were
+258,759,008 logical bytes and state excluding assets 259,157,091 logical bytes.
+The selected pair matches the arm64 hashes below, from actual candidate source
+`7c6f8a806a55ee3c7527f6aa149900f25006e049`. Full test source is
+`1f271ecfd8fd4a57b6237c2f1b57ca71f03ff64b`, initial core test source
+`97de9cd3ab4809a3f67c90106b029cfb8fef8d98`, and retained developer-only helpers
+source `97c00fe7f29042d60f6f0a56b06c6f679da812c6`; these are distinct identities.
+
+Fixture `gs-cli-alpha1-fedora44-native-20261109` has 2 CPUs/4 GiB, no host mounts,
+SSH forwarding or published ports. It uses the committed Fedora Containerfile,
+local image index `sha256:75a44979dc4c1d65dff738680fdc44cc0c4b1f159fdaee21aac3b7aa8092b07c`,
+Fedora 44/glibc 2.43/systemd on kernel 6.18.35; SELinux policy was absent. Setup
+and prerequisite checks verified user bus, cgroup delegation, namespaces, TUN,
+pidfd and openat2. Core ran with umask `0002`. The complete runner verified exact
+hashes and `validate_performance(..., True)`. DNF removal removed the global
+commands, payload and user unit; the VM is stopped with owned evidence retained.
+Existing Ubuntu and earlier Fedora fixtures were retained.
+Files: `/private/tmp/gs-alpha1-fedora44-native-{core,full}.log`,
+`/private/tmp/gs-alpha1-fedora44-native-acceptance.json`,
+`/private/tmp/gs-alpha1-fedora44-native-{container,platform}.json`.
+
+Explicit hosted Fedora review was added for both architectures. Its initial
+[run 42627501213](https://github.com/gitstore-dev/cli/actions/runs/42627501213)
+stopped during infrastructure setup: the system bus was not ready immediately
+after PID 1 launch. It made no workload-support claim. A bounded read-only boot
+probe now waits before account setup; retry
+[run 42630133332](https://github.com/gitstore-dev/cli/actions/runs/42630133332)
+passed on both architectures at test/helper source
+`fe503270d36b9b528d4afcf8f9d6b8676feb309d`. Both actual RPM installs, installed-
+command concurrent first use, core cold start, seven clean-install cases, ten
+recovery cases, two integrity cases and removal passed. Candidate source remains
+`7c6f8a806a55ee3c7527f6aa149900f25006e049`; the product hashes match the Ubuntu
+receipts below. Fedora 44/glibc 2.43 ran on Azure kernel 7.0.0-1017 with four CPUs,
+private cgroup namespaces and no host bind mounts; SELinux enforcing status was
+unavailable. This is unsigned review evidence, not trusted tag qualification.
+
+| Hosted Fedora measurement | amd64 | arm64 |
+| --- | ---: | ---: |
+| Complete clean-install batch (s) | 341.099 | 346.152 |
+| Complete recovery batch (s) | 587.761 | 591.750 |
+| Cold offline readiness (s) | 37.642 | 37.931 |
+| Inspection p95, 100 samples (ms) | 3.146 | 2.429 |
+| `gs` help/version p95 (ms) | 1.701 / 1.576 | 2.246 / 2.260 |
+| `gitstored` help/version p95 (ms) | 20.196 / 20.302 | 12.485 / 11.875 |
+| Manager RSS/HWM only (bytes) | 10,326,016 | 9,719,808 |
+| Assets, logical bytes | 276,079,776 | 258,759,008 |
+| State excluding assets, logical bytes | 276,479,122 | 259,157,064 |
+
+Both managers exited. Exact RPM SHA-256 values are
+`3cb71bc828e184b714ab5f9deddfd4b092dbc1387baaf8ab9f71932fd8aea065` (amd64) and
+`2a14d6374bbe694ab833f3292502061e5c5122d8d5f66222a78dfa9205d2755b` (arm64).
+Downloaded bounded receipts: `/private/tmp/gs-alpha1-final-fedora-{x64,arm64}/`,
+artifacts `13681093682` and `13680973583`, each containing
+`native-acceptance.json` and `package-controls.json`.
+
+The shared RPM pre-install checks reject scripts/triggers, unsafe
+links, paths and modes. Selected helper copies avoid Cargo hardlinks. Recovery
+read-only SQLite connections now close explicitly to avoid Python 3.14 resource
+warnings during the high-frequency observation loop. Package policy checks:
+77 cases, seven explicit fixture skips; workflow lint and shell syntax pass.
+
+The organization already shares both Release Please settings with `cli`:
+repository-scoped organization-variable/secret metadata confirmed their names
+without reading a private key. Repository-level lists remain empty. Organization-
+wide metadata returned HTTP 403; no broader authentication scope was requested.
+The configured names match the
+[upstream workflow](https://github.com/gitstore-dev/GitStore/blob/main/.github/workflows/release-please.yml).
+Actual App preflight in
+[run 42628759382](https://github.com/gitstore-dev/cli/actions/runs/42628759382)
+returned HTTP 404 for the App's `gitstore-dev/cli` repository-installation lookup.
+After the maintainer enabled CLI installation access,
+[run 42632871632](https://github.com/gitstore-dev/cli/actions/runs/42632871632)
+passed at source `fe503270d36b9b528d4afcf8f9d6b8676feb309d`. The token requested
+the Release Please contents/issues/pull-request write permissions and was scoped
+to exactly one repository, immutable ID `1431005655`. The check performed only
+a read API call; token cleanup ran automatically. Artifact `13681386743`, retained
+at `/private/tmp/gs-alpha1-final-app/release-app-preflight.json`, records success.
+No secret value was transferred. Actual bot release-PR/tag triggering remains
+T038, separate from this resolved installation-access gate.
+
+Real signing preflight exposed an invalid maintainer verifier command: `gh`
+forbids combining `--signer-workflow` with `--cert-identity`. Both release and
+preflight verification now use the exact certificate SAN, which binds the
+workflow and ref, alongside immutable repository ID, source ref/digest, issuer,
+predicate, hosted-runner and byte-digest checks. The corrected verifier accepted
+our actual signed fixture offline and rejected all four negative controls.
+[Run 42630137792](https://github.com/gitstore-dev/cli/actions/runs/42630137792)
+then passed the same real hosted check at source
+`fe503270d36b9b528d4afcf8f9d6b8676feb309d`. Subject SHA-256 is
+`3b604ea5673aedab1bac5cff4484b1ed2d1f4973d5ed62efab220a6eb1504444`.
+It is marked non-installable test text. Altered bytes, wrong workflow, wrong
+source and missing bundle were rejected; the unchanged release producer policy
+also rejected the branch fixture. This is an own signing-service positive, not
+a qualified release or an authorized tag-trigger positive. Standard bundle,
+trusted root, subject and result are retained at
+`/private/tmp/gs-alpha1-signing-preflight-corrected/`. Release-policy checks report
+23 passed and one explicit optional fixture skip; provenance policy checks pass
+all three cases. No version tag, release, package registry upload or tap
+publication occurred.
+
+### Earlier Ubuntu native acceptance
+
 Current implementation checkpoint: **59/64 tasks checked; five acceptance gates
 remain open**. Both exact Linux package pairs pass the complete hosted native
 suite in [run 42605030100](https://github.com/gitstore-dev/cli/actions/runs/42605030100).
@@ -29,8 +138,8 @@ all four successful scenario records and `validate_performance(..., True)`.
 These Ubuntu 24.04/glibc 2.39, Azure-kernel-7.0.0-1017 runs are unsigned review
 evidence, not the required trusted six-host/channel qualification. APT and DNF
 arm64 installed-path controls below also pass. T024/T061 remain open for the
-complete reference matrix; T038 needs authorized/configured trusted signing and
-App-trigger evidence; T039/T064 retain final tag-bound inventory/guide gates.
+complete reference matrix; T038 still needs authorized tag-bound signing and
+actual App-trigger evidence; T039/T064 retain final tag-bound inventory/guide gates.
 No tag, release, registry/tap publication or merge was performed.
 Retained `/private/tmp/gs-alpha1-final-native-{x64,arm64}.log` and
 `/private/tmp/gs-alpha1-final-native-{x64,arm64}-acceptance.json`.
