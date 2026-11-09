@@ -64,6 +64,13 @@ package control evidence, separate from Fedora native systemd/cgroup checks and
 trusted release qualification. Missing tooling or runtime dependencies fail the
 selected job rather than silently skipping it.
 
+The same selected inputs also exercise actual APT install/remove on ephemeral
+Ubuntu runners of both architectures. Privileged package management owns code;
+all product commands run as fresh UID 11000 with an empty tools PATH and private
+synthetic HOME/XDG state. Only the bounded lifecycle receipt is copied out;
+private fixture permissions remain intact. Replacement-order controls and trusted
+tag qualification remain separate from these install/remove review jobs.
+
 ## Explicit Fedora review
 
 `fedora_native_run` selects a successful same-repository unsigned Linux producer
