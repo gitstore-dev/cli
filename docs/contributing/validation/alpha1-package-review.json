@@ -11,7 +11,6 @@
   "attestationBundles": "absent for these unsigned development subjects; branch signing preflight is separate",
   "reviewFormulaSha256": "4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e",
   "remainingTasks": [
-    "T024",
     "T038",
     "T039",
     "T064"
@@ -1031,5 +1030,6 @@
         }
       }
     }
-  ]
+  ],
+  "upgradeReviewManifest": "alpha1-upgrade-review.json"
 }
