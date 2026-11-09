@@ -72,7 +72,7 @@ synthetic HOME/XDG state. Only the bounded lifecycle receipt is copied out;
 private fixture permissions remain intact. Replacement-order controls and trusted
 tag qualification remain separate from these install/remove review jobs.
 
-To test next-alpha replacement, also select `review_replacement_runs=CLI_RUN:LINUX_RUN` from successful same-source producer jobs. Both producer IDs are required together. The original candidate source and the replacement fixture
+To test next-alpha replacement, also select `review_upgrades=true` on successful same-source producer jobs. Replacement controls must come from those same two selected producers. The original candidate source and the replacement fixture
 source are recorded separately. The coordinator checks all four real replacement
 archive identities and renders the next formula from their actual hashes; it
 never invents unused-platform digests. APT, DNF, Homebrew, Fedora archive and npm
