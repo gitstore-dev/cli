@@ -71,7 +71,8 @@ def main():
                 for key,descriptor in db.execute("SELECT asset_key,descriptor FROM assets WHERE state='active' LIMIT 8"):
                     if not re.fullmatch('[a-f0-9]{64}',key) or len(descriptor)>65536:
                         continue
-                    component=json.loads(descriptor).get('component')
+                    images=json.loads(descriptor).get('images',[])
+                    component=images[0].get('component') if len(images)==1 and isinstance(images[0],dict) else None
                     if component not in ('api','git','controller'):
                         continue
                     cache=root/'state/assets'/key

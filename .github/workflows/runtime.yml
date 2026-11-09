@@ -580,9 +580,9 @@ jobs:
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
-          if ! rustup run "$toolchain" rustc --version; then
-            rustup toolchain install "$toolchain" --profile minimal --no-self-update
-          fi
+          export RUSTUP_HOME="$RUNNER_TEMP/diagnostic-rustup" RUSTUP_TOOLCHAIN="$toolchain"
+          printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
           sudo apt-get update --error-on=any
           sudo apt-get install -y libssl-dev zlib1g-dev pkg-config
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
