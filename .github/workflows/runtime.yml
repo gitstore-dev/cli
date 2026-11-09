@@ -480,6 +480,7 @@ jobs:
             ${{ runner.temp }}/package-review/review.json
             ${{ runner.temp }}/package-review/gitstore.rb
             ${{ runner.temp }}/package-review/*/complete-candidate/assets/gitstore-0.*.tar.gz
+            ${{ runner.temp }}/package-review/linux-*/complete-candidate/assets/*.deb
           if-no-files-found: error
           retention-days: 7
   homebrew-review:
@@ -544,6 +545,81 @@ jobs:
             /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
             /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
           if-no-files-found: warn
+          retention-days: 7
+
+  apt-package-review:
+    needs: package-review-inputs
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, arch: x64}
+          - {runner: ubuntu-24.04-arm, arch: arm64}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: unsigned-package-review
+          path: ${{ runner.temp }}/package-review
+      - name: Install/remove exact Debian candidate on disposable Ubuntu
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          test "$GITHUB_ACTIONS:$RUNNER_ENVIRONMENT:$GITHUB_REPOSITORY_ID" = true:github-hosted:1431005655
+          . /etc/os-release
+          test "$ID:$VERSION_ID" = ubuntu:24.04
+          ! getent passwd 11000 >/dev/null
+          ! getent group 11000 >/dev/null
+          ! getent passwd gitstorefixture >/dev/null
+          test ! -e /home/gitstorefixture
+          sudo useradd --uid 11000 --user-group --create-home gitstorefixture
+          sudo chmod 700 /home/gitstorefixture
+          sudo install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments
+          python3 -m venv "$RUNNER_TEMP/apt-review-venv"
+          "$RUNNER_TEMP/apt-review-venv/bin/pip" install jsonschema==4.26.0
+          sudo apt-get update
+          sudo env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LANG=C ARCH="$ARCH" RESULT="$RUNNER_TEMP/apt-review-result.json" REVIEW="$RUNNER_TEMP/package-review" SOURCE="$GITHUB_WORKSPACE" "$RUNNER_TEMP/apt-review-venv/bin/python" - <<'PY'
+          import hashlib, json, os, pathlib, shutil, socket, subprocess, sys
+          root = pathlib.Path(os.environ['REVIEW'])
+          record = json.loads((root/'review.json').read_text())
+          packages = list((root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets').glob('*.deb'))
+          if len(packages) != 1:
+              raise ValueError('Select one exact native Debian package')
+          artifact = pathlib.Path('/home/gitstorefixture/candidate.deb')
+          shutil.copyfile(packages[0],artifact)
+          artifact.chmod(0o400)
+          fixture = dict(schemaVersion=1,disposableUid=11000,disposableGid=11000,
+              dedicatedTestAccount=True,disposableHost=True,hostname=socket.gethostname(),
+              osId='ubuntu',osVersion='24.04',arch=os.environ['ARCH'],fixtureParent='/home/gitstorefixture/experiments')
+          manifest = pathlib.Path('/home/gitstorefixture/system.json')
+          manifest.write_text(json.dumps(fixture))
+          manifest.chmod(0o600)
+          subprocess.run([sys.executable,os.environ['SOURCE']+'/tests/packaging/run.py','--channel','deb',
+              '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
+              '--version',record['version'],'--fixture-parent',fixture['fixtureParent'],
+              '--system-fixture',str(manifest)],check=True)
+          receipts = list(pathlib.Path(fixture['fixtureParent']).glob('system-package-*/receipt.json'))
+          if len(receipts) != 1:
+              raise ValueError('Expected one owned APT lifecycle result')
+          result = json.loads(receipts[0].read_text())
+          result['candidateSourceRevision'] = record['sourceRevision']
+          with open(os.environ['RESULT'],'x') as output:
+              json.dump(result,output,indent=2)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unsigned-apt-review-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/package-review/review.json
+            ${{ runner.temp }}/apt-review-result.json
+          if-no-files-found: error
           retention-days: 7
 
   fedora-homebrew-review:
