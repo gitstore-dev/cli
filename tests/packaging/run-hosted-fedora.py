@@ -10,6 +10,7 @@ import re
 import stat
 import subprocess
 import sys
+import time
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'runtime/packaging'))
@@ -36,6 +37,17 @@ def ordinary(path,executable=False):
             or not 0<info.st_size<=512*1024*1024 or executable and not info.st_mode&0o100):
         raise ValueError('Select a bounded trusted ordinary public input')
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def wait_for_systemd(query,clock=time.monotonic,sleep=time.sleep):
+    deadline=clock()+60
+    while True:
+        state=query()
+        if state in ('running','degraded'):
+            return state
+        if clock()>=deadline:
+            raise ValueError('Disposable Fedora PID 1 did not finish booting; no account setup attempted')
+        sleep(0.25)
 
 
 def main():
@@ -105,7 +117,8 @@ def main():
         receipt.update(imageId=details['Image'],privateCgroupNamespace=True,noHostBindMounts=True)
         # Wait for PID 1, not an arbitrary boot delay. /root avoids Fedora's
         # independently mounted /tmp, which is not the Docker cp root filesystem.
-        docker('exec',name,'systemctl','is-system-running','--wait',check=False,timeout=60)
+        receipt['bootState']=wait_for_systemd(lambda:docker('exec',name,'systemctl','is-system-running',
+            capture=True,check=False,timeout=10).stdout.strip())
         code="import json,os,platform,pathlib; p=pathlib.Path('/sys/fs/selinux/enforce'); print(json.dumps(dict(distribution=platform.freedesktop_os_release()['ID'],version=platform.freedesktop_os_release()['VERSION_ID'],kernel=platform.release(),libc=os.confstr('CS_GNU_LIBC_VERSION'),selinuxEnforcing=(p.read_text().strip()=='1') if p.exists() else None)))"
         receipt['host']=json.loads(docker('exec',name,'python3','-c',code,capture=True).stdout)
         docker('cp',source,name+':/root/public-inputs.tar')

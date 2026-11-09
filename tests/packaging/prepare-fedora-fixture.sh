@@ -15,6 +15,7 @@ done
 ! getent passwd 11000 >/dev/null
 ! getent group 11000 >/dev/null
 test ! -e /home/gitstorefixture
+systemctl start dbus.socket systemd-logind.service
 useradd --uid 11000 --user-group --create-home --shell /bin/bash gitstorefixture
 chmod 700 /home/gitstorefixture
 install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments

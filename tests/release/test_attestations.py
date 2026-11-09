@@ -37,7 +37,7 @@ class Attestations(unittest.TestCase):
             self.assertTrue(self.verify()['verified'])
         command = run.call_args.args[0]
         for flag, expected in {
-            '--repo': 'gitstore-dev/cli', '--signer-workflow': policy.WORKFLOW,
+            '--repo': 'gitstore-dev/cli',
             '--cert-identity': 'https://github.com/' + policy.WORKFLOW + '@refs/tags/v0.1.0-alpha.1',
             '--cert-oidc-issuer': 'https://token.actions.githubusercontent.com',
             '--source-ref': 'refs/tags/v0.1.0-alpha.1', '--source-digest': 'a' * 40,
@@ -45,6 +45,9 @@ class Attestations(unittest.TestCase):
         }.items():
             self.assertEqual(command[command.index(flag) + 1], expected)
         self.assertIn('--deny-self-hosted-runners', command)
+        # The maintained CLI rejects combinations of these identity aliases.
+        self.assertEqual([flag for flag in ('--cert-identity','--cert-identity-regex',
+            '--signer-repo','--signer-workflow') if flag in command],['--cert-identity'])
         self.assertEqual(run.call_args.kwargs['env']['GH_TOKEN'], 'offline-verification-placeholder')
 
     def test_altered_bytes_missing_bundle_and_unversioned_ref_fail_before_gh(self):

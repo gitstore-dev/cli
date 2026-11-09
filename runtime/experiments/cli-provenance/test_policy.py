@@ -39,7 +39,7 @@ class ReleasePolicy(unittest.TestCase):
                 self.assertNotEqual(Path(command[3]), artifact)
                 self.assertEqual(Path(command[3]).read_bytes(), artifact.read_bytes())
                 for flag, value in (("--repo", policy.REPOSITORY),
-                                    ("--signer-workflow", policy.WORKFLOW),
+                                    ("--cert-identity", "https://github.com/" + policy.WORKFLOW + "@refs/tags/v0.1.0"),
                                     ("--source-ref", "refs/tags/v0.1.0"),
                                     ("--source-digest", "a" * 40)):
                     self.assertEqual(command[command.index(flag) + 1], value)

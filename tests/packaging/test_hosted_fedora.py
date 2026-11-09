@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock
 
 SCRIPT=Path(__file__).with_name('run-hosted-fedora.py').resolve()
 spec=importlib.util.spec_from_file_location('hosted_fedora',SCRIPT)
@@ -44,6 +45,19 @@ class HostedFedora(unittest.TestCase):
             self.assertNotEqual(reply.returncode,0)
             self.assertIn('ephemeral hosted Linux fixture',reply.stderr)
             self.assertFalse(output.exists())
+
+    def test_boot_probe_waits_for_pid_one_before_account_setup(self):
+        query=Mock(side_effect=['','starting','running']);sleep=Mock()
+        self.assertEqual(hosted.wait_for_systemd(query,clock=lambda:0,sleep=sleep),'running')
+        self.assertEqual(query.call_count,3)
+        self.assertEqual(sleep.call_count,2)
+
+    def test_boot_probe_failure_is_bounded_without_retrying_setup(self):
+        clock=Mock(side_effect=[0,61]);sleep=Mock();query=Mock(return_value='starting')
+        with self.assertRaisesRegex(ValueError,'no account setup attempted'):
+            hosted.wait_for_systemd(query,clock=clock,sleep=sleep)
+        query.assert_called_once()
+        sleep.assert_not_called()
 
 
 if __name__=='__main__':
