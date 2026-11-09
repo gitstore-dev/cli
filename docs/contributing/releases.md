@@ -55,6 +55,49 @@ Final promotion must wait for the complete package matrix, final-byte attestatio
 and producer verification. Public tag/release creation is a separate authorized
 operation; none is performed by local fixture tests.
 
+## First-release handoff
+
+Release Please has opened [alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13).
+After its required checks and review pass, the maintainer merges that proposal
+through the merge queue. This is the tag-creation decision: Release Please creates
+`v0.1.0-alpha.1` and a draft prerelease. Do not manually create a duplicate tag or
+publish the draft through the GitHub release editor.
+
+The tag push starts `release.yml` in build mode. After that run succeeds, record
+its numeric run ID as `BUILD_RUN_ID`. An operator or agent then dispatches the
+qualification workflow at the same tag:
+
+```sh
+gh workflow run runtime.yml --repo gitstore-dev/cli --ref v0.1.0-alpha.1 \
+  -f candidate_run=BUILD_RUN_ID -f candidate_tag=v0.1.0-alpha.1
+```
+
+Replace the uppercase run-ID placeholders with the actual selected successful
+run IDs. All six hosts and 22 selections must pass; inspect the collector's
+`release-qualification` artifact and the build's frozen inventory, source/license
+materials, hashes, support limitations and early-alpha notice. Record the
+qualification run as `QUALIFICATION_RUN_ID`. An operator or agent can then start
+promotion at the same tag:
+
+```sh
+gh workflow run release.yml --repo gitstore-dev/cli --ref v0.1.0-alpha.1 \
+  -f phase=promote -f candidate_run=BUILD_RUN_ID \
+  -f qualification_run=QUALIFICATION_RUN_ID
+```
+
+Signing and producer verification run before publication. The maintainer reviews
+the selected source/runs and approves the waiting `release-publication`
+environment deployment. That approval authorizes uploading and publishing the
+qualified bytes. The job then updates the tap. Never bypass an environment or
+qualification failure, publish an incomplete draft, or overwrite conflicting
+assets.
+
+After observed publication, an operator or agent checks the public inventory,
+attestation bundles, formula and documented install paths, updates the evidence
+record, and marks T038/T039/T064 complete only when their acceptance is satisfied.
+If a build/qualification job fails, repair and requalify under the existing
+exact-source/byte policy; do not move a version tag to hide the failure.
+
 ## Distribution and verification policy
 
 Canonical and npm version: `0.1.0-alpha.1`; tag: `v0.1.0-alpha.1`.

@@ -2,7 +2,6 @@ import importlib.util
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 import tomllib
@@ -30,8 +29,13 @@ class ReleaseVersions(unittest.TestCase):
     def test_bootstrap_removed_only_in_synchronized_first_release_pr(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            for name in ['Cargo.toml','version.txt','release-please-config.json','.release-please-manifest.json']:
-                shutil.copyfile(ROOT / name, root / name)
+            # Model bootstrap state explicitly: the checked-out release proposal
+            # has already removed release-as and advanced its manifest.
+            (root / 'version.txt').write_text('0.1.0-alpha.1\n')
+            (root / 'Cargo.toml').write_text('[workspace.package]\nversion = "0.1.0-alpha.1"\n')
+            (root / 'release-please-config.json').write_text(json.dumps({
+                'packages': {'.': {'release-as': '0.1.0-alpha.1'}}}))
+            (root / '.release-please-manifest.json').write_text('{".":"0.1.0-alpha.0"}')
             with self.assertRaises(ValueError):
                 bootstrap.remove(root)
             (root / '.release-please-manifest.json').write_text('{".":"0.1.0-alpha.1"}')
