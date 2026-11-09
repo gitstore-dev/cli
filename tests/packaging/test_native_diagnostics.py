@@ -23,9 +23,13 @@ class NativeDiagnostic(unittest.TestCase):
                     code='OPERATION_FAILED',stage='unavailable',message=secret)),secret,secret))
                 db.execute('CREATE TABLE assets(asset_key,descriptor,state)')
                 db.execute('INSERT INTO assets VALUES(?,?,?)',('a'*64,json.dumps(dict(images=[dict(component='git')])),'staging'))
-                db.execute('CREATE TABLE resource_ownership(resource_type,lifecycle_stage,ownership_state,backend_identity)')
-                db.execute('INSERT INTO resource_ownership VALUES(?,?,?,?)',('workload','reserved','held',
+                db.execute('CREATE TABLE query_meta(store_id)')
+                db.execute('INSERT INTO query_meta VALUES(?)',('b'*32,))
+                db.execute('CREATE TABLE resource_ownership(resource_id,resource_type,lifecycle_stage,ownership_state,backend_identity)')
+                db.execute('INSERT INTO resource_ownership VALUES(?,?,?,?,?)',('run-git-fixture','workload','reserved','held',
                     json.dumps(dict(execution=dict(private=secret),unrelated=secret))))
+            work=state/('resources-'+'b'*32)/'run-git-fixture/execution/rootfs'
+            work.mkdir(parents=True); work.chmod(0o775)
             fixture=root/'fixture.json';fixture.write_text(json.dumps(dict(
                 dedicatedTestAccount=True,disposableUid=os.geteuid(),fixtureParent=str(root))))
             fixture.chmod(0o600)
@@ -37,6 +41,7 @@ class NativeDiagnostic(unittest.TestCase):
             self.assertEqual(value['fixtures'][0]['operations'],[dict(state='failed',code='OPERATION_FAILED',stage='unavailable')])
             self.assertEqual(value['fixtures'][0]['assets'],[dict(state='staging',count=1)])
             self.assertEqual(value['fixtures'][0]['workloadMilestoneCounts'],dict(execution=1,population=0,native=0))
+            self.assertEqual(value['fixtures'][0]['workloadDirectories'][0]['rootfs']['mode'],0o775)
             self.assertEqual(output.stat().st_mode&0o777,0o600)
             with sqlite3.connect(state/'state.db') as db:
                 db.execute("UPDATE assets SET state='active'")
