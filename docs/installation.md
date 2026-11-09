@@ -50,6 +50,12 @@ test targets, not a claim that all rows already passed acceptance.
 
 ## Homebrew
 
+Start with a working Homebrew installation and its platform prerequisites. On
+Linux, [Homebrew requires a system C compiler and development tools](https://docs.brew.sh/Homebrew-on-Linux#requirements);
+its installer checks those even though this formula copies prebuilt GitStore
+binaries and never compiles `gs` or `gitstored`. The archive, APT, DNF and npm
+paths do not require a compiler.
+
 After promotion creates the matching generated formula:
 
 ```sh
