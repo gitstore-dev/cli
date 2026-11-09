@@ -5,6 +5,8 @@ Never emits intent, result bodies, raw error messages, descriptors, service logs
 configuration, environment, credentials, database files or workload data.
 """
 import argparse
+from contextlib import ExitStack
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -16,6 +18,49 @@ import sqlite3
 import stat
 import subprocess
 import tempfile
+
+
+def audit_blobs(cache):
+    """Only fixed cache paths, bounded public image bytes and scalar results."""
+    rows=[]
+    try:
+        with ExitStack() as cleanup:
+            flags=os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC
+            root_fd=os.open(cache,flags|os.O_DIRECTORY)
+            cleanup.callback(os.close,root_fd)
+            blobs_fd=os.open('blobs',flags|os.O_DIRECTORY,dir_fd=root_fd)
+            cleanup.callback(os.close,blobs_fd)
+            with os.fdopen(os.open('manifest.json',flags,dir_fd=root_fd),'rb') as source:
+                info=os.fstat(source.fileno())
+                if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.geteuid() or info.st_nlink!=1:
+                    return rows
+                data=source.read(1024*1024+1)
+            if len(data)>1024*1024:
+                return rows
+            layers=json.loads(data).get('layers',[])
+            if not isinstance(layers,list) or len(layers)>128:
+                return rows
+            remaining=128*1024*1024
+            for index,descriptor in enumerate(layers):
+                expected=descriptor.get('size')
+                digest=descriptor.get('digest','')
+                if not isinstance(expected,int) or not 0<expected<=remaining or not re.fullmatch('sha256:[a-f0-9]{64}',digest):
+                    break
+                remaining-=expected
+                with os.fdopen(os.open(f'layer-{index}',flags,dir_fd=blobs_fd),'rb') as source:
+                    info=os.fstat(source.fileno())
+                    policy=stat.S_ISREG(info.st_mode) and info.st_uid in (0,os.geteuid()) and info.st_nlink==1 and not info.st_mode&0o022
+                    matches=False
+                    if policy and info.st_size==expected:
+                        value=hashlib.sha256()
+                        for _ in range((expected+65535)//65536):
+                            value.update(source.read(65536))
+                        matches='sha256:'+value.hexdigest()==digest
+                    rows.append(dict(index=index,policy=policy,mode=stat.S_IMODE(info.st_mode),links=info.st_nlink,
+                        sizeMatches=info.st_size==expected,digestMatches=matches))
+    except (OSError,ValueError,TypeError,AttributeError):
+        pass
+    return rows
 
 
 def main():
@@ -79,6 +124,7 @@ def main():
                     cached=cache.lstat()
                     if not stat.S_ISDIR(cached.st_mode) or cached.st_uid!=os.geteuid() or stat.S_IMODE(cached.st_mode)!=0o700:
                         continue
+                    blob_checks=audit_blobs(cache)
                     for mode in ('materialize','materialize-sdk'):
                         target=Path(tempfile.mkdtemp(prefix='image-materialization-probe-',dir=parent))
                         result=subprocess.run([str(args.provision_probe),component,str(target),'180000',str(cache),mode],
@@ -92,7 +138,7 @@ def main():
                         # Only fixed numeric SDK/provisioning outcomes; no raw child diagnostics.
                         materialization.append(dict(component=component,mode=mode,target=target.name,exit=result.returncode,
                             status=value.get('status') if isinstance(value.get('status'),int) else None,
-                            phases=phases,stderrCharacters=len(result.stderr)))
+                            phases=phases,blobChecks=blob_checks,stderrCharacters=len(result.stderr)))
         record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned,
             workloadMilestoneCounts=milestones,materializationProbes=materialization))
     fd=os.open(args.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
