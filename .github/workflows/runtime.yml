@@ -590,6 +590,20 @@ jobs:
             "$RUNNER_TEMP/tls-diagnostic-target/release/examples/runtime_tls_probe" /home/gitstorefixture/experiments/native-tls-probe
           sudo -u gitstorefixture env -i PATH=/nonexistent HOME=/home/gitstorefixture/experiments LANG=C \
             /home/gitstorefixture/experiments/native-tls-probe --fixture /home/gitstorefixture/experiments/hosted.json
+      - name: Diagnose libcrun with a synthetic credential-free payload
+        if: failure() && steps.owned-host.outcome == 'success'
+        run: |
+          sudo apt-get install -y cmake make pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev
+          cmake -S daemon -B "$RUNNER_TEMP/libcrun-diagnostic" -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=ON -DGITSTORED_LIBCRUN=ON -DGITSTORED_IMAGE_SDK=OFF \
+            -DGITSTORED_SLIRP=OFF -DGITSTORED_BOOTSTRAP=OFF
+          cmake --build "$RUNNER_TEMP/libcrun-diagnostic" --parallel 2 --target native_library_probe native_library_payload
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/libcrun-diagnostic/native_library_probe" \
+            "$RUNNER_TEMP/libcrun-diagnostic/native_library_payload" /home/gitstorefixture/experiments/
+          sudo install -o 11000 -g 11000 -m 400 runtime/experiments/libcrun/run.py /home/gitstorefixture/experiments/libcrun-probe.py
+          sudo -u gitstorefixture python3 /home/gitstorefixture/experiments/libcrun-probe.py \
+            /home/gitstorefixture/experiments/native_library_probe /home/gitstorefixture/experiments/native_library_payload \
+            --delegated --keep --fixture-parent /home/gitstorefixture/experiments
       - name: Retain only bounded safe native diagnostic metadata
         if: always()
         run: |
