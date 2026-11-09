@@ -156,7 +156,10 @@ workflow, hosted issuer, exact tag and full commit. The signing job has only rea
 access to contents plus OIDC/attestation/artifact-metadata writes.
 
 Configure the `release-publication` environment with required reviewers before
-enabling promotion. Only its publication job has Contents write permission.
+enabling promotion. The promotion preflight reads that environment and refuses
+a missing environment or an empty required-reviewer rule before signing or
+uploading anything; it never creates or changes environment settings. Only its
+publication job has Contents write permission.
 `scripts/publish-release.py` runs producer verification again, requires an owned
 private asset directory and a per-tag nonblocking lock, then inspects the existing
 draft/tag commit. It never creates a tag/release or deletes/replaces an asset.
