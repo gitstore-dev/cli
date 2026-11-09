@@ -49,6 +49,17 @@ Only summary/diagnostic JSON is uploaded, never scenario state or credentials.
 This remains unsigned native Ubuntu evidence; it does not qualify other package
 channels, Fedora, trusted tag receipts or release support.
 
+## Four-platform Homebrew review
+
+Select successful same-source `review_cli_run` and `review_linux_run` values to
+render one exact-hash review formula and install/remove the matching archive on
+Ubuntu 24.04 and macOS 15, each on amd64 and arm64. Every job uses a private
+Homebrew checkout/prefix, pinned tooling revision, isolated HOME/XDG paths and a
+synthetic local tap. It does not update a user's installed tap or publish assets.
+Linux results cover Ubuntu only; Fedora Homebrew and the complete trusted
+qualification matrix remain separate acceptance work. Missing tooling or runtime
+dependencies fail the selected job rather than silently skipping it.
+
 ## Explicit Fedora review
 
 `fedora_native_run` selects a successful same-repository unsigned Linux producer

@@ -474,7 +474,7 @@ jobs:
           path: |
             ${{ runner.temp }}/package-review/review.json
             ${{ runner.temp }}/package-review/gitstore.rb
-            ${{ runner.temp }}/package-review/darwin-*/complete-candidate/assets/gitstore-0.*-darwin-*.tar.gz
+            ${{ runner.temp }}/package-review/*/complete-candidate/assets/gitstore-0.*.tar.gz
           if-no-files-found: error
           retention-days: 7
   homebrew-review:
@@ -482,10 +482,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15, macos-15-intel]
         include:
-          - {runner: macos-15, arch: arm64}
-          - {runner: macos-15-intel, arch: x64}
+          - {runner: macos-15, os: darwin, arch: arm64}
+          - {runner: macos-15-intel, os: darwin, arch: x64}
+          - {runner: ubuntu-24.04, os: linux, arch: x64}
+          - {runner: ubuntu-24.04-arm, os: linux, arch: arm64}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     permissions:
@@ -502,6 +503,7 @@ jobs:
       - name: Install/remove exact complete Homebrew candidate in private prefix
         env:
           ARCH: ${{ matrix.arch }}
+          PACKAGE_OS: ${{ matrix.os }}
         run: |
           review_parent="$HOME/.gitstore-package-review-$GITHUB_RUN_ID"
           mkdir -m 700 "$review_parent"
@@ -516,7 +518,7 @@ jobs:
           import hashlib, json, os, pathlib, subprocess, sys
           root, parent = map(pathlib.Path,sys.argv[1:])
           record = json.loads((root/'review.json').read_text())
-          artifact = root/('darwin-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-darwin-'+os.environ['ARCH']+'.tar.gz')
+          artifact = root/(os.environ['PACKAGE_OS']+'-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-'+os.environ['PACKAGE_OS']+'-'+os.environ['ARCH']+'.tar.gz')
           subprocess.run([sys.executable,'tests/packaging/run.py','--channel','homebrew',
               '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
               '--version',record['version'],'--fixture-parent',str(parent),
@@ -533,6 +535,8 @@ jobs:
             ${{ runner.temp }}/package-review/gitstore.rb
             /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
             /Users/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
+            /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/receipt.json
+            /home/runner/.gitstore-package-review-${{ github.run_id }}/brew-lifecycle-*/logs/*.log
           if-no-files-found: warn
           retention-days: 7
 
