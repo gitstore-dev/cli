@@ -29,12 +29,8 @@ on:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
         type: string
-      review_replacement_cli_run:
-        description: 'Successful CLI run with four-platform next-alpha test fixtures; requires replacement Linux run'
-        required: false
-        type: string
-      review_replacement_linux_run:
-        description: 'Same-source successful Linux run with unqualified next-alpha test fixtures'
+      review_replacement_runs:
+        description: 'Optional next-alpha producer pair CLI_RUN:LINUX_RUN, both successful at the same source'
         required: false
         type: string
       review_fedora_only:
@@ -60,10 +56,6 @@ on:
         type: string
       candidate_tag:
         description: 'Exact reviewed candidate v-tag (qualification only)'
-        required: false
-        type: string
-      qualification_fixture:
-        description: 'Owned private qualification manifest at this path on EACH dedicated clean reference host'
         required: false
         type: string
 permissions:
@@ -381,9 +373,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE_RUN: ${{ inputs.candidate_run }}
           CANDIDATE_TAG: ${{ inputs.candidate_tag }}
-          FIXTURE: ${{ inputs.qualification_fixture }}
         run: |
-          test -n "$FIXTURE"
           python3 scripts/check-release-run.py --run-id "$CANDIDATE_RUN" --workflow release.yml --revision "$GITHUB_SHA" --tag "$CANDIDATE_TAG"
   qualification:
     needs: qualification-input
@@ -391,46 +381,64 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {host: 'ubuntu:24.04', arch: x64, labels: 'gitstore-release-ubuntu24', os: Linux}
-          - {host: 'ubuntu:24.04', arch: arm64, labels: 'gitstore-release-ubuntu24', os: Linux}
-          - {host: 'fedora:44', arch: x64, labels: 'gitstore-release-fedora44', os: Linux}
-          - {host: 'fedora:44', arch: arm64, labels: 'gitstore-release-fedora44', os: Linux}
-          - {host: macos-15, arch: arm64, labels: 'gitstore-release-macos15', os: macOS}
-          - {host: macos-15-intel, arch: x64, labels: 'gitstore-release-macos15', os: macOS}
-    runs-on: [self-hosted, '${{ matrix.os }}', '${{ matrix.labels }}', '${{ matrix.arch }}']
+          - {host: 'ubuntu:24.04', label: ubuntu24, arch: x64, runner: ubuntu-24.04}
+          - {host: 'ubuntu:24.04', label: ubuntu24, arch: arm64, runner: ubuntu-24.04-arm}
+          - {host: 'fedora:44', label: fedora44, arch: x64, runner: ubuntu-24.04}
+          - {host: 'fedora:44', label: fedora44, arch: arm64, runner: ubuntu-24.04-arm}
+          - {host: macos-15, label: macos15, arch: arm64, runner: macos-15}
+          - {host: macos-15-intel, label: macos15, arch: x64, runner: macos-15-intel}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 120
     permissions:
       contents: read
       actions: read
     concurrency:
-      group: release-reference-${{ matrix.labels }}-${{ matrix.arch }}
+      group: release-reference-${{ matrix.label }}-${{ matrix.arch }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - name: Prepare fixture tooling only on the selected ephemeral Linux host
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv uidmap dbus-user-session sudo git gcc make file curl tar gzip bzip2 patch procps patchelf nodejs npm
+      - name: Prepare pinned schema validator
+        run: |
+          python3 -m venv "$RUNNER_TEMP/qualification-venv"
+          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           name: release-candidate
           path: ${{ runner.temp }}/release-candidate
           run-id: ${{ inputs.candidate_run }}
           github-token: ${{ github.token }}
-      - name: Execute exact-byte package and native acceptance on selected clean host
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: unqualified-replacement-*
+          path: ${{ runner.temp }}/qualification-controls
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: qualification-controls-*
+          path: ${{ runner.temp }}/qualification-controls
+          run-id: ${{ inputs.candidate_run }}
+          github-token: ${{ github.token }}
+      - name: Execute exact-byte package and native acceptance on isolated hosted fixtures
         env:
-          FIXTURE: ${{ inputs.qualification_fixture }}
           HOST: ${{ matrix.host }}
           TAG: ${{ inputs.candidate_tag }}
         run: |
-          python3 -m venv "$RUNNER_TEMP/qualification-venv"
-          "$RUNNER_TEMP/qualification-venv/bin/pip" install jsonschema==4.26.0
-          chmod 700 "$RUNNER_TEMP/release-candidate"
-          "$RUNNER_TEMP/qualification-venv/bin/python" scripts/qualify-release.py \
-            --candidate "$RUNNER_TEMP/release-candidate" --fixture "$FIXTURE" --host "$HOST" \
-            --revision "$GITHUB_SHA" --tag "$TAG" --output "$RUNNER_TEMP/qualification-receipts"
+          "$RUNNER_TEMP/qualification-venv/bin/python" tests/packaging/run-hosted-qualification.py \
+            --candidate "$RUNNER_TEMP/release-candidate" --controls "$RUNNER_TEMP/qualification-controls" \
+            --host "$HOST" --tag "$TAG" --output "$RUNNER_TEMP/qualification-output"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: qualification-${{ matrix.labels }}-${{ matrix.arch }}
-          path: ${{ runner.temp }}/qualification-receipts/*.json
+          name: qualification-${{ matrix.label }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/qualification-output/receipts/*.json
           if-no-files-found: error
   qualification-complete:
     needs: qualification
@@ -491,21 +499,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CLI_RUN: ${{ inputs.review_cli_run }}
           LINUX_RUN: ${{ inputs.review_linux_run }}
-          REPLACEMENT_CLI_RUN: ${{ inputs.review_replacement_cli_run }}
-          REPLACEMENT_LINUX_RUN: ${{ inputs.review_replacement_linux_run }}
+          REPLACEMENT_RUNS: ${{ inputs.review_replacement_runs }}
         run: |
           python3 -m venv "$RUNNER_TEMP/review-venv"
           "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
           "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
-          import os, subprocess, sys
+          import os, re, subprocess, sys
           command = [sys.executable,'scripts/prepare-package-review.py',
               '--cli-run',os.environ['CLI_RUN'],'--linux-run',os.environ['LINUX_RUN'],
               '--output',os.environ['RUNNER_TEMP']+'/package-review']
-          if bool(os.environ['REPLACEMENT_CLI_RUN']) != bool(os.environ['REPLACEMENT_LINUX_RUN']):
-              raise ValueError('select both replacement run IDs or neither')
-          if os.environ['REPLACEMENT_CLI_RUN']:
-              command += ['--replacement-cli-run',os.environ['REPLACEMENT_CLI_RUN'],
-                  '--replacement-linux-run',os.environ['REPLACEMENT_LINUX_RUN']]
+          if os.environ['REPLACEMENT_RUNS']:
+              if not re.fullmatch(r'[1-9][0-9]*:[1-9][0-9]*',os.environ['REPLACEMENT_RUNS']):
+                  raise ValueError('select the complete replacement pair CLI_RUN:LINUX_RUN')
+              cli,linux=os.environ['REPLACEMENT_RUNS'].split(':')
+              command += ['--replacement-cli-run',cli,'--replacement-linux-run',linux]
           subprocess.run(command,check=True)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -1041,7 +1048,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SELECTED_RUN: ${{ inputs.fedora_native_run }}
-          OTHER_SELECTION: ${{ inputs.release_preflight != 'none' && 'release-preflight' || inputs.hosted_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
+          OTHER_SELECTION: ${{ inputs.release_preflight != 'none' && 'release-preflight' || inputs.hosted_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.review_replacement_runs || inputs.candidate_run || inputs.candidate_tag || inputs.native_fixture || inputs.denied_fixture }}
         run: |
           test -z "$OTHER_SELECTION"
           python3 -m venv "$RUNNER_TEMP/review-venv"
@@ -1106,7 +1113,7 @@ jobs:
     steps:
       - name: Require a separate explicit preflight selection
         env:
-          OTHER_SELECTION: ${{ inputs.hosted_native_full && 'native-full' || inputs.hosted_native_run || inputs.fedora_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
+          OTHER_SELECTION: ${{ inputs.hosted_native_full && 'native-full' || inputs.hosted_native_run || inputs.fedora_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.review_replacement_runs || inputs.candidate_run || inputs.candidate_tag || inputs.native_fixture || inputs.denied_fixture }}
         run: test -z "$OTHER_SELECTION"
       - name: Mint the existing App token scoped only to this repository
         id: app
@@ -1151,7 +1158,7 @@ jobs:
     steps:
       - name: Require a separate explicit preflight selection
         env:
-          OTHER_SELECTION: ${{ inputs.hosted_native_full && 'native-full' || inputs.hosted_native_run || inputs.fedora_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
+          OTHER_SELECTION: ${{ inputs.hosted_native_full && 'native-full' || inputs.hosted_native_run || inputs.fedora_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.review_replacement_runs || inputs.candidate_run || inputs.candidate_tag || inputs.native_fixture || inputs.denied_fixture }}
         run: test -z "$OTHER_SELECTION"
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:

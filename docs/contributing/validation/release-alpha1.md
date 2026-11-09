@@ -2,6 +2,61 @@
 
 ## CI follow-up — 2026-11-09
 
+### Hosted qualification preparation and exact-byte native confirmation
+
+The pinned review candidate at `12c8721ed3a2b47dd865fce89fbbe0e4d0918201` passed
+all four complete native lanes: [Ubuntu run 42669876762](https://github.com/gitstore-dev/cli/actions/runs/42669876762)
+and [Fedora run 42669882585](https://github.com/gitstore-dev/cli/actions/runs/42669882585).
+Each passed cold start, seven clean-install cases, ten recovery cases, both
+integrity controls and 100-sample performance checks; all managers exited.
+Inspection p95 was Ubuntu amd64/arm64 3.052 / 2.291 ms and Fedora amd64/arm64
+2.010 / 2.518 ms. Exact executable hashes match the pinned unsigned inventory.
+Bounded receipts and hashes are now included in
+[that review manifest](alpha1-package-review.json), with local originals under
+`/private/tmp/gs-alpha1-pinned-native-12c8721/`. This closes the earlier gap between
+newer package review bytes and the previous native candidate; it is still unsigned
+pre-tag evidence.
+
+All four new producer replacement checks also passed in
+[CLI 42667856070](https://github.com/gitstore-dev/cli/actions/runs/42667856070) and
+[Linux 42667856064](https://github.com/gitstore-dev/cli/actions/runs/42667856064).
+They exercise original production archive/npm replacement with real next-alpha
+pairs; both Linux architectures also pass actual missing-library and running-
+version refusal controls. The following package-manager upgrade dispatch hit a
+GitHub planner internal server error before creating test jobs:
+[42672018241](https://github.com/gitstore-dev/cli/actions/runs/42672018241), including
+its retry; [42673443124](https://github.com/gitstore-dev/cli/actions/runs/42673443124)
+and the isolated Linux attempt
+[42673712709](https://github.com/gitstore-dev/cli/actions/runs/42673712709) also failed
+at the planner. Public annotations report correlation IDs, not test failures.
+The optional replacement producer pair is now one validated
+`review_replacement_runs=CLI_RUN:LINUX_RUN` input; the two source/run identities
+remain independently verified and recorded. Actual upgrade results remain open.
+
+The user selected isolated GitHub-hosted Ubuntu/macOS runners and pinned Fedora
+fixtures for final qualification. The final workflow now prepares all six hosts,
+including new UID 11000 Linux accounts and Fedora private cgroup namespaces with
+no host binds/ports. It exports committed public Git objects rather than copying
+checkout config/credentials, validates same-source next-alpha/helper controls,
+generates private manifests and retains all 22 required host/channel rows.
+Cold-start-derived offline layouts, integrity tests and short Unix-socket paths
+are part of the actual qualifier. No trusted tag run has executed this new
+orchestration; T038/T039 remain open until that real run passes.
+
+The existing `release-publication` approval requirement is now enforced by a
+read-only promotion preflight. Missing/empty reviewer environments fail before
+signing/uploads. The actual missing-environment control first failed as expected.
+The repository environment was then configured with required reviewer `juliuskrah`
+(ID `9932477`) and the sole deployment policy `v0.1.0-alpha.*` of type `tag`.
+The live read-only preflight now passes. Setup responses are retained under
+`/private/tmp/gs-alpha1-publication-setup/`. No tag, release, deployment, registry
+upload, tap update or merge was created.
+
+Current changed policy checks: 87 package cases, 80 passed/seven explicit fixture
+skips; 27 release cases, 26 passed/one optional fixture skip. Workflow lint,
+embedded Python syntax and changed-document local links pass. Task state remains
+60/64 while package-manager replacement and trusted tag gates are unfinished.
+
 ### Package acceptance checkpoint — 2026-11-09
 
 All previously queued package jobs passed. Same-source original candidates are
