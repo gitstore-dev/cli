@@ -67,8 +67,7 @@ class Alpha9(Commands):
                         self.assertTrue(markdown.endswith('Café\n\n'))
                         self.assertNotIn('observedGeneration:', markdown)
                 finally:
-                    if kind in ('Namespace', 'Repository'):
-                        self.wait_resource_ready(command, created['id'])
+                    self.wait_resource_ready(command, created['id'])
                     self.invoke(['delete', command, '--id', created['id']])
 
     def watch(self, kind, name=None, credential=None):

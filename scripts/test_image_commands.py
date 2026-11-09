@@ -44,8 +44,8 @@ class Commands(unittest.TestCase):
         return response['data']
 
     def wait_resource_ready(self, kind, identity):
-        self.assertIn(kind, ('namespace', 'repository'))
-        # Wait for initial Namespace/Repository controller status writes.
+        self.assertIn(kind, ('namespace', 'repository', 'product', 'category'))
+        # Wait for initial controller status writes before fixture cleanup.
         # Let this fixture finish reconciliation before the single optimistic
         # delete; the CLI must still surface conflicts rather than retry writes.
         deadline = time.monotonic() + 15
@@ -53,10 +53,13 @@ class Commands(unittest.TestCase):
             current = self.graphql('query($id:ID!){'+kind+'(by:{id:$id}){metadata{generation}'
                 'status{observedGeneration conditions{type status observedGeneration}}}}', {'id': identity})[kind]
             generation = current['metadata']['generation']
-            status = current['status']
-            if status['observedGeneration'] == generation and any(
+            status = current['status'] or {}
+            if status.get('observedGeneration') == generation and any(
                     condition['type'] == 'Ready' and condition['status'] == 'TRUE'
-                    and condition['observedGeneration'] == generation for condition in status['conditions']):
+                    # Alpha.9 Category conditions omit observedGeneration;
+                    # its enclosing status carries the reconciled generation.
+                    and (kind == 'category' or condition['observedGeneration'] == generation)
+                    for condition in status.get('conditions', [])):
                 break
             self.assertLess(time.monotonic(), deadline, f'Disposable {kind} did not finish initial reconciliation')
             time.sleep(.1)
@@ -173,6 +176,7 @@ class AuthoringCommands(Commands):
 
     def remove_fixture(self):
         if self.identity:
+            self.wait_resource_ready(self.kind, self.identity)
             self.invoke(['delete', self.kind, '--id', self.identity])
 
     def test_create(self):
@@ -193,12 +197,14 @@ class AuthoringCommands(Commands):
 
     def test_delete_by_id(self):
         self.create_fixture()
+        self.wait_resource_ready(self.kind, self.identity)
         result = self.invoke(['delete', self.kind, '--id', self.identity])
         self.assertIn(result['outcome'], ['TERMINATION_STARTED', 'ALREADY_TERMINATING'])
         self.identity = None
 
     def test_delete_by_name(self):
         self.create_fixture()
+        self.wait_resource_ready(self.kind, self.identity)
         result = self.invoke(['delete', self.kind, self.name])
         self.assertIn(result['outcome'], ['TERMINATION_STARTED', 'ALREADY_TERMINATING'])
         self.identity = None
