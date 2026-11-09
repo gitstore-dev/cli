@@ -15,6 +15,10 @@ on:
         required: false
         default: false
         type: boolean
+      fedora_native_run:
+        description: 'Successful unsigned Linux producer for explicit Fedora systemd/cgroup native review; no release qualification'
+        required: false
+        type: string
       review_cli_run:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
@@ -47,7 +51,7 @@ permissions:
   contents: read
 jobs:
   libraries:
-    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '' && inputs.hosted_native_run == '')
+    if: github.event_name != 'workflow_dispatch' || (inputs.candidate_run == '' && inputs.review_cli_run == '' && inputs.hosted_native_run == '' && inputs.fedora_native_run == '')
     name: Libraries ${{ matrix.arch }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
@@ -779,5 +783,83 @@ jobs:
             ${{ runner.temp }}/native-diagnostic.json
             ${{ runner.temp }}/native-acceptance.json
             ${{ runner.temp }}/source-core.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  hosted-fedora-review:
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1431005655' && inputs.fedora_native_run != ''
+    name: Fedora native review ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x64, label: amd64, runner: ubuntu-24.04}
+          - {arch: arm64, label: arm64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Validate explicit unsigned Fedora source selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_RUN: ${{ inputs.fedora_native_run }}
+          OTHER_SELECTION: ${{ inputs.hosted_native_run || inputs.review_cli_run || inputs.review_linux_run || inputs.candidate_run || inputs.candidate_tag || inputs.qualification_fixture || inputs.native_fixture || inputs.denied_fixture }}
+        run: |
+          test -z "$OTHER_SELECTION"
+          python3 -m venv "$RUNNER_TEMP/review-venv"
+          "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
+          import importlib.util, os
+          spec=importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')
+          module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+          module.selected_run(int(os.environ['SELECTED_RUN']),'runtime.yml')
+          PY
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: unpublished-production-candidate-linux-${{ matrix.label }}
+          path: ${{ runner.temp }}/native-candidate
+          run-id: ${{ inputs.fedora_native_run }}
+          github-token: ${{ github.token }}
+      - name: Build separate source-pinned developer helpers
+        run: |
+          sudo apt-get update --error-on=any
+          sudo apt-get install -y cmake make pkg-config libssl-dev zlib1g-dev
+          toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          export RUSTUP_HOME="$RUNNER_TEMP/fedora-rustup" RUSTUP_TOOLCHAIN="$toolchain"
+          printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
+          CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$RUNNER_TEMP/fedora-helpers" cargo build --release --locked -p gs --example runtime_repository_probe
+          cmake -S daemon -B "$RUNNER_TEMP/fedora-control-negative" -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=OFF -DGITSTORED_LIBCRUN=OFF \
+            -DGITSTORED_SLIRP=OFF -DGITSTORED_BOOTSTRAP=OFF
+          cmake --build "$RUNNER_TEMP/fedora-control-negative" --parallel 2 --target gitstored
+          mkdir -m 700 "$RUNNER_TEMP/fedora-selected-helpers"
+          install -m 500 "$RUNNER_TEMP/fedora-control-negative/gitstored" "$RUNNER_TEMP/fedora-selected-helpers/unsupported-daemon"
+          install -m 500 "$RUNNER_TEMP/fedora-helpers/release/examples/runtime_repository_probe" "$RUNNER_TEMP/fedora-selected-helpers/repository-probe"
+      - name: Run owned Fedora package and native acceptance
+        env:
+          SELECTED_RUN: ${{ inputs.fedora_native_run }}
+        run: |
+          if test -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          "$RUNNER_TEMP/review-venv/bin/python" tests/packaging/run-hosted-fedora.py \
+            --producer-run "$SELECTED_RUN" \
+            --candidate "$RUNNER_TEMP/native-candidate/complete-candidate/assets" \
+            --unsupported-daemon "$RUNNER_TEMP/fedora-selected-helpers/unsupported-daemon" \
+            --repository-probe "$RUNNER_TEMP/fedora-selected-helpers/repository-probe" \
+            --output "$RUNNER_TEMP/fedora-review"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: unsigned-fedora-native-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/fedora-review/native-acceptance.json
+            ${{ runner.temp }}/fedora-review/package-controls.json
           if-no-files-found: warn
           retention-days: 7

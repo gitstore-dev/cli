@@ -2,6 +2,7 @@
 import json
 import fcntl
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 import os
 from pathlib import Path
 import sqlite3
@@ -164,7 +165,7 @@ class Recovery(unittest.TestCase):
         self.addCleanup(resume_manager)
         deadline = time.monotonic() + 60
         while True:
-            with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+            with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
                 # Pin committed state before stopping the writer. A new reader
                 # after SIGSTOP can block behind the stopped writer's lock.
                 database.execute("BEGIN")
@@ -213,7 +214,7 @@ class Recovery(unittest.TestCase):
         f.stop("lost-create", key="stop-discovered-partial-graph")
         stopped = f.call("deployment", "inspect", "lost-create")
         self.assertEqual(stopped["writerOwnership"], "released")
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+        with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
             recovered, = database.execute("SELECT backend_identity FROM resource_ownership WHERE resource_id=?", (row[0],)).fetchone()
         self.assertEqual(json.loads(recovered)["native"]["pid"], status["pid"])
         self.assertEqual(json.loads(recovered)["native"]["startTime"], status["process-start-time"])
@@ -227,7 +228,7 @@ class Recovery(unittest.TestCase):
         accepted = f.start("cancel-start", key="active-start")
         deadline = time.monotonic() + 60
         while True:
-            with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+            with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
                 rows = database.execute("SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' AND backend_identity IS NOT NULL").fetchall()
             records = [json.loads(row[0]).get("native", {}) for row in rows]
             api = next((record for record in records if record.get("component") == "api" and record.get("pid", 0) > 0), None)
@@ -314,7 +315,7 @@ class Recovery(unittest.TestCase):
         material = f.credential_path("recovery")
         material_hash = f.digest(material)
         assets = f.assets()
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+        with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
             native = [json.loads(row[0])["native"] for row in database.execute(
                 "SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' AND ownership_state='held'")]
             volume, device, inode = database.execute(
@@ -341,7 +342,7 @@ class Recovery(unittest.TestCase):
         signal.pidfd_send_signal(api_fd, signal.SIGSTOP)
         deadline = time.monotonic() + 15
         while True:
-            with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+            with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
                 observing, = database.execute("SELECT state='running' FROM jobs WHERE operation_id=?",
                                                (accepted["operationId"],)).fetchone()
             if observing:
@@ -357,7 +358,7 @@ class Recovery(unittest.TestCase):
         if graceful:
             self.assertEqual(f.process.returncode, 0)
             self.assertLess(time.monotonic() - exiting, 30, "Manager shutdown exceeded its bound")
-            with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+            with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
                 rows = database.execute("SELECT ownership_state FROM resource_ownership WHERE operation_id=?", (accepted["operationId"],)).fetchall()
             self.assertTrue(rows and all(row[0] in {"held", "uncertain"} for row in rows))
         resume()
@@ -399,7 +400,7 @@ class Recovery(unittest.TestCase):
         initial = f.ready("retry-stop", accepted)
         material = f.credential_path("retry-stop")
         material_hash = f.digest(material)
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+        with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
             records = [json.loads(row[0])["native"] for row in database.execute(
                 "SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' AND ownership_state='held'")]
         git = next(record for record in records if record["component"] == "git")
@@ -446,7 +447,7 @@ class Recovery(unittest.TestCase):
         f.ready("partial-stop", accepted)
         material = f.credential_path("partial-stop")
         digest = f.digest(material)
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+        with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
             records = [json.loads(row[0])["native"] for row in database.execute(
                 "SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' AND ownership_state='held'")]
         git = next(record for record in records if record["component"] == "git")
@@ -466,7 +467,7 @@ class Recovery(unittest.TestCase):
         stop = f.call("deployment", "stop", "partial-stop", "--detach", "--idempotency-key", "interrupted-partial-stop")
         deadline = time.monotonic() + 15
         while True:
-            with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+            with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
                 journal = database.execute("SELECT lifecycle_stage,backend_identity FROM resource_ownership WHERE resource_type='workload'").fetchall()
             completed = [json.loads(identity) for stage, identity in journal if stage == "retained"]
             if len(completed) == 2:
@@ -503,7 +504,7 @@ class Recovery(unittest.TestCase):
 
     @staticmethod
     def api_identity(f):
-        with sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True) as database:
+        with closing(sqlite3.connect((f.root / "state/state.db").as_uri() + "?mode=ro", uri=True)) as database:
             records = [json.loads(row[0])["native"] for row in database.execute(
                 "SELECT backend_identity FROM resource_ownership WHERE resource_type='workload' AND ownership_state='held' "
                 "AND resource_id LIKE 'run-api-%'")]

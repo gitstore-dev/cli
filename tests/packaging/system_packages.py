@@ -70,6 +70,25 @@ def allowed_path(name):
                     'usr/libexec', 'usr/libexec/gitstore') or name.startswith('usr/libexec/gitstore/')
 
 
+def validate_rpm_metadata(fields, scripts, triggers, listing, version, arch):
+    """Shared pre-install policy for local and explicitly isolated Docker fixtures."""
+    identity = encode(version)
+    if fields != ['gitstore', identity['rpmVersion'], identity['rpmRelease'], 'x86_64' if arch == 'x64' else 'aarch64']:
+        raise ValueError('RPM package version/platform/name mismatch')
+    if scripts or triggers:
+        raise ValueError('system installation must not run package scripts/triggers')
+    for line in listing.splitlines():
+        name, link, mode = line.split('\t')
+        mode = int(mode, 8)
+        if (not allowed_path(name.removeprefix('/')) or '..' in name.split('/') or
+                not stat.S_ISLNK(mode) and mode & 0o7022 or
+                not (stat.S_ISREG(mode) or stat.S_ISDIR(mode) or stat.S_ISLNK(mode))):
+            raise ValueError('unexpected privileged RPM payload')
+        if link and (name not in ('/usr/bin/gs', '/usr/bin/gitstored') or
+                link != '../libexec/gitstore/bin/' + name.rsplit('/',1)[1]):
+            raise ValueError('unexpected privileged RPM link')
+
+
 def inspect(path, digest, version, channel, arch, uid):
     if not path.is_absolute() or path.is_symlink():
         raise ValueError('select an absolute ordinary package')
@@ -102,21 +121,11 @@ def inspect(path, digest, version, channel, arch, uid):
                     raise ValueError('unexpected special package file')
     else:
         fields = command('rpm', '-qp', '--qf', '%{NAME}\n%{VERSION}\n%{RELEASE}\n%{ARCH}', str(path)).stdout.decode().splitlines()
-        if fields != ['gitstore', identity['rpmVersion'], identity['rpmRelease'], 'x86_64' if arch == 'x64' else 'aarch64']:
-            raise ValueError('RPM package version/platform/name mismatch')
-        if command('rpm', '-qp', '--scripts', str(path)).stdout or command('rpm', '-qp', '--triggers', str(path)).stdout:
-            raise ValueError('system installation must not run package scripts/triggers')
-        listing = command('rpm', '-qp', '--qf', '[%{FILENAMES}\t%{FILELINKTOS}\t%{FILEMODES:octal}\n]', str(path)).stdout.decode()
-        for line in listing.splitlines():
-            name, link, mode = line.split('\t')
-            mode = int(mode, 8)
-            if (not allowed_path(name.removeprefix('/')) or '..' in name.split('/') or
-                    not stat.S_ISLNK(mode) and mode & 0o7022 or
-                    not (stat.S_ISREG(mode) or stat.S_ISDIR(mode) or stat.S_ISLNK(mode))):
-                raise ValueError('unexpected privileged RPM payload')
-            if link and (name not in ('/usr/bin/gs', '/usr/bin/gitstored') or
-                    link != '../libexec/gitstore/bin/' + name.rsplit('/',1)[1]):
-                raise ValueError('unexpected privileged RPM link')
+        validate_rpm_metadata(fields,
+            command('rpm', '-qp', '--scripts', str(path)).stdout,
+            command('rpm', '-qp', '--triggers', str(path)).stdout,
+            command('rpm', '-qp', '--qf', '[%{FILENAMES}\t%{FILELINKTOS}\t%{FILEMODES:octal}\n]', str(path)).stdout.decode(),
+            version, arch)
 
 
 def run(args):
