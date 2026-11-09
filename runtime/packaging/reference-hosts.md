@@ -57,7 +57,8 @@ Ubuntu 24.04 and macOS 15, each on amd64 and arm64. Every job uses a private
 Homebrew checkout/prefix, pinned tooling revision, isolated HOME/XDG paths and a
 synthetic local tap. It does not update a user's installed tap or publish assets.
 A separate Fedora 44 job on each architecture uses the pinned disposable job
-container and fresh UID 11000. Only fixture tooling runs as root; package commands
+container and fresh UID 11000. The fixture includes Homebrew’s documented Linux compiler/development-tool
+prerequisites; it does not compile GitStore. Only fixture tooling runs as root; package commands
 run with a cleared environment as that user. `review_fedora_only=true` selects
 just those Fedora checks when Ubuntu/macOS evidence already exists. This is
 package control evidence, separate from Fedora native systemd/cgroup checks and

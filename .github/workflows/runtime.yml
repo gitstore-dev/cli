@@ -640,7 +640,7 @@ jobs:
     steps:
       - name: Prepare disposable Fedora package tooling and account
         run: |
-          dnf -y install git curl tar gzip bzip2 patch procps-ng findutils python3-jsonschema shadow-utils util-linux
+          dnf -y install gcc make glibc-devel file git curl tar gzip bzip2 patch procps-ng findutils python3-jsonschema shadow-utils util-linux
           useradd --uid 11000 --create-home gitstorefixture
           chmod 700 /home/gitstorefixture
           install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments
