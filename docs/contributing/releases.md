@@ -220,6 +220,15 @@ empty-tool PATH boundary. The formula remains a review artifact, never a tap upd
 These outputs are named unsigned development review, contain no release receipts
 or attestations, and cannot replace the trusted qualification/publication path.
 
+For controlled replacement, additionally set `review_replacement_cli_run` and
+`review_replacement_linux_run` to successful producer runs containing separate
+`unqualified-replacement-*` artifacts. The coordinator requires a complete actual
+four-platform next-alpha set, retains its distinct source revision, and renders
+the next formula using real hashes. The selected APT/DNF/Homebrew and Fedora
+archive/npm cases then exercise replacement/removal. These incomplete-notice,
+`UNQUALIFIED-ONLY` fixtures remain outside the release inventory and never satisfy
+trusted tag-bound qualification on their own.
+
 For a separate ephemeral Linux native smoke, dispatch `runtime.yml` with only
 `hosted_native_run` selecting a successful unsigned runtime candidate run. It
 validates the exact downloaded native pair, prepares its own non-root account,

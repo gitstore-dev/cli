@@ -317,5 +317,113 @@
       "bytes": 6532056,
       "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e"
     }
+  ],
+  "additionalReviewEvidence": [
+    {
+      "label": "fedora-homebrew-x64",
+      "run": 42650502300,
+      "artifactId": 13691526116,
+      "receiptSha256": "a1b67f7ab9bcd46de63f46466fdb7829c4dc57c0b498f3ee023c489aac234a45",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/gitstorefixture/experiments/brew-lifecycle-4aa0apcj",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "87bd672927233770a4bcd92d780b64252cf2924183cbb1d9a6c7f361a452e9fc",
+            "formulaSha256": "4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e",
+            "applicationVersion": "0.1.0-alpha.1"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      }
+    },
+    {
+      "label": "fedora-homebrew-arm64",
+      "run": 42650502300,
+      "artifactId": 13690677545,
+      "receiptSha256": "f76f32bf02d2c6eee138fac45a914b2d0fd945d2d6fd9683f4de9cc0c49bb9b9",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/home/gitstorefixture/experiments/brew-lifecycle-een93lti",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "6d9f4c1f638424de4918a41c1ec50461a316f5627469eec2a5c98054cf6731a0",
+            "formulaSha256": "4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e",
+            "applicationVersion": "0.1.0-alpha.1"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      }
+    },
+    {
+      "label": "apt-x64",
+      "run": 42650502300,
+      "artifactId": 13690677790,
+      "receiptSha256": "3c44dc6941d95fb06585ea0cb002b5b5712f042f997088bb26b7c296c6ec790e",
+      "receipt": {
+        "channel": "deb",
+        "fixture": "/home/gitstorefixture/experiments/system-package-k87z5gwj",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "artifacts": [
+          {
+            "sha256": "1bdd67703eb65ed59a7ade5e6b1dd6570f9e97ae2d94c600708988f11c764db8",
+            "applicationVersion": "0.1.0-alpha.1"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true,
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201"
+      }
+    },
+    {
+      "label": "apt-arm64",
+      "run": 42650502300,
+      "artifactId": 13689733320,
+      "receiptSha256": "e0c3c4b56890b5553bb4970ff3e42f742329dfb01e859cf45e925f6b5806d3f8",
+      "receipt": {
+        "channel": "deb",
+        "fixture": "/home/gitstorefixture/experiments/system-package-rdar7c5c",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+        "artifacts": [
+          {
+            "sha256": "ea0517aaeeaecb5edad07bbbc4120efdcb50b53b382159fc4d5372371fbf30dd",
+            "applicationVersion": "0.1.0-alpha.1"
+          }
+        ],
+        "qualification": "controlled system package lifecycle only; not release qualification",
+        "removed": true,
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201"
+      }
+    },
+    {
+      "label": "macos-homebrew-arm64",
+      "run": 42649040740,
+      "artifactId": 13689647343,
+      "receiptSha256": "65de730828acd1d9049e07244e3871807636096f3a7f4e33fa1d3217403bda9f",
+      "receipt": {
+        "channel": "homebrew",
+        "fixture": "/Users/runner/.gitstore-package-review-42649040740/brew-lifecycle-q_sbvm2k",
+        "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "qualification": "controlled package lifecycle only; not release qualification",
+        "artifacts": [
+          {
+            "sha256": "c702fff9b356e19e53980c63b15865226c1269e07d2ea8839bd9cf5073d39761",
+            "formulaSha256": "4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e",
+            "applicationVersion": "0.1.0-alpha.1"
+          }
+        ],
+        "toolingVersion": "Homebrew >=4.3.0 (shallow or no git repository)",
+        "removed": true
+      }
+    }
   ]
 }

@@ -2,6 +2,44 @@
 
 ## CI follow-up — 2026-11-09
 
+### Package acceptance checkpoint — 2026-11-09
+
+All previously queued package jobs passed. Same-source original candidates are
+still checkout `12c8721ed3a2b47dd865fce89fbbe0e4d0918201` from branch checkpoint
+`8146a1f1004595cd059bc4fe0a4e1ec9409bd420`; the complete PR checks also passed at
+`120b502` before the new replacement-test changes.
+
+| Review operation | Result | Run |
+| --- | --- | --- |
+| Homebrew install/remove, Ubuntu 24.04 amd64 and arm64 | passed | [42649040740](https://github.com/gitstore-dev/cli/actions/runs/42649040740) |
+| Homebrew install/remove, macOS 15 x86_64 and arm64 | passed | [42649040740](https://github.com/gitstore-dev/cli/actions/runs/42649040740) |
+| Homebrew install/remove, Fedora 44 amd64 and arm64 | passed | [42650502300](https://github.com/gitstore-dev/cli/actions/runs/42650502300) |
+| Actual APT install/remove, Ubuntu 24.04 amd64 and arm64 | passed | [42650502300](https://github.com/gitstore-dev/cli/actions/runs/42650502300) |
+
+Every selected receipt confirms removal and exact original asset identities;
+Homebrew also binds exact formula/tooling digests. These checks retain the
+non-root, empty-tool PATH and unchanged-private-state assertions. The five latest
+bounded receipts and their hashes are included as additional review evidence in
+[the unsigned inventory](alpha1-package-review.json), retained locally under
+`/private/tmp/gs-alpha1-package-review-complete/`. Earlier native Ubuntu/Fedora
+receipts and their distinct source identities remain below.
+
+T024 stays open for the complete replacement/channel set. New producer CI builds
+local-only alpha.2 pairs in private source copies and runs original production
+archive/npm alpha.1 → alpha.2 replacement/removal. Linux also executes the actual
+missing-library and running-version refusal cases with explicitly selected inputs.
+The macOS arm64 producer passed these new replacement checks in
+[42667856070](https://github.com/gitstore-dev/cli/actions/runs/42667856070);
+other producer rows remain in progress. Fixtures are uploaded separately with
+`UNQUALIFIED-ONLY` names and cannot enter canonical release subject slots.
+
+Optional replacement-run inputs extend the isolated APT, DNF and all-six-host
+Homebrew review jobs with real next-alpha artifacts/formula hashes. Fedora also
+runs archive/npm lifecycle checks. These jobs must actually pass before their
+results count; none emits trusted/tag-bound qualification. Current portable
+package policy: 83 cases, 76 passed and seven explicit native fixture skips.
+Workflow lint, embedded Python syntax and whitespace checks pass.
+
 ### Linux package-channel continuation
 
 The complete current-head PR checks passed at `8146a1f1004595cd059bc4fe0a4e1ec9409bd420`:

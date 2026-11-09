@@ -29,6 +29,14 @@ on:
         description: 'Successful unsigned CLI candidate run for disposable Homebrew review (no release qualification)'
         required: false
         type: string
+      review_replacement_cli_run:
+        description: 'Successful CLI run with four-platform next-alpha test fixtures; requires replacement Linux run'
+        required: false
+        type: string
+      review_replacement_linux_run:
+        description: 'Same-source successful Linux run with unqualified next-alpha test fixtures'
+        required: false
+        type: string
       review_fedora_only:
         description: 'Run only the explicit Fedora Homebrew review after selecting the same-source inputs'
         required: false
@@ -483,19 +491,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           CLI_RUN: ${{ inputs.review_cli_run }}
           LINUX_RUN: ${{ inputs.review_linux_run }}
+          REPLACEMENT_CLI_RUN: ${{ inputs.review_replacement_cli_run }}
+          REPLACEMENT_LINUX_RUN: ${{ inputs.review_replacement_linux_run }}
         run: |
           python3 -m venv "$RUNNER_TEMP/review-venv"
           "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
-          "$RUNNER_TEMP/review-venv/bin/python" scripts/prepare-package-review.py \
-            --cli-run "$CLI_RUN" --linux-run "$LINUX_RUN" --output "$RUNNER_TEMP/package-review"
+          "$RUNNER_TEMP/review-venv/bin/python" - <<'PY'
+          import os, subprocess, sys
+          command = [sys.executable,'scripts/prepare-package-review.py',
+              '--cli-run',os.environ['CLI_RUN'],'--linux-run',os.environ['LINUX_RUN'],
+              '--output',os.environ['RUNNER_TEMP']+'/package-review']
+          if bool(os.environ['REPLACEMENT_CLI_RUN']) != bool(os.environ['REPLACEMENT_LINUX_RUN']):
+              raise ValueError('select both replacement run IDs or neither')
+          if os.environ['REPLACEMENT_CLI_RUN']:
+              command += ['--replacement-cli-run',os.environ['REPLACEMENT_CLI_RUN'],
+                  '--replacement-linux-run',os.environ['REPLACEMENT_LINUX_RUN']]
+          subprocess.run(command,check=True)
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unsigned-package-review
           path: |
             ${{ runner.temp }}/package-review/review.json
             ${{ runner.temp }}/package-review/gitstore.rb
+            ${{ runner.temp }}/package-review/gitstore-next.rb
+            ${{ runner.temp }}/package-review/replacements/*/packages/UNQUALIFIED*
             ${{ runner.temp }}/package-review/*/complete-candidate/assets/gitstore-0.*.tar.gz
             ${{ runner.temp }}/package-review/linux-*/complete-candidate/assets/*.deb
+            ${{ runner.temp }}/package-review/linux-*/complete-candidate/assets/*.tgz
+            ${{ runner.temp }}/package-review/linux-*/complete-candidate/assets/*.rpm
           if-no-files-found: error
           retention-days: 7
   homebrew-review:
@@ -538,6 +562,8 @@ jobs:
           "$RUNNER_TEMP/review-venv/bin/pip" install jsonschema==4.26.0
           "$RUNNER_TEMP/review-venv/bin/python" - "$RUNNER_TEMP/package-review" "$review_parent" <<'PY'
           import hashlib, json, os, pathlib, subprocess, sys
+          sys.path[:0] = [str(pathlib.Path.cwd()/'tests/packaging'),str(pathlib.Path.cwd()/'runtime/packaging')]
+          from review_replacements import arguments
           root, parent = map(pathlib.Path,sys.argv[1:])
           record = json.loads((root/'review.json').read_text())
           artifact = root/(os.environ['PACKAGE_OS']+'-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-'+os.environ['PACKAGE_OS']+'-'+os.environ['ARCH']+'.tar.gz')
@@ -545,7 +571,7 @@ jobs:
               '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
               '--version',record['version'],'--fixture-parent',str(parent),
               '--formula',str(root/'gitstore.rb'),'--formula-sha256',hashlib.sha256((root/'gitstore.rb').read_bytes()).hexdigest(),
-              '--brew-source',str(parent/'brew-source'),'--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e'],check=True)
+              '--brew-source',str(parent/'brew-source'),'--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e']+arguments(root,record,os.environ['PACKAGE_OS'],os.environ['ARCH'],'homebrew'),check=True)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -602,6 +628,8 @@ jobs:
           sudo apt-get update
           sudo env -i PATH=/usr/sbin:/usr/bin:/sbin:/bin LANG=C ARCH="$ARCH" RESULT="$RUNNER_TEMP/apt-review-result.json" REVIEW="$RUNNER_TEMP/package-review" SOURCE="$GITHUB_WORKSPACE" "$RUNNER_TEMP/apt-review-venv/bin/python" - <<'PY'
           import hashlib, json, os, pathlib, shutil, socket, subprocess, sys
+          sys.path[:0] = [os.environ['SOURCE']+'/tests/packaging',os.environ['SOURCE']+'/runtime/packaging']
+          from review_replacements import arguments
           root = pathlib.Path(os.environ['REVIEW'])
           record = json.loads((root/'review.json').read_text())
           packages = list((root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets').glob('*.deb'))
@@ -616,10 +644,13 @@ jobs:
           manifest = pathlib.Path('/home/gitstorefixture/system.json')
           manifest.write_text(json.dumps(fixture))
           manifest.chmod(0o600)
+          replacement = arguments(root,record,'linux',os.environ['ARCH'],'deb')
+          if replacement:
+              os.chown(replacement[1],0,0)
           subprocess.run([sys.executable,os.environ['SOURCE']+'/tests/packaging/run.py','--channel','deb',
               '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
               '--version',record['version'],'--fixture-parent',fixture['fixtureParent'],
-              '--system-fixture',str(manifest)],check=True)
+              '--system-fixture',str(manifest)]+replacement,check=True)
           receipts = list(pathlib.Path(fixture['fixtureParent']).glob('system-package-*/receipt.json'))
           if len(receipts) != 1:
               raise ValueError('Expected one owned APT lifecycle result')
@@ -655,7 +686,7 @@ jobs:
     steps:
       - name: Prepare disposable Fedora package tooling and account
         run: |
-          dnf -y install gcc make glibc-devel file git curl tar gzip bzip2 patch procps-ng findutils python3-jsonschema shadow-utils util-linux
+          dnf -y install gcc make glibc-devel file git curl tar gzip bzip2 patch procps-ng findutils python3-jsonschema shadow-utils util-linux /usr/bin/npm
           useradd --uid 11000 --create-home gitstorefixture
           chmod 700 /home/gitstorefixture
           install -d -m 700 -o 11000 -g 11000 /home/gitstorefixture/experiments
@@ -666,6 +697,29 @@ jobs:
         with:
           name: unsigned-package-review
           path: /home/gitstorefixture/review
+      - name: Exercise actual DNF install, selected replacement and removal
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, socket, subprocess, sys
+          sys.path[:0] = [os.environ['GITHUB_WORKSPACE']+'/tests/packaging',os.environ['GITHUB_WORKSPACE']+'/runtime/packaging']
+          from review_replacements import arguments
+          root = pathlib.Path('/home/gitstorefixture/review')
+          record = json.loads((root/'review.json').read_text())
+          packages = list((root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets').glob('*.rpm'))
+          if len(packages) != 1:
+              raise ValueError('Select one exact native RPM')
+          fixture = dict(schemaVersion=1,disposableUid=11000,disposableGid=11000,
+              dedicatedTestAccount=True,disposableHost=True,hostname=socket.gethostname(),
+              osId='fedora',osVersion='44',arch=os.environ['ARCH'],fixtureParent='/home/gitstorefixture/experiments')
+          manifest = pathlib.Path('/home/gitstorefixture/system.json')
+          manifest.write_text(json.dumps(fixture)); manifest.chmod(0o600)
+          subprocess.run([sys.executable,os.environ['GITHUB_WORKSPACE']+'/tests/packaging/run.py','--channel','rpm',
+              '--artifact',str(packages[0]),'--sha256',hashlib.sha256(packages[0].read_bytes()).hexdigest(),
+              '--version',record['version'],'--fixture-parent',fixture['fixtureParent'],
+              '--system-fixture',str(manifest)]+arguments(root,record,'linux',os.environ['ARCH'],'rpm'),check=True)
+          PY
       - name: Exercise exact Fedora Homebrew package as non-root
         env:
           ARCH: ${{ matrix.arch }}
@@ -678,14 +732,21 @@ jobs:
           chown -R 11000:11000 /home/gitstorefixture/review /home/gitstorefixture/brew-source
           runuser -u gitstorefixture -- env -i PATH=/usr/bin:/bin HOME=/home/gitstorefixture ARCH="$ARCH" SOURCE="$GITHUB_WORKSPACE" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess, sys
+          sys.path[:0] = [os.environ['SOURCE']+'/tests/packaging',os.environ['SOURCE']+'/runtime/packaging']
+          from review_replacements import arguments
           root = pathlib.Path('/home/gitstorefixture/review')
           record = json.loads((root/'review.json').read_text())
-          artifact = root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets'/('gitstore-'+record['version']+'-linux-'+os.environ['ARCH']+'.tar.gz')
+          assets = root/('linux-'+os.environ['ARCH'])/'complete-candidate/assets'
+          artifact = assets/('gitstore-'+record['version']+'-linux-'+os.environ['ARCH']+'.tar.gz')
+          for channel,selected in [('archive',artifact),('npm',assets/('gitstore-npm-'+record['version']+'-linux-'+os.environ['ARCH']+'.tgz'))]:
+              subprocess.run([sys.executable,os.environ['SOURCE']+'/tests/packaging/run.py','--channel',channel,
+                  '--artifact',str(selected),'--sha256',hashlib.sha256(selected.read_bytes()).hexdigest(),
+                  '--version',record['version'],'--fixture-parent','/home/gitstorefixture/experiments']+arguments(root,record,'linux',os.environ['ARCH'],channel),check=True)
           subprocess.run([sys.executable,os.environ['SOURCE']+'/tests/packaging/run.py','--channel','homebrew',
               '--artifact',str(artifact),'--sha256',hashlib.sha256(artifact.read_bytes()).hexdigest(),
               '--version',record['version'],'--fixture-parent','/home/gitstorefixture/experiments',
               '--formula',str(root/'gitstore.rb'),'--formula-sha256',hashlib.sha256((root/'gitstore.rb').read_bytes()).hexdigest(),
-              '--brew-source','/home/gitstorefixture/brew-source','--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e'],check=True)
+              '--brew-source','/home/gitstorefixture/brew-source','--brew-revision','bf464f57275cae0be106b43d190c98564ac59b0e']+arguments(root,record,'linux',os.environ['ARCH'],'homebrew'),check=True)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -694,6 +755,9 @@ jobs:
           path: |
             /home/gitstorefixture/review/review.json
             /home/gitstorefixture/review/gitstore.rb
+            /home/gitstorefixture/experiments/system-package-*/receipt.json
+            /home/gitstorefixture/experiments/archive-lifecycle-*/receipt.json
+            /home/gitstorefixture/experiments/npm-lifecycle-*/receipt.json
             /home/gitstorefixture/experiments/brew-lifecycle-*/receipt.json
             /home/gitstorefixture/experiments/brew-lifecycle-*/logs/*.log
           if-no-files-found: warn
