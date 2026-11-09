@@ -729,7 +729,7 @@ jobs:
           nm "$RUNNER_TEMP/source-production/gitstored" > "$RUNNER_TEMP/source-production/symbols.txt"
           if grep -E 'gstd_test_|gstd_controlled_|gstd_failpoint' "$RUNNER_TEMP/source-production/symbols.txt"; then exit 1; fi
           sudo install -d -o 11000 -g 11000 -m 700 /home/gitstorefixture/experiments/source-production-pair \
-            /home/gitstorefixture/experiments/source-production-fixtures
+            /home/gitstorefixture/experiments/src
           sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/source-production/gitstored" \
             /home/gitstorefixture/experiments/source-production-pair/gitstored
           sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/native-pair/gs" \
@@ -739,7 +739,7 @@ jobs:
           parent=pathlib.Path('/home/gitstorefixture/experiments')
           value=json.loads((parent/'hosted.json').read_text())
           value.update(gs=str(parent/'source-production-pair/gs'),daemon=str(parent/'source-production-pair/gitstored'),
-              fixtureParent=str(parent/'source-production-fixtures'),
+              fixtureParent=str(parent/'src'),
               purpose='Current production-source daemon with selected candidate gs; not an exact candidate or release qualification')
           fd=os.open(parent/'source-production-fixture.json',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
           with os.fdopen(fd,'w') as output: json.dump(value,output)
@@ -759,7 +759,7 @@ jobs:
           sudo -u gitstorefixture python3 - <<'PY'
           import json, os, pathlib
           parent=pathlib.Path('/home/gitstorefixture/experiments')
-          records=list((parent/'source-production-fixtures').glob('runtime-run-core-memdb-*.json'))
+          records=list((parent/'src').glob('runtime-run-core-memdb-*.json'))
           if len(records)==1:
               value=json.loads(records[0].read_text())
               safe={key:value[key] for key in ('status','scenario','case','elapsedSeconds','executables')}

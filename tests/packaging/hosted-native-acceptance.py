@@ -79,7 +79,10 @@ def main():
     if core['status']!='passed' or core['case']!='test_authorized_cold_start_requires_current_generation_health' or any(
             core['executables'][key]['sha256']!=inputs[name]['sha256'] for name,key in [('gs','gs'),('gitstored','daemon')]):
         p.error('Require successful cold-start evidence for this exact pair')
-    batch=Path(tempfile.mkdtemp(prefix='hosted-native-acceptance-',dir=parent))
+    # Keep the real AF_UNIX control and lost-ACK relay paths below sun_path.
+    batch=Path(tempfile.mkdtemp(prefix='a-',dir=parent))
+    if len(os.fsencode(batch/'gs-public-runtime-xxxxxxxx/runtime/gitstored.sock'))>=108:
+        p.error('Select a shorter fixture parent for native Unix sockets')
     summary=dict(schemaVersion=1,status='running',scope='unsigned Ubuntu native acceptance; not package-channel or release qualification',
         host=platform.platform(),candidateSourceRevision=inventory['sourceRevision'],
         testSourceRevision=settings['sourceRevision'],applicationVersion=inventory['applicationVersion'],
