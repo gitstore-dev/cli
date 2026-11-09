@@ -21,7 +21,7 @@ class NativeDiagnostic(unittest.TestCase):
                 db.execute('INSERT INTO operations VALUES(?,?,?,?)',('failed',json.dumps(dict(
                     code='OPERATION_FAILED',stage='unavailable',message=secret)),secret,secret))
                 db.execute('CREATE TABLE assets(asset_key,descriptor,state)')
-                db.execute('INSERT INTO assets VALUES(?,?,?)',('a'*64,json.dumps(dict(component='git')),'staging'))
+                db.execute('INSERT INTO assets VALUES(?,?,?)',('a'*64,json.dumps(dict(images=[dict(component='git')])),'staging'))
                 db.execute('CREATE TABLE resource_ownership(resource_type,lifecycle_stage,ownership_state,backend_identity)')
                 db.execute('INSERT INTO resource_ownership VALUES(?,?,?,?)',('workload','reserved','held',
                     json.dumps(dict(execution=dict(private=secret),unrelated=secret))))
