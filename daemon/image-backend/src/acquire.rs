@@ -16,6 +16,7 @@ use sha2::{Digest, Sha256};
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Write},
+    os::unix::fs::OpenOptionsExt,
     path::Path,
     time::Duration,
 };
@@ -32,6 +33,7 @@ pub(crate) fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
+        .mode(0o600)
         .open(path)
         .map_err(|_| Status::Transfer)?;
     file.write_all(bytes)
@@ -67,6 +69,7 @@ async fn blob(
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
+        .mode(0o600)
         .open(path)
         .map_err(|_| Status::Transfer)?;
     let mut count = 0u64;
@@ -277,6 +280,79 @@ pub(crate) fn stage_cached(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn downloaded_files_stay_private_with_permissive_umask() {
+        // umask is process-global: isolate this case from parallel SDK tests.
+        if std::env::var("GSTD_IMAGE_MODE_CHILD").as_deref() != Ok("1") {
+            assert!(
+                std::process::Command::new(std::env::current_exe().unwrap())
+                    .args([
+                        "--exact",
+                        "acquire::tests::downloaded_files_stay_private_with_permissive_umask",
+                        "--test-threads=1"
+                    ])
+                    .env("GSTD_IMAGE_MODE_CHILD", "1")
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            return;
+        }
+        unsafe {
+            libc::umask(0o002);
+        }
+        let root = tempfile::tempdir().unwrap();
+        write_new(&root.path().join("manifest.json"), b"synthetic manifest").unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            std::fs::metadata(root.path().join("manifest.json"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
+        let data = b"synthetic registry layer";
+        let descriptor = OciDescriptor {
+            digest: sha256(data),
+            size: data.len() as i64,
+            media_type: manifest::IMAGE_LAYER_MEDIA_TYPE.into(),
+            ..Default::default()
+        };
+        let service =
+            tower::service_fn(move |request: oci_client::transport::Request| async move {
+                assert_eq!(request.method(), http::Method::GET);
+                Ok::<_, oci_client::transport::BoxError>(http::Response::new(
+                    oci_client::transport::Body::from_bytes(data.as_slice()),
+                ))
+            });
+        let client = Client::new_with_transport(ClientConfig::default(), service);
+        let reference: Reference = format!("example.invalid/synthetic/image@{}", descriptor.digest)
+            .parse()
+            .unwrap();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let path = root.path().join("layer");
+        let mut remaining = 65536;
+        runtime
+            .block_on(blob(
+                &client,
+                &reference,
+                &descriptor,
+                &path,
+                &mut remaining,
+                &transport::Budget::metadata(),
+                None,
+            ))
+            .unwrap();
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        assert_eq!(std::fs::read(path).unwrap(), data);
+    }
     #[test]
     #[ignore = "explicit owned synthetic registry fixture only"]
     fn fixture_streams_verify_platform_quota_and_unpack() {
