@@ -1,5 +1,32 @@
 # Alpha.1 implementation evidence
 
+## Release proposal handoff — 2026-11-09
+
+[PR #12](https://github.com/gitstore-dev/cli/pull/12) merged through the merge
+queue at `2435ddf719729a06a6cf7749c7ff4d08b498e683`; all required merge-group
+checks passed. [Release Please run 42696490264](https://github.com/gitstore-dev/cli/actions/runs/42696490264)
+succeeded with the scoped App, opened [alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13),
+and removed its one-time override. Proposal creation and downstream PR-event CI
+are now observed evidence; tag-event/signing/qualification acceptance remains open.
+
+The proposal's first Rust-policy jobs failed in
+`test_bootstrap_removed_only_in_synchronized_first_release_pr`: its fixture copied
+the current checkout, which already had the override removed, and incorrectly
+expected bootstrap rejection. The corrected test supplies explicit alpha.0
+manifest/alpha.1 override inputs, then proves synchronization, removal and
+idempotence independently of checkout state. All 29 release-policy cases pass
+locally with the pinned Release Please 17.3.0 engine, including actual updater
+alpha.1 → alpha.2 behavior. Hosted results must pass on the corrected proposal
+before its merge; no checks are bypassed.
+
+The maintainer owns merging #13 (which creates the version tag/draft) and the
+`release-publication` environment approval. Candidate build, exact-byte six-host/
+22-selection qualification, inventory review, producer verification and final
+evidence updates can be executed by automation/an agent between those decisions.
+See the [first-release handoff](../releases.md#first-release-handoff).
+T038, T039 and T064 remain unchecked until their actual tag-bound evidence exists.
+No version tag, published release or tap update is claimed by this handoff.
+
 ## CI follow-up — 2026-11-09
 
 ### Automated review follow-up — 2026-11-09
