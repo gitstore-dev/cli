@@ -580,7 +580,9 @@ jobs:
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
-          rustup toolchain install "$toolchain" --profile minimal
+          if ! rustup run "$toolchain" rustc --version; then
+            rustup toolchain install "$toolchain" --profile minimal --no-self-update
+          fi
           sudo apt-get update --error-on=any
           sudo apt-get install -y libssl-dev zlib1g-dev pkg-config
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
@@ -593,17 +595,24 @@ jobs:
       - name: Diagnose libcrun with a synthetic credential-free payload
         if: failure() && steps.owned-host.outcome == 'success'
         run: |
-          sudo apt-get install -y cmake make pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev
+          sudo apt-get install -y cmake make pkg-config libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev
           cmake -S daemon -B "$RUNNER_TEMP/libcrun-diagnostic" -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DGITSTORED_TESTING=ON -DGITSTORED_LIBCRUN=ON -DGITSTORED_IMAGE_SDK=OFF \
-            -DGITSTORED_SLIRP=OFF -DGITSTORED_BOOTSTRAP=OFF
-          cmake --build "$RUNNER_TEMP/libcrun-diagnostic" --parallel 2 --target native_library_probe native_library_payload
+            -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=OFF
+          cmake --build "$RUNNER_TEMP/libcrun-diagnostic" --parallel 2 \
+            --target native_library_probe native_library_payload native_adapter_probe native_registered_payload
           sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/libcrun-diagnostic/native_library_probe" \
-            "$RUNNER_TEMP/libcrun-diagnostic/native_library_payload" /home/gitstorefixture/experiments/
+            "$RUNNER_TEMP/libcrun-diagnostic/native_library_payload" \
+            "$RUNNER_TEMP/libcrun-diagnostic/native_adapter_probe" \
+            "$RUNNER_TEMP/libcrun-diagnostic/native_registered_payload" /home/gitstorefixture/experiments/
           sudo install -o 11000 -g 11000 -m 400 runtime/experiments/libcrun/run.py /home/gitstorefixture/experiments/libcrun-probe.py
           sudo -u gitstorefixture python3 /home/gitstorefixture/experiments/libcrun-probe.py \
             /home/gitstorefixture/experiments/native_library_probe /home/gitstorefixture/experiments/native_library_payload \
             --delegated --keep --fixture-parent /home/gitstorefixture/experiments
+          sudo -u gitstorefixture python3 /home/gitstorefixture/experiments/libcrun-probe.py \
+            /home/gitstorefixture/experiments/native_adapter_probe /home/gitstorefixture/experiments/native_registered_payload \
+            --delegated --registered --network --seccomp "/home/gitstorefixture/source/runtime/profiles/seccomp/${{ matrix.label }}.json" \
+            --keep --fixture-parent /home/gitstorefixture/experiments
       - name: Retain only bounded safe native diagnostic metadata
         if: always()
         run: |
