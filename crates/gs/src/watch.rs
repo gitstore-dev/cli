@@ -336,13 +336,23 @@ fn send(socket: &mut Socket, value: Value) -> Result<()> {
 fn receive(socket: &mut Socket, deadline: Instant) -> Result<Value> {
     loop {
         bounds(socket, deadline)?;
-        let received = socket.read().map_err(|error| {
-            if Instant::now() >= deadline {
-                Error::deadline()
-            } else {
-                socket_error(error)
+        let received = match socket.read() {
+            Ok(message) => message,
+            Err(_) if Instant::now() >= deadline => return Err(Error::deadline()),
+            Err(tungstenite::Error::Io(error))
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock
+                        | std::io::ErrorKind::TimedOut
+                        | std::io::ErrorKind::Interrupted
+                ) =>
+            {
+                // A bounded read poll is not evidence of a disconnected peer.
+                // Keep the subscription/cursor and retry budget until deadline.
+                continue;
             }
-        })?;
+            Err(error) => return Err(socket_error(error)),
+        };
         match received {
             Message::Text(text) => {
                 return input::json(text.as_str()).map_err(|_| {

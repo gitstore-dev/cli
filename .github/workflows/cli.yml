@@ -39,7 +39,7 @@ jobs:
       - name: Read-only package and release policy fixtures
         run: |
           python3 -m venv "$RUNNER_TEMP/release-policy-venv"
-          "$RUNNER_TEMP/release-policy-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/release-policy-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/release-policy-venv/bin/python" -m unittest discover -s tests/packaging -v
           npm install --prefix "$RUNNER_TEMP/release-please" --ignore-scripts --no-audit --no-fund release-please@17.3.0
           GITSTORE_RELEASE_PLEASE_MODULE="$RUNNER_TEMP/release-please/node_modules/release-please" \
@@ -73,7 +73,7 @@ jobs:
       - name: Installed pair policy and unavailable-runtime checks
         run: |
           python3 -m venv "$RUNNER_TEMP/package-venv"
-          "$RUNNER_TEMP/package-venv/bin/pip" install jsonschema==4.26.0
+          "$RUNNER_TEMP/package-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           GITSTORE_PACKAGE_PAIR="$PWD/build/control-pair" "$RUNNER_TEMP/package-venv/bin/python" -m unittest discover -s tests/packaging -v
           GITSTORED_TEST_BINARY="$PWD/build/control-pair/gitstored" cargo test --locked -p gs --test daemon_setup -- --include-ignored
       - name: Collect source and notice review inputs for this actual architecture

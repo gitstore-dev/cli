@@ -127,6 +127,54 @@ fn reconnect_resumes_after_emitted_cursor_and_allows_duplicate_delivery() {
 }
 
 #[test]
+fn idle_subscription_keeps_its_connection_cursor_and_retry_budget() {
+    let (listener, endpoint) = wire::listener();
+    let h = configured(&endpoint);
+    let checkpoint = h.dir.path().join("idle-watch.json");
+    let worker = std::thread::spawn(move || {
+        let mut socket = wire::accept(&listener);
+        wire::start(&mut socket);
+        wire::send(
+            &mut socket,
+            wire::event("product", "BOOKMARK", "journal-start"),
+        );
+        // Exceed the real production read poll without events or heartbeats.
+        std::thread::sleep(Duration::from_secs(16));
+        wire::send(
+            &mut socket,
+            wire::event("product", "ADDED", "journal-after-idle"),
+        );
+        assert_eq!(wire::read(&mut socket)["type"], "complete");
+        assert!(
+            matches!(listener.accept(), Err(error) if error.kind() == std::io::ErrorKind::WouldBlock)
+        );
+    });
+    let out = h
+        .credential_cmd("synthetic-watch-token")
+        .args([
+            "--timeout",
+            "30s",
+            "watch",
+            "product",
+            "--max-events",
+            "1",
+            "--checkpoint-file",
+        ])
+        .arg(&checkpoint)
+        .output()
+        .unwrap();
+    worker.join().unwrap();
+    assert!(out.status.success(), "{}", stderr(&out));
+    assert_eq!(
+        lines(&out).last().unwrap()["resourceVersion"],
+        "journal-after-idle"
+    );
+    let record: Value = serde_json::from_slice(&std::fs::read(checkpoint).unwrap()).unwrap();
+    assert_eq!(record["retries"], 0);
+    assert_eq!(record["connectionState"], "stopped");
+}
+
+#[test]
 fn expiry_wrong_kind_and_oversized_frames_fail_without_advancing_past_valid_output() {
     for fault in [
         "expired",
