@@ -25,6 +25,17 @@ previous successful TLS result remains separate. The diagnostic now reuses an
 installed pinned compiler. Its next adapter/network attempt initially lacked
 Meson; explicit Meson/Ninja build dependencies were added. These developer
 diagnostics never enter release packages or qualify a failed workload run.
+The corrected registered adapter/network probe subsequently passed both normal
+and lost-start-acknowledgement scenarios on both hosted architectures in
+[run 42585570950](https://github.com/gitstore-dev/cli/actions/runs/42585570950).
+The production workload's bounded milestone counts are all zero (execution,
+population, native); failure precedes execution-root recording. This narrows the
+remaining investigation to active-cache reopening/verification or private image
+materialization, rather than demonstrating a libcrun launch failure. Full logs
+are retained at `/private/tmp/gs-alpha1-hosted-adapter-complete-{x64,arm64}.log`.
+The selected offline cache probe reports numeric provisioning outcomes only and
+does not execute image commands. Diagnostic privacy assertions and the complete
+66-case package policy suite pass locally (seven explicit fixture skips).
 
 Pinned alpha.9 integration passed all 34 tests locally after waiting for initial
 Repository reconciliation before fixture cleanup, matching the existing Namespace
