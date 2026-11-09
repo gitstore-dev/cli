@@ -43,21 +43,22 @@ class Commands(unittest.TestCase):
         self.assertNotIn('errors', response)
         return response['data']
 
-    def wait_namespace_ready(self, identity):
-        # Alpha.9's namespace controller writes SystemRepoReady/Ready status.
+    def wait_resource_ready(self, kind, identity):
+        self.assertIn(kind, ('namespace', 'repository'))
+        # Wait for initial Namespace/Repository controller status writes.
         # Let this fixture finish reconciliation before the single optimistic
         # delete; the CLI must still surface conflicts rather than retry writes.
         deadline = time.monotonic() + 15
         while True:
-            current = self.graphql('query($id:ID!){namespace(by:{id:$id}){metadata{generation}'
-                'status{observedGeneration conditions{type status observedGeneration}}}}', {'id': identity})['namespace']
+            current = self.graphql('query($id:ID!){'+kind+'(by:{id:$id}){metadata{generation}'
+                'status{observedGeneration conditions{type status observedGeneration}}}}', {'id': identity})[kind]
             generation = current['metadata']['generation']
             status = current['status']
             if status['observedGeneration'] == generation and any(
                     condition['type'] == 'Ready' and condition['status'] == 'TRUE'
                     and condition['observedGeneration'] == generation for condition in status['conditions']):
                 break
-            self.assertLess(time.monotonic(), deadline, 'Disposable Namespace did not finish initial reconciliation')
+            self.assertLess(time.monotonic(), deadline, f'Disposable {kind} did not finish initial reconciliation')
             time.sleep(.1)
 
 
@@ -220,7 +221,7 @@ class LifecycleCommands(Commands):
                                 {'input': {'apiVersion': 'gitstore.dev/v1beta1', 'kind': 'Namespace',
                                            'metadata': {'name': name}, 'spec': {'title': 'Disposable', 'tier': 'ORGANIZATION'}}})
         identity = resource['createNamespace']['namespace']['id']
-        self.wait_namespace_ready(identity)
+        self.wait_resource_ready('namespace', identity)
         result = self.invoke(['delete', 'namespace', '--id', identity])
         self.assertIn(result['outcome'], ['TERMINATION_STARTED', 'ALREADY_TERMINATING'])
 
@@ -231,6 +232,7 @@ class LifecycleCommands(Commands):
                                            'metadata': {'namespace': 'gs-m1-ci', 'name': name},
                                            'spec': {'defaultBranch': 'main', 'visibility': 'PRIVATE', 'storageClass': 'standard'}}})
         identity = resource['createRepository']['repository']['id']
+        self.wait_resource_ready('repository', identity)
         result = self.invoke(['delete', 'repository', '--id', identity])
         self.assertIn(result['outcome'], ['TERMINATION_STARTED', 'ALREADY_TERMINATING'])
 
