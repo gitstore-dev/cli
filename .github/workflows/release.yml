@@ -69,7 +69,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-18 cmake make pkg-config meson ninja-build dpkg-dev rpm \
-            libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev libssl-dev libcurl4-openssl-dev libcrypt-dev libpcre2-dev
+            libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev libssl-dev libcurl4-openssl-dev libcrypt-dev libpcre2-dev patchelf
       - name: Install pinned producer tools
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
@@ -79,6 +79,44 @@ jobs:
           echo "$RUNNER_TEMP/release-venv/bin" >> "$GITHUB_PATH"
       - name: Build production pair, notices and packages from reviewed inputs
         run: python3 scripts/build-release-platform.py --output "$RUNNER_TEMP/platform"
+      - name: Build separate never-publish next-alpha qualification controls
+        run: |
+          python3 tests/packaging/check-produced-replacement.py \
+            --candidate "$RUNNER_TEMP/platform" --output "$RUNNER_TEMP/replacement-checks"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: unqualified-replacement-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/replacement-checks/result.json
+            ${{ runner.temp }}/replacement-checks/built/UNQUALIFIED.json
+            ${{ runner.temp }}/replacement-checks/packages/UNQUALIFIED*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Prepare exact-source Linux native negative and Git probes
+        if: runner.os == 'Linux'
+        run: |
+          cargo build --release --locked -p gs --example runtime_repository_probe
+          cmake -S daemon -B "$RUNNER_TEMP/qualification-negative" -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=OFF -DGITSTORED_LIBCRUN=OFF \
+            -DGITSTORED_SLIRP=OFF -DGITSTORED_BOOTSTRAP=OFF
+          cmake --build "$RUNNER_TEMP/qualification-negative" --parallel 2 --target gitstored
+          install -d -m 700 "$RUNNER_TEMP/qualification-controls"
+          install -m 500 "$RUNNER_TEMP/qualification-negative/gitstored" "$RUNNER_TEMP/qualification-controls/unsupported-daemon"
+          install -m 500 target/release/examples/runtime_repository_probe "$RUNNER_TEMP/qualification-controls/repository-probe"
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'qualification-controls'
+          files={key:dict(filename=name,sha256=hashlib.sha256((root/name).read_bytes()).hexdigest())
+              for key,name in [('unsupportedDaemon','unsupported-daemon'),('repositoryProbe','repository-probe')]}
+          (root/'controls.json').write_text(json.dumps(dict(sourceRevision=os.environ['GITHUB_SHA'],files=files)))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: runner.os == 'Linux'
+        with:
+          name: qualification-controls-linux-${{ matrix.arch }}
+          path: ${{ runner.temp }}/qualification-controls/*
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: platform-${{ matrix.os }}-${{ matrix.arch }}

@@ -75,7 +75,8 @@ def main():
         raise ValueError('select an owned private experiment parent')
     if not args.output.is_absolute() or args.output.exists():
         p.error('select a new absolute receipt directory')
-    workspace = Path(tempfile.mkdtemp(prefix='release-qualification-',dir=parent)).resolve()
+    # Keep AF_UNIX control and recovery relay paths below sun_path's limit.
+    workspace = Path(tempfile.mkdtemp(prefix='q-',dir=parent)).resolve()
     workspace.chmod(0o700)
     (workspace/'home').mkdir(mode=0o700)
     environment = dict(PATH=os.environ.get('PATH','/usr/bin:/bin'),LANG='C',HOME=str(workspace/'home'))
@@ -126,16 +127,43 @@ def main():
     unpack(root/archive,artifacts[archive]['sha256'],version,prefix)
     if os_name == 'linux':
         native.update(gs=str(prefix/'bin/gs'),daemon=str(prefix/'bin/gitstored'),sourceRoot=str(ROOT))
+        cold = workspace/'cold'
+        cold.mkdir(mode=0o700)
+        native['fixtureParent'] = str(cold)
         fixture = workspace/'native.json'
         fixture.write_text(json.dumps(native))
         fixture.chmod(0o600)
         env = dict(environment,GITSTORE_PACKAGE_PAIR=str(prefix/'bin'),GITSTORE_RUNTIME_FIXTURE=str(fixture),
             GITSTORE_MISMATCH_DAEMON=settings['mismatchDaemon'])
+        run('native-prerequisites',[sys.executable,str(ROOT/'tests/packaging/check-linux-fixture.py'),
+            '--fixture',str(fixture)],env)
         for test in ('test_native_autostart.py','test_native_failures.py'):
             run(test,[sys.executable,'-m','unittest','discover','-s','tests/packaging','-p',test,'-v'],env)
+        run('native-cold',[sys.executable,str(ROOT/'tests/runtime/run.py'),'--scenario','core-memdb',
+            '--case','test_authorized_cold_start_requires_current_generation_health','--fixture',str(fixture)])
+        roots = list(cold.glob('gs-public-runtime-*'))
+        records = list(cold.glob('runtime-run-*.json'))
+        if len(roots)!=1 or len(records)!=1:
+            raise ValueError('require one exact-pair cold start before preparing offline layouts')
+        record = json.loads(records[0].read_text())
+        if record['status']!='passed' or any(record['executables'][key]['sha256'] !=
+                hashlib.sha256((prefix/'bin'/name).read_bytes()).hexdigest()
+                for name,key in [('gs','gs'),('gitstored','daemon')]):
+            raise ValueError('cold-start receipt must bind this exact installed pair')
+        layouts = workspace/'offline'
+        run('prepare-offline',[sys.executable,str(ROOT/'tests/packaging/prepare-offline-cache.py'),
+            '--cache',str(roots[0]/'state/assets'),'--output',str(layouts)])
+        batch = workspace/'a'
+        batch.mkdir(mode=0o700)
+        native.update(fixtureParent=str(batch),offlineLayouts=json.loads((layouts/'layouts.json').read_text()))
+        fixture.write_text(json.dumps(native))
         for scenario in ('core-offline','clean-install','recovery'):
             run('native-'+scenario,[sys.executable,str(ROOT/'tests/runtime/run.py'),
                 '--scenario',scenario,'--fixture',str(fixture)])
+        for case in ('test_interrupted_offline_blob_never_activates',
+                     'test_tampered_warm_blob_cannot_be_reused_for_execution'):
+            run(case,[sys.executable,str(ROOT/'tests/runtime/run.py'),'--scenario','exp-003b',
+                '--case',case,'--fixture',str(fixture)])
         for binary in ('gs','gitstored'):
             run('closure-'+binary,[sys.executable,str(ROOT/'runtime/packaging/closure.py'),
                 '--binary',str(prefix/'bin'/binary)])

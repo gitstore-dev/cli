@@ -72,9 +72,7 @@ synthetic HOME/XDG state. Only the bounded lifecycle receipt is copied out;
 private fixture permissions remain intact. Replacement-order controls and trusted
 tag qualification remain separate from these install/remove review jobs.
 
-To test next-alpha replacement, also select `review_replacement_cli_run` and
-`review_replacement_linux_run` from successful same-source producer jobs. Both
-are required together. The original candidate source and the replacement fixture
+To test next-alpha replacement, also select `review_replacement_runs=CLI_RUN:LINUX_RUN` from successful same-source producer jobs. Both producer IDs are required together. The original candidate source and the replacement fixture
 source are recorded separately. The coordinator checks all four real replacement
 archive identities and renders the next formula from their actual hashes; it
 never invents unused-platform digests. APT, DNF, Homebrew, Fedora archive and npm
@@ -140,6 +138,39 @@ requirement is introduced. Only the marked subject, public bundle/root and a
 bounded result are uploaded. Exact certificate SAN, source ref and digest remain
 mandatory; `gh`'s mutually exclusive identity flags must not be combined.
 
+## Trusted hosted release qualification
+
+The final tag-qualified lane uses isolated GitHub-hosted fixtures, as selected
+for this release. Dispatch reviewed `main` only while it points at the exact
+candidate SHA, or dispatch the exact candidate tag, with `candidate_run` and
+`candidate_tag`. The existing source/workflow/run gates execute before any
+qualification host is queued. No caller-provided manifest or self-hosted release
+runner labels are needed.
+
+All six hosts remain mandatory: Ubuntu 24.04 and macOS 15 on both architectures,
+and Fedora 44 systemd guests on matching ephemeral Ubuntu Docker hosts. Linux
+setup creates a new UID 11000, user bus, cgroup delegation and TUN access. Fedora
+has a private cgroup namespace and no host binds/ports; its recorded kernel is
+the hosted Ubuntu kernel, not proof of every Fedora kernel/SELinux configuration.
+MacOS is control-only. No App key or signing permission reaches these jobs.
+
+The trusted release build supplies separate next-alpha replacement fixtures and
+native helper controls, all bound to the exact same source. Only declared public
+candidate subjects and control files enter Linux accounts; Git bundles carry
+committed public objects/refs without checkout configuration, credentials,
+hooks or untracked inputs. The selected account installs pinned schema tooling
+and a private Homebrew checkout. Narrow fixture sudo access is for actual system
+package management; all product invocations run non-root with isolated state.
+
+The qualifier runs every selected install/replace/remove channel. Linux also
+runs real first use, missing-library/version refusal, cold start, prepares offline
+layouts from that exact successful cold pair, then tests offline/clean-install/
+recovery/integrity and fd/memfd closure plus 100-sample costs. It writes no host
+receipts until every required case passes. The collector still requires all 22
+host/channel selections and exact tag/source/subject digests. These workflow
+changes are not evidence that a tag-qualified run has passed; T038/T039 retain
+that gate.
+
 ## Explicit native reference fixtures
 
 Workload jobs run only after a maintainer dispatches reviewed `main` in repository
@@ -185,9 +216,9 @@ The workflow does not upload retained fixture directories, credentials or arbitr
 native logs. Keep local failure evidence and inspect remaining ownership before
 cleanup. Do not globally prune a reference host to reclaim a failed run.
 
-No self-hosted native reference runner set or six-host release qualification set
-is configured or dispatched by this change. The ephemeral hosted core smoke
-fixtures described above are a separate scoped lane. Existing local arm64 fixture passes are explicitly scoped in
+The optional self-hosted development native/denial lanes remain separately
+selected. They are not dependencies of the hosted six-host release lane. The
+unsigned hosted review lanes above also remain separate from trusted tag evidence. Existing local arm64 fixture passes are explicitly scoped in
 [the validation record](../../docs/contributing/validation/local-runtime.md).
 Unavailable amd64, denial and hosted combinations remain unverified and are not a
 release-support list.

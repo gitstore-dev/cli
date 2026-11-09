@@ -142,3 +142,14 @@ No tasks.md is generated here; this command ends after Phase 1 design.
 
 No architecture exception. Required multi-format renderers share one inventory;
 the user-directed prerelease policy is documented above and in the specification.
+
+## Accepted implementation update — 2026-11-09
+
+The user selected isolated GitHub-hosted Ubuntu/macOS runners and pinned Fedora
+fixtures for final tag qualification, replacing the unprovisioned six-runner
+self-hosted fleet. Linux fixture accounts remain fresh UID 11000; Fedora uses
+private cgroups and no host mounts/ports. All 22 host/channel rows, exact trusted
+source/tag/byte checks and optional consumer verification remain unchanged.
+Separate same-source next-alpha/helper artifacts support qualification but never
+enter the release inventory. Existing optional self-hosted development/denial
+lanes are independent. Actual trusted tag execution remains an acceptance gate.

@@ -90,11 +90,19 @@ qualification receipts. The original source/native build remains unchanged.
 ## Exact-byte workflow qualification
 
 The manual `runtime.yml` qualification lane consumes a successful same-source
-`release.yml` build, never PR artifacts. Provision six separate dedicated clean
-reference hosts with the `gitstore-release-ubuntu24`, `gitstore-release-fedora44`
-or `gitstore-release-macos15` label plus actual OS and `x64`/`arm64`. Do not share
-these hosts with development or personal deployments. No such complete runner
-set has been provisioned by this implementation.
+`release.yml` build, never PR artifacts. It prepares six isolated GitHub-hosted
+fixtures: Ubuntu 24.04 and macOS 15 on both architectures, plus pinned Fedora 44
+systemd guests on matching ephemeral Ubuntu Docker hosts. Linux product processes
+run as fresh UID 11000; setup alone has privilege. Fedora has private cgroups,
+no host binds/ports, and no App/signing credentials. Qualification manifests,
+next-alpha controls/formula and helper bindings are generated from that exact
+trusted candidate build. Source transfer uses committed public Git bundles,
+excluding checkout credentials/configuration and untracked files. Missing
+prerequisites fail the selected host; no fallback or passing skip is used.
+
+For advanced separately managed manual fixture execution, the underlying qualifier
+still accepts the explicit manifest described below. This is not a required input
+or alternative automatically selected by the hosted workflow.
 
 Copy [the example](../../packaging/qualification-fixture.example.json) to an owned
 mode-0600 file at the selected path on each host. Replace every placeholder and

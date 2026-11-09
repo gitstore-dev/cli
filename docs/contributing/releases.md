@@ -120,10 +120,19 @@ Missed documented p95 targets fail before host receipts are emitted. Measurement
 remain embedded in those maintainer-owned execution receipts.
 Dispatch the exact reviewed candidate tag (or `main` while it still points
 to the exact candidate source SHA) with
-`candidate_run`, `candidate_tag` and `qualification_fixture` (an owned private
-manifest at that path on each host). It rejects foreign/PR/wrong-source runs before
-queuing dedicated hosts. Those hosts require the declared `gitstore-release-*`
-labels; this workflow does not provision them or silently substitute hosted builds.
+`candidate_run` and `candidate_tag`. It rejects foreign/PR/wrong-source runs before
+queuing isolated hosted fixtures. Ubuntu and macOS use fresh GitHub-hosted VMs on
+both architectures; Fedora boots the pinned systemd image in a private cgroup
+namespace on the matching Ubuntu runner, with no host bind mounts or ports.
+Linux product checks use a newly created UID 11000. No self-hosted runner fleet
+or caller-supplied qualification manifest is required.
+
+The release build also uploads separate, never-publish next-alpha replacement
+controls for all four production tuples and Linux negative/Git probes. They come
+from the exact same reviewed source/run and never enter canonical release groups.
+The qualification runner generates private manifests and a real-hash replacement
+formula, exports only committed public Git objects into Linux fixture accounts,
+and keeps App/signing credentials out of all native jobs.
 
 [`qualify-release.py`](../../scripts/qualify-release.py) requires an explicit
 clean disposable host/account and actual OS match, complete next-alpha replacement
@@ -223,8 +232,7 @@ empty-tool PATH boundary. The formula remains a review artifact, never a tap upd
 These outputs are named unsigned development review, contain no release receipts
 or attestations, and cannot replace the trusted qualification/publication path.
 
-For controlled replacement, additionally set `review_replacement_cli_run` and
-`review_replacement_linux_run` to successful producer runs containing separate
+For controlled replacement, additionally set `review_replacement_runs=CLI_RUN:LINUX_RUN` to successful producer runs containing separate
 `unqualified-replacement-*` artifacts. The coordinator requires a complete actual
 four-platform next-alpha set, retains its distinct source revision, and renders
 the next formula using real hashes. The selected APT/DNF/Homebrew and Fedora

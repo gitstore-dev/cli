@@ -425,5 +425,611 @@
         "removed": true
       }
     }
+  ],
+  "pinnedNativeReviewEvidence": [
+    {
+      "label": "ubuntu-x64",
+      "run": 42669876762,
+      "artifactId": 13699447010,
+      "receiptSha256": "91c5e9f027db2749a8bb4149180d7538cd6a0600d1c027c3fe12fc3af4baef47",
+      "receipt": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "scope": "unsigned Ubuntu native acceptance; not package-channel or release qualification",
+        "fixtureKind": "hosted-ubuntu24",
+        "distribution": {
+          "ID": "ubuntu",
+          "VERSION_ID": "24.04"
+        },
+        "developerHelpersSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "coreTestSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+        "testSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "applicationVersion": "0.1.0-alpha.1",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e",
+            "bytes": 6532056
+          },
+          "gitstored": {
+            "sha256": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155",
+            "bytes": 22088280
+          },
+          "unsupportedDaemon": {
+            "sha256": "a67e60a6b8f3443e5ffbff32f821dc58d57081efe4d963aa52b26bd8a1fc6cf0",
+            "bytes": 1495544
+          },
+          "repositoryProbe": {
+            "sha256": "1aceb34f24fb411d4d7ead19434681fca66e73ad60eb7763fed145242736f26a",
+            "bytes": 1527224
+          }
+        },
+        "scenarios": [
+          {
+            "scenario": "clean-install",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 330.16
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_interrupted_offline_blob_never_activates",
+            "status": "passed",
+            "elapsedSeconds": 1.417
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_tampered_warm_blob_cannot_be_reused_for_execution",
+            "status": "passed",
+            "elapsedSeconds": 39.012
+          },
+          {
+            "scenario": "recovery",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 571.15
+          }
+        ],
+        "measurements": {
+          "schemaVersion": 1,
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "cpus": 4,
+          "samples": 100,
+          "fixture": "/home/gitstorefixture/experiments/a-gpbqicgw/gs-public-runtime-l792swtn",
+          "sourceInputs": {
+            "gs": {
+              "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e",
+              "bytes": 6532056
+            },
+            "gitstored": {
+              "sha256": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155",
+              "bytes": 22088280
+            }
+          },
+          "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+          "coldOfflineReadySeconds": 36.707,
+          "daemonInspect": {
+            "command": "gs deployment inspect performance -o json through explicit owned socket",
+            "samples": 100,
+            "p95Milliseconds": 3.052,
+            "minimumMilliseconds": 2.745,
+            "maximumMilliseconds": 3.999
+          },
+          "commandLatency": {
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+            "machine": "x86_64",
+            "samples": 100,
+            "clock": "perf_counter_ns; wall time includes process startup",
+            "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+            "commands": {
+              "gs --help": {
+                "samples": 100,
+                "p95Milliseconds": 1.687,
+                "minimumMilliseconds": 1.476,
+                "maximumMilliseconds": 2.711
+              },
+              "gs --version": {
+                "samples": 100,
+                "p95Milliseconds": 1.571,
+                "minimumMilliseconds": 1.369,
+                "maximumMilliseconds": 2.595
+              },
+              "gitstored --help": {
+                "samples": 100,
+                "p95Milliseconds": 20.429,
+                "minimumMilliseconds": 15.394,
+                "maximumMilliseconds": 21.162
+              },
+              "gitstored --version": {
+                "samples": 100,
+                "p95Milliseconds": 20.188,
+                "minimumMilliseconds": 15.569,
+                "maximumMilliseconds": 20.857
+              }
+            },
+            "daemonInspect": "not measured; requires separately selected live owned deployment"
+          },
+          "assetCost": {
+            "logicalBytes": 276079776,
+            "allocatedBytes": 277913600,
+            "regularFiles": 665
+          },
+          "stateCostExcludingAssets": {
+            "logicalBytes": 276479175,
+            "allocatedBytes": 278515712,
+            "regularFiles": 750
+          },
+          "cacheCost": {
+            "logicalBytes": 0,
+            "allocatedBytes": 0,
+            "regularFiles": 0
+          },
+          "assetLogicalBytes": 276079776,
+          "stateLogicalBytes": 276479175,
+          "managerMemoryOnly": {
+            "VmHWMBytes": 10203136,
+            "VmRSSBytes": 10203136,
+            "scope": "manager only; excludes service/worker peaks"
+          },
+          "managerChildStopped": true
+        }
+      }
+    },
+    {
+      "label": "ubuntu-arm64",
+      "run": 42669876762,
+      "artifactId": 13699312426,
+      "receiptSha256": "9a90e370e553460c2ea2c441d8b2c5af06f19cb7379a004c0cd0c548f32a495d",
+      "receipt": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "scope": "unsigned Ubuntu native acceptance; not package-channel or release qualification",
+        "fixtureKind": "hosted-ubuntu24",
+        "distribution": {
+          "ID": "ubuntu",
+          "VERSION_ID": "24.04"
+        },
+        "developerHelpersSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "coreTestSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+        "testSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "applicationVersion": "0.1.0-alpha.1",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7",
+            "bytes": 5983816
+          },
+          "gitstored": {
+            "sha256": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df",
+            "bytes": 22409784
+          },
+          "unsupportedDaemon": {
+            "sha256": "01ca49a26e571aafb29acf12e3dcc810062ddd4f3384be9bdf78fea540cf63d1",
+            "bytes": 1606080
+          },
+          "repositoryProbe": {
+            "sha256": "aa04f161de1c96fda65ed43476277035c9882933f73cec92653e59d4bd869819",
+            "bytes": 1526520
+          }
+        },
+        "scenarios": [
+          {
+            "scenario": "clean-install",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 339.287
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_interrupted_offline_blob_never_activates",
+            "status": "passed",
+            "elapsedSeconds": 1.417
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_tampered_warm_blob_cannot_be_reused_for_execution",
+            "status": "passed",
+            "elapsedSeconds": 37.741
+          },
+          {
+            "scenario": "recovery",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 577.771
+          }
+        ],
+        "measurements": {
+          "schemaVersion": 1,
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+          "machine": "aarch64",
+          "cpus": 4,
+          "samples": 100,
+          "fixture": "/home/gitstorefixture/experiments/a-jmi1tenj/gs-public-runtime-06fc6aal",
+          "sourceInputs": {
+            "gs": {
+              "sha256": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7",
+              "bytes": 5983816
+            },
+            "gitstored": {
+              "sha256": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df",
+              "bytes": 22409784
+            }
+          },
+          "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+          "coldOfflineReadySeconds": 37.269,
+          "daemonInspect": {
+            "command": "gs deployment inspect performance -o json through explicit owned socket",
+            "samples": 100,
+            "p95Milliseconds": 2.291,
+            "minimumMilliseconds": 1.999,
+            "maximumMilliseconds": 3.231
+          },
+          "commandLatency": {
+            "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+            "machine": "aarch64",
+            "samples": 100,
+            "clock": "perf_counter_ns; wall time includes process startup",
+            "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+            "commands": {
+              "gs --help": {
+                "samples": 100,
+                "p95Milliseconds": 2.422,
+                "minimumMilliseconds": 1.244,
+                "maximumMilliseconds": 2.485
+              },
+              "gs --version": {
+                "samples": 100,
+                "p95Milliseconds": 2.381,
+                "minimumMilliseconds": 1.178,
+                "maximumMilliseconds": 2.458
+              },
+              "gitstored --help": {
+                "samples": 100,
+                "p95Milliseconds": 13.121,
+                "minimumMilliseconds": 10.697,
+                "maximumMilliseconds": 13.591
+              },
+              "gitstored --version": {
+                "samples": 100,
+                "p95Milliseconds": 12.086,
+                "minimumMilliseconds": 10.72,
+                "maximumMilliseconds": 12.669
+              }
+            },
+            "daemonInspect": "not measured; requires separately selected live owned deployment"
+          },
+          "assetCost": {
+            "logicalBytes": 258759008,
+            "allocatedBytes": 260595712,
+            "regularFiles": 662
+          },
+          "stateCostExcludingAssets": {
+            "logicalBytes": 259157108,
+            "allocatedBytes": 261197824,
+            "regularFiles": 747
+          },
+          "cacheCost": {
+            "logicalBytes": 0,
+            "allocatedBytes": 0,
+            "regularFiles": 0
+          },
+          "assetLogicalBytes": 258759008,
+          "stateLogicalBytes": 259157108,
+          "managerMemoryOnly": {
+            "VmHWMBytes": 9359360,
+            "VmRSSBytes": 9359360,
+            "scope": "manager only; excludes service/worker peaks"
+          },
+          "managerChildStopped": true
+        }
+      }
+    },
+    {
+      "label": "fedora-x64",
+      "run": 42669882585,
+      "artifactId": 13698678673,
+      "receiptSha256": "51d15a405b7b1e628cd1084f972c0677d9b462ed0b15293fed89efb1da08d34f",
+      "receipt": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "scope": "unsigned Fedora native acceptance; not package-channel or release qualification",
+        "fixtureKind": "hosted-fedora44",
+        "distribution": {
+          "ID": "fedora",
+          "VERSION_ID": "44"
+        },
+        "developerHelpersSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "coreTestSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+        "testSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "applicationVersion": "0.1.0-alpha.1",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e",
+            "bytes": 6532056
+          },
+          "gitstored": {
+            "sha256": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155",
+            "bytes": 22088280
+          },
+          "unsupportedDaemon": {
+            "sha256": "a67e60a6b8f3443e5ffbff32f821dc58d57081efe4d963aa52b26bd8a1fc6cf0",
+            "bytes": 1495544
+          },
+          "repositoryProbe": {
+            "sha256": "1aceb34f24fb411d4d7ead19434681fca66e73ad60eb7763fed145242736f26a",
+            "bytes": 1527224
+          }
+        },
+        "scenarios": [
+          {
+            "scenario": "clean-install",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 348.684
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_tampered_warm_blob_cannot_be_reused_for_execution",
+            "status": "passed",
+            "elapsedSeconds": 39.682
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_interrupted_offline_blob_never_activates",
+            "status": "passed",
+            "elapsedSeconds": 1.617
+          },
+          {
+            "scenario": "recovery",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 598.845
+          }
+        ],
+        "measurements": {
+          "schemaVersion": 1,
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+          "machine": "x86_64",
+          "cpus": 4,
+          "samples": 100,
+          "fixture": "/home/gitstorefixture/experiments/a-nbk17hos/gs-public-runtime-wcn1ykrc",
+          "sourceInputs": {
+            "gs": {
+              "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e",
+              "bytes": 6532056
+            },
+            "gitstored": {
+              "sha256": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155",
+              "bytes": 22088280
+            }
+          },
+          "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+          "coldOfflineReadySeconds": 38.476,
+          "daemonInspect": {
+            "command": "gs deployment inspect performance -o json through explicit owned socket",
+            "samples": 100,
+            "p95Milliseconds": 2.01,
+            "minimumMilliseconds": 1.825,
+            "maximumMilliseconds": 3.044
+          },
+          "commandLatency": {
+            "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+            "machine": "x86_64",
+            "samples": 100,
+            "clock": "perf_counter_ns; wall time includes process startup",
+            "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+            "commands": {
+              "gs --help": {
+                "samples": 100,
+                "p95Milliseconds": 2.172,
+                "minimumMilliseconds": 1.048,
+                "maximumMilliseconds": 4.61
+              },
+              "gs --version": {
+                "samples": 100,
+                "p95Milliseconds": 1.24,
+                "minimumMilliseconds": 0.967,
+                "maximumMilliseconds": 2.133
+              },
+              "gitstored --help": {
+                "samples": 100,
+                "p95Milliseconds": 12.7,
+                "minimumMilliseconds": 11.938,
+                "maximumMilliseconds": 12.906
+              },
+              "gitstored --version": {
+                "samples": 100,
+                "p95Milliseconds": 13.042,
+                "minimumMilliseconds": 11.977,
+                "maximumMilliseconds": 14.127
+              }
+            },
+            "daemonInspect": "not measured; requires separately selected live owned deployment"
+          },
+          "assetCost": {
+            "logicalBytes": 276079776,
+            "allocatedBytes": 277913600,
+            "regularFiles": 665
+          },
+          "stateCostExcludingAssets": {
+            "logicalBytes": 276479109,
+            "allocatedBytes": 278515712,
+            "regularFiles": 750
+          },
+          "cacheCost": {
+            "logicalBytes": 0,
+            "allocatedBytes": 0,
+            "regularFiles": 0
+          },
+          "assetLogicalBytes": 276079776,
+          "stateLogicalBytes": 276479109,
+          "managerMemoryOnly": {
+            "VmHWMBytes": 10375168,
+            "VmRSSBytes": 10375168,
+            "scope": "manager only; excludes service/worker peaks"
+          },
+          "managerChildStopped": true
+        }
+      }
+    },
+    {
+      "label": "fedora-arm64",
+      "run": 42669882585,
+      "artifactId": 13700365012,
+      "receiptSha256": "ff90830a2d4dba653339c4b3bc5072f2e0c53928aa4c6b5db0bf41175cd894a3",
+      "receipt": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "scope": "unsigned Fedora native acceptance; not package-channel or release qualification",
+        "fixtureKind": "hosted-fedora44",
+        "distribution": {
+          "ID": "fedora",
+          "VERSION_ID": "44"
+        },
+        "developerHelpersSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "coreTestSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+        "testSourceRevision": "04b4c519e484fb15d23b03d6ad1cf434b0892016",
+        "applicationVersion": "0.1.0-alpha.1",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7",
+            "bytes": 5983816
+          },
+          "gitstored": {
+            "sha256": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df",
+            "bytes": 22409784
+          },
+          "unsupportedDaemon": {
+            "sha256": "01ca49a26e571aafb29acf12e3dcc810062ddd4f3384be9bdf78fea540cf63d1",
+            "bytes": 1606080
+          },
+          "repositoryProbe": {
+            "sha256": "aa04f161de1c96fda65ed43476277035c9882933f73cec92653e59d4bd869819",
+            "bytes": 1526520
+          }
+        },
+        "scenarios": [
+          {
+            "scenario": "clean-install",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 347.028
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_interrupted_offline_blob_never_activates",
+            "status": "passed",
+            "elapsedSeconds": 1.768
+          },
+          {
+            "scenario": "exp-003b",
+            "case": "test_tampered_warm_blob_cannot_be_reused_for_execution",
+            "status": "passed",
+            "elapsedSeconds": 39.522
+          },
+          {
+            "scenario": "recovery",
+            "case": null,
+            "status": "passed",
+            "elapsedSeconds": 591.641
+          }
+        ],
+        "measurements": {
+          "schemaVersion": 1,
+          "status": "passed",
+          "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+          "machine": "aarch64",
+          "cpus": 4,
+          "samples": 100,
+          "fixture": "/home/gitstorefixture/experiments/a-j040egq0/gs-public-runtime-v8phprbc",
+          "sourceInputs": {
+            "gs": {
+              "sha256": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7",
+              "bytes": 5983816
+            },
+            "gitstored": {
+              "sha256": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df",
+              "bytes": 22409784
+            }
+          },
+          "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+          "coldOfflineReadySeconds": 38.077,
+          "daemonInspect": {
+            "command": "gs deployment inspect performance -o json through explicit owned socket",
+            "samples": 100,
+            "p95Milliseconds": 2.518,
+            "minimumMilliseconds": 2.118,
+            "maximumMilliseconds": 3.377
+          },
+          "commandLatency": {
+            "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+            "machine": "aarch64",
+            "samples": 100,
+            "clock": "perf_counter_ns; wall time includes process startup",
+            "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+            "commands": {
+              "gs --help": {
+                "samples": 100,
+                "p95Milliseconds": 2.471,
+                "minimumMilliseconds": 1.258,
+                "maximumMilliseconds": 2.522
+              },
+              "gs --version": {
+                "samples": 100,
+                "p95Milliseconds": 2.343,
+                "minimumMilliseconds": 1.198,
+                "maximumMilliseconds": 2.419
+              },
+              "gitstored --help": {
+                "samples": 100,
+                "p95Milliseconds": 13.224,
+                "minimumMilliseconds": 11.543,
+                "maximumMilliseconds": 13.92
+              },
+              "gitstored --version": {
+                "samples": 100,
+                "p95Milliseconds": 13.496,
+                "minimumMilliseconds": 11.656,
+                "maximumMilliseconds": 14.085
+              }
+            },
+            "daemonInspect": "not measured; requires separately selected live owned deployment"
+          },
+          "assetCost": {
+            "logicalBytes": 258759008,
+            "allocatedBytes": 260595712,
+            "regularFiles": 662
+          },
+          "stateCostExcludingAssets": {
+            "logicalBytes": 259157070,
+            "allocatedBytes": 261197824,
+            "regularFiles": 747
+          },
+          "cacheCost": {
+            "logicalBytes": 0,
+            "allocatedBytes": 0,
+            "regularFiles": 0
+          },
+          "assetLogicalBytes": 258759008,
+          "stateLogicalBytes": 259157070,
+          "managerMemoryOnly": {
+            "VmHWMBytes": 11456512,
+            "VmRSSBytes": 11456512,
+            "scope": "manager only; excludes service/worker peaks"
+          },
+          "managerChildStopped": true
+        }
+      }
+    }
   ]
 }
