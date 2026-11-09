@@ -19,6 +19,23 @@ from versions import encode
 from inventory import snapshot_file
 
 
+def stage_package(source, target, producer_uid):
+    for parent in source.parents:
+        if parent.is_symlink():raise ValueError('public package input must not follow links')
+    fd=os.open(source,os.O_RDONLY|os.O_NOFOLLOW|os.O_CLOEXEC)
+    with os.fdopen(fd,'rb') as stream:
+        before=os.fstat(stream.fileno())
+        if (not stat.S_ISREG(before.st_mode) or before.st_nlink!=1 or before.st_mode&0o022 or
+                before.st_uid not in (0,producer_uid) or not 0<before.st_size<=512*1024*1024):
+            raise ValueError('select an ordinary bounded package from the selected producer account')
+        with target.open('xb') as output:shutil.copyfileobj(stream,output)
+        after=os.fstat(stream.fileno())
+        if (before.st_size,before.st_mtime_ns,before.st_ctime_ns)!=(after.st_size,after.st_mtime_ns,after.st_ctime_ns):
+            raise ValueError('selected package changed while staging')
+    target.chmod(0o400)
+    return target
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--review',type=Path,required=True)
@@ -51,7 +68,7 @@ def main():
             selected=[assets/f"gitstore-{record['version']}-{os_name}-{arch}.tar.gz"]
         if len(selected)!=1:raise ValueError('select exactly one native package per review channel')
         artifact=selected[0]
-        snapshot_file(root,artifact.relative_to(root).as_posix())
+        if channel not in ('deb','rpm'):snapshot_file(root,artifact.relative_to(root).as_posix())
         replacement=arguments(root,record,os_name,arch,channel)
         command=[sys.executable,str(ROOT/'tests/packaging/run.py'),'--channel',channel,
             '--version',record['version'],'--fixture-parent',str(args.parent)]
@@ -64,10 +81,10 @@ def main():
             if (release['ID'],release['VERSION_ID'])!={'deb':('ubuntu','24.04'),'rpm':('fedora','44')}[channel]:
                 raise ValueError('system review requires the actual selected distribution')
             staging=args.parent.parent/('review-original.'+channel)
-            shutil.copyfile(artifact,staging);staging.chmod(0o400);artifact=staging
+            artifact=stage_package(artifact,staging,root.stat().st_uid)
             if replacement:
                 staging=args.parent.parent/('review-next.'+channel)
-                shutil.copyfile(replacement[1],staging);staging.chmod(0o400)
+                stage_package(Path(replacement[1]),staging,root.stat().st_uid)
                 replacement[1]=str(staging)
             fixture=dict(schemaVersion=1,disposableUid=11000,disposableGid=11000,
                 dedicatedTestAccount=True,disposableHost=True,hostname=socket.gethostname(),
