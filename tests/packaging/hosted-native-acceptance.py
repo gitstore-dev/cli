@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Opt-in disposable Ubuntu native acceptance; never a release qualification."""
+"""Opt-in disposable Linux native acceptance; never a release qualification."""
 import argparse
 import hashlib
 import json
@@ -37,6 +37,23 @@ def execute(*arguments,timeout=1800):
         env=dict(PATH='/usr/bin:/bin',LANG='C'),umask=0o077)
 
 
+def select_fixture(settings,kind,distribution):
+    kinds={
+        'hosted-ubuntu24':('github-hosted-ubuntu24-','ubuntu','24.04','Ubuntu'),
+        'apple-fedora44':('apple-fedora44-native-','fedora','44','Fedora'),
+        'hosted-fedora44':('github-hosted-fedora44-','fedora','44','Fedora'),
+    }
+    if kind not in kinds:
+        raise ValueError('Select a documented disposable fixture kind')
+    prefix,identifier,version,label=kinds[kind]
+    name=settings.get('fixtureName')
+    if (settings.get('dedicatedTestAccount') is not True or settings.get('disposableUid')!=11000
+            or not isinstance(name,str) or not name.startswith(prefix)
+            or (distribution.get('ID'),distribution.get('VERSION_ID'))!=(identifier,version)):
+        raise ValueError('Fixture identity and actual distribution must match the explicitly selected kind')
+    return label
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--fixture',required=True,type=Path)
@@ -44,12 +61,20 @@ def main():
     p.add_argument('--unsupported-daemon',required=True,type=Path)
     p.add_argument('--repository-probe',required=True,type=Path)
     p.add_argument('--output',required=True,type=Path)
+    p.add_argument('--fixture-kind',choices=('hosted-ubuntu24','apple-fedora44','hosted-fedora44'),default='hosted-ubuntu24')
     args=p.parse_args()
     if sys.platform!='linux' or os.geteuid()!=11000:
         p.error('Select only the explicitly prepared disposable hosted UID 11000')
     settings=private_json(args.fixture)
-    if settings.get('dedicatedTestAccount') is not True or settings.get('disposableUid')!=os.geteuid() or not settings.get('fixtureName','').startswith('github-hosted-ubuntu24-'):
-        p.error('Select the dedicated ephemeral hosted Ubuntu fixture')
+    try:
+        distribution=platform.freedesktop_os_release()
+        label=select_fixture(settings,args.fixture_kind,distribution)
+    except (OSError,ValueError) as error:
+        p.error(str(error))
+    helper_source=settings.get('developerHelpersSource',settings.get('sourceRevision'))
+    if any(not isinstance(value,str) or not re.fullmatch('[a-f0-9]{40}',value)
+            for value in (settings.get('sourceRevision'),helper_source)):
+        p.error('Require canonical test and developer-helper source revisions')
     parent=Path(settings['fixtureParent'])
     info=parent.lstat()
     if not parent.is_absolute() or not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.geteuid() or stat.S_IMODE(info.st_mode)!=0o700:
@@ -63,7 +88,8 @@ def main():
     for name,key in [('gs','gs'),('gitstored','daemon'),('unsupportedDaemon','unsupported_daemon'),('repositoryProbe','repository_probe')]:
         path=Path(settings[key]) if key in settings else getattr(args,key)
         info=path.lstat()
-        if not path.is_absolute() or not stat.S_ISREG(info.st_mode) or info.st_uid!=os.geteuid() or info.st_mode&0o022 or not info.st_mode&0o100:
+        owners=(os.geteuid(),) if args.fixture_kind=='hosted-ubuntu24' else (0,os.geteuid())
+        if not path.is_absolute() or not stat.S_ISREG(info.st_mode) or info.st_uid not in owners or info.st_mode&0o022 or not info.st_mode&0o100:
             p.error('Select explicitly owned ordinary executables')
         with path.open('rb') as binary:
             digest=hashlib.file_digest(binary,'sha256').hexdigest()
@@ -81,11 +107,17 @@ def main():
     if core['status']!='passed' or core['case']!='test_authorized_cold_start_requires_current_generation_health' or any(
             core['executables'][key]['sha256']!=inputs[name]['sha256'] for name,key in [('gs','gs'),('gitstored','daemon')]):
         p.error('Require successful cold-start evidence for this exact pair')
+    core_source=private_json(Path(core['snapshotFixture'])).get('sourceRevision')
+    if not isinstance(core_source,str) or not re.fullmatch('[a-f0-9]{40}',core_source):
+        p.error('Require the recorded cold-start test source revision')
     # Keep the real AF_UNIX control and lost-ACK relay paths below sun_path.
     batch=Path(tempfile.mkdtemp(prefix='a-',dir=parent))
     if len(os.fsencode(batch/'gs-public-runtime-xxxxxxxx/runtime/gitstored.sock'))>=108:
         p.error('Select a shorter fixture parent for native Unix sockets')
-    summary=dict(schemaVersion=1,status='running',scope='unsigned Ubuntu native acceptance; not package-channel or release qualification',
+    summary=dict(schemaVersion=1,status='running',scope=f'unsigned {label} native acceptance; not package-channel or release qualification',
+        fixtureKind=args.fixture_kind,distribution={key:distribution[key] for key in ('ID','VERSION_ID')},
+        developerHelpersSourceRevision=helper_source,
+        coreTestSourceRevision=core_source,
         host=platform.platform(),candidateSourceRevision=inventory['sourceRevision'],
         testSourceRevision=settings['sourceRevision'],applicationVersion=inventory['applicationVersion'],
         sourceInputs=inputs,scenarios=[])
