@@ -2,6 +2,30 @@
 
 ## CI follow-up — 2026-11-09
 
+The exact hosted Linux arm64 candidate from run 42525026876 also passed on the
+retained disposable Apple Linux VM (kernel 6.18.35, Ubuntu 24.04): offline core
+lifecycle 36.247 s and online cold start/current-generation readiness 45.353 s.
+Selected CLI SHA-256 `eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7`;
+daemon `07381a994c6784504150ecedddfcd61cf670c5e3150c0ffdf4abb822c1643265`.
+Both were checked against the complete candidate's install inventory before
+transfer to new owned experimental paths. Receipts:
+`runtime-run-core-offline-ol2eezbc.json` and
+`runtime-run-core-memdb-oiltqsvk.json`, retained under
+`/home/gitstorefixture/experiments` in `gs-cli-alpha1-linux-20261108`.
+Host logs: `/private/tmp/gs-alpha1-hosted-pair-apple-comparison.log` and
+`/private/tmp/gs-alpha1-hosted-pair-apple-online-comparison.log`.
+
+Direct pinned-libcrun synthetic lifecycle, delegation/security and start-worker
+crash probes passed on both Azure kernel 7.0.0-1017 hosted architectures in
+[run 42584603547](https://github.com/gitstore-dev/cli/actions/runs/42584603547).
+This establishes the direct library path only; the same run's real production
+workload still failed before readiness. The arm64 TLS diagnostic did not run
+because rustup attempted to reinstall an existing component and failed; the
+previous successful TLS result remains separate. The diagnostic now reuses an
+installed pinned compiler. Its next adapter/network attempt initially lacked
+Meson; explicit Meson/Ninja build dependencies were added. These developer
+diagnostics never enter release packages or qualify a failed workload run.
+
 Pinned alpha.9 integration passed all 34 tests locally after waiting for initial
 Repository reconciliation before fixture cleanup, matching the existing Namespace
 readiness check. The previous hosted integration failure was an optimistic-delete
@@ -9,6 +33,13 @@ conflict while the Repository controller was writing initial status. Fixtures no
 observe public current-generation `Ready` before issuing the single delete;
 production mutation/conflict behavior is unchanged. Retained log:
 `/private/tmp/gs-alpha1-repository-ready-integration.log`.
+The next hosted failure was the corresponding Product controller race; server
+logs identify `MarkProductTerminating: datastore: resourceVersion conflict`.
+Readiness before fixture deletion now covers all four authored kinds. Category
+uses enclosing status observedGeneration because its pinned Ready condition does
+not populate that field. All 34 pinned-image checks passed again (30 commands in
+3.299 s; four alpha.9 cases in 2.441 s), retained at
+`/private/tmp/gs-alpha1-all-resources-ready-integration.log`.
 
 The previous ordinary amd64 runtime job failed while fetching native corresponding
 source with HTTP 503, after native compilation, package checks and actual relinking
