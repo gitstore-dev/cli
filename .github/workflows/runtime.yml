@@ -712,6 +712,41 @@ jobs:
           layers=list((cache/'blobs').iterdir()); assert 0<len(layers)<=128
           assert all(stat.S_ISREG(p.lstat().st_mode) and stat.S_IMODE(p.lstat().st_mode)==0o600 for p in layers)
           PY
+      - name: Check current production source after a selected candidate failure
+        if: inputs.hosted_native_full && failure() && steps.owned-host.outcome == 'success'
+        run: |
+          sudo apt-get install -y libcurl4-openssl-dev libcrypt-dev
+          OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
+            CARGO_TARGET_DIR="$RUNNER_TEMP/tls-diagnostic-target" cargo build --release --locked \
+            --manifest-path daemon/image-backend/Cargo.toml --lib
+          cmake -S daemon -B "$RUNNER_TEMP/source-production" -DCMAKE_BUILD_TYPE=MinSizeRel \
+            -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=ON -DGITSTORED_LIBCRUN=ON \
+            -DGITSTORED_SLIRP=ON -DGITSTORED_BOOTSTRAP=ON
+          mkdir -p "$RUNNER_TEMP/source-production/image-sdk/release"
+          cp "$RUNNER_TEMP/tls-diagnostic-target/release/libgitstored_image.a" \
+            "$RUNNER_TEMP/source-production/image-sdk/release/libgitstored_image.a"
+          cmake --build "$RUNNER_TEMP/source-production" --parallel 2 --target gitstored
+          nm "$RUNNER_TEMP/source-production/gitstored" > "$RUNNER_TEMP/source-production/symbols.txt"
+          if grep -E 'gstd_test_|gstd_controlled_|gstd_failpoint' "$RUNNER_TEMP/source-production/symbols.txt"; then exit 1; fi
+          sudo install -d -o 11000 -g 11000 -m 700 /home/gitstorefixture/experiments/source-production-pair \
+            /home/gitstorefixture/experiments/source-production-fixtures
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/source-production/gitstored" \
+            /home/gitstorefixture/experiments/source-production-pair/gitstored
+          sudo install -o 11000 -g 11000 -m 500 "$RUNNER_TEMP/native-pair/gs" \
+            /home/gitstorefixture/experiments/source-production-pair/gs
+          sudo -u gitstorefixture python3 - <<'PY'
+          import json, os, pathlib
+          parent=pathlib.Path('/home/gitstorefixture/experiments')
+          value=json.loads((parent/'hosted.json').read_text())
+          value.update(gs=str(parent/'source-production-pair/gs'),daemon=str(parent/'source-production-pair/gitstored'),
+              fixtureParent=str(parent/'source-production-fixtures'),
+              purpose='Current production-source daemon with selected candidate gs; not an exact candidate or release qualification')
+          fd=os.open(parent/'source-production-fixture.json',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+          with os.fdopen(fd,'w') as output: json.dump(value,output)
+          PY
+          sudo -u gitstorefixture python3 /home/gitstorefixture/source/tests/runtime/run.py --scenario core-memdb \
+            --case test_authorized_cold_start_requires_current_generation_health \
+            --fixture /home/gitstorefixture/experiments/source-production-fixture.json
       - name: Retain only bounded safe native diagnostic metadata
         if: always()
         run: |
@@ -721,6 +756,20 @@ jobs:
           if sudo test -f /home/gitstorefixture/experiments/native-acceptance.json; then
             sudo install -m 644 /home/gitstorefixture/experiments/native-acceptance.json "$RUNNER_TEMP/native-acceptance.json"
           fi
+          sudo -u gitstorefixture python3 - <<'PY'
+          import json, os, pathlib
+          parent=pathlib.Path('/home/gitstorefixture/experiments')
+          records=list((parent/'source-production-fixtures').glob('runtime-run-core-memdb-*.json'))
+          if len(records)==1:
+              value=json.loads(records[0].read_text())
+              safe={key:value[key] for key in ('status','scenario','case','elapsedSeconds','executables')}
+              safe['scope']='Current production-source diagnostic, not selected candidate or release qualification'
+              fd=os.open(parent/'source-core.json',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+              with os.fdopen(fd,'w') as output: json.dump(safe,output,indent=2)
+          PY
+          if sudo test -f /home/gitstorefixture/experiments/source-core.json; then
+            sudo install -m 644 /home/gitstorefixture/experiments/source-core.json "$RUNNER_TEMP/source-core.json"
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
@@ -728,5 +777,6 @@ jobs:
           path: |
             ${{ runner.temp }}/native-diagnostic.json
             ${{ runner.temp }}/native-acceptance.json
+            ${{ runner.temp }}/source-core.json
           if-no-files-found: warn
           retention-days: 7

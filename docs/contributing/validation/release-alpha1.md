@@ -2,6 +2,24 @@
 
 ## CI follow-up — 2026-11-09
 
+The rebuilt exact-source candidates from
+[run 42592043866](https://github.com/gitstore-dev/cli/actions/runs/42592043866)
+passed all four Linux producer lanes. Real core acceptance then progressed past
+layer validation but refused execution-root binding with `OWNERSHIP_UNCERTAIN`.
+Scalar arm64 metadata confirms scope/execution/bundle directories were `0700`,
+while the owned rootfs directory was `0775`; no execution record was committed.
+Retained `/private/tmp/gs-alpha1-owned-root-mode-arm64.log`.
+An independent umask-0002 unpack regression reproduced `0775` before the fix.
+Unpack now creates and pins the owned root directory before extraction, verifies
+its named identity afterward, and restores `0700` through that pinned descriptor.
+It does not relax root binding or change archive child-file permissions.
+All 16 SDK unit/security cases pass, along with all four controlled registry
+cases and all-target Linux release Clippy. Retained
+`/private/tmp/gs-alpha1-root-mode-{before,after,clippy,controlled-registry}.log`.
+Exact rebuilt production-native and complete host/channel acceptance remain open;
+a production-source cold-start diagnostic is distinct from selected-candidate
+qualification and cannot satisfy trusted release receipts.
+
 Hosted layer auditing isolated the startup failure to cache file permissions:
 all four Git-image layer blobs on both architectures had mode `0664`, one link
 and matching declared sizes. The SDK correctly refused group-writable source

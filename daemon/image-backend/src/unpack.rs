@@ -3,6 +3,7 @@ use ocirender::image::LayerBlob;
 use std::{
     fs::{File, OpenOptions},
     io::{self, Write},
+    os::unix::fs::{DirBuilderExt, MetadataExt, OpenOptionsExt, PermissionsExt},
     path::Path,
 };
 
@@ -52,8 +53,27 @@ pub(crate) fn unpack(layers: Vec<LayerBlob>, root: &Path, limit: u64) -> Result<
     archive.set_preserve_ownerships(false);
     archive.set_unpack_xattrs(false);
     archive.set_overwrite(false);
-    archive
-        .unpack(root.join("rootfs"))
+    let rootfs = root.join("rootfs");
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&rootfs)
+        .map_err(|_| Status::Unpack)?;
+    // Pin our new directory before archive entries can alter its permissions.
+    // Applying the final private mode through this descriptor cannot follow an
+    // archive-controlled symlink or depend on an ambient process umask.
+    let directory = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC)
+        .open(&rootfs)
+        .map_err(|_| Status::Unpack)?;
+    archive.unpack(&rootfs).map_err(|_| Status::Unpack)?;
+    let named = std::fs::symlink_metadata(&rootfs).map_err(|_| Status::Unpack)?;
+    let pinned = directory.metadata().map_err(|_| Status::Unpack)?;
+    if !named.is_dir() || (named.dev(), named.ino()) != (pinned.dev(), pinned.ino()) {
+        return Err(Status::Unpack);
+    }
+    directory
+        .set_permissions(std::fs::Permissions::from_mode(0o700))
         .map_err(|_| Status::Unpack)?;
     std::fs::remove_file(root.join("merged.tar")).map_err(|_| Status::Unpack)?;
     Ok(output.bytes)
@@ -62,6 +82,43 @@ pub(crate) fn unpack(layers: Vec<LayerBlob>, root: &Path, limit: u64) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn root_directory_is_private_with_permissive_umask() {
+        if std::env::var("GSTD_IMAGE_ROOT_MODE_CHILD").as_deref() != Ok("1") {
+            assert!(
+                std::process::Command::new(std::env::current_exe().unwrap())
+                    .args([
+                        "--exact",
+                        "unpack::tests::root_directory_is_private_with_permissive_umask",
+                        "--test-threads=1"
+                    ])
+                    .env("GSTD_IMAGE_ROOT_MODE_CHILD", "1")
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            return;
+        }
+        unsafe {
+            libc::umask(0o002);
+        }
+        let root = tempfile::tempdir().unwrap();
+        let input = layer(root.path(), 0, &[("payload", "owned")]);
+        unpack(vec![input], root.path(), 65536).unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            std::fs::metadata(root.path().join("rootfs"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
+        );
+        assert_eq!(
+            std::fs::read(root.path().join("rootfs/payload")).unwrap(),
+            b"owned"
+        );
+    }
     fn layer(root: &Path, index: usize, entries: &[(&str, &str)]) -> LayerBlob {
         let path = root.join(format!("layer-{index}"));
         let mut tar = tar::Builder::new(File::create(&path).unwrap());
