@@ -10,10 +10,29 @@ import posixpath
 from pathlib import Path, PurePosixPath
 import tarfile
 import tempfile
+import time
+import urllib.error
 import urllib.request
 
 MAX_ARCHIVE = 1024 * 1024
 MAX_SOURCE = 4 * 1024 * 1024
+
+
+def download(url):
+    if not url.startswith('https://'):
+        raise ValueError('Source download requires HTTPS')
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as source:
+                if not source.url.startswith('https://'):
+                    raise ValueError('Source redirect left HTTPS')
+                return source.read(MAX_ARCHIVE + 1)
+        except urllib.error.HTTPError as error:
+            retryable = error.code in (429, 500, 502, 503, 504)
+            error.close()
+            if not retryable or attempt == 2:
+                raise
+            time.sleep(2**attempt)
 
 
 def normalized_archive(raw):
@@ -58,8 +77,7 @@ def main():
         with args.input.open('rb') as source:
             raw = source.read(MAX_ARCHIVE + 1)
     else:
-        with urllib.request.urlopen(lock['url'], timeout=30) as source:
-            raw = source.read(MAX_ARCHIVE + 1)
+        raw = download(lock['url'])
     if len(raw) > MAX_ARCHIVE:
         raise SystemExit('Source download exceeds bounds')
     normalized = normalized_archive(raw)

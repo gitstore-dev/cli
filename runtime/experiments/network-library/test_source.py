@@ -6,6 +6,8 @@ import io
 from pathlib import Path
 import tarfile
 import unittest
+from unittest.mock import patch
+from urllib.error import HTTPError
 
 spec = importlib.util.spec_from_file_location('fetch_source', Path(__file__).with_name('fetch-source.py'))
 source = importlib.util.module_from_spec(spec)
@@ -25,6 +27,23 @@ def archive(timestamp=1, content=b'known source', mode=0o644, link='source.c'):
 
 
 class SourceIdentity(unittest.TestCase):
+    def test_transient_fetch_recovers_and_persistent_or_permanent_errors_stop(self):
+        url='https://example.invalid/pinned-source'
+        response=io.BytesIO(archive()); response.url=url
+        def failure(code):
+            return HTTPError(url,code,'synthetic fixture',{},io.BytesIO())
+        for outcomes,calls,success in [([failure(503),response],2,True),
+                                       ([failure(503) for _ in range(3)],3,False),
+                                       ([failure(404)],1,False)]:
+            with self.subTest(calls=calls), patch.object(source.urllib.request,'urlopen',side_effect=outcomes) as request, patch.object(source.time,'sleep') as sleep:
+                if success:
+                    self.assertTrue(source.download(url))
+                else:
+                    with self.assertRaises(HTTPError):
+                        source.download(url)
+                self.assertEqual(request.call_count,calls)
+                self.assertEqual(sleep.call_count,calls-1)
+
     def test_timestamp_changes_preserve_source_identity(self):
         self.assertEqual(source.normalized_archive(archive(1.25)),
                          source.normalized_archive(archive(200.75)))
