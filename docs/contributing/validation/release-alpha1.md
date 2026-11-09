@@ -2,6 +2,57 @@
 
 ## CI follow-up — 2026-11-09
 
+### Linux package-channel continuation
+
+The complete current-head PR checks passed at `8146a1f1004595cd059bc4fe0a4e1ec9409bd420`:
+Rust on Ubuntu/macOS, both macOS control pairs, all four ordinary/sanitized Linux
+library lanes, both daemon lanes and both alpha.9/latest server integrations.
+The earlier macOS ARM failures were runner acquisition failures, not executed
+test failures. Later workflow changes add explicit package review lanes and
+remain subject to their own CI results.
+
+Unsigned same-source package review
+[run 42649040740](https://github.com/gitstore-dev/cli/actions/runs/42649040740)
+passed Homebrew install/remove on Ubuntu 24.04 amd64/arm64 and macOS 15 x86_64.
+macOS arm64 remains queued. Candidate branch source is `8146a1f1004595cd059bc4fe0a4e1ec9409bd420`,
+actual shared checkout `12c8721ed3a2b47dd865fce89fbbe0e4d0918201`.
+The review formula digest is
+`4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e`;
+Homebrew tooling revision `bf464f57275cae0be106b43d190c98564ac59b0e`.
+Selected receipts verify exact archive/formula identities, non-root commands with
+no tools on PATH, unchanged GitStore state, matching public/private links and
+removal. They do not establish native package-channel or replacement acceptance.
+Retained bounded JSON/logs under `/private/tmp/gs-alpha1-homebrew-review-42649040740/`.
+
+The initial Fedora Homebrew
+[run 42649643351](https://github.com/gitstore-dev/cli/actions/runs/42649643351)
+failed before installation because the minimal fixture omitted Homebrew’s own
+Linux compiler prerequisites. The pinned installer rejects an unbottled formula
+without development tools even when its install method copies precompiled bytes.
+The [documented Homebrew requirements](https://docs.brew.sh/Homebrew-on-Linux#requirements)
+are now explicit in installation guidance and present in the corrected Fedora
+fixture. No GitStore source compilation or compiler-check bypass was added.
+The corrected Fedora Homebrew and new actual APT architecture checks are
+[run 42650502300](https://github.com/gitstore-dev/cli/actions/runs/42650502300).
+APT arm64 install/remove also passed in
+[run 42649884272](https://github.com/gitstore-dev/cli/actions/runs/42649884272),
+using Debian package SHA-256
+`ea0517aaeeaecb5edad07bbbc4120efdcb50b53b382159fc4d5372371fbf30dd`.
+The bounded receipt binds actual checkout `12c8721ed3a2b47dd865fce89fbbe0e4d0918201`
+and records removal. Non-root help/version and private-state/link checks passed.
+Receipt: `/private/tmp/gs-alpha1-apt-review-arm64-42649884272.json`.
+APT amd64, the corrected Fedora jobs and macOS arm64 review remain queued at this
+checkpoint; T024 is not marked complete from queued jobs.
+
+A concrete [unsigned asset review manifest](alpha1-package-review.json) records
+30 assets (468,664,983 bytes including corresponding sources/relink materials),
+with exact names, kinds, target tuples, install-inventory references and SHA-256.
+It was assembled from all four successful same-source producer groups by
+`prepare-package-review.py`, retained under
+`/private/tmp/gs-alpha1-review-inventory-8146/`. It includes no signing bundles
+and is explicitly unsuitable for promotion. Final qualified/tag-bound inventory
+review stays T039; this preliminary inventory does not close that gate.
+
 ### Fedora and signing continuation
 
 The DNF-installed arm64 candidate also passed the complete native suite on a

@@ -16,7 +16,10 @@ uses an App installation token. This repository follows that approach, with
 commit-pinned actions and a main-only, non-cancelling serialized workflow.
 Install the App on `gitstore-dev/cli` with Contents, Issues and Pull requests
 write permissions. Configure `RELEASE_PLEASE_APP_CLIENT_ID` as a repository
-variable and `RELEASE_PLEASE_APP_PRIVATE_KEY` as an Actions secret. No npm,
+variable and `RELEASE_PLEASE_APP_PRIVATE_KEY` as an Actions secret. Inherited
+organization settings also work; effective repository organization-variable/secret
+metadata lists them even when the repository-level settings lists are empty. The
+App must separately include `cli` in its selected installation repositories. No npm,
 Homebrew or other package registry account/token is required. Missing App
 configuration skips proposals; it is not release acceptance evidence.
 
@@ -80,8 +83,9 @@ package templates.
 prepares read-only candidates; it cannot promote a release. The four hosted build
 rows use production facilities only and call `scripts/build-release-platform.py`.
 Its per-tuple reviewed notices, closure and source/relink materials live under
-`packaging/release-inputs/`; missing inputs fail before building. These reviews
-are still outstanding. No placeholder manifest is acceptable.
+`packaging/release-inputs/`; missing inputs fail before building. These inputs are populated and exercised by the recorded production candidates;
+review them again when dependency or build inputs change. No placeholder manifest
+is acceptable.
 
 `scripts/assemble-release.py` requires all four build groups, rejects conflicting
 assets and renders the formula from the four final archive digests. The local
@@ -183,8 +187,10 @@ gh attestation verify /absolute/downloaded-package.tgz --repo gitstore-dev/cli \
 ```
 
 Maintainers use the stricter [producer policy](../../runtime/packaging/release-policy.md),
-including all exact signed identity constraints. An own hosted signed positive,
-App-trigger evidence and complete platform qualification remain required before
+including all exact signed identity constraints. The branch-only App read-access
+and own signing preflights pass, including negative controls. They do not establish
+trusted tag-bound signing, actual release-PR/tag event delivery or full package
+qualification. Those remain required before
 calling alpha.1 ready. No public tag/release creation or publication was performed
 while preparing this workflow.
 
@@ -199,8 +205,15 @@ agree on actual checkout revision/version, and renders a private formula from th
 four actual archive digests. It retains branch-head and PR-merge checkout identities
 separately. No synthetic unused-platform digests are accepted by this path.
 
-The two macOS 15 jobs install/remove their exact complete candidate through an
-isolated Homebrew checkout/prefix and retain scoped receipts/logs. Tooling is pinned
+Ubuntu 24.04 and macOS 15 jobs on both architectures install/remove their exact
+complete candidate through an isolated Homebrew checkout/prefix. Separate pinned
+Fedora 44 job containers test Homebrew as fresh UID 11000, and Ubuntu jobs also
+exercise actual APT install/remove with non-root product commands. Receipts remain
+scoped to these operations; install/remove does not establish replacement or native
+workload acceptance. Use `review_fedora_only=true` to skip the Ubuntu/macOS Homebrew
+jobs when their evidence already exists; Fedora Homebrew and APT checks still run.
+Homebrew’s documented Linux compiler/tool prerequisites belong to the package
+manager; the formula installs prebuilt GitStore binaries. Tooling is pinned
 to Homebrew revision `bf464f57275cae0be106b43d190c98564ac59b0e`; it may acquire its
 own Ruby/tool metadata in that private fixture. All product invocations retain the
 empty-tool PATH boundary. The formula remains a review artifact, never a tap update.

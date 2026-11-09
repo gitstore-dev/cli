@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Unsigned development package review; not a qualified or published release",
+  "applicationVersion": "0.1.0-alpha.1",
+  "branchRevision": "8146a1f1004595cd059bc4fe0a4e1ec9409bd420",
+  "candidateSourceRevision": "12c8721ed3a2b47dd865fce89fbbe0e4d0918201",
+  "producerRuns": {
+    "cli": 42635622429,
+    "linux": 42635622614
+  },
+  "attestationBundles": "absent for these unsigned development subjects; branch signing preflight is separate",
+  "reviewFormulaSha256": "4924a8ad158747275954e1d7672feaad88c776000d57954a7dd6fa4f1e68ff5e",
+  "remainingTasks": [
+    "T024",
+    "T038",
+    "T039",
+    "T064"
+  ],
+  "assets": [
+    {
+      "filename": "gitstore-0.1.0-0.alpha.1.1.aarch64.rpm",
+      "kind": "rpm",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 11996243,
+      "sha256": "40e3b096febf100fcd471ce10d670c9969abb2d8f53917252768f66414a6fa44"
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.1.1.x86_64.rpm",
+      "kind": "rpm",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 12219447,
+      "sha256": "de268e75fdd70a6fb11155571ae2413931b7d207adc4e983440bdbf38c77c7eb"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "kind": "manifest",
+      "os": "darwin",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "unpackedBytes": 9655799,
+      "bytes": 92353,
+      "sha256": "f27c83a2738fbcb813eeed0dcac084f4dfad51ccc8a6149aa262939226c35b4f"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-darwin-arm64.tar.gz",
+      "kind": "archive",
+      "os": "darwin",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "unpackedBytes": 9655799,
+      "bytes": 3530411,
+      "sha256": "c702fff9b356e19e53980c63b15865226c1269e07d2ea8839bd9cf5073d39761"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "kind": "manifest",
+      "os": "darwin",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "unpackedBytes": 9984479,
+      "bytes": 92856,
+      "sha256": "8d76535a264ce875e0f9834642d450b0a894db76607397bc6d0b497f21a177ce"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-darwin-x64.tar.gz",
+      "kind": "archive",
+      "os": "darwin",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "unpackedBytes": 9984479,
+      "bytes": 3685825,
+      "sha256": "8adfa3d0e2e31b8c8360711fb3e4d44fafb2cd81a693451dfd3385c66410fed4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "kind": "manifest",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 199030,
+      "sha256": "5dd89f62fe15fd71fca2af5a6167c737d1886557134a910c480ca7574660fd38"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-linux-arm64.tar.gz",
+      "kind": "archive",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 11871715,
+      "sha256": "6d9f4c1f638424de4918a41c1ec50461a316f5627469eec2a5c98054cf6731a0"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "kind": "manifest",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 199497,
+      "sha256": "76969d251e627e2547358effa400afcb5a6fdea68605a4ad9288689f223ef487"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.1-linux-x64.tar.gz",
+      "kind": "archive",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 12094485,
+      "sha256": "87bd672927233770a4bcd92d780b64252cf2924183cbb1d9a6c7f361a452e9fc"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.1-darwin-arm64.tgz",
+      "kind": "npm",
+      "os": "darwin",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "unpackedBytes": 9655799,
+      "bytes": 3530882,
+      "sha256": "f00b553ffeb9c849ba9500278d7e677182bf7704ab415b0288c285210b7d8363"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.1-darwin-x64.tgz",
+      "kind": "npm",
+      "os": "darwin",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "unpackedBytes": 9984479,
+      "bytes": 3686231,
+      "sha256": "532986e3670f1ce79e323db495984538116ef1a0bf30b9e522358a8185184ab7"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.1-linux-arm64.tgz",
+      "kind": "npm",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 11871868,
+      "sha256": "fd869a8ac744077a3d83f9c6648f6d9cd6ccbb8f95273ccbe53aa271296a9d47"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.1-linux-x64.tgz",
+      "kind": "npm",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 12094624,
+      "sha256": "7dbc43433866dbc6364f571ace4d2aa82c65296598b07a71352cc999e04c277e"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.1-linux-arm64.tar.gz",
+      "kind": "relink",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 28582006,
+      "bytes": 28582006,
+      "sha256": "912af0e9d1dba280c9ff33d8f389f6c55afd497b7867356f11d5dd94e8e380c8"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.1-linux-x64.tar.gz",
+      "kind": "relink",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 27787957,
+      "bytes": 27787957,
+      "sha256": "8bfb397d4c0f73a5d887e626abbf443ece33c9c29e6caa5526be19df2c41a3b5"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.1-darwin-arm64.tar.gz",
+      "kind": "source",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 25439130,
+      "bytes": 25439130,
+      "sha256": "1e348998f451e449934693ccb211bbacf7ecd30bd397b0bcae1f31500b336751"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.1-darwin-x64.tar.gz",
+      "kind": "source",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 25438659,
+      "bytes": 25438659,
+      "sha256": "f0525409a290c850d8e5394482d64ca16c6230a565a4d60d7b5e65bcaa58ae6b"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.1-linux-arm64.tar.gz",
+      "kind": "source",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 92421519,
+      "bytes": 92421519,
+      "sha256": "a455960f3e7e6d39b898019c8bb5993164d71dfeefde71cc24216d8df5add48d"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.1-linux-x64.tar.gz",
+      "kind": "source",
+      "os": "any",
+      "arch": "any",
+      "installInventory": "release-inventory.json",
+      "unpackedBytes": 92439875,
+      "bytes": 92439875,
+      "sha256": "a8e905d27962d5c7cb749015d83040cd4841fbfb4f21b0551a19da015529f9c6"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.1-1_amd64.deb",
+      "kind": "deb",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 9399166,
+      "sha256": "1bdd67703eb65ed59a7ade5e6b1dd6570f9e97ae2d94c600708988f11c764db8"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.1-1_arm64.deb",
+      "kind": "deb",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 9195296,
+      "sha256": "ea0517aaeeaecb5edad07bbbc4120efdcb50b53b382159fc4d5372371fbf30dd"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.1-darwin-arm64",
+      "kind": "gitstored",
+      "os": "darwin",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "unpackedBytes": 9655799,
+      "bytes": 1378296,
+      "sha256": "1dda7205444dd89d04ba1ab989182b149c584937cc894f220f5ae66ae21db0a1"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.1-darwin-x64",
+      "kind": "gitstored",
+      "os": "darwin",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "unpackedBytes": 9984479,
+      "bytes": 1388112,
+      "sha256": "b75125b0018b04b85695842fc9df30bf5ae36eec707221391312c5cd4bce66de"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.1-linux-arm64",
+      "kind": "gitstored",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 22409784,
+      "sha256": "8b06eccabbdcdfaf72ab855498afe04d4b17f17e8017a614cf4b3df8568da8df"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.1-linux-x64",
+      "kind": "gitstored",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 22088280,
+      "sha256": "b519b703485a1cef62dfd02aae53726e3955914a323de770f610af75be451155"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.1-darwin-arm64",
+      "kind": "gs",
+      "os": "darwin",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-arm64.install.json",
+      "unpackedBytes": 9655799,
+      "bytes": 5354512,
+      "sha256": "a584661b4bb414fff94e700d5ccde0d60ba7cdfb8981bc2e4f68a66eefeecbae"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.1-darwin-x64",
+      "kind": "gs",
+      "os": "darwin",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-darwin-x64.install.json",
+      "unpackedBytes": 9984479,
+      "bytes": 5661052,
+      "sha256": "977eb2228b13969dbf9f591e760ddeef611de5e9bd9ca063cef8b24162f80452"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.1-linux-arm64",
+      "kind": "gs",
+      "os": "linux",
+      "arch": "arm64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-arm64.install.json",
+      "unpackedBytes": 35673311,
+      "bytes": 5983816,
+      "sha256": "eb08ebcddea8029de2f4a7644152e39c55e953e63840048e517ee1b06d28fed7"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.1-linux-x64",
+      "kind": "gs",
+      "os": "linux",
+      "arch": "x64",
+      "installInventory": "gitstore-0.1.0-alpha.1-linux-x64.install.json",
+      "unpackedBytes": 35911937,
+      "bytes": 6532056,
+      "sha256": "4f30d98953184d19e39800910addefea3d2cb3d0d73f2b34590fac9ed1fbb60e"
+    }
+  ]
+}
