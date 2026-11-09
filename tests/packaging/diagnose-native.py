@@ -84,10 +84,15 @@ def main():
                         result=subprocess.run([str(args.provision_probe),component,str(target),'180000',str(cache),mode],
                             env=dict(PATH='/nonexistent',LANG='C',HOME=str(target)),capture_output=True,text=True,timeout=190)
                         value=json.loads(result.stdout) if 0<len(result.stdout)<=4096 else {}
+                        phases=[]
+                        for line in result.stderr.splitlines():
+                            match=re.fullmatch(r'GSTD_IMAGE_DIAGNOSTIC phase=(source-root|separate-roots|manifest-read|manifest-verify|config-copy|config-verify|layer-copy|unpack) status=([0-7])',line)
+                            if match and len(phases)<16:
+                                phases.append(dict(phase=match[1],status=int(match[2])))
                         # Only fixed numeric SDK/provisioning outcomes; no raw child diagnostics.
                         materialization.append(dict(component=component,mode=mode,target=target.name,exit=result.returncode,
                             status=value.get('status') if isinstance(value.get('status'),int) else None,
-                            stderrCharacters=len(result.stderr)))
+                            phases=phases,stderrCharacters=len(result.stderr)))
         record['fixtures'].append(dict(name=root.name,operations=operations,assets=assets,resources=owned,
             workloadMilestoneCounts=milestones,materializationProbes=materialization))
     fd=os.open(args.output,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)

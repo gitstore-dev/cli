@@ -14,6 +14,8 @@ publish = false
 crate-type = ["rlib", "staticlib"]
 
 [features]
+# Explicit contributor probes only; never selected by production builds.
+developer-diagnostics = []
 # Only for a C host built with ASan, whose shadow mapping exceeds 1 GiB.
 # Ordinary workers retain their strict 1 GiB address-space requirement.
 instrumented-host = []

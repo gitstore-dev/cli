@@ -171,10 +171,20 @@ pub(crate) fn stage(plan: &Plan, source_fd: i32, root: &Path) -> Result<Outcome>
 pub(crate) fn stage_cache(plan: &Plan, source_fd: i32, root: &Path) -> Result<Outcome> {
     materialize(plan, source_fd, root, true)
 }
+fn diagnostic(phase: &'static str, status: Status) -> Status {
+    #[cfg(feature = "developer-diagnostics")]
+    eprintln!(
+        "GSTD_IMAGE_DIAGNOSTIC phase={phase} status={}",
+        status as i32
+    );
+    #[cfg(not(feature = "developer-diagnostics"))]
+    let _ = phase;
+    status
+}
 fn materialize(plan: &Plan, source_fd: i32, root: &Path, cached: bool) -> Result<Outcome> {
     let reference = plan.validate()?;
-    let source = Source::new(source_fd)?;
-    separate_roots(&source, root)?;
+    let source = Source::new(source_fd).map_err(|s| diagnostic("source-root", s))?;
+    separate_roots(&source, root).map_err(|s| diagnostic("separate-roots", s))?;
     let raw = if cached {
         let info = source.0.metadata().map_err(|_| Status::Invalid)?;
         let target = root.metadata().map_err(|_| Status::Invalid)?;
@@ -184,7 +194,9 @@ fn materialize(plan: &Plan, source_fd: i32, root: &Path, cached: bool) -> Result
         {
             return Err(Status::Invalid);
         }
-        source.small("manifest.json", 1024 * 1024)?
+        source
+            .small("manifest.json", 1024 * 1024)
+            .map_err(|s| diagnostic("manifest-read", s))?
     } else {
         let marker = source.small("oci-layout", 4096)?;
         let layout: oci_spec::image::OciLayout =
@@ -202,7 +214,8 @@ fn materialize(plan: &Plan, source_fd: i32, root: &Path, cached: bool) -> Result
         let digest = reference.digest().ok_or(Status::Invalid)?;
         source.small(&format!("blobs/sha256/{}", &digest[7..]), 1024 * 1024)?
     };
-    let manifest = acquire::verified_manifest(plan, &raw)?;
+    let manifest =
+        acquire::verified_manifest(plan, &raw).map_err(|s| diagnostic("manifest-verify", s))?;
     std::fs::create_dir(root.join("blobs")).map_err(|_| Status::Transfer)?;
     acquire::write_new(&root.join("manifest.json"), &raw)?;
     let mut remaining = plan.maximum_download_bytes;
@@ -216,9 +229,10 @@ fn materialize(plan: &Plan, source_fd: i32, root: &Path, cached: bool) -> Result
         },
         &root.join("config.json"),
         &mut remaining,
-    )?;
+    )
+    .map_err(|s| diagnostic("config-copy", s))?;
     let config = std::fs::read(root.join("config.json")).map_err(|_| Status::Integrity)?;
-    acquire::verified_config(plan, &config)?;
+    acquire::verified_config(plan, &config).map_err(|s| diagnostic("config-verify", s))?;
     let mut layers = Vec::new();
     for (index, descriptor) in manifest.layers.iter().enumerate() {
         let path = root.join("blobs").join(format!("layer-{index}"));
@@ -227,14 +241,16 @@ fn materialize(plan: &Plan, source_fd: i32, root: &Path, cached: bool) -> Result
         } else {
             format!("blobs/sha256/{}", &descriptor.digest[7..])
         };
-        copy_blob(&source, descriptor, &name, &path, &mut remaining)?;
+        copy_blob(&source, descriptor, &name, &path, &mut remaining)
+            .map_err(|s| diagnostic("layer-copy", s))?;
         layers.push(LayerBlob {
             path,
             media_type: descriptor.media_type.clone(),
             index,
         });
     }
-    let merged_bytes = unpack::unpack(layers, root, plan.maximum_merged_bytes)?;
+    let merged_bytes = unpack::unpack(layers, root, plan.maximum_merged_bytes)
+        .map_err(|s| diagnostic("unpack", s))?;
     Ok(Outcome {
         downloaded_bytes: plan.maximum_download_bytes - remaining,
         merged_bytes,

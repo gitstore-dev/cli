@@ -632,7 +632,7 @@ jobs:
         run: |
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
             CARGO_TARGET_DIR="$RUNNER_TEMP/tls-diagnostic-target" cargo build --release --locked \
-            --manifest-path daemon/image-backend/Cargo.toml --lib
+            --manifest-path daemon/image-backend/Cargo.toml --features developer-diagnostics --lib
           cmake -S daemon -B "$RUNNER_TEMP/libcrun-diagnostic" -DGITSTORED_IMAGE_SDK=ON
           mkdir -p "$RUNNER_TEMP/libcrun-diagnostic/image-sdk/release"
           cp "$RUNNER_TEMP/tls-diagnostic-target/release/libgitstored_image.a" \

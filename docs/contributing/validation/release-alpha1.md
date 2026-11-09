@@ -36,6 +36,19 @@ are retained at `/private/tmp/gs-alpha1-hosted-adapter-complete-{x64,arm64}.log`
 The selected offline cache probe reports numeric provisioning outcomes only and
 does not execute image commands. Diagnostic privacy assertions and the complete
 66-case package policy suite pass locally (seven explicit fixture skips).
+Corrected exact-cache reconstruction in
+[run 42587398198](https://github.com/gitstore-dev/cli/actions/runs/42587398198)
+returned provisioning integrity status 4 for the Git image on both architectures,
+without HTTP or executing an image. Roots `image-materialization-probe-fjiur4fa`
+(x64) and `image-materialization-probe-qkz0xojr` (arm64) stayed in their ephemeral
+owned fixtures. Logs are retained at
+`/private/tmp/gs-alpha1-hosted-materialization-selected-{x64,arm64}.log`.
+The isolated pinned diagnostic Rust installation passed on both architectures;
+the former ambient component conflict no longer prevents the arm64 image probe.
+The SDK-only mode rejects a missing source before selecting any acquisition path;
+its portable C compilation and that negative check passed. SDK-versus-tree audit
+comparison and the existing synthetic owned-file reader remain diagnostic work,
+not completed runtime acceptance.
 
 Pinned alpha.9 integration passed all 34 tests locally after waiting for initial
 Repository reconciliation before fixture cleanup, matching the existing Namespace
