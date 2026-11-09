@@ -16,8 +16,9 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #endif
-static gstd_provision_status foreign_bytes(const json_t *manifest, const char *component, int stage,
-                                           unsigned timeout, gstd_provision_result *result) {
+static gstd_provision_status direct_bytes(const json_t *manifest, const char *component, int stage,
+                                          int source, unsigned timeout,
+                                          gstd_provision_result *result) {
 #ifdef __linux__
     struct rlimit core = {0, 0},
                   address = {UINT64_C(1024) * 1024 * 1024, UINT64_C(1024) * 1024 * 1024},
@@ -36,8 +37,11 @@ static gstd_provision_status foreign_bytes(const json_t *manifest, const char *c
         return GSTD_PROVISION_INVALID;
     gstd_image_auth auth = {0};
     gstd_image_result acquired = {0};
-    gstd_image_status status =
-        gstd_image_stage((const unsigned char *)bytes, strlen(bytes), stage, &auth, &acquired);
+    gstd_image_status status = source >= 0
+                                   ? gstd_image_materialize((const unsigned char *)bytes,
+                                                            strlen(bytes), source, stage, &acquired)
+                                   : gstd_image_stage((const unsigned char *)bytes, strlen(bytes),
+                                                      stage, &auth, &acquired);
     free(bytes);
     result->downloaded_bytes = acquired.downloaded_bytes;
     result->merged_bytes = acquired.merged_bytes;
@@ -46,15 +50,18 @@ static gstd_provision_status foreign_bytes(const json_t *manifest, const char *c
     (void)manifest;
     (void)component;
     (void)stage;
+    (void)source;
     (void)timeout;
     (void)result;
     return GSTD_PROVISION_UNAVAILABLE;
 #endif
 }
-/* Explicit opt-in developer staging probe. Never activates or executes images. */
+/* Explicit opt-in developer staging probe. Never activates or executes images.
+ */
 int main(int argc, char **argv) {
     if (argc != 4 && argc != 5 &&
-        !(argc == 6 && (!strcmp(argv[5], "resume") || !strcmp(argv[5], "materialize"))))
+        !(argc == 6 && (!strcmp(argv[5], "resume") || !strcmp(argv[5], "materialize") ||
+                        !strcmp(argv[5], "materialize-sdk"))))
         return 2;
     char *end = NULL;
     errno = 0;
@@ -84,8 +91,11 @@ int main(int argc, char **argv) {
     gstd_image_auth auth = {0};
     gstd_provision_result result = {0};
     int source = argc >= 5 ? open(argv[4], O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW) : -1;
+    int sdk_materialize = argc == 6 && !strcmp(argv[5], "materialize-sdk");
     gstd_provision_status status =
-        foreign ? foreign_bytes(manifest, argv[1], staging, (unsigned)timeout, &result)
+        sdk_materialize && source < 0 ? GSTD_PROVISION_INVALID
+        : foreign || sdk_materialize
+            ? direct_bytes(manifest, argv[1], staging, source, (unsigned)timeout, &result)
         : argc == 6 && !strcmp(argv[5], "materialize")
             ? gstd_provision_materialize(manifest, argv[1], source, staging,
                                          UINT64_C(128) * 1024 * 1024, UINT64_C(512) * 1024 * 1024,
