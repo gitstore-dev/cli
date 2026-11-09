@@ -31,6 +31,14 @@ class NativeAutostart(unittest.TestCase):
             shutil.copyfile(value[key], root / 'bin' / name)
             (root / 'bin' / name).chmod(0o755)
             (root / 'public' / name).symlink_to(root / 'bin' / name)
+        public_gs = root / 'public/gs'
+        if os.environ.get('GITSTORE_TEST_INSTALLED_COMMANDS') == '1':
+            # Explicit system-package control; never select another installation
+            # just because it happens to be on PATH.
+            for key, name in [('gs', 'gs'), ('daemon', 'gitstored')]:
+                self.assertEqual((Path('/usr/bin') / name).resolve(strict=True),
+                                 Path(value[key]).resolve(strict=True))
+            public_gs = Path('/usr/bin/gs')
         env = {'PATH': '/nonexistent', 'HOME': str(root / 'home'),
             'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state'),
             'XDG_CACHE_HOME': str(root / 'cache'), 'XDG_RUNTIME_DIR': f'/run/user/{uid}',
@@ -64,7 +72,7 @@ class NativeAutostart(unittest.TestCase):
 
         try:
             for _ in range(2):
-                children.append(subprocess.Popen([str(root / 'public/gs'), 'deployment',
+                children.append(subprocess.Popen([str(public_gs), 'deployment',
                     'list', '-o', 'json'], env=env, cwd=root, stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE))
             for child in children:

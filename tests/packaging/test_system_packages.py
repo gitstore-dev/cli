@@ -81,6 +81,17 @@ class SystemPackages(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'RPM payload'):
                 system.inspect(artifact, digest, '0.1.0-alpha.1', 'rpm', 'arm64', os.geteuid())
 
+    def test_shared_rpm_policy_rejects_scripts_unsafe_links_and_privileged_modes(self):
+        fields=['gitstore','0.1.0','0.alpha.1.1','aarch64']
+        listing='/usr/bin/gs\t../libexec/gitstore/bin/gs\t120777\n/usr/libexec/gitstore/bin/gs\t\t100755\n'
+        system.validate_rpm_metadata(fields,b'',b'',listing,'0.1.0-alpha.1','arm64')
+        for scripts,triggers,entries in ((b'root script',b'',listing),(b'',b'root trigger',listing),
+                (b'',b'',listing.replace('../libexec/gitstore/bin/gs','../../etc/passwd')),
+                (b'',b'',listing.replace('100755','104755')),
+                (b'',b'',listing.replace('/usr/libexec/gitstore/bin/gs','/etc/owned-by-another-package'))):
+            with self.subTest(scripts=bool(scripts),triggers=bool(triggers),entries=entries),self.assertRaises(ValueError):
+                system.validate_rpm_metadata(fields,scripts,triggers,entries,'0.1.0-alpha.1','arm64')
+
 
 if __name__ == '__main__':
     unittest.main()
