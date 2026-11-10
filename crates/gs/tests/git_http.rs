@@ -2,7 +2,7 @@
 mod git_http;
 mod support;
 use git_http::*;
-use std::{path::Path, sync::atomic::Ordering};
+use std::{path::Path, sync::atomic::Ordering, time::Duration};
 use support::*;
 fn configure(h: &Harness, endpoint: &str, mechanism: &str) {
     h.configure("http://127.0.0.1:1/graphql");
@@ -319,14 +319,20 @@ fn ambient_helpers_filters_and_headers_are_not_executed_or_forwarded() {
 
 #[test]
 fn denied_redirected_and_stalled_transports_fail_with_precise_categories() {
-    for (mode, code) in [(Mode::Deny(403), 3), (Mode::Redirect, 8), (Mode::Delay, 7)] {
+    // Immediate responses must not race process/config startup on busy hosts.
+    // Only the deliberate stall uses a short deadline, with a longer server delay.
+    for (mode, code, timeout) in [
+        (Mode::Deny(403), 3, "10s"),
+        (Mode::Redirect, 8, "10s"),
+        (Mode::Delay(Duration::from_secs(3)), 7, "1s"),
+    ] {
         let (h, http) = setup(Auth::None);
         configure(&h, &http.endpoint, "bearer");
         *http.mode.lock().unwrap() = mode;
         let dest = h.dir.path().join("catalog");
         let o = h.run(&[
             "--timeout",
-            "100ms",
+            timeout,
             "repository",
             "clone",
             "catalog",
