@@ -1,6 +1,39 @@
 # Alpha.1 implementation evidence
 
-## Trusted tag execution — 2026-11-10 (in progress)
+## Alpha.2 proposal handoff — 2026-11-10
+
+The maintainer queued [repair #14](https://github.com/gitstore-dev/cli/pull/14).
+It merged at `45c22cf1ba5a08b58ef33a2b208b236fcbe2c8d4` after all required
+merge-group checks passed. [Release Please 42797822665](https://github.com/gitstore-dev/cli/actions/runs/42797822665)
+succeeded and opened [alpha.2 proposal #15](https://github.com/gitstore-dev/cli/pull/15).
+The actual proposal advances only the application version, its workspace/gs-lock
+entry, manifest and changelog before this evidence update; no dependency version
+is changed. The synchronized-version guard accepts alpha.1 → alpha.2, all 29
+release-policy cases pass locally with pinned Release Please 17.3.0, and the
+one-time alpha.1 override is absent. Draft/prerelease policy remains enabled.
+Required proposal CI must pass on its final head before the maintainer merges it.
+
+The alpha.1 tag remains `9ff58dad0f8126060549656d44fb316f9f1aa069`, and its
+empty draft remains unpublished. Both candidate attempts are retained. The clean
+retry passed both macOS production/replacement jobs but failed both Linux jobs
+with the same component conflict; mixed results do not supply a candidate.
+
+Repair PR runtime evidence separately passed explicit toolchain setup on both
+Linux architectures and sanitizer modes. Its ARM ordinary development producer
+later rejected an Ubuntu `noble-security` Sources index with an unexpected size
+and hash; apt reported a mirror sync in progress. This is failed download evidence,
+not a qualified artifact or a reason to disable integrity checks. It does not
+establish a failure of the future tagged candidate, which must build and qualify
+from its own exact source and bytes.
+
+The next human decision is review/merge of #15. Only after its actual tag build
+succeeds can an operator/agent dispatch six-host, 22-selection qualification,
+review the complete frozen inventory and start signing/producer verification.
+The maintainer retains the publication-environment approval. T038/T039/T064 stay
+open until their complete tag-bound acceptance evidence exists; no alpha.2 tag,
+qualification, attestation or published release is claimed by proposal creation.
+
+## Trusted alpha.1 tag execution — 2026-11-10 (failed candidate)
 
 The maintainer submitted #13 to the merge queue. Required checks passed and
 [the proposal](https://github.com/gitstore-dev/cli/pull/13) merged at
