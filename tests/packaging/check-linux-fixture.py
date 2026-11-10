@@ -40,7 +40,7 @@ def main():
     finally:
         os.close(fd)
     subprocess.run(['unshare', '--user', '--map-root-user', '--net', 'true'],
-                   check=True, timeout=5, capture_output=True)
+                   check=True, timeout=5)
     fd = os.pidfd_open(os.getpid())
     os.close(fd)
     root = os.open(value['fixtureParent'], os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)

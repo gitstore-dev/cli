@@ -114,7 +114,10 @@ def main():
     print(json.dumps({'fixture':str(root),'phase':'selected'}), flush=True)
     for artifact, digest, version in selections:
         subprocess.run([npm,'install','--global','--ignore-scripts','--offline','--no-audit','--no-fund',str(artifact)],
-            check=True, env=env, cwd=root, timeout=120)
+            # npm chmods command targets from its process umask, independently
+            # of the archive mode. Keep a permissive hosted-account umask from
+            # turning the private fixture's executables group writable.
+            check=True, env=env, cwd=root, timeout=120, umask=0o022)
         binary_dir = root / 'prefix with spaces/bin'
         siblings = []
         before = {str(path.relative_to(root)) for directory in ['config','state','cache','runtime'] for path in (root / directory).rglob('*')}

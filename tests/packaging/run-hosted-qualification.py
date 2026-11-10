@@ -135,6 +135,12 @@ def main():
         return subprocess.run(['/usr/bin/docker','--host','unix:///var/run/docker.sock',*map(str,arguments)],
             env=env,cwd=ROOT,check=check,text=True,capture_output=capture,timeout=timeout)
     if docker('ps','--all','--quiet',capture=True).stdout.strip():p.error('refuse a Docker host with pre-existing containers')
+    # The Fedora systemd guest shares the disposable Ubuntu host's kernel.
+    # Apply the same user-namespace prerequisite as the Ubuntu fixture; never
+    # change this policy on a workstation or persistent runner.
+    restriction=Path('/proc/sys/kernel/apparmor_restrict_unprivileged_userns')
+    if restriction.exists():
+        subprocess.run(['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],check=True)
     context=args.output/'image-context';context.mkdir(mode=0o700)
     (context/'Containerfile').write_text((ROOT/'tests/fixtures/runtime/fedora44-native.Containerfile').read_text()+
         '\nRUN dnf -y install sudo git gcc make glibc-devel file curl bzip2 patch python3-pip python3-jsonschema /usr/bin/npm patchelf libseccomp libcap json-c libcurl openssl-libs libxcrypt && dnf clean all\n')
