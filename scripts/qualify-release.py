@@ -26,6 +26,28 @@ from command_measurements import measure, validate_performance
 sys.path.remove(str(ROOT/'tests/packaging'))
 
 
+
+def run_check(name, command, workspace, environment):
+    """Keep full private logs locally; expose bounded errors for public checks."""
+    path = workspace / (name + '.log')
+    try:
+        with path.open('wb') as log:
+            subprocess.run(command, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
+                stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1800)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        # These checks use public package files and empty synthetic config only.
+        # Native workload logs can contain ephemeral credentials and stay private.
+        public = {'package-archive', 'package-npm', 'package-deb', 'package-rpm',
+            'package-homebrew', 'native-prerequisites', 'closure-gs', 'closure-gitstored'}
+        if name in public:
+            with path.open('rb') as log:
+                log.seek(0, os.SEEK_END)
+                log.seek(max(0, log.tell() - 16384))
+                tail = log.read().decode(errors='replace').replace('\x1b', r'\x1b')
+            print(f'Failed qualification check: {name} (last 16 KiB)\n{tail}', file=sys.stderr, flush=True)
+        raise
+
+
 def selection(host, manifest):
     os_name = 'darwin' if sys.platform == 'darwin' else 'linux'
     arch = {'aarch64':'arm64','arm64':'arm64','x86_64':'x64'}.get(platform.machine())
@@ -103,9 +125,7 @@ def main():
             raise ValueError('privileged package checks must select this same disposable account/parent')
     executed = []
     def run(name, command, env=None):
-        with (workspace/(name+'.log')).open('wb') as log:
-            subprocess.run(command,cwd=ROOT,env=environment if env is None else env,stdin=subprocess.DEVNULL,
-                stdout=log,stderr=subprocess.STDOUT,check=True,timeout=1800)
+        run_check(name, command, workspace, environment if env is None else env)
         executed.append(name)
     for channel in channels:
         name = slot_filename(version,'archive' if channel == 'homebrew' else channel,os_name,arch)
