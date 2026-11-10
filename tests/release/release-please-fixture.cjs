@@ -8,7 +8,7 @@ for (const protocol of ['node:http', 'node:https']) {
 }
 const base = process.env.GITSTORE_RELEASE_PLEASE_MODULE;
 assert(path.isAbsolute(base));
-assert.equal(require(path.join(base, 'package.json')).version, '17.3.0');
+assert.equal(require(path.join(base, 'package.json')).version, '17.6.0');
 require(base); // Initialize the published entry point before internal strategies.
 const load = name => require(path.join(base, 'build/src', name));
 const {Simple} = load('strategies/simple');
@@ -22,13 +22,13 @@ const logger = {info(){}, debug(){}, warn(){}, error(){}};
 const github = {repository:{owner:'gitstore-dev',repo:'cli'}};
 const commits = parseConventionalCommits([{sha:'a'.repeat(40), message:'feat: ship the reviewed CLI increment', files:['Cargo.toml']}], logger);
 
-async function proposal(previous, override) {
+async function proposal(previous, override, history = commits) {
   const strategy = new Simple({github, path:'.', targetBranch:'main',
     packageName:'', includeComponentInTag:false, includeVInTag:true, logger,
     releaseAs:override, extraFiles:config.packages['.']['extra-files'],
     versioningStrategy:new PrereleaseVersioningStrategy({prerelease:true,
       prereleaseType:'alpha', bumpMinorPreMajor:true, logger})});
-  const result = await strategy.buildReleasePullRequest(commits,
+  const result = await strategy.buildReleasePullRequest(history,
     {tag:new TagName(Version.parse(previous)),sha:'b'.repeat(40),notes:'previous'});
   assert(result);
   const version = result.version.toString();
@@ -48,5 +48,12 @@ async function proposal(previous, override) {
   const second = await proposal(first, undefined);
   assert.equal(first,'0.1.0-alpha.1');
   assert.equal(second,'0.1.0-alpha.2');
-  console.log(JSON.stringify({engine:'17.3.0',first,second,network:false,publication:false}));
+  const current = fs.readFileSync(path.join(root, 'version.txt'), 'utf8').trim();
+  const match = /^0\.1\.0-alpha\.(\d+)$/.exec(current);
+  assert(match);
+  const repairHistory = parseConventionalCommits([{sha:'c'.repeat(40),
+    message:'fix(ci): run release automation on Node 24', files:['.github/workflows/release-please.yml']}], logger);
+  const repair = await proposal(current, undefined, repairHistory);
+  assert.equal(repair, `0.1.0-alpha.${Number(match[1]) + 1}`);
+  console.log(JSON.stringify({engine:'17.6.0',first,second,repair,network:false,publication:false}));
 })().catch(error => { console.error(error); process.exitCode = 1; });
