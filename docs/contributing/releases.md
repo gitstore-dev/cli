@@ -1,316 +1,116 @@
-# Preparing GitHub-hosted prereleases
+# Releasing GitStore CLI
 
-GitStore and this CLI are early alpha. Upstream schemas continue changing
-incompatibly. Upgrade compatibility, data preservation and recovery are not
-guaranteed. Use, upgrade, migration or removal may cause data loss. Keep
+GitStore and this CLI are early alpha. Upstream schemas change incompatibly.
+Upgrade compatibility, data preservation and recovery are not guaranteed. Keep
 independent backups; do not use prereleases for irreplaceable data.
 
-This release implementation is under development. No complete qualified matrix
-or own signed release has been produced. Do not publish an incomplete candidate.
-See [the evidence record](validation/release-alpha1.md).
+For candidate results and remaining gates, see [release qualification](validation/release-qualification.md).
 
-## Release Please setup
+## Repository setup
 
-The [upstream alpha.9 workflow](https://github.com/gitstore-dev/GitStore/blob/68f8471edc947e417c98b6e8299a1367ab6b20da/.github/workflows/release-please.yml)
-uses an App installation token. This repository follows that approach, with
-commit-pinned actions and a main-only, non-cancelling serialized workflow.
-Install the App on `gitstore-dev/cli` with Contents, Issues and Pull requests
-write permissions. Configure `RELEASE_PLEASE_APP_CLIENT_ID` as a repository
-variable and `RELEASE_PLEASE_APP_PRIVATE_KEY` as an Actions secret. Inherited
-organization settings also work; effective repository organization-variable/secret
-metadata lists them even when the repository-level settings lists are empty. The
-App must separately include `cli` in its selected installation repositories. No npm,
-Homebrew or other package registry account/token is required. Missing App
-configuration skips proposals; it is not release acceptance evidence.
+- Install the Release Please App on `gitstore-dev/cli` with Contents, Issues and
+  Pull requests write permissions. Configure `RELEASE_PLEASE_APP_CLIENT_ID` and
+  `RELEASE_PLEASE_APP_PRIVATE_KEY`; inherited organization settings are supported.
+- Configure `release-publication` with required maintainer reviewers and a tag
+  deployment policy for `v0.1.0-alpha.*`. Promotion refuses a missing reviewer rule.
+- Keep App/signing credentials out of PR and native fixture jobs. Use the scoped
+  App for release proposals/tags so their events trigger downstream workflows.
 
-The workflow's ordinary GITHUB_TOKEN is read-only. The scoped App token creates
-proposals and reviewed tags so their PR/tag events can trigger CI. Do not replace
-it with GITHUB_TOKEN and assume those downstream runs happen. See
-[the action's event guidance](https://github.com/googleapis/release-please-action/blob/5c625bfb5d1ff62eadeeb3772007f7f66fdcf071/README.md#other-actions-on-release-please-prs).
-Do not expose release credentials in PR jobs.
+No external package registry account is required. Homebrew uses the repository
+as a Git URL tap; APT/DNF and npm install GitHub Release files. Nix is deferred.
 
-`release-please-config.json` uses manifest/simple alpha mode, bounded history
-starting at `b5c393e37b4787de0407ac3ccc1b058c067d69d8`, alpha.0 seed and the
-one-time alpha.1 override. The generated alpha.1 proposal removes that override
-before merge. Its manifest, version.txt and Cargo workspace must agree before
-removal. A later proposal can then advance to alpha.2. CMake reads the full
-application string from version.txt and derives its numeric project VERSION;
-Cargo.toml and only the marked gs entry in Cargo.lock are updated by the engine.
-Never replace transitive dependency versions with the application version.
+## Release procedure
 
-Run offline history fixtures using the same engine as the pinned action:
+1. **Review and merge the Release Please proposal through the merge queue.**
+   Required CI must pass. `version.txt`, Cargo workspace, the gs lock entry and
+   release manifest must agree. The first proposal removes the bootstrap override;
+   subsequent proposals advance the alpha number. Merging creates the version tag
+   and a draft prerelease; it does not publish packages.
+2. **Wait for the tag's `release.yml` build to succeed.** All four platform rows
+   and assembly must pass. Review the `release-candidate` artifact: frozen
+   inventory/checksums, matching gs/gitstored pairs, package formats, notices and
+   corresponding-source/relink materials. Never select PR-produced artifacts.
+3. **Qualify the exact candidate.** Set `RELEASE_TAG` to the reviewed tag and
+   `BUILD_RUN_ID` to its successful build run, then dispatch:
 
-```sh
-npm install --prefix /absolute/disposable/tooling --ignore-scripts --no-audit --no-fund release-please@17.3.0
-GITSTORE_RELEASE_PLEASE_MODULE=/absolute/disposable/tooling/node_modules/release-please python3 -m unittest discover -s tests/release
-```
+   ```sh
+   gh workflow run runtime.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
+     -f candidate_run="$BUILD_RUN_ID" -f candidate_tag="$RELEASE_TAG"
+   ```
 
-The fixture disables network requests and writes no GitHub resources. It proves
-alpha.1 then alpha.2 and actual updater behavior; it does not prove configured App
-permissions, hosted event delivery or an own signed positive. Those remain T038.
+   All six hosts and 22 selections in [the platform matrix](../../packaging/platforms.json)
+   must pass. The collector emits `release-qualification` only for a complete set
+   of receipts binding the exact source, tag and final subject hashes. Ubuntu/macOS
+   use isolated GitHub-hosted runners; Fedora uses pinned disposable fixtures.
+   Linux product commands run as UID 11000. macOS qualification covers remote/control
+   behavior; local workload execution remains unsupported.
+4. **Review qualification and start promotion.** Set `QUALIFICATION_RUN_ID` to the
+   successful qualification run. Check its installation/replacement/removal,
+   native-runtime and performance results, then dispatch at the same tag:
 
-Release Please creates a **draft** prerelease and an explicit versioned tag after
-the reviewed release proposal merges. A draft is not a qualified distribution.
-Final promotion must wait for the complete package matrix, final-byte attestations
-and producer verification. Public tag/release creation is a separate authorized
-operation; none is performed by local fixture tests.
+   ```sh
+   gh workflow run release.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
+     -f phase=promote -f candidate_run="$BUILD_RUN_ID" \
+     -f qualification_run="$QUALIFICATION_RUN_ID"
+   ```
 
-## First-release handoff
+   Promotion rejects foreign, PR, failed or mismatched-source input runs. It signs
+   every final subject and performs [producer verification](../../runtime/packaging/release-policy.md)
+   before the publication job can request approval.
+5. **Approve publication.** A required maintainer reviews the selected tag, source,
+   runs and verified inventory, then approves the waiting `release-publication`
+   deployment. The job re-verifies bytes, uploads matching assets/bundles, publishes
+   the prerelease with `latest=false`, and updates the Homebrew formula.
+6. **Verify delivery and record acceptance.** Check public asset names/digests,
+   downloadable `.sigstore.jsonl` bundles, the mandatory early-alpha notice,
+   formula and [installation instructions](../installation.md). Update the compact
+   qualification record and its machine-readable evidence. Close acceptance tasks
+   only when their checks have actually passed.
 
-[Alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13) merged and
-created the exact tag/draft, but both candidate attempts failed on Linux toolchain
-setup. Alpha.1 is not qualified and must remain unpublished. Alpha.2 subsequently
-built its complete frozen candidate and passed six macOS channel selections,
-but its first qualification exposed Linux fixture failures; it also remains an
-unpublished draft. See the [execution evidence](validation/release-alpha1.md).
-Fixture source repairs require a new reviewed commit and version proposal under
-the current exact-source policy. Do not move an existing tag, reuse incomplete
-receipts, or relabel old candidate bytes as belonging to a new source.
+## Artifact and verification rules
 
-The maintainer merges a reviewed release proposal through the merge queue.
-This is the tag-creation decision: Release Please creates that version tag and
-a draft prerelease. Do not manually create a duplicate tag or publish the draft
-through the GitHub release editor.
+- Package both real executables with matching application versions. Debian encodes
+  `0.1.0-alpha.N` as `0.1.0~alpha.N-1`; RPM uses Version `0.1.0`, Release
+  `0.alpha.N.1`. A package rebuild suffix does not change socket/application identity.
+- Review [producer inputs](../../packaging/release-inputs/) when dependencies change.
+  Strip, relocate and package before freezing hashes or signing. Include complete
+  Rust/native notices and required source/relink assets.
+- `release-inventory.json` describes payloads. `SHA256SUMS` covers payloads and that
+  inventory, excluding itself. Both are signed subjects; the mutable candidate
+  ledger is not part of its own hash inventory.
+- [Python dependencies](../../packaging/requirements.txt) have exact versions and
+  SHA-256 wheel hashes. Install with `--require-hashes --only-binary=:all:`; review
+  wheel resolution on every selected platform when updating the lock. Install
+  publication dependencies before supplying the Contents-write token.
+- Standard GitHub Actions attestations bind producer identity and final bytes.
+  They do not certify vulnerability freedom. Producer verification is mandatory;
+  consumer verification is optional and is never required by an installer.
 
-The tag push starts `release.yml` in build mode. Set `RELEASE_TAG` to that exact
-maintainer-reviewed tag. After its build succeeds, record the numeric run ID as
-`BUILD_RUN_ID`. An operator or agent then dispatches qualification at the same tag:
-
-```sh
-gh workflow run runtime.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
-  -f candidate_run=BUILD_RUN_ID -f candidate_tag="$RELEASE_TAG"
-```
-
-Replace the uppercase run-ID placeholders with the actual selected successful
-run IDs. All six hosts and 22 selections must pass; inspect the collector's
-`release-qualification` artifact and the build's frozen inventory, source/license
-materials, hashes, support limitations and early-alpha notice. Record the
-qualification run as `QUALIFICATION_RUN_ID`. An operator or agent can then start
-promotion at the same tag:
-
-```sh
-gh workflow run release.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
-  -f phase=promote -f candidate_run=BUILD_RUN_ID \
-  -f qualification_run=QUALIFICATION_RUN_ID
-```
-
-Signing and producer verification run before publication. The maintainer reviews
-the selected source/runs and approves the waiting `release-publication`
-environment deployment. That approval authorizes uploading and publishing the
-qualified bytes. The job then updates the tap. Never bypass an environment or
-qualification failure, publish an incomplete draft, or overwrite conflicting
-assets.
-
-After observed publication, an operator or agent checks the public inventory,
-attestation bundles, formula and documented install paths, updates the evidence
-record, and marks T038/T039/T064 complete only when their acceptance is satisfied.
-If a build/qualification job fails, repair and requalify under the existing
-exact-source/byte policy; do not move a version tag to hide the failure.
-
-## Distribution and verification policy
-
-Canonical and npm version: `0.1.0-alpha.1`; tag: `v0.1.0-alpha.1`.
-Debian: `0.1.0~alpha.1-1`; RPM: Version `0.1.0`, Release `0.alpha.1.1`.
-Package rebuild suffixes never alter application/socket identity. Every artifact
-must contain both matching real executables. Strip/relocate/package before
-calculating final digests or signing. Produce complete native/Rust notices and
-any corresponding-source/relink assets before qualification.
-
-Publish standard GitHub Actions attestation bundles for final subjects. Consumer
-verification is optional; installers never require GitHub CLI or another verifier.
-Producer promotion follows [the existing identity policy](../../runtime/packaging/release-policy.md).
-Signed provenance binds build identity and bytes, not vulnerability freedom or
-security certification. Never promote PR-produced artifacts using release credentials.
-
-No external registry publication is in scope. Homebrew uses this repository's
-explicit Git URL tap, APT/DNF install GitHub Release files, and npm installs a
-platform tarball URL with both native binaries and no lifecycle download script.
-Nix remains deferred. Linux/macOS platform qualification and release publication
-are still open; consult the evidence record rather than inferring support from
-package templates.
-
-## Packaging Python dependency policy
-
-`packaging/requirements.txt` locks the complete validator dependency closure to
-exact versions and SHA-256 wheel hashes. All workflow installs and isolated
-qualification-account installs use `--require-hashes --only-binary=:all:`. There
-is no source-build or floating-transitive fallback. Updates require reviewing the
-exact-version PyPI wheel metadata and checking resolution on both architectures
-for Ubuntu/Fedora and macOS before committing new hashes.
-
-The publish job installs this closure in a separate step with no `GH_TOKEN` in
-its environment. Only the subsequent verified-publication step receives the
-Contents-write token; no dependency installation occurs there. Hash locking also
-covers the signing job so later imports cannot silently select new dependency
-code while attestation permissions are available.
-
-## Candidate preparation and recovery
-
-`release.yml` builds only on an exact reviewed alpha tag. An ordinary tag push
-prepares read-only candidates; it cannot promote a release. The four hosted build
-rows use production facilities only and call `scripts/build-release-platform.py`.
-Its per-tuple reviewed notices, closure and source/relink materials live under
-`packaging/release-inputs/`; missing inputs fail before building. These inputs are populated and exercised by the recorded production candidates;
-review them again when dependency or build inputs change. No placeholder manifest
-is acceptable.
-
-`scripts/assemble-release.py` requires all four build groups, rejects conflicting
-assets and renders the formula from the four final archive digests. The local
-`scripts/prepare-release.py` interface can also register explicit subjects and
-advance immutable ledger files. The enforced sequence is:
-
-```text
-proposed → version-reviewed → built → packaged → validated
-         → attested → producer-verified → observed published release
-```
-
-Version review binds the exact tag and full commit. Built requires every selected
-platform/format; packaged freezes `release-inventory.json` and `SHA256SUMS`.
-The inventory describes payloads; checksums include that inventory and every
-payload, excluding themselves. The checksum file is itself a signed subject.
-The mutable producer ledger is not a self-hashing signed inventory. Preserve its
-packaged copy to resume; generated subjects refuse overwrite. If generation fails
-before saving the packaged ledger, assemble a new private directory from the
-same verified build groups rather than replacing existing frozen files.
-
-Validation requires pass receipts for every selected OS/architecture/host/channel
-in `packaging/platforms.json`. Each JSON receipt has `schemaVersion: 1`,
-`result: "pass"`, exact `tag`/`sourceRevision`, `selection` as
-`[os,arch,fixture,channel]` and `subjects` mapping every final filename to SHA-256.
-Receipts are maintainer-owned execution evidence, not a cryptographic signature.
-They must come from actual tests of those exact bytes. Structural fixture tests
-do not supply qualification. The dedicated runtime workflow now produces the
-`release-qualification` artifact only after all six selected clean reference hosts
-pass. Each host also records 100 warm help/version samples; Linux measures 100
-current-generation inspections and distinct runtime costs with offline assets.
-Missed documented p95 targets fail before host receipts are emitted. Measurements
-remain embedded in those maintainer-owned execution receipts.
-Dispatch the exact reviewed candidate tag (or `main` while it still points
-to the exact candidate source SHA) with
-`candidate_run` and `candidate_tag`. It rejects foreign/PR/wrong-source runs before
-queuing isolated hosted fixtures. Ubuntu and macOS use fresh GitHub-hosted VMs on
-both architectures; Fedora boots the pinned systemd image in a private cgroup
-namespace on the matching Ubuntu runner, with no host bind mounts or ports.
-Linux product checks use a newly created UID 11000. No self-hosted runner fleet
-or caller-supplied qualification manifest is required.
-
-The release build also uploads separate, never-publish next-alpha replacement
-controls for all four production tuples and Linux negative/Git probes. They come
-from the exact same reviewed source/run and never enter canonical release groups.
-The qualification runner generates private manifests and a real-hash replacement
-formula, exports only committed public Git objects into Linux fixture accounts,
-and keeps App/signing credentials out of all native jobs.
-
-[`qualify-release.py`](../../scripts/qualify-release.py) requires an explicit
-clean disposable host/account and actual OS match, complete next-alpha replacement
-fixtures, the selected tooling revision, and Linux native/system fixture manifests.
-See [fixture setup](../../tests/packaging/README.md). APT is tested on Ubuntu;
-DNF on Fedora; archive/Homebrew/npm run on both selected Linux distributions and
-macOS. Linux acceptance includes actual first-use/mismatched-manager and missing
-library controls, offline/clean-install/recovery suites, and fd/memfd closure.
-Tests run installed candidate bytes rather than rebuilding the product. All cases
-must pass before per-host receipts are written; unavailable fixtures fail the job.
-The final collector validates the full 22 host/channel selections before emitting
-the promotion input. These new jobs have not been executed on the full reference
-matrix; they do not establish release qualification by existing in source.
-
-For promotion, dispatch `release.yml` **at the same tag**, select `promote`, and
-supply the successful candidate build run and manually selected qualification
-run IDs. Input validation rejects fork/PR artifacts, different workflows,
-failed/in-progress runs and different source commits. It checks source identity
-again after download and requires complete exact-byte receipts. Workflow
-concurrency serializes the tag without cancelling an in-progress operation.
-
-The hosted attestation job uses commit-pinned `actions/attest` in standard SLSA
-provenance mode. It signs every final subject, including loose executable copies,
-packages, inventories, checksums, formula and LGPL source/relink assets. Each asset
-gets a downloadable `.sigstore.jsonl` bundle (a standard multi-subject bundle may
-be repeated for its subjects). There is no registry upload. Trust roots are
-obtained through the maintainer's trusted GitHub CLI channel, independently of
-downloaded release assets. Producer verification checks bytes, repository ID,
-workflow, hosted issuer, exact tag and full commit. The signing job has only read
-access to contents plus OIDC/attestation/artifact-metadata writes.
-
-Configure the `release-publication` environment with required reviewers before
-enabling promotion. The promotion preflight reads that environment and refuses
-a missing environment or an empty required-reviewer rule before signing or
-uploading anything; it never creates or changes environment settings. Only its
-publication job has Contents write permission.
-`scripts/publish-release.py` runs producer verification again, requires an owned
-private asset directory and a per-tag nonblocking lock, then inspects the existing
-draft/tag commit. It never creates a tag/release or deletes/replaces an asset.
-Matching uploads are reused; different bytes, names or source identities fail.
-An interrupted upload leaves the draft incomplete. Retry the same reviewed
-candidate/tag with matching receipts; do not use `--clobber` or create a fresh tag
-to hide an incomplete candidate. Inspection must observe the exact complete set
-before clearing draft, with prerelease true and latest false.
-The publisher prepends the canonical early-alpha/upstream-schema/no-upgrade/
-no-data-preservation/no-recovery/backup statement to the draft's existing release
-notes and checks it again before and after promotion. Changelog preamble alone
-would not put that notice in every GitHub release's generated notes. A published
-release missing the notice requires explicit correction; retries do not silently
-rewrite published notes.
-
-The tap is updated only after observed publication. If branch protection prevents
-the formula commit, the release stays published and the tap stays unchanged; retry
-the same candidate after resolving that write policy. The script checks the most
-recent published prerelease before updating, compares existing content and uses
-the Contents API file SHA to reject concurrent conflicting edits. It never rolls
-back a published release because a later tap update failed.
-
-Optional consumer verification example (installation itself does not run this):
+Optional consumer verification:
 
 ```sh
-gh attestation verify /absolute/downloaded-package.tgz --repo gitstore-dev/cli \
-  --bundle /absolute/downloaded-package.tgz.sigstore.jsonl
+gh attestation verify /absolute/package.tgz --repo gitstore-dev/cli \
+  --bundle /absolute/package.tgz.sigstore.jsonl
 ```
 
-Maintainers use the stricter [producer policy](../../runtime/packaging/release-policy.md),
-including all exact signed identity constraints. The branch-only App read-access
-and own signing preflights pass, including negative controls. They do not establish
-trusted tag-bound signing, actual release-PR/tag event delivery or full package
-qualification. Those remain required before
-calling alpha.1 ready. No public tag/release creation or publication was performed
-while preparing this workflow.
+## Failure and recovery
+
+| Failure | Action |
+| --- | --- |
+| Build or qualification incomplete | Keep the draft unpublished. Preserve failed-run evidence and repair the cause. Never substitute older or partial receipts. |
+| Source or fixture code changes | Use a new reviewed commit/version proposal; rebuild and requalify. Do not move an existing version tag. |
+| Upload interrupted | Retry the same reviewed candidate/tag and successful qualification. Matching uploads are reused; conflicting bytes fail. Never use `--clobber`. |
+| Publication gate or provenance check fails | Resolve the configuration/evidence problem. Do not bypass the gate or publish through the release editor. |
+| Tap update blocked after publication | Keep the published release intact. Resolve the branch write policy and retry the matching formula update; do not roll back or overwrite assets. |
+
+The publisher checks the exact complete asset set and early-alpha notice before
+and after promotion. A published release missing its notice requires explicit
+correction; retries do not silently rewrite published release notes.
 
 ## Unsigned development package review
 
-Before a release tag exists, maintainers can dispatch `runtime.yml` with
-`review_cli_run` and `review_linux_run` selecting successful same-source ordinary
-CLI/runtime runs. This runs only ephemeral hosted review jobs; leave candidate,
-native and denial fixture inputs empty. `prepare-package-review.py` checks both
-run repository/workflow/source identities, verifies all four installed inventories
-agree on actual checkout revision/version, and renders a private formula from the
-four actual archive digests. It retains branch-head and PR-merge checkout identities
-separately. No synthetic unused-platform digests are accepted by this path.
-
-Ubuntu 24.04 and macOS 15 jobs on both architectures install/remove their exact
-complete candidate through an isolated Homebrew checkout/prefix. Separate pinned
-Fedora 44 job containers test Homebrew as fresh UID 11000, and Ubuntu jobs also
-exercise actual APT install/remove with non-root product commands. Receipts remain
-scoped to these operations; install/remove does not establish replacement or native
-workload acceptance. Use `review_fedora_only=true` to skip the Ubuntu/macOS Homebrew
-jobs when their evidence already exists; Fedora Homebrew and APT checks still run.
-Homebrew’s documented Linux compiler/tool prerequisites belong to the package
-manager; the formula installs prebuilt GitStore binaries. Tooling is pinned
-to Homebrew revision `bf464f57275cae0be106b43d190c98564ac59b0e`; it may acquire its
-own Ruby/tool metadata in that private fixture. All product invocations retain the
-empty-tool PATH boundary. The formula remains a review artifact, never a tap update.
-These outputs are named unsigned development review, contain no release receipts
-or attestations, and cannot replace the trusted qualification/publication path.
-
-For controlled replacement, additionally set `review_upgrades=true` with producer runs containing separate
-`unqualified-replacement-*` artifacts. The coordinator requires a complete actual
-four-platform next-alpha set, retains its distinct source revision, and renders
-the next formula using real hashes. The selected APT/DNF/Homebrew and Fedora
-archive/npm cases then exercise replacement/removal. These incomplete-notice,
-`UNQUALIFIED-ONLY` fixtures remain outside the release inventory and never satisfy
-trusted tag-bound qualification on their own.
-
-For a separate ephemeral Linux native smoke, dispatch `runtime.yml` with only
-`hosted_native_run` selecting a successful unsigned runtime candidate run. It
-validates the exact downloaded native pair, prepares its own non-root account,
-runs prerequisites and one real core case, and retains bounded diagnostic enums/
-counts on failure. It neither signs nor produces release qualification receipts.
-Ordinary library/package builds do not assert native workload support; an explicit
-native job failure stays a failure and cannot be used as release acceptance.
+For development review, dispatch `runtime.yml` with successful same-source
+`review_cli_run`/`review_linux_run` inputs; add `review_upgrades=true` for replacement
+checks. Separate native review uses `hosted_native_run` or `fedora_native_run`.
+These artifacts and next-alpha test controls are unqualified, never published,
+and cannot replace tag-bound release receipts. See [fixture instructions](../../tests/packaging/README.md).

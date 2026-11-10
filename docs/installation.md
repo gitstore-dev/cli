@@ -3,7 +3,7 @@
 **Release preparation is in progress. No binary/package release is qualified or
 published yet.** The commands below describe the selected alpha.1 distribution
 paths once its reviewed assets exist. Consult the
-[release evidence](contributing/validation/release-alpha1.md) for actual results.
+[release evidence](contributing/validation/release-qualification.md) for actual results.
 
 GitStore and this CLI are early alpha. Upstream schemas will continue changing
 incompatibly. Upgrade compatibility, data preservation and recovery are not

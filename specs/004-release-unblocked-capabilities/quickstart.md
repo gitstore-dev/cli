@@ -2,7 +2,7 @@
 
 The implementation and fixture tools exist. This guide defines the required
 validation; it does not claim every host/channel or trusted release gate passed.
-See [current evidence](../../docs/contributing/validation/release-alpha1.md) for
+See [current evidence](../../docs/contributing/validation/release-qualification.md) for
 actual commands, hashes, results and unavailable combinations. Use disposable
 test accounts, synthetic credentials and isolated state only.
 

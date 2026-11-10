@@ -11,7 +11,7 @@ Pinned alpha.9 memdb/static-users conformance passed through
 over public Git. After remote logout an existing watch remained open at the
 200 ms observation point; reconnecting with that revoked session failed. Immediate
 termination of every already-open socket is not promised. See
-[the exact evidence](contributing/validation/release-alpha1.md).
+[the exact evidence](contributing/validation/release-qualification.md).
 
 ```sh
 gs watch product --timeout 1h

@@ -30,7 +30,7 @@ No authorization data found. Please use the `postman login` command.
 Local execution still passed. No login, cloud push or publication occurred. Full
 stdout was retained locally at `/private/tmp/gs-alpha1-capabilities-current.log`.
 These are controlled receipts; the separate pinned-image result and exact image
-identities are recorded in [release-alpha1.md](release-alpha1.md).
+identities are recorded in [release-qualification.md](release-qualification.md).
 
 **Recorded**: 2026-10-29. **Scope**: the unblocked increment in
 [specs/002-m1-remote-cli](../../../specs/002-m1-remote-cli/spec.md), not full PRD M1 release.
