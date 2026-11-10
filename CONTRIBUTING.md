@@ -33,6 +33,10 @@ edits, updates, and reopening using the PR's workflow definition. Merge-queue en
 report success because the PR title has already been checked. Fork-token restrictions
 for the pinned title action require separate verification before promising fork support.
 
+The merge queue preserves commit subjects. Release Please reads those subjects,
+so releasable fixes/features need an appropriate `fix:`/`feat:` commit. Changing
+only the PR title does not change the release classification of existing commits.
+
 ## Application CI
 
 Markdown and workflow-manifest lint jobs remain deferred. PR-title validation is the

@@ -43,8 +43,11 @@ class ReleaseVersions(unittest.TestCase):
             self.assertFalse(bootstrap.remove(root))
             self.assertNotIn('release-as', json.loads((root / 'release-please-config.json').read_text())['packages']['.'])
 
-    @unittest.skipUnless(os.environ.get('GITSTORE_RELEASE_PLEASE_MODULE'), 'select pinned Release Please 17.3.0 module for offline history fixtures')
-    def test_actual_engine_alpha1_then_alpha2_and_synchronized_updaters(self):
+    @unittest.skipUnless(os.environ.get('GITSTORE_RELEASE_PLEASE_MODULE'), 'select pinned Release Please 17.6.0 module for offline history fixtures')
+    def test_actual_engine_alpha_history_and_synchronized_updaters(self):
         reply = subprocess.run(['node', str(ROOT / 'tests/release/release-please-fixture.cjs'), str(ROOT)],
             check=True, capture_output=True, text=True, timeout=30)
-        self.assertEqual(json.loads(reply.stdout)['second'], '0.1.0-alpha.2')
+        result = json.loads(reply.stdout)
+        self.assertEqual(result['second'], '0.1.0-alpha.2')
+        current = (ROOT / 'version.txt').read_text().strip()
+        self.assertEqual(result['repair'], f'0.1.0-alpha.{int(current.rsplit(".", 1)[1]) + 1}')
