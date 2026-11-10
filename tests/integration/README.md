@@ -35,7 +35,7 @@ expiry/backpressure and persistence-failure coverage remains in the Rust suites.
 
 These are memdb/static-users/loopback checks. Native OS credential stores,
 external OIDC/HTTPS and package/native-host support need their own receipts.
-See [current evidence](../../docs/contributing/validation/release-alpha1.md).
+See [current evidence](../../docs/contributing/validation/release-qualification.md).
 The older checkpoint description below retains its original 36-case scope; its
 statements about planned login/watch/export do not describe the alpha.9 increment.
 

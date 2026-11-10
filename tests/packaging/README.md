@@ -15,7 +15,7 @@ artifact pair. Credentials must be synthetic protected files and OS-store access
 must not be inherited. Install into separate disposable channel fixtures.
 
 Pin actual fixture image digests and package-manager versions in each receipt
-when provisioned. See the [current evidence](../../docs/contributing/validation/release-alpha1.md)
+when provisioned. See the [current evidence](../../docs/contributing/validation/release-qualification.md)
 for controlled arm64 checks; the complete clean-host matrix remains open.
 Do not start/stop unrelated Docker, Apple containers or persistent services.
 

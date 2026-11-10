@@ -16,7 +16,7 @@ The 84 baseline records below preserve their original upstream evidence. The
 following explicit alpha.9 overlay takes precedence for implemented client
 behavior. It uses source `68f8471edc947e417c98b6e8299a1367ab6b20da`; controlled
 tests and shipped-image acceptance are separate in
-[the current evidence record](../contributing/validation/release-alpha1.md).
+[the current evidence record](../contributing/validation/release-qualification.md).
 No row establishes a qualified binary release or closes unrelated dependencies.
 
 | Records / slice | Implemented alpha.9 behavior | Remaining boundary |
