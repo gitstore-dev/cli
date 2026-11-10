@@ -57,19 +57,25 @@ operation; none is performed by local fixture tests.
 
 ## First-release handoff
 
-Release Please has opened [alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13).
-After its required checks and review pass, the maintainer merges that proposal
-through the merge queue. This is the tag-creation decision: Release Please creates
-`v0.1.0-alpha.1` and a draft prerelease. Do not manually create a duplicate tag or
-publish the draft through the GitHub release editor.
+[Alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13) merged and
+created the exact tag/draft, but both candidate attempts failed on Linux toolchain
+setup. Alpha.1 is not qualified and must remain unpublished. See the
+[execution evidence](validation/release-alpha1.md). The repair requires a new
+reviewed commit and version proposal; do not move the existing tag or reuse its
+incomplete artifacts.
 
-The tag push starts `release.yml` in build mode. After that run succeeds, record
-its numeric run ID as `BUILD_RUN_ID`. An operator or agent then dispatches the
-qualification workflow at the same tag:
+The maintainer merges a reviewed release proposal through the merge queue.
+This is the tag-creation decision: Release Please creates that version tag and
+a draft prerelease. Do not manually create a duplicate tag or publish the draft
+through the GitHub release editor.
+
+The tag push starts `release.yml` in build mode. Set `RELEASE_TAG` to that exact
+maintainer-reviewed tag. After its build succeeds, record the numeric run ID as
+`BUILD_RUN_ID`. An operator or agent then dispatches qualification at the same tag:
 
 ```sh
-gh workflow run runtime.yml --repo gitstore-dev/cli --ref v0.1.0-alpha.1 \
-  -f candidate_run=BUILD_RUN_ID -f candidate_tag=v0.1.0-alpha.1
+gh workflow run runtime.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
+  -f candidate_run=BUILD_RUN_ID -f candidate_tag="$RELEASE_TAG"
 ```
 
 Replace the uppercase run-ID placeholders with the actual selected successful
@@ -80,7 +86,7 @@ qualification run as `QUALIFICATION_RUN_ID`. An operator or agent can then start
 promotion at the same tag:
 
 ```sh
-gh workflow run release.yml --repo gitstore-dev/cli --ref v0.1.0-alpha.1 \
+gh workflow run release.yml --repo gitstore-dev/cli --ref "$RELEASE_TAG" \
   -f phase=promote -f candidate_run=BUILD_RUN_ID \
   -f qualification_run=QUALIFICATION_RUN_ID
 ```

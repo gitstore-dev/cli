@@ -84,7 +84,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang-18 cmake make pkg-config meson ninja-build libsystemd-dev libseccomp-dev libcap-dev libjson-c-dev libglib2.0-dev libssl-dev libcurl4-openssl-dev libcrypt-dev
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
-          rustup toolchain install "$toolchain" --profile minimal
+          rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy
       - name: Build ordinary native code dependencies
         env:
           MODE: ${{ matrix.mode }}
@@ -773,7 +773,7 @@ jobs:
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           export RUSTUP_HOME="$RUNNER_TEMP/diagnostic-rustup" RUSTUP_TOOLCHAIN="$toolchain"
           printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
-          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy --no-self-update)
           CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$RUNNER_TEMP/full-native-helpers" \
             cargo build --release --locked -p gs --example runtime_repository_probe
           cmake -S daemon -B "$RUNNER_TEMP/control-negative" -DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -799,7 +799,7 @@ jobs:
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           export RUSTUP_HOME="$RUNNER_TEMP/diagnostic-rustup" RUSTUP_TOOLCHAIN="$toolchain"
           printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
-          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy --no-self-update)
           sudo apt-get update --error-on=any
           sudo apt-get install -y libssl-dev zlib1g-dev pkg-config
           OPENSSL_STATIC=1 LIBZ_SYS_STATIC=1 LZMA_API_STATIC=1 CARGO_BUILD_JOBS=2 \
@@ -1000,7 +1000,7 @@ jobs:
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           export RUSTUP_HOME="$RUNNER_TEMP/fedora-rustup" RUSTUP_TOOLCHAIN="$toolchain"
           printf 'RUSTUP_HOME=%s\nRUSTUP_TOOLCHAIN=%s\n' "$RUSTUP_HOME" "$RUSTUP_TOOLCHAIN" >> "$GITHUB_ENV"
-          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --no-self-update)
+          (cd "$RUNNER_TEMP" && rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy --no-self-update)
           CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$RUNNER_TEMP/fedora-helpers" cargo build --release --locked -p gs --example runtime_repository_probe
           cmake -S daemon -B "$RUNNER_TEMP/fedora-control-negative" -DCMAKE_BUILD_TYPE=MinSizeRel \
             -DGITSTORED_TESTING=OFF -DGITSTORED_IMAGE_SDK=OFF -DGITSTORED_LIBCRUN=OFF \

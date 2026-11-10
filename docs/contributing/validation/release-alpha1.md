@@ -1,5 +1,46 @@
 # Alpha.1 implementation evidence
 
+## Trusted tag execution — 2026-11-10 (in progress)
+
+The maintainer submitted #13 to the merge queue. Required checks passed and
+[the proposal](https://github.com/gitstore-dev/cli/pull/13) merged at
+`9ff58dad0f8126060549656d44fb316f9f1aa069`.
+[Release Please 42790057056](https://github.com/gitstore-dev/cli/actions/runs/42790057056)
+completed successfully, created `v0.1.0-alpha.1` pointing at that exact commit,
+and created an empty draft prerelease. This establishes actual release-PR/tag
+event delivery, not final artifact qualification or signing.
+
+[Initial tag build 42790085791](https://github.com/gitstore-dev/cli/actions/runs/42790085791)
+reached identity validation, but Linux x64/arm64 and macOS arm64 failed before
+compiling: the implicit rust-toolchain component installation reported a
+`rustfmt-preview` conflict at `bin/cargo-fmt`. The other platform was allowed to
+finish; no run was cancelled, tag moved or asset published. A new disposable
+macOS arm64 RUSTUP_HOME/CARGO_HOME reproduced the exact minimal install followed
+by implicit component resolution successfully with rustup 1.29.2. This does not
+prove the hosted root cause.
+
+[Clean same-tag rebuild 42790781600](https://github.com/gitstore-dev/cli/actions/runs/42790781600)
+reproduced the same conflict on both Linux architectures, so the retry does
+not supply a complete candidate. Intel macOS passed in the first attempt; this
+does not substitute for the other three tuples. No artifacts from either failed
+run are accepted as complete release input.
+
+The repair installs rustfmt and clippy together with the pinned toolchain in all
+producer/fixture setup paths, matching the already-passing Rust CI setup. The
+release identity test now accepts the bounded `0.1.0-alpha.N` train instead of
+forcing every future proposal back to alpha.1; synchronized versions and pinned
+history remain checked. The existing alpha.1 tag is unchanged. Applying a source
+repair requires a new reviewed commit and release candidate; the maintainer owns
+merging the repair and the subsequent version proposal. All 29 release-policy
+cases pass both at current alpha.1 and in a synchronized disposable alpha.2
+proposal; workflow lint and local link/whitespace checks pass. A fresh explicit
+five-component toolchain install and subsequent rustc sysroot lookup also pass.
+Hosted repair CI remains a separate required check. No qualification or
+promotion is dispatched from failed candidate input. T038,
+T039 and T064 remain open. Publication still requires the maintainer's explicit
+`release-publication` environment approval after exact-byte qualification and
+producer verification.
+
 ## Release proposal handoff — 2026-11-09
 
 [PR #12](https://github.com/gitstore-dev/cli/pull/12) merged through the merge
