@@ -2,6 +2,7 @@
 import importlib.util
 import os
 import platform
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -19,6 +20,36 @@ inner=module('prepared_qualification','prepare-qualification.py')
 
 
 class HostedQualification(unittest.TestCase):
+    @unittest.skipIf(os.geteuid() == 0 or not shutil.which('git'), 'requires non-root Git fixture tooling')
+    def test_public_bundle_setup_escapes_an_inaccessible_runner_working_directory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary).resolve()
+            account=root/'fixture';account.mkdir(mode=0o700)
+            environment=dict(PATH=os.environ['PATH'],HOME=str(account),LANG='C',
+                GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL=os.devnull)
+            def git(*arguments,cwd=root):
+                return subprocess.check_output(['git',*map(str,arguments)],cwd=cwd,env=environment,stderr=subprocess.PIPE)
+            source=root/'source'
+            git('init','--initial-branch=main',source)
+            git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid',
+                'commit','--allow-empty','-m','public fixture',cwd=source)
+            revision=git('rev-parse','HEAD',cwd=source).decode().strip()
+            bundle=account/'source.bundle';git('bundle','create',bundle,'HEAD',cwd=source)
+            runner=root/'runner';runner.mkdir();work=runner/'work';work.mkdir()
+            user=['env','-i',*[key+'='+value for key,value in environment.items()]]
+            previous=Path.cwd()
+            try:
+                os.chdir(work);runner.chmod(0)
+                broken=subprocess.run([*user,'git','clone','--no-checkout',str(bundle),str(account/'broken')],
+                    capture_output=True,timeout=15)
+                self.assertNotEqual(broken.returncode,0)
+                outer.run_fixture_setup(user,[
+                    ['git','clone','--no-checkout',str(bundle),str(account/'source')],
+                    ['git','-C',str(account/'source'),'checkout','--detach',revision]],str(account))
+            finally:
+                runner.chmod(0o700);os.chdir(previous)
+            self.assertEqual(git('rev-parse','HEAD',cwd=account/'source').decode().strip(),revision)
+
     def environment(self):
         return dict(GITHUB_ACTIONS='true',RUNNER_ENVIRONMENT='github-hosted',GITHUB_REPOSITORY_ID='1431005655',
             GITHUB_RUN_ID='123',GITHUB_SHA='a'*40,RUNNER_ARCH='X64')

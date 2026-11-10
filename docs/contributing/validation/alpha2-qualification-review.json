@@ -1,0 +1,916 @@
+{
+  "schemaVersion": 1,
+  "status": "partial-not-release-ready",
+  "tag": "v0.1.0-alpha.2",
+  "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+  "candidateBuildRun": 42804211944,
+  "qualificationRun": 42806007675,
+  "requiredSelections": 22,
+  "passedSelections": 6,
+  "allSubjectBytesVerified": true,
+  "subjectCount": 33,
+  "totalSubjectBytes": 468850814,
+  "artifacts": [
+    {
+      "filename": "gitstore-0.1.0-alpha.2-darwin-x64.tar.gz",
+      "format": "archive",
+      "os": "darwin",
+      "arch": "x64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "90532610943657f4094f2ba933acb6965d78303d0b521dffa5b22957a0180b88",
+      "bytes": 3683572,
+      "unpackedBytes": 9980383,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.2-darwin-x64.tgz",
+      "format": "npm",
+      "os": "darwin",
+      "arch": "x64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "5a75dad4db9ef8c297478990d2ceda926b4215435c0f827da499eab61fc438d8",
+      "bytes": 3683880,
+      "unpackedBytes": 9980383,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "format": "manifest",
+      "os": "darwin",
+      "arch": "x64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "c43acd6017811fb2630a804317c521ab7f6b761942cd3f4be7bbcf3dacf140bb",
+      "bytes": 92856,
+      "unpackedBytes": 9980383,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gs-0.1.0-alpha.2-darwin-x64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "x64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "3f8dc22ede9c4bec012c213ceac267277325e2bfc1658441f1dd0a9aa345f374",
+      "bytes": 5656956,
+      "unpackedBytes": 9980383,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.2-darwin-x64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "x64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "ac45217d2ccea97c58e82c5f272ebca5d60085a639d5c89dd1f71d16da29aebb",
+      "bytes": 1388112,
+      "unpackedBytes": 9980383,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.2-darwin-x64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "fd47b0f2a66d35ffdcefc649a5b2f86d15c4ded7c6d09dfd9405175de8f3ae33",
+      "bytes": 25480422,
+      "unpackedBytes": 25480422,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-linux-x64.tar.gz",
+      "format": "archive",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "743d31e1283dc703f7cbeec95800187691f8cbc733a5e268f0c83dae1369a37e",
+      "bytes": 12094537,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.2-linux-x64.tgz",
+      "format": "npm",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "f6a5448279817987a16e8cab5b2a4d8096213b0134b3956d0b162f584ac2680c",
+      "bytes": 12094644,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "format": "manifest",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "bca7d5c05289f07b068ddd16487d230362d00daf196caba7a6b508ac7645f9a1",
+      "bytes": 199497,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gs-0.1.0-alpha.2-linux-x64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "101326fd126303ec051793fc228ef572c9db07973c6b41a3195ad2e2eb00d9dd",
+      "bytes": 6531544,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.2-linux-x64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "04a5e09eb1f3b51865d7087560d749665d582f1bf713086ee8e8f4d400a7512a",
+      "bytes": 22087920,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.2-1_amd64.deb",
+      "format": "deb",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0~alpha.2-1",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "56663d11b0e26e82ddad26d4264c857131e60f5cd037f01bd2c9786481979694",
+      "bytes": 9398664,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.2.1.x86_64.rpm",
+      "format": "rpm",
+      "os": "linux",
+      "arch": "x64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-0.alpha.2.1",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "9ad65489e3b1f2fe1388887f91c66bef923b06b55cb72dce1a107eefac2df63f",
+      "bytes": 12219534,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-x64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.2-linux-x64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "948888a9255ad6df4560f5ff6402e80bd8ecff13b7132d2d861db29a0502656b",
+      "bytes": 92484154,
+      "unpackedBytes": 92484154,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.2-linux-x64.tar.gz",
+      "format": "relink",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "49bc9c42e4bd9e60c481a81cd77aa1d8f54ed626cb8e11567f08ce2e020da426",
+      "bytes": 27791989,
+      "unpackedBytes": 27791989,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-linux-arm64.tar.gz",
+      "format": "archive",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "4692b7f368aafdee2c69eed94f460cab5299b56b33dd7b7061076b49e5fb9c51",
+      "bytes": 11870889,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.2-linux-arm64.tgz",
+      "format": "npm",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "39698fdc89579f0b68200489186254b0178d644eae4f5ffbcab1afa8b5c36cd0",
+      "bytes": 11870963,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "format": "manifest",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "706258f5ffa1654eefb61e287cf1c31f256989cb9c618cfebd4c1e90b944f5ad",
+      "bytes": 199030,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gs-0.1.0-alpha.2-linux-arm64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "32b4d5bb840686f593cb4d6785ee72c8103d1280bc1c2af2fbf9e0266e203b61",
+      "bytes": 5983816,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.2-linux-arm64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "620aec6835f0268d5da94267da5610793bb5197d611d1311251ca472e391b4f4",
+      "bytes": 22409424,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.2-1_arm64.deb",
+      "format": "deb",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0~alpha.2-1",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "0bc9ec48fb9adc81d53c76c5bc1a54c19ecf193ab22eeb6467ee1387115c950c",
+      "bytes": 9193170,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.2.1.aarch64.rpm",
+      "format": "rpm",
+      "os": "linux",
+      "arch": "arm64",
+      "abiFloor": "glibc 2.39; per-format dependency closure must pass",
+      "packageVersion": "0.1.0-0.alpha.2.1",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "0fcbfca15246000782b86ba82b1208100f4ed85d74c7ecc52b86f6512eaf2c52",
+      "bytes": 11995721,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.2-linux-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.2-linux-arm64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "6e4b5a9559fd2d03860524628841a1d08ebc1e96d757e457a7734f012ce602a6",
+      "bytes": 92465821,
+      "unpackedBytes": 92465821,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.2-linux-arm64.tar.gz",
+      "format": "relink",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "93f63ffbb990b3686d2f1c945068fc35472e7a391d7a92677d275377a6257e25",
+      "bytes": 28579020,
+      "unpackedBytes": 28579020,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-darwin-arm64.tar.gz",
+      "format": "archive",
+      "os": "darwin",
+      "arch": "arm64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "8483aa0403911d136b8959f87da0530e9c7c2c259b65b4488a2f24e8b7c84f97",
+      "bytes": 3528860,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.2-darwin-arm64.tgz",
+      "format": "npm",
+      "os": "darwin",
+      "arch": "arm64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "395af4cf3f59c45da74cc9c619e343af22591d67f5f6fb311cdd3f120789f71c",
+      "bytes": 3529115,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "format": "manifest",
+      "os": "darwin",
+      "arch": "arm64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "8db921b6892ef69d870ae41b0a46e1770663842a2d7fb9147619dd58ac06c831",
+      "bytes": 92353,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gs-0.1.0-alpha.2-darwin-arm64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "arm64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "54421856af85eca3330a8da3577c0380bc2709e92a0160d5f682a9859a25c0e1",
+      "bytes": 5354512,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.2-darwin-arm64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "arm64",
+      "abiFloor": "macOS 15",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "56a1ec66575337c26a0f822537fc3c942152a4feb1ecd59c1573011be7e2aaf5",
+      "bytes": 1378296,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.2-darwin-arm64.install.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.2-darwin-arm64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "6fbb9a01f03185306b9a777b726b5ef6954e2704e590a11107cdc46b2f20d312",
+      "bytes": 25486852,
+      "unpackedBytes": 25486852,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "gitstore.rb",
+      "format": "formula",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "13acd40a65f145c9d39b8a92832718c1d556266c728f4ba07ff911d731638776",
+      "bytes": 2165,
+      "unpackedBytes": 2165,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "release-inventory.json",
+      "format": "manifest",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "d42cb51f794d3612aaeac712d0cf19922b9173da5afacc8c9ec2a1facddc43fd",
+      "bytes": 19160,
+      "unpackedBytes": 19160,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    },
+    {
+      "filename": "SHA256SUMS",
+      "format": "checksums",
+      "os": "any",
+      "arch": "any",
+      "abiFloor": "not executable",
+      "packageVersion": "0.1.0-alpha.2",
+      "applicationVersion": "0.1.0-alpha.2",
+      "sourceRevision": "a23407463cabb3a309e713a7e291380aa8dacdd7",
+      "sha256": "77939d20bb02fe65b36740dfb68894bc13ecbc4b49d3fc86506b38f7ca0bde4a",
+      "bytes": 3366,
+      "unpackedBytes": 3366,
+      "installInventory": "release-inventory.json",
+      "bundle": null,
+      "receipt": null
+    }
+  ],
+  "passedReceipts": [
+    {
+      "artifact": "qualification-macos15-arm64",
+      "filename": "darwin-arm64-macos-15-archive.json",
+      "sha256": "0c172caed11c5aa7a915998407b2d6b2d5d17b034929585232587b8f5a0c0a1b",
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "archive"
+      ],
+      "performance": {
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 13.061,
+            "minimumMilliseconds": 6.709,
+            "maximumMilliseconds": 21.787
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 13.853,
+            "minimumMilliseconds": 6.262,
+            "maximumMilliseconds": 16.875
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 6.79,
+            "minimumMilliseconds": 2.983,
+            "maximumMilliseconds": 7.207
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 6.836,
+            "minimumMilliseconds": 3.022,
+            "maximumMilliseconds": 9.17
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "54421856af85eca3330a8da3577c0380bc2709e92a0160d5f682a9859a25c0e1",
+            "bytes": 5354512
+          },
+          "gitstored": {
+            "sha256": "56a1ec66575337c26a0f822537fc3c942152a4feb1ecd59c1573011be7e2aaf5",
+            "bytes": 1378296
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    },
+    {
+      "artifact": "qualification-macos15-arm64",
+      "filename": "darwin-arm64-macos-15-homebrew.json",
+      "sha256": "12e05b537cf3d20273461bacf9a563cc0d9b4badad561a390baaf348f098156f",
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "homebrew"
+      ],
+      "performance": {
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 13.061,
+            "minimumMilliseconds": 6.709,
+            "maximumMilliseconds": 21.787
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 13.853,
+            "minimumMilliseconds": 6.262,
+            "maximumMilliseconds": 16.875
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 6.79,
+            "minimumMilliseconds": 2.983,
+            "maximumMilliseconds": 7.207
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 6.836,
+            "minimumMilliseconds": 3.022,
+            "maximumMilliseconds": 9.17
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "54421856af85eca3330a8da3577c0380bc2709e92a0160d5f682a9859a25c0e1",
+            "bytes": 5354512
+          },
+          "gitstored": {
+            "sha256": "56a1ec66575337c26a0f822537fc3c942152a4feb1ecd59c1573011be7e2aaf5",
+            "bytes": 1378296
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    },
+    {
+      "artifact": "qualification-macos15-arm64",
+      "filename": "darwin-arm64-macos-15-npm.json",
+      "sha256": "cc54c18341976d54299f590afa1a3dfa6b4819ffa5b1bf00365597c6141b5b58",
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "npm"
+      ],
+      "performance": {
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 13.061,
+            "minimumMilliseconds": 6.709,
+            "maximumMilliseconds": 21.787
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 13.853,
+            "minimumMilliseconds": 6.262,
+            "maximumMilliseconds": 16.875
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 6.79,
+            "minimumMilliseconds": 2.983,
+            "maximumMilliseconds": 7.207
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 6.836,
+            "minimumMilliseconds": 3.022,
+            "maximumMilliseconds": 9.17
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "54421856af85eca3330a8da3577c0380bc2709e92a0160d5f682a9859a25c0e1",
+            "bytes": 5354512
+          },
+          "gitstored": {
+            "sha256": "56a1ec66575337c26a0f822537fc3c942152a4feb1ecd59c1573011be7e2aaf5",
+            "bytes": 1378296
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    },
+    {
+      "artifact": "qualification-macos15-x64",
+      "filename": "darwin-x64-macos-15-intel-archive.json",
+      "sha256": "245ad69e4886d09ee329b7a5fa57ef38a5276b6d4cae22eb138118179c642358",
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "archive"
+      ],
+      "performance": {
+        "host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "machine": "x86_64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 32.869,
+            "minimumMilliseconds": 14.092,
+            "maximumMilliseconds": 71.859
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 19.491,
+            "minimumMilliseconds": 14.827,
+            "maximumMilliseconds": 20.959
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 17.37,
+            "minimumMilliseconds": 6.887,
+            "maximumMilliseconds": 66.191
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 9.631,
+            "minimumMilliseconds": 6.096,
+            "maximumMilliseconds": 10.834
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "3f8dc22ede9c4bec012c213ceac267277325e2bfc1658441f1dd0a9aa345f374",
+            "bytes": 5656956
+          },
+          "gitstored": {
+            "sha256": "ac45217d2ccea97c58e82c5f272ebca5d60085a639d5c89dd1f71d16da29aebb",
+            "bytes": 1388112
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    },
+    {
+      "artifact": "qualification-macos15-x64",
+      "filename": "darwin-x64-macos-15-intel-homebrew.json",
+      "sha256": "5fdf3a42d67b471ae6c04612c1a68ecc2175606558743d188fcdf5889bb5944d",
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "homebrew"
+      ],
+      "performance": {
+        "host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "machine": "x86_64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 32.869,
+            "minimumMilliseconds": 14.092,
+            "maximumMilliseconds": 71.859
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 19.491,
+            "minimumMilliseconds": 14.827,
+            "maximumMilliseconds": 20.959
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 17.37,
+            "minimumMilliseconds": 6.887,
+            "maximumMilliseconds": 66.191
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 9.631,
+            "minimumMilliseconds": 6.096,
+            "maximumMilliseconds": 10.834
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "3f8dc22ede9c4bec012c213ceac267277325e2bfc1658441f1dd0a9aa345f374",
+            "bytes": 5656956
+          },
+          "gitstored": {
+            "sha256": "ac45217d2ccea97c58e82c5f272ebca5d60085a639d5c89dd1f71d16da29aebb",
+            "bytes": 1388112
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    },
+    {
+      "artifact": "qualification-macos15-x64",
+      "filename": "darwin-x64-macos-15-intel-npm.json",
+      "sha256": "72b4f1c166892cfadafaa84d87acf96be44e793f3b042d29eef145cd2540fd32",
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "npm"
+      ],
+      "performance": {
+        "host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "machine": "x86_64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 32.869,
+            "minimumMilliseconds": 14.092,
+            "maximumMilliseconds": 71.859
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 19.491,
+            "minimumMilliseconds": 14.827,
+            "maximumMilliseconds": 20.959
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 17.37,
+            "minimumMilliseconds": 6.887,
+            "maximumMilliseconds": 66.191
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 9.631,
+            "minimumMilliseconds": 6.096,
+            "maximumMilliseconds": 10.834
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "3f8dc22ede9c4bec012c213ceac267277325e2bfc1658441f1dd0a9aa345f374",
+            "bytes": 5656956
+          },
+          "gitstored": {
+            "sha256": "ac45217d2ccea97c58e82c5f272ebca5d60085a639d5c89dd1f71d16da29aebb",
+            "bytes": 1388112
+          }
+        }
+      },
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ]
+    }
+  ],
+  "limitations": [
+    "Only six macOS selections passed; Linux qualification incomplete.",
+    "No tag-bound release attestation or producer verification has run.",
+    "No publication approval requested and no assets published."
+  ]
+}

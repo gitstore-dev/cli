@@ -1,5 +1,58 @@
 # Alpha.1 implementation evidence
 
+## Alpha.2 frozen candidate and first qualification — 2026-11-10
+
+The maintainer merged [proposal #15](https://github.com/gitstore-dev/cli/pull/15)
+at `a23407463cabb3a309e713a7e291380aa8dacdd7`.
+[Release Please 42804184989](https://github.com/gitstore-dev/cli/actions/runs/42804184989)
+created the exact `v0.1.0-alpha.2` tag and empty draft.
+[Candidate build 42804211944](https://github.com/gitstore-dev/cli/actions/runs/42804211944)
+passed all four platform/package/replacement rows and final assembly. The producer
+toolchain repair is therefore exercised by an actual successful trusted tag build.
+
+The frozen candidate was downloaded and all 33 final subjects (468,850,814 bytes)
+validated locally: every subject SHA-256/size, SHA256SUMS, required matrix and
+loose-executable/install-inventory identities match. Inventory SHA-256:
+`d42cb51f794d3612aaeac712d0cf19922b9173da5afacc8c9ec2a1facddc43fd`;
+SHA256SUMS SHA-256:
+`77939d20bb02fe65b36740dfb68894bc13ecbc4b49d3fc86506b38f7ca0bde4a`.
+Formats cover archives, loose binaries, Debian/RPM/npm, formula, inventories,
+checksums and corresponding-source/relink assets. This is packaged-byte review,
+not signed or fully qualified release support.
+
+[Qualification 42806007675](https://github.com/gitstore-dev/cli/actions/runs/42806007675)
+passed all three selected channels on both macOS architectures: **6/22 selections**.
+The six receipts all bind the exact tag/source and identical 33-subject hash map.
+[Partial review](alpha2-qualification-review.json) retains those hashes, receipt
+identities, executed operations and performance evidence without claiming a
+complete qualification matrix.
+
+Both Fedora jobs failed before product installation: the old pinned Quay base
+manifest was unavailable, also confirmed by an independent exact-digest lookup.
+The reviewed replacement Fedora 44 index is
+`sha256:17c99e30075386f9385685a22ad1924e2c22faee5863272c0379c81b80b9d258`;
+it includes both Linux architectures. Fresh development-only Docker image builds
+with that exact base and every qualification prerequisite passed on arm64 and
+amd64. No product/native workload qualification is inferred from those builds.
+
+Ubuntu arm64 prepared its UID-11000 fixture but Git clone/index-pack failed from
+an inherited runner working directory that the fixture user cannot traverse.
+Setup and the inner harness now explicitly use the fixture account directory;
+Fedora exec selects that directory too. A real public-bundle regression first
+observes clone failure from a mode-000 runner parent, then clones/checks out the
+same immutable commit successfully through the repaired setup. No runner
+checkout permissions, source/tag/byte checks or UID isolation are relaxed.
+
+Local validation: 91 package-policy cases pass (seven explicit fixture skips),
+all 29 release-policy cases pass with Release Please 17.3.0, workflow lint and
+local link/whitespace checks pass. The Ubuntu x64 job was still preparing fixture
+tooling at this checkpoint; no result is invented for it. Remaining original
+jobs are retained. Both alpha tags/drafts stay unchanged and unpublished.
+T038/T039/T064 remain open: the exact-source policy requires a new reviewed
+candidate after fixture source changes, full six-host/22-selection acceptance,
+then actual signing, producer verification and final readiness review. No
+promotion or publication-environment approval has been requested.
+
 ## Alpha.2 proposal handoff — 2026-11-10
 
 The maintainer queued [repair #14](https://github.com/gitstore-dev/cli/pull/14).

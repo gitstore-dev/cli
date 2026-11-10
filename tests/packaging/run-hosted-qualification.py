@@ -31,6 +31,13 @@ def host_selection(environment,system,machine,uid):
     return arch
 
 
+def run_fixture_setup(user,commands,account):
+    # The fixture UID cannot traverse the runner checkout. Git subprocesses
+    # (including index-pack) must inherit an accessible fixture-owned cwd.
+    for command in commands:
+        subprocess.run([*user,*command],cwd=account,check=True,timeout=240)
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('candidate','controls','output'):p.add_argument('--'+name,type=Path,required=True)
@@ -114,8 +121,8 @@ def main():
         subprocess.run(['sudo','chown','-Rh','11000:11000',account+'/qualification-input'],check=True)
         subprocess.run(['sudo','install','-m','440',str(sudoers_file),'/etc/sudoers.d/gitstore-qualification'],check=True)
         user=['sudo','-u','gitstorefixture','env','-i','PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME='+account,'LANG=C']
-        for command in setup:subprocess.run([*user,*command],check=True,timeout=240)
-        subprocess.run([*user,*[name+'='+value for name,value in metadata.items()],*inner],check=True,timeout=5400)
+        run_fixture_setup(user,setup,account)
+        subprocess.run([*user,*[name+'='+value for name,value in metadata.items()],*inner],cwd=account,check=True,timeout=5400)
         subprocess.run(['sudo','cp','-a',account+'/qualification-receipts',str(args.output/'receipts')],check=True)
         subprocess.run(['sudo','chown','-Rh',str(os.geteuid())+':'+str(os.getegid()),str(args.output/'receipts')],check=True)
         return
@@ -153,7 +160,7 @@ def main():
         docker('cp',str(public),name+':'+account+'/qualification-input')
         docker('exec',name,'chown','-Rh','11000:11000',account+'/qualification-input')
         docker('exec',name,'install','-m','440',account+'/qualification-input/sudoers','/etc/sudoers.d/gitstore-qualification')
-        user=['exec','--user','11000:11000',name,'env','-i','PATH=/usr/bin:/bin:/usr/sbin:/sbin','HOME='+account,'LANG=C']
+        user=['exec','--workdir',account,'--user','11000:11000',name,'env','-i','PATH=/usr/bin:/bin:/usr/sbin:/sbin','HOME='+account,'LANG=C']
         for command in setup:docker(*user,*command,timeout=300)
         docker(*user,*[key+'='+value for key,value in metadata.items()],*inner,timeout=5400)
         docker('cp',name+':'+account+'/qualification-receipts',str(args.output/'receipts'))
