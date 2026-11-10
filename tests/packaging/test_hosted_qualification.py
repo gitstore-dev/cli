@@ -43,11 +43,16 @@ class HostedQualification(unittest.TestCase):
                 broken=subprocess.run([*user,'git','clone','--no-checkout',str(bundle),str(account/'broken')],
                     capture_output=True,timeout=15)
                 self.assertNotEqual(broken.returncode,0)
-                outer.run_fixture_setup(user,[
+                # Model a private target home that becomes accessible only
+                # after the user prefix (sudo in the real fixture) executes.
+                account.chmod(0)
+                transition=[*user,'sh','-c','chmod 700 "$1"; shift; exec "$@"',
+                    'fixture-user-transition',str(account)]
+                outer.run_fixture_setup(transition,[
                     ['git','clone','--no-checkout',str(bundle),str(account/'source')],
                     ['git','-C',str(account/'source'),'checkout','--detach',revision]],str(account))
             finally:
-                runner.chmod(0o700);os.chdir(previous)
+                account.chmod(0o700);runner.chmod(0o700);os.chdir(previous)
             self.assertEqual(git('rev-parse','HEAD',cwd=account/'source').decode().strip(),revision)
 
     def environment(self):

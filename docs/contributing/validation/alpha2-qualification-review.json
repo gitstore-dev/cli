@@ -912,5 +912,29 @@
     "Only six macOS selections passed; Linux qualification incomplete.",
     "No tag-bound release attestation or producer verification has run.",
     "No publication approval requested and no assets published."
+  ],
+  "qualificationConclusion": "failure",
+  "blockedSelections": 16,
+  "failedFixtureHosts": [
+    {
+      "host": "ubuntu:24.04",
+      "arch": "x64",
+      "reason": "Inherited runner working directory inaccessible to fixture UID"
+    },
+    {
+      "host": "ubuntu:24.04",
+      "arch": "arm64",
+      "reason": "Inherited runner working directory inaccessible to fixture UID"
+    },
+    {
+      "host": "fedora:44",
+      "arch": "x64",
+      "reason": "Pinned Quay image manifest unavailable"
+    },
+    {
+      "host": "fedora:44",
+      "arch": "arm64",
+      "reason": "Pinned Quay image manifest unavailable"
+    }
   ]
 }

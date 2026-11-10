@@ -31,11 +31,12 @@ def host_selection(environment,system,machine,uid):
     return arch
 
 
-def run_fixture_setup(user,commands,account):
-    # The fixture UID cannot traverse the runner checkout. Git subprocesses
-    # (including index-pack) must inherit an accessible fixture-owned cwd.
+def run_fixture_setup(user,commands,account,timeout=240):
+    # Start outside the private runner checkout, switch UID through the user
+    # prefix, then enter its private home. The runner cannot chdir there first.
     for command in commands:
-        subprocess.run([*user,*command],cwd=account,check=True,timeout=240)
+        subprocess.run([*user,'sh','-c','cd "$1" && shift && exec "$@"',
+            'gitstore-fixture',account,*command],cwd='/',check=True,timeout=timeout)
 
 
 def main():
@@ -122,7 +123,7 @@ def main():
         subprocess.run(['sudo','install','-m','440',str(sudoers_file),'/etc/sudoers.d/gitstore-qualification'],check=True)
         user=['sudo','-u','gitstorefixture','env','-i','PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin','HOME='+account,'LANG=C']
         run_fixture_setup(user,setup,account)
-        subprocess.run([*user,*[name+'='+value for name,value in metadata.items()],*inner],cwd=account,check=True,timeout=5400)
+        run_fixture_setup(user,[['env',*[name+'='+value for name,value in metadata.items()],*inner]],account,timeout=5400)
         subprocess.run(['sudo','cp','-a',account+'/qualification-receipts',str(args.output/'receipts')],check=True)
         subprocess.run(['sudo','chown','-Rh',str(os.geteuid())+':'+str(os.getegid()),str(args.output/'receipts')],check=True)
         return

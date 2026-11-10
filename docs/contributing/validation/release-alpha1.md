@@ -35,19 +35,26 @@ it includes both Linux architectures. Fresh development-only Docker image builds
 with that exact base and every qualification prerequisite passed on arm64 and
 amd64. No product/native workload qualification is inferred from those builds.
 
-Ubuntu arm64 prepared its UID-11000 fixture but Git clone/index-pack failed from
+Both Ubuntu architectures prepared their UID-11000 fixtures but Git clone/index-pack failed from
 an inherited runner working directory that the fixture user cannot traverse.
-Setup and the inner harness now explicitly use the fixture account directory;
-Fedora exec selects that directory too. A real public-bundle regression first
+Setup and the inner harness start from `/`, switch UID through sudo, then
+enter the fixture account directory. The caller cannot chdir into that private
+home before the UID transition. Fedora exec selects that directory too. A real public-bundle regression first
 observes clone failure from a mode-000 runner parent, then clones/checks out the
-same immutable commit successfully through the repaired setup. No runner
+same immutable commit successfully through the repaired setup. It also models
+a target home that becomes accessible only after the user prefix executes. A
+separate network-isolated, unprivileged Fedora container proved the real
+UID-1001 → UID-11000 transition: the caller could not traverse the fixture home,
+but public-bundle clone, detached checkout and the inner command all passed
+inside that private home. The owned labeled probe container was removed.
+No runner
 checkout permissions, source/tag/byte checks or UID isolation are relaxed.
 
-Local validation: 91 package-policy cases pass (seven explicit fixture skips),
+Local validation: 91 package-policy cases (84 passed, seven explicit fixture skips),
 all 29 release-policy cases pass with Release Please 17.3.0, workflow lint and
-local link/whitespace checks pass. The Ubuntu x64 job was still preparing fixture
-tooling at this checkpoint; no result is invented for it. Remaining original
-jobs are retained. Both alpha tags/drafts stay unchanged and unpublished.
+local link/whitespace checks pass. Qualification finished unsuccessfully with
+the four Linux fixture failures above; the collector correctly emitted no
+complete release-qualification artifact. All original jobs are retained. Both alpha tags/drafts stay unchanged and unpublished.
 T038/T039/T064 remain open: the exact-source policy requires a new reviewed
 candidate after fixture source changes, full six-host/22-selection acceptance,
 then actual signing, producer verification and final readiness review. No
