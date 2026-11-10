@@ -79,7 +79,19 @@ def inside(args):
         '--fixture-parent',str(parent),'--replacement',str(next_artifact),
         '--replacement-sha256',hashlib.sha256(next_artifact.read_bytes()).hexdigest(),
         '--replacement-version',replacement]
-    module('package_runner', ROOT/'tests/packaging/run.py').main()
+    runner = module('package_runner', ROOT/'tests/packaging/run.py')
+    original_owned_file = runner.owned_file
+    def inspect_owned_file(path, executable=False):
+        try:
+            return original_owned_file(path, executable=executable)
+        except ValueError:
+            info = Path(path).lstat()
+            print('DIAGNOSTIC file identity:', json.dumps(dict(path=str(path),
+                uid=info.st_uid, gid=info.st_gid, mode=oct(info.st_mode),
+                links=info.st_nlink, invokingUid=os.geteuid())), flush=True)
+            raise
+    runner.owned_file = inspect_owned_file
+    runner.main()
 
 
 def main():
@@ -123,6 +135,11 @@ def main():
     (context/'Containerfile').write_text((ROOT/'tests/fixtures/runtime/fedora44-native.Containerfile').read_text()+
         '\nRUN dnf -y install sudo git gcc make glibc-devel file curl bzip2 patch python3-pip python3-jsonschema /usr/bin/npm patchelf libseccomp libcap json-c libcurl openssl-libs libxcrypt && dnf clean all\n')
     name = 'gs-diagnostic-'+os.environ['GITHUB_RUN_ID']+'-'+arch
+    # The Fedora guest shares this disposable Ubuntu VM's kernel policy.
+    restriction = Path('/proc/sys/kernel/apparmor_restrict_unprivileged_userns')
+    if restriction.exists():
+        print('DIAGNOSTIC outer userns restriction:', restriction.read_text().strip(), flush=True)
+        subprocess.run(['sudo','sysctl','-w','kernel.apparmor_restrict_unprivileged_userns=0'],check=True)
     docker('build','--file',context/'Containerfile','--tag',name,context)
     docker('run','--detach','--name',name,'--label','gitstore.diagnostic='+os.environ['GITHUB_RUN_ID'],
         '--hostname','gs-cli-alpha1-fedora44-native-20261109','--privileged','--cgroupns=private','--tmpfs','/run','--tmpfs','/tmp',name)
