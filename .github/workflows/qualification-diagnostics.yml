@@ -1,0 +1,51 @@
+name: Qualification diagnostics (non-release)
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: github.event.pull_request.head.repo.id == 1431005655 && github.head_ref == 'codex/diagnose-linux-qualification'
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {case: npm, arch: arm64, runner: ubuntu-24.04-arm}
+          - {case: npm, arch: x64, runner: ubuntu-24.04}
+          - {case: prerequisites, arch: arm64, runner: ubuntu-24.04-arm}
+          - {case: prerequisites, arch: x64, runner: ubuntu-24.04}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Require the successful reviewed product build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check-release-run.py --run-id 42829934088 --workflow release.yml --revision 6dffa2c08223209ebfd4c0bb01757e82b8751892 --tag v0.1.0-alpha.3
+      - name: Prepare isolated fixture tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-venv nodejs npm
+      - if: matrix.case == 'npm'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: platform-linux-${{ matrix.arch }}
+          run-id: 42829934088
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/diagnostic-inputs/platform
+      - if: matrix.case == 'npm'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unqualified-replacement-linux-${{ matrix.arch }}
+          run-id: 42829934088
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/diagnostic-inputs/replacement
+      - name: Replay with captured subprocess errors visible
+        run: python3 tests/packaging/diagnose-linux-qualification.py --case '${{ matrix.case }}' --inputs "$RUNNER_TEMP/diagnostic-inputs"
