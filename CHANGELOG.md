@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.4](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4) (2026-11-10)
+
+
+### Bug Fixes
+
+* **ci:** run release automation on Node 24 ([4a6be76](https://github.com/gitstore-dev/cli/commit/4a6be7677f2d1a7dd15167571b6bdec3f89b67f2))
+
 ## [0.1.0-alpha.3](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3) (2026-11-10)
 
 
