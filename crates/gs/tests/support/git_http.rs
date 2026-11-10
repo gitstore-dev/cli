@@ -17,7 +17,7 @@ pub enum Mode {
     Normal,
     Deny(u16),
     Redirect,
-    Delay,
+    Delay(Duration),
     LostResponse,
     TrailingProgress,
 }
@@ -126,7 +126,7 @@ fn handle(
             );
             return;
         }
-        Mode::Delay => std::thread::sleep(Duration::from_millis(300)),
+        Mode::Delay(duration) => std::thread::sleep(duration),
         _ => {}
     }
     let got = r
