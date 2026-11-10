@@ -84,7 +84,7 @@ jobs:
             --metadata "$RUNNER_TEMP/cli-material-metadata.json" --lockfile Cargo.lock --output "$RUNNER_TEMP/rust-material-review"
           "$RUNNER_TEMP/package-venv/bin/python" scripts/collect-native-materials.py \
             --rust-review "$RUNNER_TEMP/rust-material-review" --build-dir "$PWD/build/control" --output "$RUNNER_TEMP/material-review"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unpublished-material-review-${{ matrix.runner }}
           path: |
@@ -103,7 +103,7 @@ jobs:
         run: |
           "$RUNNER_TEMP/package-venv/bin/python" tests/packaging/check-produced-replacement.py \
             --candidate "$RUNNER_TEMP/complete-candidate" --output "$RUNNER_TEMP/replacement-checks"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unqualified-replacement-${{ matrix.runner }}
           path: |
@@ -112,7 +112,7 @@ jobs:
             ${{ runner.temp }}/replacement-checks/packages/UNQUALIFIED*
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: unpublished-production-candidate-${{ matrix.runner }}
@@ -121,7 +121,7 @@ jobs:
             ${{ runner.temp }}/produced-package-checks/measurement.json
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unpublished-control-closure-${{ matrix.runner }}
           path: build/control-pair/*.closure.json
