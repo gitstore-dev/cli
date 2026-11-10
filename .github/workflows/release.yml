@@ -73,7 +73,7 @@ jobs:
       - name: Install pinned producer tools
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
-          rustup toolchain install "$toolchain" --profile minimal
+          rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy
           python3 -m venv "$RUNNER_TEMP/release-venv"
           "$RUNNER_TEMP/release-venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           echo "$RUNNER_TEMP/release-venv/bin" >> "$GITHUB_PATH"

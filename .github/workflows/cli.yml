@@ -61,7 +61,7 @@ jobs:
           LIBZ_SYS_STATIC: '1'
         run: |
           toolchain=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
-          rustup toolchain install "$toolchain" --profile minimal
+          rustup toolchain install "$toolchain" --profile minimal --component rustfmt --component clippy
           cargo build --workspace --release --locked
           cmake -S daemon -B build/control -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DGITSTORED_TESTING=OFF
           cmake --build build/control --parallel 2

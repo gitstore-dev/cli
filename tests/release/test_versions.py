@@ -14,7 +14,7 @@ spec.loader.exec_module(bootstrap)
 
 
 class ReleaseVersions(unittest.TestCase):
-    def test_initial_identity_and_bounded_history(self):
+    def test_current_alpha_identity_and_bounded_history(self):
         config = json.loads((ROOT / 'release-please-config.json').read_text())
         self.assertEqual(config['bootstrap-sha'], 'b5c393e37b4787de0407ac3ccc1b058c067d69d8')
         self.assertLessEqual(config['commit-search-depth'], 500)
@@ -24,7 +24,7 @@ class ReleaseVersions(unittest.TestCase):
         lock = tomllib.loads((ROOT / 'Cargo.lock').read_text())
         self.assertEqual(cargo['workspace']['package']['version'], version)
         self.assertEqual(next(p['version'] for p in lock['package'] if p['name'] == 'gs'), version)
-        self.assertEqual(version, '0.1.0-alpha.1')
+        self.assertRegex(version, r'\A0\.1\.0-alpha\.[1-9][0-9]*\Z')
 
     def test_bootstrap_removed_only_in_synchronized_first_release_pr(self):
         with tempfile.TemporaryDirectory() as temporary:
