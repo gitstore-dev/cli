@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0-alpha.3](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3) (2026-11-10)
+
+
+### Bug Fixes
+
+* enter fixture home only after switching users ([46ac874](https://github.com/gitstore-dev/cli/commit/46ac874ded4211b07dcbc325106f1d30a12d4a30))
+* repair isolated Linux qualification fixtures ([9bb589a](https://github.com/gitstore-dev/cli/commit/9bb589afc90c0de15affae4e20a4a1eb03a39f9f))
+
 ## [0.1.0-alpha.2](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2) (2026-11-10)
 
 
