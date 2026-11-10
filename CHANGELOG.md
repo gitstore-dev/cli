@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.2](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* install declared Rust components before release builds ([45c22cf](https://github.com/gitstore-dev/cli/commit/45c22cf1ba5a08b58ef33a2b208b236fcbe2c8d4))
+
 ## [0.1.0-alpha.1](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.0...v0.1.0-alpha.1) (2026-11-09)
 
 
