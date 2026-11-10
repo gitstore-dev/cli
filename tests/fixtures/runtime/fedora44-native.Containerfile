@@ -1,5 +1,5 @@
-# Developer-only disposable Apple Linux VM; never an installed runtime dependency.
-FROM quay.io/fedora/fedora@sha256:526646a990bb8442f936827d98253677dd7a4c28fad33f938e32c7ffdadb72c1
+# Developer-only disposable Fedora reference fixture; never an installed runtime dependency.
+FROM quay.io/fedora/fedora@sha256:17c99e30075386f9385685a22ad1924e2c22faee5863272c0379c81b80b9d258
 RUN dnf --assumeyes install systemd dbus-broker dbus-daemon shadow-utils \
     shadow-utils-subid python3 util-linux coreutils procps-ng iproute findutils \
     ca-certificates tar gzip acl && dnf clean all

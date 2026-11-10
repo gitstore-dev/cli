@@ -59,10 +59,13 @@ operation; none is performed by local fixture tests.
 
 [Alpha.1 proposal #13](https://github.com/gitstore-dev/cli/pull/13) merged and
 created the exact tag/draft, but both candidate attempts failed on Linux toolchain
-setup. Alpha.1 is not qualified and must remain unpublished. See the
-[execution evidence](validation/release-alpha1.md). The repair requires a new
-reviewed commit and version proposal; do not move the existing tag or reuse its
-incomplete artifacts.
+setup. Alpha.1 is not qualified and must remain unpublished. Alpha.2 subsequently
+built its complete frozen candidate and passed six macOS channel selections,
+but its first qualification exposed Linux fixture failures; it also remains an
+unpublished draft. See the [execution evidence](validation/release-alpha1.md).
+Fixture source repairs require a new reviewed commit and version proposal under
+the current exact-source policy. Do not move an existing tag, reuse incomplete
+receipts, or relabel old candidate bytes as belonging to a new source.
 
 The maintainer merges a reviewed release proposal through the merge queue.
 This is the tag-creation decision: Release Please creates that version tag and
