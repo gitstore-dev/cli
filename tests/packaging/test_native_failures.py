@@ -16,7 +16,11 @@ class NativeFailures(unittest.TestCase):
         'select an actual Linux production pair and fixture patchelf tool')
     def test_missing_native_library_fails_before_runtime_state(self):
         pair = Path(os.environ['GITSTORE_PACKAGE_PAIR'])
-        with tempfile.TemporaryDirectory() as directory:
+        fixture = os.environ.get('GITSTORE_RUNTIME_FIXTURE')
+        parent = Path(json.loads(Path(fixture).read_text())['fixtureParent']) if fixture else None
+        # Fedora's system temporary directory may be mounted noexec. Keep the
+        # copied negative-control binary in the explicitly selected fixture.
+        with tempfile.TemporaryDirectory(prefix='ld-', dir=parent) as directory:
             root = Path(directory).resolve()
             daemon = root/'gitstored'
             shutil.copyfile(pair/'gitstored', daemon)
@@ -39,7 +43,9 @@ class NativeFailures(unittest.TestCase):
         self.assertIs(fixture['dedicatedTestAccount'], True)
         self.assertEqual(fixture['disposableUid'], os.geteuid())
         parent = Path(fixture['fixtureParent'])
-        root = Path(tempfile.mkdtemp(prefix='package-version-refusal-',dir=parent))
+        # Qualification nests this fixture beneath its cold-start workspace.
+        # Keep the client socket pathname within Linux's 108-byte sun_path.
+        root = Path(tempfile.mkdtemp(prefix='v-',dir=parent))
         root.chmod(0o700)
         env = {'PATH':'/nonexistent','LANG':'C'}
         for name,variable in [('home','HOME'),('runtime','XDG_RUNTIME_DIR'),('state','XDG_STATE_HOME'),
