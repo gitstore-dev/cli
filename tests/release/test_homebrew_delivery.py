@@ -26,6 +26,7 @@ class API:
         self.fail = None
         self.comparison = 'identical'
         self.mode = '100644'
+        self.main_mode = '100644'
 
     def __call__(self, endpoint, *, method='GET', payload=None, missing=False):
         path = urlsplit(endpoint).path
@@ -43,7 +44,7 @@ class API:
         if path.startswith('git/commits/'):
             return dict(tree=dict(sha='c' * 40))
         if path.startswith('git/trees/'):
-            return dict(truncated=False, tree=[dict(path='Formula/gitstore.rb', type='blob', mode=self.mode)])
+            return dict(truncated=False, tree=[dict(path='Formula/gitstore.rb', type='blob', mode=self.main_mode if path.startswith('git/trees/'+'c'*40) else self.mode)])
         if path == 'git/trees':
             self.payload = payload['tree'][0]['content'].encode()
             return dict(sha='d' * 40)
@@ -106,6 +107,14 @@ class HomebrewDelivery(unittest.TestCase):
     def test_matching_main_formula_needs_no_branch_or_pr(self):
         self.api.main_payload = self.payload
         self.assertEqual(self.propose(), dict(status='current'))
+        self.assertFalse(self.api.writes)
+
+    def test_matching_main_content_cannot_hide_a_symlink_or_executable_mode(self):
+        self.api.main_payload = self.payload
+        for mode in ['120000', '100755']:
+            with self.subTest(mode=mode):
+                self.api.main_mode = mode
+                with self.assertRaises(ValueError):self.propose()
         self.assertFalse(self.api.writes)
 
     def test_refuses_modified_branch_extra_files_changed_base_and_closed_pr(self):

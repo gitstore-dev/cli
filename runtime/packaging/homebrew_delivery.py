@@ -23,9 +23,16 @@ def propose(api, repository, tag, payload):
             raise ValueError('tap formula is not an ordinary file')
         return base64.b64decode(result['content'], validate=False)
 
+    def ordinary_tree(tree_sha):
+        tree = api('git/trees/' + tree_sha + '?recursive=1')
+        entries = [entry for entry in tree['tree'] if entry['path'] == PATH]
+        if tree.get('truncated') or len(entries) != 1 or entries[0]['type'] != 'blob' or entries[0]['mode'] != '100644':
+            raise ValueError('tap formula mode/type changed')
+
     main = api('git/ref/heads/main')['object']['sha']
     current = formula(main)
     if current == payload:
+        ordinary_tree(api('git/commits/' + main)['tree']['sha'])
         return dict(status='current')
     reference = api('git/ref/heads/' + branch, missing=True)
     if reference is None:
@@ -43,10 +50,7 @@ def propose(api, repository, tag, payload):
             or files[0].get('filename') != PATH or files[0].get('status') not in ('added', 'modified')
             or files[0].get('previous_filename') or formula(head) != payload):
         raise ValueError('tap branch changed; preserve it for maintainer review')
-    tree = api('git/trees/' + commit['commit']['tree']['sha'] + '?recursive=1')
-    entries = [entry for entry in tree['tree'] if entry['path'] == PATH]
-    if tree.get('truncated') or len(entries) != 1 or entries[0]['type'] != 'blob' or entries[0]['mode'] != '100644':
-        raise ValueError('tap branch formula mode/type changed')
+    ordinary_tree(commit['commit']['tree']['sha'])
     parent = parents[0]['sha']
     comparison = api('compare/' + parent + '...' + main)
     if comparison['status'] not in ('identical', 'ahead') or formula(parent) != current:
