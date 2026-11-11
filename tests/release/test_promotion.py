@@ -228,6 +228,18 @@ class Promotion(unittest.TestCase):
             self.assertTrue(backend.draft)
             self.assertEqual(backend.promotions, 0)
 
+    def test_pending_formula_pr_is_reported_separately_from_publication(self):
+        class Pending(Draft):
+            def update_tap(self, tag, payload):
+                super().update_tap(tag,payload)
+                return dict(status='pending',pullRequest='https://github.com/gitstore-dev/cli/pull/123')
+        backend=Pending()
+        result=publication.publish(self.verified_fixture(),self.root,backend,update_tap=True)
+        self.assertTrue(result['published'])
+        self.assertEqual(result['tap']['status'],'pending')
+        self.assertFalse(backend.draft)
+        self.assertEqual(backend.promotions,1)
+
     def test_tap_only_after_promotion_and_retry_after_tap_failure(self):
         value = self.verified_fixture()
         backend = Draft()

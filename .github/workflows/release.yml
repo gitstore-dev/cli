@@ -288,9 +288,20 @@ jobs:
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
           "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
-      - name: Reverify current bytes, resume matching draft, promote, then update tap
+      - name: Create repository-scoped App token for the formula PR
+        id: tap-app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          owner: gitstore-dev
+          repositories: cli
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Reverify, publish, then propose the protected-branch tap update
         env:
           GH_TOKEN: ${{ github.token }}
+          GITSTORE_TAP_TOKEN: ${{ steps.tap-app.outputs.token }}
         run: |
           chmod 700 candidate
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"

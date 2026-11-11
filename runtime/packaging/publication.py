@@ -41,7 +41,6 @@ def publish(value, root, backend, *, update_tap=False):
     observed = backend.inspect()
     if observed['draft'] or observed['assets'] != assets or not observed['body'].startswith(DISCLAIMER + '\n\n'):
         raise ValueError('release promotion was not observed')
-    if update_tap:
-        backend.update_tap(value['tag'], assets['gitstore.rb'])
-    return dict(tag=value['tag'], revision=value['sourceRevision'], published=True,
+    tap = backend.update_tap(value['tag'], assets['gitstore.rb']) if update_tap else None
+    return dict(tag=value['tag'], revision=value['sourceRevision'], published=True, tap=tap,
                 assets={n: hashlib.sha256(b).hexdigest() for n, b in assets.items()})

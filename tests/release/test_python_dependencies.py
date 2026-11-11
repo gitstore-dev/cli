@@ -30,10 +30,13 @@ class PublicationDependencies(unittest.TestCase):
             if 'pip" install' in step:
                 installations+=1
                 self.assertNotIn('GH_TOKEN',step)
+                self.assertNotIn('GITSTORE_TAP_TOKEN',step)
                 self.assertIn('--require-hashes --only-binary=:all: -r packaging/requirements.txt',step)
             if 'GH_TOKEN: ${{ github.token }}' in step:
                 write_steps+=1
                 self.assertNotIn('pip" install',step)
+        self.assertLess(workflow.index('--require-hashes'),workflow.index('id: tap-app'))
+        self.assertIn('permission-pull-requests: write',workflow)
         self.assertEqual(installations,1)
         self.assertEqual(write_steps,1)
 
