@@ -35,10 +35,11 @@ def run_check(name, command, workspace, environment):
             subprocess.run(command, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
                 stdout=log, stderr=subprocess.STDOUT, check=True, timeout=1800)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        # These checks use public package files and empty synthetic config only.
+        # These package and startup controls use public files and empty synthetic config only.
         # Native workload logs can contain ephemeral credentials and stay private.
         public = {'package-archive', 'package-npm', 'package-deb', 'package-rpm',
-            'package-homebrew', 'native-prerequisites', 'closure-gs', 'closure-gitstored'}
+            'package-homebrew', 'native-prerequisites', 'closure-gs', 'closure-gitstored',
+            'test_native_autostart.py', 'test_native_failures.py'}
         if name in public:
             with path.open('rb') as log:
                 log.seek(0, os.SEEK_END)

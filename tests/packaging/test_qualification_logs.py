@@ -29,6 +29,17 @@ class QualificationLogs(unittest.TestCase):
             self.assertLess(len(output), 16500)
             self.assertIn('early output', (root / 'package-npm.log').read_text())
 
+    def test_native_control_failure_exposes_the_test_assertion(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ['test_native_autostart.py', 'test_native_failures.py']:
+                with self.subTest(name=name):
+                    stderr = io.StringIO()
+                    command = [sys.executable, '-c', "import sys; print('synthetic control assertion'); sys.exit(1)"]
+                    with redirect_stderr(stderr), self.assertRaises(subprocess.CalledProcessError):
+                        qualification.run_check(name, command, root, {'LANG': 'C'})
+                    self.assertIn('synthetic control assertion', stderr.getvalue())
+
     def test_native_workload_failure_keeps_its_output_private(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
