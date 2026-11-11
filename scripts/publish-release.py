@@ -5,7 +5,6 @@ Requires a previously created reviewed tag/draft. Never creates tags or releases
 never replaces assets. Workflow concurrency must serialize this tag remotely.
 """
 import argparse
-import base64
 import fcntl
 import json
 import os
@@ -17,6 +16,7 @@ import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime/packaging'))
 from publication import publish
+from homebrew_delivery import propose as propose_tap
 from release_candidate import advance, safe_name
 from release_verification import REPOSITORY
 
@@ -75,20 +75,23 @@ class GitHub:
         current = next((r for r in releases if not r['draft'] and r['prerelease']), None)
         if current is None or current['tag_name'] != tag:
             raise ValueError('refusing to move the tap to an older prerelease')
-        # The directory README ensures the API parent exists. A missing formula
-        # is expected for alpha.1; distinguish only the explicit 404 response.
-        endpoint = f'repos/{REPOSITORY}/contents/Formula/gitstore.rb'
-        reply = subprocess.run(['gh', 'api', endpoint + '?ref=main'], capture_output=True, timeout=60)
-        body = dict(message=f'chore: update Homebrew formula for {tag}', branch='main',
-                    content=base64.b64encode(payload).decode())
-        if reply.returncode == 0:
-            existing = json.loads(reply.stdout)
-            if base64.b64decode(existing['content']) == payload:
-                return
-            body['sha'] = existing['sha']
-        elif b'(HTTP 404)' not in reply.stderr:
-            raise RuntimeError('could not inspect tap; release remains published, retry tap update separately')
-        self.gh('api', endpoint, '--method', 'PUT', '--input', '-', payload=json.dumps(body).encode())
+        return propose_tap(self.tap_api, REPOSITORY, tag, payload)
+
+    def tap_api(self, endpoint, *, method='GET', payload=None, missing=False):
+        token = os.environ.get('GITSTORE_TAP_TOKEN')
+        if not token:
+            raise ValueError('select the repository-scoped App token for tap proposals')
+        arguments = ['gh', 'api', f'repos/{REPOSITORY}/{endpoint}', '--method', method]
+        if payload is not None:
+            arguments += ['--input', '-']
+        result = subprocess.run(arguments, input=json.dumps(payload).encode() if payload is not None else None,
+            capture_output=True, timeout=120, env={**os.environ, 'GH_TOKEN': token, 'GH_HOST': 'github.com', 'GH_PROMPT_DISABLED': '1'})
+        if result.returncode:
+            if missing and b'(HTTP 404)' in result.stderr:
+                return None
+            raise RuntimeError('tap proposal failed; release remains published, inspect before retry')
+        return json.loads(result.stdout)
+
 
 
 def main():
@@ -98,6 +101,8 @@ def main():
     parser.add_argument('--trusted-root', required=True, type=Path)
     parser.add_argument('--update-tap', action='store_true')
     args = parser.parse_args()
+    if args.update_tap and not os.environ.get('GITSTORE_TAP_TOKEN'):
+        parser.error('tap proposals require the repository-scoped App token')
     if not args.asset_dir.is_absolute():
         parser.error('select an absolute private asset directory')
     info = args.asset_dir.lstat()

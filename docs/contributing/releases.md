@@ -60,7 +60,12 @@ as a Git URL tap; APT/DNF and npm install GitHub Release files. Nix is deferred.
 5. **Approve publication.** A required maintainer reviews the selected tag, source,
    runs and verified inventory, then approves the waiting `release-publication`
    deployment. The job re-verifies bytes, uploads matching assets/bundles, publishes
-   the prerelease with `latest=false`, and updates the Homebrew formula.
+   the prerelease with `latest=false`, and opens a single-file Homebrew formula PR
+   using the repository-scoped App. The publication result reports `tap.status`
+   as `pending` with its PR URL, or `current` if the formula is already on main.
+   Review that it still targets the newest published prerelease, then merge the
+   formula PR through normal checks and the merge queue. Homebrew delivery is
+   pending until that merge; the publisher never writes protected main directly.
 6. **Verify delivery and record acceptance.** Check public asset names/digests,
    downloadable `.sigstore.jsonl` bundles, the mandatory early-alpha notice,
    formula and [installation instructions](../installation.md). Update the compact
@@ -101,7 +106,8 @@ gh attestation verify /absolute/package.tgz --repo gitstore-dev/cli \
 | Source or fixture code changes | Use a new reviewed commit/version proposal; rebuild and requalify. Do not move an existing version tag. |
 | Upload interrupted | Retry the same reviewed candidate/tag and successful qualification. Matching uploads are reused; conflicting bytes fail. Never use `--clobber`. |
 | Publication gate or provenance check fails | Resolve the configuration/evidence problem. Do not bypass the gate or publish through the release editor. |
-| Tap update blocked after publication | Keep the published release intact. Resolve the branch write policy and retry the matching formula update; do not roll back or overwrite assets. |
+| Formula PR pending | Confirm it still targets the newest published prerelease, then merge through normal checks and the merge queue. |
+| Tap proposal fails after publication | Keep published assets intact. Retry the same verified candidate to resume a matching branch/PR. Edited branches, changed bases and closed PRs require maintainer reconciliation; never force-update them. |
 
 The publisher checks the exact complete asset set and early-alpha notice before
 and after promotion. A published release missing its notice requires explicit
