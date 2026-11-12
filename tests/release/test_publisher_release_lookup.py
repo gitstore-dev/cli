@@ -74,6 +74,18 @@ class ReleaseLookup(unittest.TestCase):
                 self.client.upload('SHA256SUMS', b'bytes')
             gh.assert_not_called()
 
+    def test_notice_and_promotion_explicitly_retain_the_reviewed_tag(self):
+        self.client.release_id = 42
+        release = {**self.release, 'body': 'original release notes'}
+        with patch.object(self.client, 'api', side_effect=[release, {}, {}]) as api:
+            self.client.ensure_notice('required notice')
+            self.client.promote()
+            self.assertEqual(api.call_args_list[1].args, ('releases/42', dict(
+                tag_name=self.tag, draft=True, prerelease=True,
+                body='required notice\n\noriginal release notes')))
+            self.assertEqual(api.call_args_list[2].args, ('releases/42', dict(
+                tag_name=self.tag, draft=False, prerelease=True, make_latest='false')))
+
 
 if __name__ == '__main__':
     unittest.main()
