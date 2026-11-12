@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.5](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **release:** propose Homebrew updates through protected branches ([8ed1aa1](https://github.com/gitstore-dev/cli/commit/8ed1aa1d5cc4772d69d57fde2e875adebe153af4))
+
 ## [0.1.0-alpha.4](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4) (2026-11-10)
 
 
