@@ -201,3 +201,13 @@ Final release readiness requires actual receipts, not completed templates.
 Externally blocked API capabilities and deferred Nix/Windows/CSI/backend work
 are not hidden implementation tasks. Prepare a concrete reviewable release;
 actual public mutation still requires the user's publication authorization.
+
+## Phase 7: Post-release corrections
+
+The alpha.5 host checks supplied `XDG_RUNTIME_DIR` on macOS and missed the
+ordinary-shell path reported after Homebrew installation. These follow-ups do
+not add a macOS execution backend or change alpha.5's qualified bytes.
+
+- [x] T065 [US1] Correct FR-013's macOS diagnostic when no explicit socket or absolute `XDG_RUNTIME_DIR` is selected in `crates/gs/src/deployment.rs`; report `UNSUPPORTED_HOST` without state creation, preserve explicit connect-only behavior and Linux session errors, and cover both configured/unconfigured environments in Rust and archive/Homebrew/npm acceptance.
+- [x] T066 [US1] Rewrite `docs/installation.md` around user tasks: platform support before commands, one installation path per manager, version checks, Linux-only local startup, alpha.5 macOS troubleshooting, upgrades/removal and optional verification; retain the early-alpha/schema/data-loss warning and move release-process details out of the installation flow.
+- [ ] T067 [US2] Qualify and publish the corrected diagnostic in a subsequent authorized prerelease using the normal exact-tag/package/signing pipeline; run the strengthened macOS checks without `XDG_RUNTIME_DIR` and verify the published Homebrew pair. Alpha.5 remains unchanged until that delivery; source tests alone do not satisfy this acceptance.

@@ -12,7 +12,7 @@ import sys
 import tarfile
 import tempfile
 
-from support import owned_file
+from support import macos_runtime_boundary, owned_file
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'runtime/packaging'))
 from homebrew import render
 from inventory import relative, validate_install, validate_tree
@@ -203,10 +203,7 @@ def run(args):
                 if result.stderr or not result.stdout or flag == '--version' and version.encode() not in result.stdout:
                     raise ValueError('installed Homebrew command identity/help failed')
         if sys.platform == 'darwin':
-            unavailable = subprocess.run([str(prefix/'bin/gs'),'deployment','list','-o','json'],
-                env={**env,'PATH':'/nonexistent'},cwd=root,capture_output=True,timeout=15)
-            if unavailable.returncode != 6 or unavailable.stdout:
-                raise ValueError('macOS package must expose the explicit unavailable-runtime boundary')
+            macos_runtime_boundary(prefix/'bin/gs', {**env,'PATH':'/nonexistent'}, root)
         after = sorted(str(p.relative_to(root)) for name in ('config','state','runtime') for p in (root/name).rglob('*'))
         if before != after:
             raise ValueError('help/version initialized GitStore runtime state')

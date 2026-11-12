@@ -16,7 +16,7 @@ import sys
 import tarfile
 import tempfile
 
-from support import owned_file
+from support import macos_runtime_boundary, owned_file
 
 
 def inspect(path, digest, version):
@@ -137,10 +137,7 @@ def main():
         if siblings[0] != siblings[1]:
             raise ValueError('real executables must remain siblings')
         if sys.platform == 'darwin':
-            unavailable = subprocess.run([str(binary_dir/'gs'),'deployment','list','-o','json'],
-                env={**env,'PATH':'/nonexistent'},cwd=root,capture_output=True,timeout=15)
-            if unavailable.returncode != 6 or unavailable.stdout:
-                raise ValueError('macOS package must expose the explicit unavailable-runtime boundary')
+            macos_runtime_boundary(binary_dir/'gs', {**env,'PATH':'/nonexistent'}, root)
         after = {str(path.relative_to(root)) for directory in ['config','state','cache','runtime'] for path in (root / directory).rglob('*')}
         if before != after:
             raise ValueError('help/version created configuration or runtime state')

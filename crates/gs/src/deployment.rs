@@ -209,6 +209,13 @@ fn socket(cli: &Cli) -> Result<PathBuf> {
         .filter(|p| p.is_absolute())
         .map(|p| p.join("gitstore/gitstored.sock"))
         .ok_or_else(|| {
+            if !cfg!(target_os = "linux") {
+                return Error::new(
+                    6,
+                    "UNSUPPORTED_HOST",
+                    "Automatic local runtime startup requires native Linux; use remote commands on macOS or select --daemon-socket to connect to an existing manager",
+                );
+            }
             Error::new(
                 4,
                 "NOT_FOUND",
