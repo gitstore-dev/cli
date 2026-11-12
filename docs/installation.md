@@ -1,8 +1,7 @@
 # GitHub-hosted installation
 
-**Release preparation is in progress. No binary/package release is qualified or
-published yet.** The commands below describe the selected alpha.1 distribution
-paths once its reviewed assets exist. Consult the
+**Alpha.5 has passed all six reference hosts and 22 package selections;
+publication is in progress.** The commands below select that exact candidate. Consult the
 [release evidence](contributing/validation/release-qualification.md) for actual results.
 
 GitStore and this CLI are early alpha. Upstream schemas will continue changing
@@ -45,8 +44,8 @@ See [local runtime setup](local-runtime.md#before-you-start).
 
 macOS packages do not provide a local workload backend. Local execution returns
 an unavailable-host error; remote operations and explicit control connections
-remain separate. Nix and Windows distribution are deferred. These are selected
-test targets, not a claim that all rows already passed acceptance.
+remain separate. Nix and Windows distribution are deferred. All listed host/channel selections passed alpha.5 acceptance. Results apply to
+that release and those fixtures; see the release evidence for their limits.
 
 ## Homebrew
 
@@ -56,7 +55,7 @@ its installer checks those even though this formula copies prebuilt GitStore
 binaries and never compiles `gs` or `gitstored`. The archive, APT, DNF and npm
 paths do not require a compiler.
 
-After promotion creates the matching generated formula:
+After the published release's generated formula PR merges:
 
 ```sh
 brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git
@@ -89,10 +88,10 @@ brew uninstall gitstore-dev/cli/gitstore
 ## APT
 
 Download the exact release `.deb` from the GitHub release page. For example,
-`gitstore_0.1.0~alpha.1-1_arm64.deb` (`amd64` for x86_64), then:
+`gitstore_0.1.0~alpha.5-1_arm64.deb` (`amd64` for x86_64), then:
 
 ```sh
-sudo apt install ./gitstore_0.1.0~alpha.1-1_arm64.deb
+sudo apt install ./gitstore_0.1.0~alpha.5-1_arm64.deb
 ```
 
 APT resolves declared system dependencies. This is a local package installation,
@@ -105,7 +104,7 @@ is under `/usr/libexec/gitstore/bin`, with public links under `/usr/bin`.
 Use the exact GitHub Release URL or a downloaded RPM. For Fedora arm64:
 
 ```sh
-sudo dnf install https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-0.1.0-0.alpha.1.1.aarch64.rpm
+sudo dnf install https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-0.alpha.5.1.aarch64.rpm
 ```
 
 Use `x86_64` for that architecture. DNF resolves declared dependencies; no RPM
@@ -118,7 +117,7 @@ Choose exactly one OS/CPU tarball; no npm registry account is needed. For macOS
 arm64 with a user-writable npm prefix:
 
 ```sh
-npm install --global --ignore-scripts https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.1/gitstore-npm-0.1.0-alpha.1-darwin-arm64.tgz
+npm install --global --ignore-scripts https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz
 ```
 
 Other tuples are `darwin-x64`, `linux-arm64` and `linux-x64`. The scoped package
@@ -134,7 +133,7 @@ separately in the release evidence.
 
 ## Verification and removal
 
-Release assets will include SHA-256 checksums and standard signed GitHub Actions
+Release assets include SHA-256 checksums and standard signed GitHub Actions
 attestation bundles. Verification is available to compatible tools and is
 **optional for consumers**; installation does not enforce it or install a verifier.
 Maintainers must verify producer/source/digest identity before promotion under
