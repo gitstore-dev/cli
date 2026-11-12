@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime/packaging'))
 from publication import publish
 from homebrew_delivery import propose as propose_tap
-from release_candidate import advance, safe_name
+from release_candidate import advance, safe_name, slot_filename
 from release_verification import REPOSITORY
 
 
@@ -37,6 +37,19 @@ class GitHub:
         if payload is not None:
             arguments += ['--method', 'PATCH', '--input', '-']
         return json.loads(self.gh(*arguments, payload=json.dumps(payload).encode() if payload is not None else None))
+
+    def asset_names(self):
+        # GitHub replaces '~' with '.' in hosted filenames. The signed logical
+        # subject/checksum names and Debian's internal Version remain unchanged.
+        # Enumerate only the selected release's two Debian subjects and bundles;
+        # all other names must match literally, and inspect rejects collisions.
+        result = {}
+        for arch in ('x64', 'arm64'):
+            deb = slot_filename(self.tag.removeprefix('v'), 'deb', 'linux', arch)
+            for suffix in ('', '.sigstore.jsonl'):
+                logical = deb + suffix
+                result[logical.replace('~', '.')] = logical
+        return result
 
     def inspect(self):
         # GET releases/tags/{tag} only returns published releases. Resolve the
@@ -60,7 +73,8 @@ class GitHub:
         revision = self.api('commits/' + self.tag)['sha']
         assets = {}
         for entry in release['assets']:
-            name = safe_name(entry['name'])
+            hosted = safe_name(entry['name'])
+            name = self.asset_names().get(hosted, hosted)
             if name in assets or not 0 < entry['size'] <= 1024 * 1024 * 1024:
                 raise ValueError('duplicate or oversized remote asset')
             assets[name] = self.gh('api', f'repos/{REPOSITORY}/releases/assets/{entry["id"]}',
@@ -88,7 +102,9 @@ class GitHub:
             # The tag-based CLI upload can also fail to discover drafts. Use the
             # documented upload endpoint for the same pinned release ID.
             endpoint = f'https://uploads.github.com/repos/{REPOSITORY}/releases/{self.release_id}/assets'
-            self.gh('api', endpoint + '?' + urlencode({'name': name}), '--method', 'POST',
+            names = {logical: hosted for hosted, logical in self.asset_names().items()}
+            hosted = names.get(name, name)
+            self.gh('api', endpoint + '?' + urlencode({'name': hosted}), '--method', 'POST',
                     '--header', 'Content-Type: application/octet-stream', '--input', str(path))
 
     def promote(self):

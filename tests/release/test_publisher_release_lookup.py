@@ -86,6 +86,45 @@ class ReleaseLookup(unittest.TestCase):
             self.assertEqual(api.call_args_list[2].args, ('releases/42', dict(
                 tag_name=self.tag, draft=False, prerelease=True, make_latest='false')))
 
+    def test_only_selected_debian_names_have_a_bijective_hosted_mapping(self):
+        mapping = self.client.asset_names()
+        self.assertEqual(len(mapping), 4)
+        self.assertEqual(len(set(mapping.values())), 4)
+        for arch in ('amd64', 'arm64'):
+            for suffix in ('', '.sigstore.jsonl'):
+                self.assertEqual(mapping[f'gitstore_0.1.0.alpha.5-1_{arch}.deb' + suffix],
+                    f'gitstore_0.1.0~alpha.5-1_{arch}.deb' + suffix)
+
+    def test_hosted_debian_bytes_are_inspected_under_the_signed_logical_name(self):
+        name = 'gitstore_0.1.0~alpha.5-1_amd64.deb'
+        release = {**self.release, 'assets': [dict(id=7, name=name.replace('~', '.'), size=5)]}
+        self.client.release_id = 42
+        with patch.object(self.client, 'api', side_effect=[release, {'sha': 'a' * 40}]), \
+                patch.object(self.client, 'gh', return_value=b'exact'):
+            self.assertEqual(self.client.inspect()['assets'], {name: b'exact'})
+
+    def test_alias_collision_never_hides_an_extra_asset(self):
+        name = 'gitstore_0.1.0~alpha.5-1_amd64.deb'
+        release = {**self.release, 'assets': [dict(id=7, name=name.replace('~', '.'), size=5),
+            dict(id=8, name=name, size=5)]}
+        self.client.release_id = 42
+        with patch.object(self.client, 'api', side_effect=[release, {'sha': 'a' * 40}]), \
+                patch.object(self.client, 'gh', return_value=b'exact'):
+            with self.assertRaises(ValueError):
+                self.client.inspect()
+
+    def test_upload_maps_debian_transport_name_without_changing_payload(self):
+        self.client.release_id = 42
+
+        def upload(*args):
+            self.assertEqual(args[1], 'https://uploads.github.com/repos/gitstore-dev/cli/'
+                'releases/42/assets?name=gitstore_0.1.0.alpha.5-1_amd64.deb')
+            self.assertEqual(Path(args[-1]).read_bytes(), b'original signed Debian bytes')
+            return b'{}'
+
+        with patch.object(self.client, 'gh', side_effect=upload):
+            self.client.upload('gitstore_0.1.0~alpha.5-1_amd64.deb', b'original signed Debian bytes')
+
 
 if __name__ == '__main__':
     unittest.main()
