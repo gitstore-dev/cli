@@ -1,9 +1,9 @@
 # Release qualification
 
-**Alpha.5 is qualified and producer-verified; approved publication recovery is
-in progress.** All six reference hosts and 22 package selections passed.
-All 33 final subjects have verified GitHub Actions attestations. The release remains a draft until every reviewed asset is uploaded and checked.
-Homebrew delivery will require the generated formula PR to merge.
+**[Alpha.5 is published](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5).**
+All six reference hosts and 22 package selections passed. All 33 final subjects
+and their 33 standard attestation bundles are publicly downloadable. The signed
+Homebrew formula is supplied by [#25](https://github.com/gitstore-dev/cli/pull/25).
 
 Use the [release runbook](../releases.md) for operating instructions and the
 [complete inventory and results](alpha5-qualification-review.json) for exact hashes,
@@ -52,7 +52,7 @@ Homebrew packages also passed isolated install/control/removal checks. These
 additional checks did not modify the existing installation and do not add another
 formal platform or a macOS workload backend.
 
-## Limits and remaining delivery
+## Distribution limits
 
 - GitStore and this CLI are early alpha. Upstream schemas change incompatibly.
   Upgrade compatibility, data preservation and recovery are not guaranteed. Use,
@@ -71,9 +71,23 @@ formal platform or a macOS workload backend.
 - Earlier failed candidates remain unpublished and their receipts were not reused.
   Alpha.5 build and qualification each passed without a retry.
 
-T038 (actual signing and negative controls) and T039 (complete readiness inventory)
-are satisfied. The required maintainer approved publication in GitHub. T064 remains open until
-public assets and bundles are checked and the generated
-single-file Homebrew formula PR passes review and merges. Final delivery checks
-must verify public download digests, the alpha disclaimer and installation through
-the public URLs. Consumer attestation verification remains optional.
+T038, T039 and T064 are satisfied by the signed/public inventory, complete
+qualification and delivery checks, and the matching formula supplied by #25.
+Homebrew becomes available through the main-branch tap when that change merges.
+All 66 public URLs were checked without credentials; 19 package/metadata subjects
+and their bundles were downloaded, hashed and independently verified. Direct npm
+installation from the public URL passed on the maintainer's Mac, including both
+binary identities, isolated state and removal. Consumer verification is optional.
+
+The original approved publication job failed at draft lookup. Maintainer recovery
+used that recorded approval and the unchanged signed candidate, retaining full
+producer, receipt and byte-equality checks. No tag, package or signature was
+replaced. #25 fixes draft discovery/upload and tag retention for future automation.
+The failed workflow is retained as failed evidence, not reported as a passing
+end-to-end publication run.
+
+GitHub normalizes `~` to `.` in the two Debian download names and their bundles.
+The adapter permits only those four bijective aliases and rejects collisions.
+Signed logical filenames, package versions and hashes remain unchanged. The
+machine-readable inventory records both names; [installation](../../installation.md)
+shows how to save the logical filename for checksum verification.

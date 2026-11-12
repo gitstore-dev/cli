@@ -2,10 +2,15 @@
 
 `gs` manages [GitStore](https://github.com/gitstore-dev/GitStore) through its public
 GraphQL and Git interfaces. Its companion daemon, `gitstored`, runs local GitStore
-deployments.
+deployments on Linux.
 
-This repository provides a source preview. Published CLI/daemon binaries are not
-available yet. To try it, follow [building from source](docs/contributing/building.md).
+Install the matching `gs` and `gitstored` pair using
+[Homebrew, APT, DNF or npm](docs/installation.md). The
+[alpha.5 prerelease](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5)
+is available for Linux and macOS; macOS supports remote/control commands only.
+Upstream schemas change incompatibly. Upgrade compatibility, data preservation
+and recovery are not guaranteed; keep independent backups. Contributor builds
+are covered by [building from source](docs/contributing/building.md).
 
 ## Connect to GitStore
 
@@ -44,9 +49,10 @@ gs deployment stop dev
 
 The default catalogue is in memory and resets when the API restarts; repository
 data and credentials are retained. Select `--datastore scylladb` for a retained
-catalogue. Matching Linux source builds provide deployment logs and registered
+catalogue. Matching Linux binaries provide deployment logs and registered
 standalone migration; optional services and native macOS execution remain
-unavailable. Development execution evidence is Linux arm64. Read the
+unavailable. Alpha.5 native acceptance covers Ubuntu 24.04 and Fedora 44 on both
+x64 and arm64. Read the
 [local deployment guide](docs/local-runtime.md) for prerequisites, migration backup
 acknowledgment, disk footprint and recovery limits.
 

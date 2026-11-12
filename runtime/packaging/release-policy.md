@@ -19,11 +19,11 @@ Promotion must bind the final artifact SHA-256 to all of these verified claims:
 | Predicate | `https://slsa.dev/provenance/v1` |
 | Runner | GitHub hosted; self-hosted signing is rejected |
 
-The workflow path is the reserved release policy identity, not evidence that a
-release workflow has already run. No CLI releases exist in the repository at this
-checkpoint. Unsigned development binaries and candidate packages cannot pass this
-gate. The positive experiment control belongs to another repository and grants
-no GitStore publication authority.
+The workflow path is the trusted release policy identity. Alpha.5 has own signed
+positive and negative controls in the
+[current qualification record](../../docs/contributing/validation/release-qualification.md).
+Unsigned development binaries and candidate packages cannot pass this gate.
+External experiment controls grant no GitStore publication authority.
 
 [`release_verification.py`](release_verification.py) snapshots bounded ordinary
 artifact/bundle/root files before invoking the maintained verifier. It requires
@@ -58,7 +58,7 @@ Its successful output is a verification receipt, not a publishing operation.
 
 ## Trusted generation
 
-Build, package and sign before attesting final bytes. The future trusted release
+Build, package and sign before attesting final bytes. The trusted release
 job must use reviewed commit-pinned `actions/attest`, scoped `contents: read`,
 `id-token: write` and `attestations: write`. Current action guidance also requires
 `artifact-metadata: write`; grant it only to that trusted job. Registry write is
@@ -70,8 +70,8 @@ repository is insufficient. SBOM attestations, if added, bind the same final dig
 provenance is not a vulnerability or higher-SLSA-level claim.
 
 The reviewed `actions/attest` v4 reference on 2026-11-05 resolves to
-`1e69f48acb82d1966a394da916b4c1698aa569d6`. No release job is enabled by these local
-experiments. Hosted signing/promotion evidence remains required before publishing.
+`1e69f48acb82d1966a394da916b4c1698aa569d6`. Local experiments do not authorize publication. Actual hosted signing and
+producer verification plus required maintainer approval gate publication.
 This repository currently publishes no OCI image, so OCI signing/verification is
 not added speculatively.
 
@@ -95,3 +95,13 @@ owners left running. macOS records local command costs and retains control-only
 scope; Linux additionally measures successful current-generation inspection and
 separate offline runtime costs. This is maintainer-owned execution evidence, not
 an attestation or a substitute for the other required host/channel checks.
+
+## Hosted download names
+
+The GitHub transport adapter discovers drafts through the authenticated release
+listing and pins their existing release ID for reads and uploads. Metadata updates
+explicitly retain the reviewed tag. GitHub normalizes Debian filename tildes to
+periods; the adapter maps only the selected version's two Debian names and their
+bundles back to the signed logical names. It rejects collisions and retains the
+complete asset-set, digest, source, receipt and signature checks. Signed subjects
+and package bytes are never rewritten to accommodate a transport filename.
