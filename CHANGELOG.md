@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.6](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.5...v0.1.0-alpha.6) (2026-11-12)
+
+
+### Bug Fixes
+
+* **macos:** explain unavailable local runtime without XDG setup ([51b4cfb](https://github.com/gitstore-dev/cli/commit/51b4cfb48881dc42da5a91f5fe3da7650e4e12e9))
+
 ## [0.1.0-alpha.5](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5) (2026-11-12)
 
 
