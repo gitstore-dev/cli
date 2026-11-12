@@ -1,0 +1,1395 @@
+{
+  "schemaVersion": 1,
+  "status": "qualified-and-producer-verified; publication requires human approval",
+  "tag": "v0.1.0-alpha.5",
+  "sourceRevision": "968ee1d44ce550c76a05b311c000c87fd910e444",
+  "buildRun": 43164227501,
+  "qualificationRun": 43165938837,
+  "promotionRun": 43179378305,
+  "subjectCount": 33,
+  "subjectBytes": 468729270,
+  "inventorySha256": "32602faa4c0491d6e2d184ab21008635207316144b891827abb3669b1cdb7c50",
+  "checksumsSha256": "03c5415ae3276c00d33636a7f3330c98ed0c76f5bbfe82400334ee54f6380761",
+  "subjects": [
+    {
+      "filename": "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz",
+      "format": "archive",
+      "os": "darwin",
+      "arch": "x64",
+      "sha256": "1045dfef77603452a65e333dc8f97e3becd252d74de86b2a0f7dcdca800ea77e",
+      "bytes": 3684362,
+      "unpackedBytes": 9984479,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz",
+      "format": "npm",
+      "os": "darwin",
+      "arch": "x64",
+      "sha256": "a69ad7437d873ac168f1bf24e858adefd11a7d23618aa3fc2bf20c31532a4a56",
+      "bytes": 3684717,
+      "unpackedBytes": 9984479,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "bundle": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "format": "manifest",
+      "os": "darwin",
+      "arch": "x64",
+      "sha256": "2bcc76cb04f20be0abc41d1b68273254a5ea0bee5c6b2cc7204326e0ca44ae64",
+      "bytes": 92856,
+      "unpackedBytes": 9984479,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-darwin-x64.install.json.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.5-darwin-x64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "x64",
+      "sha256": "b47f7d229668557be650b55670a3eb1f4f2d4a1835f81a550e20056124b9caee",
+      "bytes": 5661052,
+      "unpackedBytes": 9984479,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "bundle": "gs-0.1.0-alpha.5-darwin-x64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.5-darwin-x64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "x64",
+      "sha256": "6ee570cfdc6844fb894908a18963ba98dd232e48b32de1540038263dfc57a95d",
+      "bytes": 1388112,
+      "unpackedBytes": 9984479,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "bundle": "gitstored-0.1.0-alpha.5-darwin-x64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "sha256": "3fc6dfbe14894a6e18a80ee08a788ebbb128128d81bd2595420a7c226e798bf3",
+      "bytes": 25450507,
+      "unpackedBytes": 25450507,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz",
+      "format": "archive",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "a6a8be6eb4ec34b2ec4346103b6816642f70071037ac90f0f1cd819c20f1c389",
+      "bytes": 12094544,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz",
+      "format": "npm",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "743d869e048250caf50282b20ac311e799e8914b303546ac3773abba828a24c9",
+      "bytes": 12094646,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "format": "manifest",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "b7004b016f8b2f132b05d01513d0c214f87dcffbbdda3595302d616a7fd346e6",
+      "bytes": 199497,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-linux-x64.install.json.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.5-linux-x64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "920f9f649f2b7e9dad11f495f06b3eb52ef61609056206fb3fc3b4c217253a75",
+      "bytes": 6531544,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gs-0.1.0-alpha.5-linux-x64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.5-linux-x64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "916e1207777cb5316a3646b9d19a6f23e457aa6726ae336feff1c1c840d5bf9a",
+      "bytes": 22087920,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstored-0.1.0-alpha.5-linux-x64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.5-1_amd64.deb",
+      "format": "deb",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "00d71c81a88604786ba9c9b600aaae7a6cf7d8ceb067554a5aa74da87d07f848",
+      "bytes": 9398458,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstore_0.1.0~alpha.5-1_amd64.deb.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm",
+      "format": "rpm",
+      "os": "linux",
+      "arch": "x64",
+      "sha256": "3cd07f28bb4ccd5d2ae220fad7bfe4c92fe1fbdd4ee1b4836482e4b1f59dd15b",
+      "bytes": 12219597,
+      "unpackedBytes": 35911065,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "bundle": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "sha256": "f0e7b89429c6e9ce8dae6e65b5530da11305399bfdfb1b4da4a5cc4f91c0d9a0",
+      "bytes": 92454167,
+      "unpackedBytes": 92454167,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz",
+      "format": "relink",
+      "os": "any",
+      "arch": "any",
+      "sha256": "6979b0737cd7b745aaeeb1e8f46750d3e9b1517fdfb082154b58bb1fdcd7f0d8",
+      "bytes": 27783860,
+      "unpackedBytes": 27783860,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz",
+      "format": "archive",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "58020ad2a69708303dda968b0db8cac1d9f90d57f2411fabaddf9e67cb529047",
+      "bytes": 11870832,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz",
+      "format": "npm",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "6fdfcdf4e7511d78092d5710b0094dd70b7cbb4552b1500d797b9237f32e44ee",
+      "bytes": 11870895,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "format": "manifest",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "e7d8eaa83fe0d574730dd2880740ee917a97d4fd012c4f537554147ef724e006",
+      "bytes": 199030,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-linux-arm64.install.json.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.5-linux-arm64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "ab74705a02cca407478721a04c2851d661faf9b82a29307ba291ee0c44169a3b",
+      "bytes": 5983816,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gs-0.1.0-alpha.5-linux-arm64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.5-linux-arm64",
+      "format": "binary",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "b866340c62bd5b7c16ed2808ef54184981cd0b11a75ce44f8e3501378c6ff877",
+      "bytes": 22409424,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstored-0.1.0-alpha.5-linux-arm64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.5-1_arm64.deb",
+      "format": "deb",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "a2b126d2f5618f9c6147e87d72b754c37646dd94aa0a0a1417f00063f12366e5",
+      "bytes": 9193020,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstore_0.1.0~alpha.5-1_arm64.deb.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm",
+      "format": "rpm",
+      "os": "linux",
+      "arch": "arm64",
+      "sha256": "ed136fe8dd2e7ea2d9c6aae9d055e29c570f8ca39d82f41d94f3c0685d33f363",
+      "bytes": 11995556,
+      "unpackedBytes": 35672951,
+      "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "bundle": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "sha256": "013a8dcc1007423f5f22b8af5e6f353cb26e5f305993e04915896b67835dff4c",
+      "bytes": 92435957,
+      "unpackedBytes": 92435957,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz",
+      "format": "relink",
+      "os": "any",
+      "arch": "any",
+      "sha256": "899ed369b8decc1167a58434177876bfe9b2a89f9c342429548d4374920dab83",
+      "bytes": 28579022,
+      "unpackedBytes": 28579022,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz",
+      "format": "archive",
+      "os": "darwin",
+      "arch": "arm64",
+      "sha256": "c09a8522fff9f936139ae55e95b339e25e39651ea056739e9c6f5c97dcfd74a9",
+      "bytes": 3529218,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz",
+      "format": "npm",
+      "os": "darwin",
+      "arch": "arm64",
+      "sha256": "ad340dbfbd2ea308bcb6edcfc044dc6884eb140a42fa76bd7caed53132c86a61",
+      "bytes": 3529512,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "bundle": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "format": "manifest",
+      "os": "darwin",
+      "arch": "arm64",
+      "sha256": "6b8ca54c95011e56de19dd4ad417f049d2cc32a5ea2f09ea7a9f40fed83e9137",
+      "bytes": 92353,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "bundle": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.5-darwin-arm64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "arm64",
+      "sha256": "a2644b0163c04b7b9c7c9bbf6e200e7e699116c8eb5627b6698fc09c52df4dce",
+      "bytes": 5354512,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "bundle": "gs-0.1.0-alpha.5-darwin-arm64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.5-darwin-arm64",
+      "format": "binary",
+      "os": "darwin",
+      "arch": "arm64",
+      "sha256": "911a5daeafa36322ad3bcb2de20af17dc2baa46e197cb569e45208ba67d3d7ab",
+      "bytes": 1378296,
+      "unpackedBytes": 9655799,
+      "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "bundle": "gitstored-0.1.0-alpha.5-darwin-arm64.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz",
+      "format": "source",
+      "os": "any",
+      "arch": "any",
+      "sha256": "7e8c91a2e12c7bab1faabf847aeb85dff51964acdaa7b947b11d3bc713fba894",
+      "bytes": 25457297,
+      "unpackedBytes": 25457297,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "gitstore.rb",
+      "format": "formula",
+      "os": "any",
+      "arch": "any",
+      "sha256": "fcc9c69bf88e5e3fb0036487f20dddeedb9f00ac9bce5e5529de01e2f76760c3",
+      "bytes": 2165,
+      "unpackedBytes": 2165,
+      "installInventory": "release-inventory.json",
+      "bundle": "gitstore.rb.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "release-inventory.json",
+      "format": "manifest",
+      "os": "any",
+      "arch": "any",
+      "sha256": "32602faa4c0491d6e2d184ab21008635207316144b891827abb3669b1cdb7c50",
+      "bytes": 19160,
+      "unpackedBytes": 19160,
+      "installInventory": "release-inventory.json",
+      "bundle": "release-inventory.json.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    },
+    {
+      "filename": "SHA256SUMS",
+      "format": "checksums",
+      "os": "any",
+      "arch": "any",
+      "sha256": "03c5415ae3276c00d33636a7f3330c98ed0c76f5bbfe82400334ee54f6380761",
+      "bytes": 3366,
+      "unpackedBytes": 3366,
+      "installInventory": "release-inventory.json",
+      "bundle": "SHA256SUMS.sigstore.jsonl",
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+    }
+  ],
+  "hostChannelResults": [
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "npm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "npm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "npm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "rpm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "deb"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "npm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "npm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "rpm"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "archive"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "deb"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "homebrew"
+      ],
+      "result": "pass"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "npm"
+      ],
+      "result": "pass"
+    }
+  ],
+  "hosts": [
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ],
+      "performance": {
+        "host": "macOS-15.8.2-arm64-arm-64bit-Mach-O",
+        "machine": "arm64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 14.154,
+            "minimumMilliseconds": 6.24,
+            "maximumMilliseconds": 15.388
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 13.65,
+            "minimumMilliseconds": 6.625,
+            "maximumMilliseconds": 41.46
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 10.03,
+            "minimumMilliseconds": 2.959,
+            "maximumMilliseconds": 14.229
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 11.33,
+            "minimumMilliseconds": 3.234,
+            "maximumMilliseconds": 13.73
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "a2644b0163c04b7b9c7c9bbf6e200e7e699116c8eb5627b6698fc09c52df4dce",
+            "bytes": 5354512
+          },
+          "gitstored": {
+            "sha256": "911a5daeafa36322ad3bcb2de20af17dc2baa46e197cb569e45208ba67d3d7ab",
+            "bytes": 1378296
+          }
+        }
+      }
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "command-costs"
+      ],
+      "performance": {
+        "host": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
+        "machine": "x86_64",
+        "samples": 100,
+        "clock": "perf_counter_ns; wall time includes process startup",
+        "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+        "commands": {
+          "gs --help": {
+            "samples": 100,
+            "p95Milliseconds": 24.441,
+            "minimumMilliseconds": 17.56,
+            "maximumMilliseconds": 33.264
+          },
+          "gs --version": {
+            "samples": 100,
+            "p95Milliseconds": 23.709,
+            "minimumMilliseconds": 17.491,
+            "maximumMilliseconds": 30.77
+          },
+          "gitstored --help": {
+            "samples": 100,
+            "p95Milliseconds": 11.669,
+            "minimumMilliseconds": 6.491,
+            "maximumMilliseconds": 18.087
+          },
+          "gitstored --version": {
+            "samples": 100,
+            "p95Milliseconds": 10.714,
+            "minimumMilliseconds": 6.844,
+            "maximumMilliseconds": 11.512
+          }
+        },
+        "daemonInspect": "not measured; requires separately selected live owned deployment",
+        "sourceInputs": {
+          "gs": {
+            "sha256": "b47f7d229668557be650b55670a3eb1f4f2d4a1835f81a550e20056124b9caee",
+            "bytes": 5661052
+          },
+          "gitstored": {
+            "sha256": "6ee570cfdc6844fb894908a18963ba98dd232e48b32de1540038263dfc57a95d",
+            "bytes": 1388112
+          }
+        }
+      }
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "package-rpm",
+        "native-prerequisites",
+        "test_native_autostart.py",
+        "test_native_failures.py",
+        "native-cold",
+        "prepare-offline",
+        "native-core-offline",
+        "native-clean-install",
+        "native-recovery",
+        "test_interrupted_offline_blob_never_activates",
+        "test_tampered_warm_blob_cannot_be_reused_for_execution",
+        "closure-gs",
+        "closure-gitstored",
+        "native-costs"
+      ],
+      "performance": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+        "machine": "aarch64",
+        "cpus": 4,
+        "samples": 100,
+        "sourceInputs": {
+          "gs": {
+            "sha256": "ab74705a02cca407478721a04c2851d661faf9b82a29307ba291ee0c44169a3b",
+            "bytes": 5983816
+          },
+          "gitstored": {
+            "sha256": "b866340c62bd5b7c16ed2808ef54184981cd0b11a75ce44f8e3501378c6ff877",
+            "bytes": 22409424
+          }
+        },
+        "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+        "coldOfflineReadySeconds": 37.994,
+        "daemonInspect": {
+          "command": "gs deployment inspect performance -o json through explicit owned socket",
+          "samples": 100,
+          "p95Milliseconds": 2.344,
+          "minimumMilliseconds": 1.972,
+          "maximumMilliseconds": 3.378
+        },
+        "commandLatency": {
+          "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.43",
+          "machine": "aarch64",
+          "samples": 100,
+          "clock": "perf_counter_ns; wall time includes process startup",
+          "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+          "commands": {
+            "gs --help": {
+              "samples": 100,
+              "p95Milliseconds": 2.348,
+              "minimumMilliseconds": 1.127,
+              "maximumMilliseconds": 2.427
+            },
+            "gs --version": {
+              "samples": 100,
+              "p95Milliseconds": 2.221,
+              "minimumMilliseconds": 1.064,
+              "maximumMilliseconds": 2.255
+            },
+            "gitstored --help": {
+              "samples": 100,
+              "p95Milliseconds": 12.309,
+              "minimumMilliseconds": 10.511,
+              "maximumMilliseconds": 13.43
+            },
+            "gitstored --version": {
+              "samples": 100,
+              "p95Milliseconds": 13.689,
+              "minimumMilliseconds": 10.682,
+              "maximumMilliseconds": 13.995
+            }
+          },
+          "daemonInspect": "not measured; requires separately selected live owned deployment"
+        },
+        "assetCost": {
+          "logicalBytes": 258759008,
+          "allocatedBytes": 260595712,
+          "regularFiles": 662
+        },
+        "stateCostExcludingAssets": {
+          "logicalBytes": 259157116,
+          "allocatedBytes": 261197824,
+          "regularFiles": 747
+        },
+        "cacheCost": {
+          "logicalBytes": 0,
+          "allocatedBytes": 0,
+          "regularFiles": 0
+        },
+        "assetLogicalBytes": 258759008,
+        "stateLogicalBytes": 259157116,
+        "managerMemoryOnly": {
+          "VmHWMBytes": 9654272,
+          "VmRSSBytes": 9654272,
+          "scope": "manager only; excludes service/worker peaks"
+        },
+        "managerChildStopped": true
+      }
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-deb",
+        "package-homebrew",
+        "package-npm",
+        "native-prerequisites",
+        "test_native_autostart.py",
+        "test_native_failures.py",
+        "native-cold",
+        "prepare-offline",
+        "native-core-offline",
+        "native-clean-install",
+        "native-recovery",
+        "test_interrupted_offline_blob_never_activates",
+        "test_tampered_warm_blob_cannot_be_reused_for_execution",
+        "closure-gs",
+        "closure-gitstored",
+        "native-costs"
+      ],
+      "performance": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+        "machine": "aarch64",
+        "cpus": 4,
+        "samples": 100,
+        "sourceInputs": {
+          "gs": {
+            "sha256": "ab74705a02cca407478721a04c2851d661faf9b82a29307ba291ee0c44169a3b",
+            "bytes": 5983816
+          },
+          "gitstored": {
+            "sha256": "b866340c62bd5b7c16ed2808ef54184981cd0b11a75ce44f8e3501378c6ff877",
+            "bytes": 22409424
+          }
+        },
+        "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+        "coldOfflineReadySeconds": 37.391,
+        "daemonInspect": {
+          "command": "gs deployment inspect performance -o json through explicit owned socket",
+          "samples": 100,
+          "p95Milliseconds": 2.541,
+          "minimumMilliseconds": 2.189,
+          "maximumMilliseconds": 3.334
+        },
+        "commandLatency": {
+          "host": "Linux-7.0.0-1017-azure-aarch64-with-glibc2.39",
+          "machine": "aarch64",
+          "samples": 100,
+          "clock": "perf_counter_ns; wall time includes process startup",
+          "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+          "commands": {
+            "gs --help": {
+              "samples": 100,
+              "p95Milliseconds": 2.486,
+              "minimumMilliseconds": 1.316,
+              "maximumMilliseconds": 2.601
+            },
+            "gs --version": {
+              "samples": 100,
+              "p95Milliseconds": 2.39,
+              "minimumMilliseconds": 1.225,
+              "maximumMilliseconds": 2.451
+            },
+            "gitstored --help": {
+              "samples": 100,
+              "p95Milliseconds": 14.062,
+              "minimumMilliseconds": 12.59,
+              "maximumMilliseconds": 14.503
+            },
+            "gitstored --version": {
+              "samples": 100,
+              "p95Milliseconds": 14.675,
+              "minimumMilliseconds": 11.956,
+              "maximumMilliseconds": 15.361
+            }
+          },
+          "daemonInspect": "not measured; requires separately selected live owned deployment"
+        },
+        "assetCost": {
+          "logicalBytes": 258759008,
+          "allocatedBytes": 260595712,
+          "regularFiles": 662
+        },
+        "stateCostExcludingAssets": {
+          "logicalBytes": 259157160,
+          "allocatedBytes": 261197824,
+          "regularFiles": 747
+        },
+        "cacheCost": {
+          "logicalBytes": 0,
+          "allocatedBytes": 0,
+          "regularFiles": 0
+        },
+        "assetLogicalBytes": 258759008,
+        "stateLogicalBytes": 259157160,
+        "managerMemoryOnly": {
+          "VmHWMBytes": 9375744,
+          "VmRSSBytes": 9375744,
+          "scope": "manager only; excludes service/worker peaks"
+        },
+        "managerChildStopped": true
+      }
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-homebrew",
+        "package-npm",
+        "package-rpm",
+        "native-prerequisites",
+        "test_native_autostart.py",
+        "test_native_failures.py",
+        "native-cold",
+        "prepare-offline",
+        "native-core-offline",
+        "native-clean-install",
+        "native-recovery",
+        "test_interrupted_offline_blob_never_activates",
+        "test_tampered_warm_blob_cannot_be_reused_for_execution",
+        "closure-gs",
+        "closure-gitstored",
+        "native-costs"
+      ],
+      "performance": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+        "machine": "x86_64",
+        "cpus": 4,
+        "samples": 100,
+        "sourceInputs": {
+          "gs": {
+            "sha256": "920f9f649f2b7e9dad11f495f06b3eb52ef61609056206fb3fc3b4c217253a75",
+            "bytes": 6531544
+          },
+          "gitstored": {
+            "sha256": "916e1207777cb5316a3646b9d19a6f23e457aa6726ae336feff1c1c840d5bf9a",
+            "bytes": 22087920
+          }
+        },
+        "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+        "coldOfflineReadySeconds": 45.261,
+        "daemonInspect": {
+          "command": "gs deployment inspect performance -o json through explicit owned socket",
+          "samples": 100,
+          "p95Milliseconds": 2.559,
+          "minimumMilliseconds": 2.296,
+          "maximumMilliseconds": 3.466
+        },
+        "commandLatency": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+          "machine": "x86_64",
+          "samples": 100,
+          "clock": "perf_counter_ns; wall time includes process startup",
+          "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+          "commands": {
+            "gs --help": {
+              "samples": 100,
+              "p95Milliseconds": 1.511,
+              "minimumMilliseconds": 1.308,
+              "maximumMilliseconds": 2.455
+            },
+            "gs --version": {
+              "samples": 100,
+              "p95Milliseconds": 1.391,
+              "minimumMilliseconds": 1.207,
+              "maximumMilliseconds": 2.44
+            },
+            "gitstored --help": {
+              "samples": 100,
+              "p95Milliseconds": 15.405,
+              "minimumMilliseconds": 13.597,
+              "maximumMilliseconds": 20.256
+            },
+            "gitstored --version": {
+              "samples": 100,
+              "p95Milliseconds": 15.088,
+              "minimumMilliseconds": 13.836,
+              "maximumMilliseconds": 15.648
+            }
+          },
+          "daemonInspect": "not measured; requires separately selected live owned deployment"
+        },
+        "assetCost": {
+          "logicalBytes": 276079776,
+          "allocatedBytes": 277913600,
+          "regularFiles": 665
+        },
+        "stateCostExcludingAssets": {
+          "logicalBytes": 276479183,
+          "allocatedBytes": 278515712,
+          "regularFiles": 750
+        },
+        "cacheCost": {
+          "logicalBytes": 0,
+          "allocatedBytes": 0,
+          "regularFiles": 0
+        },
+        "assetLogicalBytes": 276079776,
+        "stateLogicalBytes": 276479183,
+        "managerMemoryOnly": {
+          "VmHWMBytes": 10334208,
+          "VmRSSBytes": 10334208,
+          "scope": "manager only; excludes service/worker peaks"
+        },
+        "managerChildStopped": true
+      }
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04"
+      ],
+      "result": "pass",
+      "executed": [
+        "package-archive",
+        "package-deb",
+        "package-homebrew",
+        "package-npm",
+        "native-prerequisites",
+        "test_native_autostart.py",
+        "test_native_failures.py",
+        "native-cold",
+        "prepare-offline",
+        "native-core-offline",
+        "native-clean-install",
+        "native-recovery",
+        "test_interrupted_offline_blob_never_activates",
+        "test_tampered_warm_blob_cannot_be_reused_for_execution",
+        "closure-gs",
+        "closure-gitstored",
+        "native-costs"
+      ],
+      "performance": {
+        "schemaVersion": 1,
+        "status": "passed",
+        "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+        "machine": "x86_64",
+        "cpus": 4,
+        "samples": 100,
+        "sourceInputs": {
+          "gs": {
+            "sha256": "920f9f649f2b7e9dad11f495f06b3eb52ef61609056206fb3fc3b4c217253a75",
+            "bytes": 6531544
+          },
+          "gitstored": {
+            "sha256": "916e1207777cb5316a3646b9d19a6f23e457aa6726ae336feff1c1c840d5bf9a",
+            "bytes": 22087920
+          }
+        },
+        "scope": "owned three-service memdb deployment; process wall time includes CLI startup/negotiation; no user data",
+        "coldOfflineReadySeconds": 36.45,
+        "daemonInspect": {
+          "command": "gs deployment inspect performance -o json through explicit owned socket",
+          "samples": 100,
+          "p95Milliseconds": 3.003,
+          "minimumMilliseconds": 2.739,
+          "maximumMilliseconds": 3.249
+        },
+        "commandLatency": {
+          "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+          "machine": "x86_64",
+          "samples": 100,
+          "clock": "perf_counter_ns; wall time includes process startup",
+          "scope": "warm local commands; excludes network, image readiness and daemon IPC inspection",
+          "commands": {
+            "gs --help": {
+              "samples": 100,
+              "p95Milliseconds": 1.667,
+              "minimumMilliseconds": 1.482,
+              "maximumMilliseconds": 1.699
+            },
+            "gs --version": {
+              "samples": 100,
+              "p95Milliseconds": 1.518,
+              "minimumMilliseconds": 1.372,
+              "maximumMilliseconds": 2.622
+            },
+            "gitstored --help": {
+              "samples": 100,
+              "p95Milliseconds": 19.777,
+              "minimumMilliseconds": 15.131,
+              "maximumMilliseconds": 20.828
+            },
+            "gitstored --version": {
+              "samples": 100,
+              "p95Milliseconds": 20.08,
+              "minimumMilliseconds": 15.14,
+              "maximumMilliseconds": 20.453
+            }
+          },
+          "daemonInspect": "not measured; requires separately selected live owned deployment"
+        },
+        "assetCost": {
+          "logicalBytes": 276079776,
+          "allocatedBytes": 277913600,
+          "regularFiles": 665
+        },
+        "stateCostExcludingAssets": {
+          "logicalBytes": 276479227,
+          "allocatedBytes": 278515712,
+          "regularFiles": 750
+        },
+        "cacheCost": {
+          "logicalBytes": 0,
+          "allocatedBytes": 0,
+          "regularFiles": 0
+        },
+        "assetLogicalBytes": 276079776,
+        "stateLogicalBytes": 276479227,
+        "managerMemoryOnly": {
+          "VmHWMBytes": 10199040,
+          "VmRSSBytes": 10199040,
+          "scope": "manager only; excludes service/worker peaks"
+        },
+        "managerChildStopped": true
+      }
+    }
+  ],
+  "provenance": {
+    "hostedVerifiedSubjects": 33,
+    "independentPositive": [
+      {
+        "filename": "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz",
+        "verified": true,
+        "sha256": "1045dfef77603452a65e333dc8f97e3becd252d74de86b2a0f7dcdca800ea77e"
+      },
+      {
+        "filename": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz",
+        "verified": true,
+        "sha256": "a69ad7437d873ac168f1bf24e858adefd11a7d23618aa3fc2bf20c31532a4a56"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+        "verified": true,
+        "sha256": "2bcc76cb04f20be0abc41d1b68273254a5ea0bee5c6b2cc7204326e0ca44ae64"
+      },
+      {
+        "filename": "gs-0.1.0-alpha.5-darwin-x64",
+        "verified": true,
+        "sha256": "b47f7d229668557be650b55670a3eb1f4f2d4a1835f81a550e20056124b9caee"
+      },
+      {
+        "filename": "gitstored-0.1.0-alpha.5-darwin-x64",
+        "verified": true,
+        "sha256": "6ee570cfdc6844fb894908a18963ba98dd232e48b32de1540038263dfc57a95d"
+      },
+      {
+        "filename": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz",
+        "verified": true,
+        "sha256": "3fc6dfbe14894a6e18a80ee08a788ebbb128128d81bd2595420a7c226e798bf3"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz",
+        "verified": true,
+        "sha256": "a6a8be6eb4ec34b2ec4346103b6816642f70071037ac90f0f1cd819c20f1c389"
+      },
+      {
+        "filename": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz",
+        "verified": true,
+        "sha256": "743d869e048250caf50282b20ac311e799e8914b303546ac3773abba828a24c9"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+        "verified": true,
+        "sha256": "b7004b016f8b2f132b05d01513d0c214f87dcffbbdda3595302d616a7fd346e6"
+      },
+      {
+        "filename": "gs-0.1.0-alpha.5-linux-x64",
+        "verified": true,
+        "sha256": "920f9f649f2b7e9dad11f495f06b3eb52ef61609056206fb3fc3b4c217253a75"
+      },
+      {
+        "filename": "gitstored-0.1.0-alpha.5-linux-x64",
+        "verified": true,
+        "sha256": "916e1207777cb5316a3646b9d19a6f23e457aa6726ae336feff1c1c840d5bf9a"
+      },
+      {
+        "filename": "gitstore_0.1.0~alpha.5-1_amd64.deb",
+        "verified": true,
+        "sha256": "00d71c81a88604786ba9c9b600aaae7a6cf7d8ceb067554a5aa74da87d07f848"
+      },
+      {
+        "filename": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm",
+        "verified": true,
+        "sha256": "3cd07f28bb4ccd5d2ae220fad7bfe4c92fe1fbdd4ee1b4836482e4b1f59dd15b"
+      },
+      {
+        "filename": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz",
+        "verified": true,
+        "sha256": "f0e7b89429c6e9ce8dae6e65b5530da11305399bfdfb1b4da4a5cc4f91c0d9a0"
+      },
+      {
+        "filename": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz",
+        "verified": true,
+        "sha256": "6979b0737cd7b745aaeeb1e8f46750d3e9b1517fdfb082154b58bb1fdcd7f0d8"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz",
+        "verified": true,
+        "sha256": "58020ad2a69708303dda968b0db8cac1d9f90d57f2411fabaddf9e67cb529047"
+      },
+      {
+        "filename": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz",
+        "verified": true,
+        "sha256": "6fdfcdf4e7511d78092d5710b0094dd70b7cbb4552b1500d797b9237f32e44ee"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+        "verified": true,
+        "sha256": "e7d8eaa83fe0d574730dd2880740ee917a97d4fd012c4f537554147ef724e006"
+      },
+      {
+        "filename": "gs-0.1.0-alpha.5-linux-arm64",
+        "verified": true,
+        "sha256": "ab74705a02cca407478721a04c2851d661faf9b82a29307ba291ee0c44169a3b"
+      },
+      {
+        "filename": "gitstored-0.1.0-alpha.5-linux-arm64",
+        "verified": true,
+        "sha256": "b866340c62bd5b7c16ed2808ef54184981cd0b11a75ce44f8e3501378c6ff877"
+      },
+      {
+        "filename": "gitstore_0.1.0~alpha.5-1_arm64.deb",
+        "verified": true,
+        "sha256": "a2b126d2f5618f9c6147e87d72b754c37646dd94aa0a0a1417f00063f12366e5"
+      },
+      {
+        "filename": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm",
+        "verified": true,
+        "sha256": "ed136fe8dd2e7ea2d9c6aae9d055e29c570f8ca39d82f41d94f3c0685d33f363"
+      },
+      {
+        "filename": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz",
+        "verified": true,
+        "sha256": "013a8dcc1007423f5f22b8af5e6f353cb26e5f305993e04915896b67835dff4c"
+      },
+      {
+        "filename": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz",
+        "verified": true,
+        "sha256": "899ed369b8decc1167a58434177876bfe9b2a89f9c342429548d4374920dab83"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz",
+        "verified": true,
+        "sha256": "c09a8522fff9f936139ae55e95b339e25e39651ea056739e9c6f5c97dcfd74a9"
+      },
+      {
+        "filename": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz",
+        "verified": true,
+        "sha256": "ad340dbfbd2ea308bcb6edcfc044dc6884eb140a42fa76bd7caed53132c86a61"
+      },
+      {
+        "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+        "verified": true,
+        "sha256": "6b8ca54c95011e56de19dd4ad417f049d2cc32a5ea2f09ea7a9f40fed83e9137"
+      },
+      {
+        "filename": "gs-0.1.0-alpha.5-darwin-arm64",
+        "verified": true,
+        "sha256": "a2644b0163c04b7b9c7c9bbf6e200e7e699116c8eb5627b6698fc09c52df4dce"
+      },
+      {
+        "filename": "gitstored-0.1.0-alpha.5-darwin-arm64",
+        "verified": true,
+        "sha256": "911a5daeafa36322ad3bcb2de20af17dc2baa46e197cb569e45208ba67d3d7ab"
+      },
+      {
+        "filename": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz",
+        "verified": true,
+        "sha256": "7e8c91a2e12c7bab1faabf847aeb85dff51964acdaa7b947b11d3bc713fba894"
+      },
+      {
+        "filename": "gitstore.rb",
+        "verified": true,
+        "sha256": "fcc9c69bf88e5e3fb0036487f20dddeedb9f00ac9bce5e5529de01e2f76760c3"
+      },
+      {
+        "filename": "release-inventory.json",
+        "verified": true,
+        "sha256": "32602faa4c0491d6e2d184ab21008635207316144b891827abb3669b1cdb7c50"
+      },
+      {
+        "filename": "SHA256SUMS",
+        "verified": true,
+        "sha256": "03c5415ae3276c00d33636a7f3330c98ed0c76f5bbfe82400334ee54f6380761"
+      }
+    ],
+    "negativeControls": [
+      {
+        "control": "altered bytes",
+        "rejected": true
+      },
+      {
+        "control": "missing bundle",
+        "rejected": true
+      },
+      {
+        "control": "wrong source revision",
+        "rejected": true
+      },
+      {
+        "control": "altered bytes with recomputed digest",
+        "rejected": true
+      },
+      {
+        "control": "wrong producer workflow",
+        "rejected": true
+      }
+    ],
+    "independentVerifiedSubjects": 33
+  },
+  "personalMac": {
+    "host": "macOS-26.6.1-arm64-arm-64bit-Mach-O",
+    "scope": "additional isolated control-only package checks; not a macOS 15 reference fixture",
+    "channels": [
+      "archive",
+      "npm",
+      "homebrew"
+    ],
+    "result": "pass",
+    "removed": true
+  },
+  "publication": {
+    "status": "waiting-for-required-human-review",
+    "environment": "release-publication",
+    "publicAssets": 0,
+    "homebrewFormula": "pending publication and subsequent formula PR merge"
+  },
+  "supersededQualification": {
+    "tag": "v0.1.0-alpha.4",
+    "run": 42907719516,
+    "status": "failed; receipts not reused"
+  },
+  "independentInventoryReview": {
+    "result": "pass",
+    "subjectCount": 33,
+    "subjectBytes": 468729270,
+    "receiptCount": 22,
+    "scope": "All frozen bytes, install inventories, receipt source/tag/subject bindings and executable-bound performance identities revalidated locally"
+  }
+}
