@@ -38,8 +38,24 @@ class GitHub:
         return json.loads(self.gh(*arguments, payload=json.dumps(payload).encode() if payload is not None else None))
 
     def inspect(self):
-        release = self.api('releases/tags/' + self.tag)
-        self.release_id = release['id']
+        # GET releases/tags/{tag} only returns published releases. Resolve the
+        # existing draft through the authenticated list, then pin its ID across
+        # inspections; publication must never create or silently switch drafts.
+        if not hasattr(self, 'release_id'):
+            matches = []
+            for page in range(1, 11):
+                releases = self.api(f'releases?per_page=100&page={page}')
+                if not isinstance(releases, list) or len(releases) > 100:
+                    raise ValueError('invalid release listing')
+                matches.extend(r for r in releases if r.get('tag_name') == self.tag)
+                if len(releases) < 100:
+                    break
+            else:
+                raise ValueError('release listing exceeds the bounded lookup; inspect before retry')
+            if len(matches) != 1 or type(matches[0].get('id')) is not int or matches[0]['id'] <= 0:
+                raise ValueError('select exactly one existing release for the reviewed tag')
+            self.release_id = matches[0]['id']
+        release = self.api(f'releases/{self.release_id}')
         revision = self.api('commits/' + self.tag)['sha']
         assets = {}
         for entry in release['assets']:

@@ -112,6 +112,8 @@ gh attestation verify /absolute/package.tgz --repo gitstore-dev/cli \
 The publisher checks the exact complete asset set and early-alpha notice before
 and after promotion. A published release missing its notice requires explicit
 correction; retries do not silently rewrite published release notes.
+Draft discovery uses the authenticated release listing and pins the existing
+release ID. GitHub's release-by-tag endpoint returns published releases only.
 
 ## Unsigned development package review
 
