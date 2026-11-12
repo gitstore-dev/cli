@@ -1,101 +1,79 @@
 # Release qualification
 
-**Status: not ready for publication.** Alpha.2 has a complete packaged candidate
-and 6/22 passing host/channel selections. Linux fixture failures block the
-remaining selections. No tag-bound release signing, producer verification or
-publication has run. T038, T039 and T064 remain open.
+**Alpha.5 is qualified and producer-verified; publication is awaiting required
+maintainer approval.** All six reference hosts and 22 package selections passed.
+All 33 final subjects have verified GitHub Actions attestations. No assets are
+public yet, and Homebrew delivery will require the generated formula PR to merge.
 
-Use the [release runbook](../releases.md) for operating instructions.
+Use the [release runbook](../releases.md) for operating instructions and the
+[complete inventory and results](alpha5-qualification-review.json) for exact hashes,
+bundle hashes, host receipts, performance and provenance controls.
 
-## Candidate identity and integrity
+## Reviewed candidate
 
-| Field | Recorded value |
+| Field | Value |
 | --- | --- |
-| Tag | `v0.1.0-alpha.2` |
-| Source | `a23407463cabb3a309e713a7e291380aa8dacdd7` |
-| Build | [42804211944](https://github.com/gitstore-dev/cli/actions/runs/42804211944), all four platform rows and assembly passed |
-| Qualification | [42806007675](https://github.com/gitstore-dev/cli/actions/runs/42806007675), failed; collector emitted no complete receipt artifact |
-| Frozen subjects | 33 subjects, 468,850,814 bytes; hashes/sizes, checksums and executable/install-inventory identities verified locally |
-| Inventory SHA-256 | `d42cb51f794d3612aaeac712d0cf19922b9173da5afacc8c9ec2a1facddc43fd` |
-| SHA256SUMS SHA-256 | `77939d20bb02fe65b36740dfb68894bc13ecbc4b49d3fc86506b38f7ca0bde4a` |
-| Detailed evidence | [Artifact hashes, receipt identities and performance results](alpha2-qualification-review.json) |
+| Tag | `v0.1.0-alpha.5` |
+| Source | `968ee1d44ce550c76a05b311c000c87fd910e444` |
+| Release proposal | [#24](https://github.com/gitstore-dev/cli/pull/24), merged through the queue with passing required CI |
+| Build | [43164227501](https://github.com/gitstore-dev/cli/actions/runs/43164227501), four platforms and assembly passed |
+| Qualification | [43165938837](https://github.com/gitstore-dev/cli/actions/runs/43165938837), all 22 selections and complete collector passed |
+| Signing and producer verification | [43179378305](https://github.com/gitstore-dev/cli/actions/runs/43179378305), passed; publication waiting |
+| Frozen subjects | 33 subjects, 468,729,270 bytes, plus 33 standard `.sigstore.jsonl` bundles |
+| Inventory SHA-256 | `32602faa4c0491d6e2d184ab21008635207316144b891827abb3669b1cdb7c50` |
+| SHA256SUMS SHA-256 | `03c5415ae3276c00d33636a7f3330c98ed0c76f5bbfe82400334ee54f6380761` |
 
-Both alpha.1 and alpha.2 remain unpublished drafts. Alpha.1 builds failed on Rust
-component setup; alpha.2's successful build exercised the repair. These records
-qualify only their stated source/bytes, never a later candidate automatically.
+Receipts bind this exact source/tag and all 33 subject hashes. Promotion rechecked
+bytes, install inventories, performance identities and complete receipts before
+signing. Every final subject passed the issuer, workflow/tag, source revision,
+hosted-runner and immutable repository-ID policies. Independent offline checks
+revalidated all 33 subject signatures, frozen hashes and install inventories, plus
+all 22 executable-bound qualification receipts. Five negative controls rejected
+altered bytes, altered bytes with a recomputed digest,
+missing evidence, wrong source and wrong workflow.
 
-## Host/channel results
+## Qualified support
 
-| Host | Architecture | Required channels | Alpha.2 result |
+| Host | Architecture | Passing channels | Runtime scope |
 | --- | --- | --- | --- |
-| Ubuntu 24.04 | x64 | Archive, Homebrew, APT, npm | Blocked before installation: inaccessible inherited runner directory |
-| Ubuntu 24.04 | arm64 | Archive, Homebrew, APT, npm | Same fixture failure |
-| Fedora 44 | x64 | Archive, Homebrew, DNF, npm | Blocked before installation: pinned base image unavailable |
-| Fedora 44 | arm64 | Archive, Homebrew, DNF, npm | Same fixture failure |
-| macOS 15 | x64 | Archive, Homebrew, npm | All three passed |
-| macOS 15 | arm64 | Archive, Homebrew, npm | All three passed |
+| Ubuntu 24.04 | x64 and arm64 | Archive, Homebrew, APT, npm | Native rootless Linux |
+| Fedora 44 | x64 and arm64 | Archive, Homebrew, DNF, npm | Native rootless Linux |
+| macOS 15 | x64 and arm64 | Archive, Homebrew, npm | Remote/control only |
 
-The six macOS receipts bind the same tag/source and all 33 subject hashes.
-They cover remote/control behavior; macOS local workload execution is unsupported.
-No Linux product failure is inferred from fixture preparation failures.
+Linux acceptance includes first-use startup, concurrent startup, active-version
+refusal, library/loader controls, offline native execution, clean installation,
+recovery and interrupted/tampered-asset controls. Each host also records 100 warm
+command samples; Linux records native startup, inspection latency and separate
+runtime assets, state, cache and manager-memory costs. Results are fixture
+measurements, not a universal performance guarantee.
 
-## Outstanding gates
+On the maintainer's macOS 26.6.1 arm64 machine, the exact archive, npm and private
+Homebrew packages also passed isolated install/control/removal checks. These
+additional checks did not modify the existing installation and do not add another
+formal platform or a macOS workload backend.
 
-| Gate | Required evidence |
-| --- | --- |
-| Linux fixtures | Apply [#16](https://github.com/gitstore-dev/cli/pull/16): available pinned Fedora 44 base and working-directory change after switching to the fixture UID. |
-| Full qualification | Rebuild from the reviewed repair/version commit and pass all six hosts/22 selections with exact-byte receipts. Old tags and partial receipts cannot be reused for a new source. |
-| T038 | Actual tag-bound signing/producer verification, own signed positive and required negative controls. Release Please proposal/tag events and the four-platform build have passed. |
-| T039 | Complete qualified inventory, attestation bundles, support matrix and readiness review. |
-| T064 | Final guide, links and delivered inventory review; distinguish qualified support from implemented behavior. |
-| Publication | Required maintainer approval of `release-publication` after qualification and producer verification. |
+## Limits and remaining delivery
 
-Repair validation: 91 package-policy cases (84 passed, seven explicit fixture
-skips), all 29 release-policy cases, workflow lint and documentation checks.
-A public-bundle regression covers inaccessible caller/target directories. An
-isolated Linux probe verified the actual UID-1001 → UID-11000 transition and
-private-home clone/checkout. Both replacement Fedora fixture images built with
-all prerequisites on arm64/amd64; image builds do not establish native acceptance.
+- GitStore and this CLI are early alpha. Upstream schemas change incompatibly.
+  Upgrade compatibility, data preservation and recovery are not guaranteed. Use,
+  upgrade, migration or removal may lose data. Keep independent backups; do not
+  use prereleases for irreplaceable data.
+- Linux `gitstored` is 22,087,920 bytes on x64 and 22,409,424 bytes on arm64.
+  Bundle reduction is deferred. Runtime image/state costs are separate from the
+  package and daemon sizes; see the machine-readable measurements.
+- APT/DNF install downloaded release files; no package registry or repository
+  publication is included. npm installs the platform-specific GitHub Release
+  tarball. Nix is deferred. macOS local workloads remain unsupported.
+- Capability coverage remains the shipped alpha.9 public-contract increment in
+  [the capability inventory](../../../specs/004-release-unblocked-capabilities/contracts/capabilities.md).
+  Named upstream dependencies remain gated; this release does not complete every
+  M0–M3 capability.
+- Earlier failed candidates remain unpublished and their receipts were not reused.
+  Alpha.5 build and qualification each passed without a retry.
 
-## Supporting acceptance evidence
-
-| Scope | Evidence | Limit |
-| --- | --- | --- |
-| CLI capabilities | [Contracts and gap inventory](../../../specs/004-release-unblocked-capabilities/contracts/capabilities.md), [controlled CLI results](remote-cli.md), [shipped-server integration](https://github.com/gitstore-dev/cli/actions/runs/42692602984) | Pinned alpha.9 public contract; unsupported operations remain gated. |
-| Development packages | [Package review](alpha1-package-review.json), [all 22 replacement/removal selections](alpha1-upgrade-review.json) | Earlier source/byte identities; not final alpha.2 qualification. |
-| Linux native lifecycle/performance | [Ubuntu](https://github.com/gitstore-dev/cli/actions/runs/42669876762), [Fedora](https://github.com/gitstore-dev/cli/actions/runs/42669882585) | Earlier development pairs on both architectures; require fresh tag-bound acceptance. |
-| Release Please | [Alpha.1 event](https://github.com/gitstore-dev/cli/actions/runs/42790057056), [alpha.2 event](https://github.com/gitstore-dev/cli/actions/runs/42804184989) | Successful tag/draft creation is not publication. |
-| Signing policy | [Own signing preflight and negative controls](https://github.com/gitstore-dev/cli/actions/runs/42630137792) | Branch fixture only; production policy rejects its identity. |
-
-## Requirement trace
-
-| Requirement | Evidence or remaining gate |
-| --- | --- |
-| FR-001 | Pinned upstream source/release review in capability contracts. |
-| FR-002 | M0–M3 gap inventory and explicit external dependencies in capability contracts. |
-| FR-003 | Controlled and shipped-server capability checks; unsupported providers/operations stay gated. |
-| FR-004 | Command matrix/dependencies reconciled with shipped alpha.9 selector mappings. |
-| FR-005 | Public transports, credential isolation, authoring fidelity and bounded-watch regressions. |
-| FR-006 | Actual Release Please proposals, synchronized versions, tags and draft events. |
-| FR-007 | Homebrew/APT/DNF/npm development acceptance; final matrix remains incomplete. Nix deferred. |
-| FR-008 | Matching executable pairs and complete frozen packaging/source/relink inventory; qualified distribution pending. |
-| FR-009 | Private first-use directories/socket and daemon-independent remote commands tested. |
-| FR-010 | Earlier Linux lifecycle/first-use controls passed; fresh Linux tag qualification blocked. |
-| FR-011 | Signing preflight passed; final-subject attestation and producer verification pending T038. |
-| FR-012 | Retry/conflict/incomplete-release and identity controls tested; actual final signed evidence pending. |
-| FR-013 | Six current macOS selections passed; remaining 16 Linux selections blocked by fixtures. |
-| FR-014 | Lifecycle documentation/tests retain no upgrade, data-preservation or recovery guarantees. |
-| FR-015 | Earlier native/offline/recovery/integrity/performance evidence; fresh Linux tag acceptance pending. |
-| FR-016 | Upload/LFS, CRD/MediaAsset, transfer, catalogue publication and CSI retain named gates. |
-| FR-017 | Installation/help/package notices and publisher enforce the early-alpha/schema-change disclaimer. |
-| SC-001 | Command-family classification and remaining dependencies in capability contracts. |
-| SC-002 | Earlier 22-selection lifecycle matrix passed; final exact-byte matrix incomplete. |
-| SC-003 | Earlier Ubuntu/Fedora native acceptance; current macOS remote/control acceptance. |
-| SC-004 | Final release provenance verification remains open. |
-| SC-005 | Alpha.1 version synchronization tested; alpha.2 train/build verified; no qualified public distribution yet. |
-| SC-006 | Controlled success/fault and pinned shipped-server checks for enabled capabilities. |
-| SC-007 | Disclaimer coverage tested; final release-note/inventory review remains open. |
-
-Detailed superseded validation is retained in [Git history](https://github.com/gitstore-dev/cli/blob/57296249c1ebe464e51f51a7fb74a98e5b366070/docs/contributing/validation/release-alpha1.md).
-Update this summary when evidence or qualification status changes; keep execution
-logs and investigation history in CI and pull requests.
+T038 (actual signing and negative controls) and T039 (complete readiness inventory)
+are satisfied. T064 remains open until the required maintainer approves the
+waiting publication, public assets and bundles are checked, and the generated
+single-file Homebrew formula PR passes review and merges. Final delivery checks
+must verify public download digests, the alpha disclaimer and installation through
+the public URLs. Consumer attestation verification remains optional.
