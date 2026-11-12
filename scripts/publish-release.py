@@ -76,7 +76,8 @@ class GitHub:
             raise ValueError('release changed before preparing its prerelease notice')
         body = release.get('body') or ''
         if not body.startswith(notice + '\n\n'):
-            self.api(f'releases/{self.release_id}', dict(body=notice + '\n\n' + body))
+            self.api(f'releases/{self.release_id}', dict(tag_name=self.tag,
+                draft=True, prerelease=True, body=notice + '\n\n' + body))
 
     def upload(self, name, payload):
         if not hasattr(self, 'release_id'):
@@ -91,7 +92,8 @@ class GitHub:
                     '--header', 'Content-Type: application/octet-stream', '--input', str(path))
 
     def promote(self):
-        self.api(f'releases/{self.release_id}', dict(draft=False, prerelease=True, make_latest='false'))
+        self.api(f'releases/{self.release_id}', dict(tag_name=self.tag,
+            draft=False, prerelease=True, make_latest='false'))
 
     def update_tap(self, tag, payload):
         releases = self.api('releases?per_page=100')
