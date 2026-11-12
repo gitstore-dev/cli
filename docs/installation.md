@@ -1,8 +1,10 @@
 # GitHub-hosted installation
 
-**Alpha.5 has passed all six reference hosts and 22 package selections;
-publication is in progress.** The commands below select that exact candidate. Consult the
-[release evidence](contributing/validation/release-qualification.md) for actual results.
+**[Alpha.5 is available on GitHub Releases](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5).**
+All six reference hosts and 22 package selections passed. The commands below
+select that exact release. Consult the
+[release evidence](contributing/validation/release-qualification.md) for results
+and limits.
 
 GitStore and this CLI are early alpha. Upstream schemas will continue changing
 incompatibly. Upgrade compatibility, data preservation and recovery are not
@@ -55,7 +57,7 @@ its installer checks those even though this formula copies prebuilt GitStore
 binaries and never compiles `gs` or `gitstored`. The archive, APT, DNF and npm
 paths do not require a compiler.
 
-After the published release's generated formula PR merges:
+Add this repository as an explicit Git URL tap:
 
 ```sh
 brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git
@@ -87,12 +89,17 @@ brew uninstall gitstore-dev/cli/gitstore
 
 ## APT
 
-Download the exact release `.deb` from the GitHub release page. For example,
-`gitstore_0.1.0~alpha.5-1_arm64.deb` (`amd64` for x86_64), then:
+For arm64 (`amd64` for x86_64), download the exact release `.deb` and install it:
 
 ```sh
+curl --fail --location --output 'gitstore_0.1.0~alpha.5-1_arm64.deb' \
+  'https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore_0.1.0.alpha.5-1_arm64.deb'
 sudo apt install ./gitstore_0.1.0~alpha.5-1_arm64.deb
 ```
+
+GitHub replaces `~` with `.` in Debian download names. The command saves the
+signed inventory/checksum filename locally; the package's internal Debian version
+is still `0.1.0~alpha.5-1`. The same mapping applies to its attestation bundle.
 
 APT resolves declared system dependencies. This is a local package installation,
 not an APT repository subscription. Install a later exact downloaded `.deb` to

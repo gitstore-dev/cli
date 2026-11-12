@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "qualified and producer-verified; approved same-candidate publication recovery in progress",
+  "status": "qualified, producer-verified and published; signed Homebrew formula supplied by PR #25",
   "tag": "v0.1.0-alpha.5",
   "sourceRevision": "968ee1d44ce550c76a05b311c000c87fd910e444",
   "buildRun": 43164227501,
@@ -21,7 +21,8 @@
       "unpackedBytes": 9984479,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz"
     },
     {
       "filename": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz",
@@ -33,7 +34,8 @@
       "unpackedBytes": 9984479,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
       "bundle": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
@@ -45,7 +47,8 @@
       "unpackedBytes": 9984479,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-darwin-x64.install.json.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-darwin-x64.install.json"
     },
     {
       "filename": "gs-0.1.0-alpha.5-darwin-x64",
@@ -57,7 +60,8 @@
       "unpackedBytes": 9984479,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
       "bundle": "gs-0.1.0-alpha.5-darwin-x64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gs-0.1.0-alpha.5-darwin-x64"
     },
     {
       "filename": "gitstored-0.1.0-alpha.5-darwin-x64",
@@ -69,7 +73,8 @@
       "unpackedBytes": 9984479,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
       "bundle": "gitstored-0.1.0-alpha.5-darwin-x64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstored-0.1.0-alpha.5-darwin-x64"
     },
     {
       "filename": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz",
@@ -81,7 +86,8 @@
       "unpackedBytes": 25450507,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.5-darwin-x64.tar.gz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz",
@@ -93,7 +99,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-linux-x64.tar.gz"
     },
     {
       "filename": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz",
@@ -105,7 +112,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
@@ -117,7 +125,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-linux-x64.install.json.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-linux-x64.install.json"
     },
     {
       "filename": "gs-0.1.0-alpha.5-linux-x64",
@@ -129,7 +138,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gs-0.1.0-alpha.5-linux-x64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gs-0.1.0-alpha.5-linux-x64"
     },
     {
       "filename": "gitstored-0.1.0-alpha.5-linux-x64",
@@ -141,7 +151,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstored-0.1.0-alpha.5-linux-x64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstored-0.1.0-alpha.5-linux-x64"
     },
     {
       "filename": "gitstore_0.1.0~alpha.5-1_amd64.deb",
@@ -153,7 +164,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstore_0.1.0~alpha.5-1_amd64.deb.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore_0.1.0.alpha.5-1_amd64.deb"
     },
     {
       "filename": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm",
@@ -165,7 +177,8 @@
       "unpackedBytes": 35911065,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-x64.install.json",
       "bundle": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm"
     },
     {
       "filename": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz",
@@ -177,7 +190,8 @@
       "unpackedBytes": 92454167,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.5-linux-x64.tar.gz"
     },
     {
       "filename": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz",
@@ -189,7 +203,8 @@
       "unpackedBytes": 27783860,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-relink-0.1.0-alpha.5-linux-x64.tar.gz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz",
@@ -201,7 +216,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz"
     },
     {
       "filename": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz",
@@ -213,7 +229,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
@@ -225,7 +242,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-linux-arm64.install.json.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-linux-arm64.install.json"
     },
     {
       "filename": "gs-0.1.0-alpha.5-linux-arm64",
@@ -237,7 +255,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gs-0.1.0-alpha.5-linux-arm64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gs-0.1.0-alpha.5-linux-arm64"
     },
     {
       "filename": "gitstored-0.1.0-alpha.5-linux-arm64",
@@ -249,7 +268,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstored-0.1.0-alpha.5-linux-arm64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstored-0.1.0-alpha.5-linux-arm64"
     },
     {
       "filename": "gitstore_0.1.0~alpha.5-1_arm64.deb",
@@ -261,7 +281,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstore_0.1.0~alpha.5-1_arm64.deb.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore_0.1.0.alpha.5-1_arm64.deb"
     },
     {
       "filename": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm",
@@ -273,7 +294,8 @@
       "unpackedBytes": 35672951,
       "installInventory": "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
       "bundle": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm"
     },
     {
       "filename": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz",
@@ -285,7 +307,8 @@
       "unpackedBytes": 92435957,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.5-linux-arm64.tar.gz"
     },
     {
       "filename": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz",
@@ -297,7 +320,8 @@
       "unpackedBytes": 28579022,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-relink-0.1.0-alpha.5-linux-arm64.tar.gz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz",
@@ -309,7 +333,8 @@
       "unpackedBytes": 9655799,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz"
     },
     {
       "filename": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz",
@@ -321,7 +346,8 @@
       "unpackedBytes": 9655799,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
       "bundle": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz"
     },
     {
       "filename": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
@@ -333,7 +359,8 @@
       "unpackedBytes": 9655799,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
       "bundle": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json"
     },
     {
       "filename": "gs-0.1.0-alpha.5-darwin-arm64",
@@ -345,7 +372,8 @@
       "unpackedBytes": 9655799,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
       "bundle": "gs-0.1.0-alpha.5-darwin-arm64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gs-0.1.0-alpha.5-darwin-arm64"
     },
     {
       "filename": "gitstored-0.1.0-alpha.5-darwin-arm64",
@@ -357,7 +385,8 @@
       "unpackedBytes": 9655799,
       "installInventory": "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
       "bundle": "gitstored-0.1.0-alpha.5-darwin-arm64.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstored-0.1.0-alpha.5-darwin-arm64"
     },
     {
       "filename": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz",
@@ -369,7 +398,8 @@
       "unpackedBytes": 25457297,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.5-darwin-arm64.tar.gz"
     },
     {
       "filename": "gitstore.rb",
@@ -381,7 +411,8 @@
       "unpackedBytes": 2165,
       "installInventory": "release-inventory.json",
       "bundle": "gitstore.rb.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "gitstore.rb"
     },
     {
       "filename": "release-inventory.json",
@@ -393,7 +424,8 @@
       "unpackedBytes": 19160,
       "installInventory": "release-inventory.json",
       "bundle": "release-inventory.json.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "release-inventory.json"
     },
     {
       "filename": "SHA256SUMS",
@@ -405,7 +437,8 @@
       "unpackedBytes": 3366,
       "installInventory": "release-inventory.json",
       "bundle": "SHA256SUMS.sigstore.jsonl",
-      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4"
+      "bundleSha256": "d884e644bf8fc6b1a73ba5825f7901405c111e6a58ecc578bcd99918fe93e1d4",
+      "hostedFilename": "SHA256SUMS"
     }
   ],
   "hostChannelResults": [
@@ -1375,14 +1408,25 @@
     "removed": true
   },
   "publication": {
-    "status": "approved-maintainer-recovery-in-progress",
+    "status": "published",
+    "releaseUrl": "https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5",
+    "publicAssets": 66,
+    "prerelease": true,
     "environment": "release-publication",
-    "publicAssets": 0,
-    "homebrewFormula": "pending publication and subsequent formula PR merge",
     "approvedBy": "juliuskrah",
+    "approvalRun": 43179378305,
     "originalWorkflowConclusion": "failure",
-    "originalFailure": "draft release lookup returned 404 before uploads",
-    "recoveryToolingCommit": "eb9a767"
+    "originalFailure": "draft lookup returned 404 before uploads",
+    "deliveryMethod": "maintainer recovery after recorded environment approval, using unchanged original signed subjects and all producer/receipt/complete-byte-set checks",
+    "recoveryToolingCommit": "2b896ce934e09db4b8a2bef18d91c2401e028213",
+    "homebrewFormulaPullRequest": 25,
+    "homebrewFormulaSha256": "fcc9c69bf88e5e3fb0036487f20dddeedb9f00ac9bce5e5529de01e2f76760c3",
+    "hostedToLogical": {
+      "gitstore_0.1.0.alpha.5-1_amd64.deb": "gitstore_0.1.0~alpha.5-1_amd64.deb",
+      "gitstore_0.1.0.alpha.5-1_amd64.deb.sigstore.jsonl": "gitstore_0.1.0~alpha.5-1_amd64.deb.sigstore.jsonl",
+      "gitstore_0.1.0.alpha.5-1_arm64.deb": "gitstore_0.1.0~alpha.5-1_arm64.deb",
+      "gitstore_0.1.0.alpha.5-1_arm64.deb.sigstore.jsonl": "gitstore_0.1.0~alpha.5-1_arm64.deb.sigstore.jsonl"
+    }
   },
   "supersededQualification": {
     "tag": "v0.1.0-alpha.4",
@@ -1395,5 +1439,52 @@
     "subjectBytes": 468729270,
     "receiptCount": 22,
     "scope": "All frozen bytes, install inventories, receipt source/tag/subject bindings and executable-bound performance identities revalidated locally"
+  },
+  "publicDelivery": {
+    "unauthenticatedDownloadChecks": 66,
+    "downloadedAndHashedFiles": 38,
+    "downloadedSubjectsWithVerifiedSignatures": [
+      "gitstore-0.1.0-alpha.5-darwin-x64.tar.gz",
+      "gitstore-npm-0.1.0-alpha.5-darwin-x64.tgz",
+      "gitstore-0.1.0-alpha.5-darwin-x64.install.json",
+      "gitstore-0.1.0-alpha.5-linux-x64.tar.gz",
+      "gitstore-npm-0.1.0-alpha.5-linux-x64.tgz",
+      "gitstore-0.1.0-alpha.5-linux-x64.install.json",
+      "gitstore_0.1.0~alpha.5-1_amd64.deb",
+      "gitstore-0.1.0-0.alpha.5.1.x86_64.rpm",
+      "gitstore-0.1.0-alpha.5-linux-arm64.tar.gz",
+      "gitstore-npm-0.1.0-alpha.5-linux-arm64.tgz",
+      "gitstore-0.1.0-alpha.5-linux-arm64.install.json",
+      "gitstore_0.1.0~alpha.5-1_arm64.deb",
+      "gitstore-0.1.0-0.alpha.5.1.aarch64.rpm",
+      "gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz",
+      "gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz",
+      "gitstore-0.1.0-alpha.5-darwin-arm64.install.json",
+      "gitstore.rb",
+      "release-inventory.json",
+      "SHA256SUMS"
+    ],
+    "allHostedNamesSizesAndDigestsMatch": true,
+    "mandatoryDisclaimerPresent": true,
+    "publicNpmInstallation": {
+      "tag": "v0.1.0-alpha.5",
+      "sourceRevision": "968ee1d44ce550c76a05b311c000c87fd910e444",
+      "host": "macOS-26.6.1-arm64-arm-64bit-Mach-O",
+      "channel": "npm",
+      "input": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-npm-0.1.0-alpha.5-darwin-arm64.tgz",
+      "result": "pass",
+      "scope": "Actual public GitHub URL installation with isolated npm/config/state; both linked binaries match signed hashes and pass help/version without a verifier or runtime state; removal passed",
+      "binaries": [
+        {
+          "command": "gs",
+          "sha256": "a2644b0163c04b7b9c7c9bbf6e200e7e699116c8eb5627b6698fc09c52df4dce"
+        },
+        {
+          "command": "gitstored",
+          "sha256": "911a5daeafa36322ad3bcb2de20af17dc2baa46e197cb569e45208ba67d3d7ab"
+        }
+      ],
+      "removed": true
+    }
   }
 }
