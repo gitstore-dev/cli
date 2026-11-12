@@ -16,11 +16,13 @@ incompatibly; upgrade compatibility, data preservation and recovery are not
 guaranteed. Use, upgrade, migration or removal may cause data loss. Keep independent
 backups and do not rely on prereleases for irreplaceable data.
 
-Local execution is a source preview, exercised on a Linux arm64 development host.
-Use matching native `gs` and `gitstored` builds installed in the same trusted
-directory; see [building from source](contributing/building.md). A control-only
-daemon build cannot start workloads. Broader Linux host support and native macOS
-execution have not been established.
+Alpha.5 native core execution passed on Ubuntu 24.04 and Fedora 44, each on
+x86_64 and arm64. Use matching native `gs` and `gitstored` binaries installed
+together; see [installation](installation.md) or
+[building from source](contributing/building.md). A control-only daemon cannot
+start workloads. macOS local execution remains unsupported. See the
+[qualification record](contributing/validation/release-qualification.md) for the
+tested profiles and host limits; optional OIDC has separate development evidence.
 
 The Linux host needs user namespaces, cgroup v2 with delegated CPU/memory/PID
 controllers, a working systemd user session and bus, accessible TUN, and the pidfd
