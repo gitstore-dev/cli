@@ -29,10 +29,12 @@ class NpmLifecycle(unittest.TestCase):
             for version in versions:
                 metadata = dict(name=f'@gitstore/cli-{os_name}-{arch}', version=version,
                     os=[os_name], cpu=[arch], bin={'gs': 'bin/gs', 'gitstored': 'bin/gitstored'})
+                unavailable = json.dumps(dict(code='UNSUPPORTED_HOST', message='Requires native Linux'))
                 script = ('#!/bin/sh\ncase "$1" in\n'
                     f'--version) echo "fixture {version}";;\n'
                     '--help) echo "synthetic package fixture";;\n'
-                    'deployment) exit 6;;\n*) exit 1;;\nesac\n').encode()
+                    f"deployment) printf '%s\\n' '{unavailable}' >&2; exit 6;;\n"
+                    '*) exit 1;;\nesac\n').encode()
                 payload = {'package/package.json': (json.dumps(metadata).encode(), 0o644),
                     **{f'package/bin/{name}': (script, 0o755) for name in ['gs', 'gitstored']}}
                 artifact = root / (version + '.tgz')

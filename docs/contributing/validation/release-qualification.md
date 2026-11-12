@@ -5,6 +5,13 @@ All six reference hosts and 22 package selections passed. All 33 final subjects
 and their 33 standard attestation bundles are publicly downloadable. The signed
 Homebrew formula is supplied by [#25](https://github.com/gitstore-dev/cli/pull/25).
 
+Post-release limitation: alpha.5 reports `NOT_FOUND` for a macOS local command
+when `XDG_RUNTIME_DIR` is absent, instead of the intended `UNSUPPORTED_HOST`.
+Its package fixtures had always set that variable. T065–T067 track the diagnostic,
+ordinary-shell regression checks, user-guide correction and subsequent delivery.
+The source correction and ordinary-shell regressions are implemented; shipping
+them remains T067. Local macOS execution remains outside this release's scope.
+
 Use the [release runbook](../releases.md) for operating instructions and the
 [complete inventory and results](alpha5-qualification-review.json) for exact hashes,
 bundle hashes, host receipts, performance and provenance controls.

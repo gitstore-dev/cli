@@ -104,6 +104,57 @@ fn automatic_macos_runtime_is_explicitly_unsupported_without_user_state() {
     assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
 }
 
+#[cfg(target_os = "macos")]
+#[test]
+fn macos_without_xdg_runtime_reports_unsupported_host_without_creating_state() {
+    for args in [
+        vec!["deployment", "list", "-o", "json"],
+        vec!["serve", "--deployment", "local", "--detach", "-o", "json"],
+    ] {
+        let root = tempfile::tempdir().unwrap();
+        let canonical = root.path().canonicalize().unwrap();
+        let result = std::process::Command::new(env!("CARGO_BIN_EXE_gs"))
+            .env_clear()
+            .env("HOME", &canonical)
+            .env("PATH", "/nonexistent")
+            .args(&args)
+            .output()
+            .unwrap();
+        assert_eq!(
+            result.status.code(),
+            Some(6),
+            "{args:?}: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert!(result.stdout.is_empty());
+        let error: serde_json::Value = serde_json::from_slice(&result.stderr).unwrap();
+        assert_eq!(error["code"], "UNSUPPORTED_HOST");
+        assert!(error["message"].as_str().unwrap().contains("Linux"));
+        assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn macos_explicit_socket_without_xdg_runtime_remains_connect_only() {
+    let root = tempfile::tempdir().unwrap();
+    let canonical = root.path().canonicalize().unwrap();
+    let result = std::process::Command::new(env!("CARGO_BIN_EXE_gs"))
+        .env_clear()
+        .env("HOME", &canonical)
+        .env("PATH", "/nonexistent")
+        .arg("--daemon-socket")
+        .arg(canonical.join("missing.sock"))
+        .args(["deployment", "list", "-o", "json"])
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(4));
+    let error: serde_json::Value = serde_json::from_slice(&result.stderr).unwrap();
+    assert_eq!(error["code"], "NOT_FOUND");
+    assert!(result.stdout.is_empty());
+    assert_eq!(std::fs::read_dir(root.path()).unwrap().count(), 0);
+}
+
 #[test]
 #[ignore = "requires explicitly built C daemon; run scripts/test-daemon.sh"]
 fn isolated_daemon_setup_and_gated_execution() {

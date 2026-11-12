@@ -1,9 +1,26 @@
 """Owner-only, synthetic package fixtures. Never inherit a user's environment."""
 from contextlib import contextmanager
+import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import tempfile
+
+
+def macos_runtime_boundary(binary, environment, workspace):
+    """Check ordinary macOS shells as well as explicitly configured fixtures."""
+    for configured in (True, False):
+        selected = dict(environment)
+        if not configured:
+            selected.pop('XDG_RUNTIME_DIR', None)
+        reply = subprocess.run([str(binary), 'deployment', 'list', '-o', 'json'],
+            cwd=workspace, env=selected, capture_output=True, timeout=15)
+        if reply.returncode != 6 or reply.stdout:
+            raise ValueError('macOS local runtime must report UNSUPPORTED_HOST with or without XDG_RUNTIME_DIR')
+        error = json.loads(reply.stderr)
+        if error.get('code') != 'UNSUPPORTED_HOST' or 'Linux' not in error.get('message', ''):
+            raise ValueError('macOS local runtime diagnostic must explain the Linux requirement')
 
 
 def owned_file(path, executable=False):

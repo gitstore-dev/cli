@@ -14,6 +14,7 @@ import tempfile
 from homebrew_lifecycle import checked_archive
 from inventory import validate_tree
 from versions import order_key
+from support import macos_runtime_boundary
 
 
 def unpack(artifact, digest, version, destination):
@@ -74,10 +75,7 @@ def run(args):
                 if reply.stderr or not reply.stdout or flag == '--version' and version.encode() not in reply.stdout:
                     raise ValueError('relocated archive command identity/help failed')
         if sys.platform == 'darwin':
-            reply = subprocess.run([str(relocated/'bin/gs'), 'deployment','list','-o','json'],
-                cwd=root, env=env, capture_output=True, timeout=15)
-            if reply.returncode != 6 or reply.stdout:
-                raise ValueError('macOS archive must refuse unavailable runtime explicitly')
+            macos_runtime_boundary(relocated/'bin/gs', env, root)
         after = {str(p.relative_to(root)) for name in ('config','state','runtime') for p in (root/name).rglob('*')}
         if before != after:
             raise ValueError('archive help/version initialized runtime state')
