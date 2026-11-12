@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "qualified-and-producer-verified; publication requires human approval",
+  "status": "qualified and producer-verified; approved same-candidate publication recovery in progress",
   "tag": "v0.1.0-alpha.5",
   "sourceRevision": "968ee1d44ce550c76a05b311c000c87fd910e444",
   "buildRun": 43164227501,
@@ -1375,10 +1375,14 @@
     "removed": true
   },
   "publication": {
-    "status": "waiting-for-required-human-review",
+    "status": "approved-maintainer-recovery-in-progress",
     "environment": "release-publication",
     "publicAssets": 0,
-    "homebrewFormula": "pending publication and subsequent formula PR merge"
+    "homebrewFormula": "pending publication and subsequent formula PR merge",
+    "approvedBy": "juliuskrah",
+    "originalWorkflowConclusion": "failure",
+    "originalFailure": "draft release lookup returned 404 before uploads",
+    "recoveryToolingCommit": "eb9a767"
   },
   "supersededQualification": {
     "tag": "v0.1.0-alpha.4",

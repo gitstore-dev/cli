@@ -1,9 +1,9 @@
 # Release qualification
 
-**Alpha.5 is qualified and producer-verified; publication is awaiting required
-maintainer approval.** All six reference hosts and 22 package selections passed.
-All 33 final subjects have verified GitHub Actions attestations. No assets are
-public yet, and Homebrew delivery will require the generated formula PR to merge.
+**Alpha.5 is qualified and producer-verified; approved publication recovery is
+in progress.** All six reference hosts and 22 package selections passed.
+All 33 final subjects have verified GitHub Actions attestations. The release remains a draft until every reviewed asset is uploaded and checked.
+Homebrew delivery will require the generated formula PR to merge.
 
 Use the [release runbook](../releases.md) for operating instructions and the
 [complete inventory and results](alpha5-qualification-review.json) for exact hashes,
@@ -18,7 +18,7 @@ bundle hashes, host receipts, performance and provenance controls.
 | Release proposal | [#24](https://github.com/gitstore-dev/cli/pull/24), merged through the queue with passing required CI |
 | Build | [43164227501](https://github.com/gitstore-dev/cli/actions/runs/43164227501), four platforms and assembly passed |
 | Qualification | [43165938837](https://github.com/gitstore-dev/cli/actions/runs/43165938837), all 22 selections and complete collector passed |
-| Signing and producer verification | [43179378305](https://github.com/gitstore-dev/cli/actions/runs/43179378305), passed; publication waiting |
+| Signing and producer verification | [43179378305](https://github.com/gitstore-dev/cli/actions/runs/43179378305), signing/producer verification passed; approved publication failed at draft lookup |
 | Frozen subjects | 33 subjects, 468,729,270 bytes, plus 33 standard `.sigstore.jsonl` bundles |
 | Inventory SHA-256 | `32602faa4c0491d6e2d184ab21008635207316144b891827abb3669b1cdb7c50` |
 | SHA256SUMS SHA-256 | `03c5415ae3276c00d33636a7f3330c98ed0c76f5bbfe82400334ee54f6380761` |
@@ -72,8 +72,8 @@ formal platform or a macOS workload backend.
   Alpha.5 build and qualification each passed without a retry.
 
 T038 (actual signing and negative controls) and T039 (complete readiness inventory)
-are satisfied. T064 remains open until the required maintainer approves the
-waiting publication, public assets and bundles are checked, and the generated
+are satisfied. The required maintainer approved publication in GitHub. T064 remains open until
+public assets and bundles are checked and the generated
 single-file Homebrew formula PR passes review and merges. Final delivery checks
 must verify public download digests, the alpha disclaimer and installation through
 the public URLs. Consumer attestation verification remains optional.
