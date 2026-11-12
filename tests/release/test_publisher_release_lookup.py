@@ -52,6 +52,28 @@ class ReleaseLookup(unittest.TestCase):
             self.assertEqual(api.call_count, 10)
             self.assertFalse(hasattr(self.client, 'release_id'))
 
+    def test_upload_uses_pinned_id_and_an_exact_binary_body(self):
+        self.client.release_id = 42
+
+        def upload(*args):
+            self.assertEqual(args[:6], ('api',
+                'https://uploads.github.com/repos/gitstore-dev/cli/releases/42/assets?name=SHA256SUMS',
+                '--method', 'POST', '--header', 'Content-Type: application/octet-stream'))
+            self.assertEqual(args[6], '--input')
+            self.assertEqual(Path(args[7]).read_bytes(), b'exact approved bytes\x00\xff')
+            self.assertNotIn('--clobber', args)
+            return b'{}'
+
+        with patch.object(self.client, 'gh', side_effect=upload) as gh:
+            self.client.upload('SHA256SUMS', b'exact approved bytes\x00\xff')
+            gh.assert_called_once()
+
+    def test_upload_cannot_guess_an_uninspected_draft(self):
+        with patch.object(self.client, 'gh') as gh:
+            with self.assertRaises(ValueError):
+                self.client.upload('SHA256SUMS', b'bytes')
+            gh.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
