@@ -64,8 +64,12 @@ Namespace, Repository, Product and CategoryTaxonomy deletion resolve the selecte
 resource before requesting deletion. A successful deletion request starts
 termination; it does not prove that controller cleanup has finished.
 
-Namespace/Repository creation, safe updates and Collection mutations are not
-available as high-level commands in this preview.
+With the explicit alpha.9 profile, `gs create -f namespace.md -f repository.md`
+also accepts Namespace and Repository documents. Namespace is cluster scoped;
+Repository requires a namespace. Both reject nonempty document bodies and
+unsupported author fields before submission; see the
+[profile and authoring limits](configuration.md). Legacy-profile scoped creation,
+safe updates and Collection mutations remain unavailable.
 
 ## Clone and sync repositories
 

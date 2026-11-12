@@ -50,8 +50,9 @@ gs deployment stop dev
 The default catalogue is in memory and resets when the API restarts; repository
 data and credentials are retained. Select `--datastore scylladb` for a retained
 catalogue. Matching Linux binaries provide deployment logs and registered
-standalone migration; optional services and native macOS execution remain
-unavailable. Alpha.5 native acceptance covers Ubuntu 24.04 and Fedora 44 on both
+standalone migration. Admin/Storefront and native macOS execution remain
+unavailable; optional OIDC has separate development evidence. Alpha.5 native core
+acceptance covers Ubuntu 24.04 and Fedora 44 on both
 x64 and arm64. Read the
 [local deployment guide](docs/local-runtime.md) for prerequisites, migration backup
 acknowledgment, disk footprint and recovery limits.
