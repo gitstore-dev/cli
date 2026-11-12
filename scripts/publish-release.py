@@ -13,6 +13,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from urllib.parse import urlencode
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'runtime/packaging'))
 from publication import publish
@@ -78,10 +79,16 @@ class GitHub:
             self.api(f'releases/{self.release_id}', dict(body=notice + '\n\n' + body))
 
     def upload(self, name, payload):
+        if not hasattr(self, 'release_id'):
+            raise ValueError('inspect and pin the existing release before uploading')
         with tempfile.TemporaryDirectory(prefix='gitstore-release-upload-') as directory:
             path = Path(directory) / safe_name(name)
             path.write_bytes(payload)
-            self.gh('release', 'upload', self.tag, str(path), '--repo', REPOSITORY)
+            # The tag-based CLI upload can also fail to discover drafts. Use the
+            # documented upload endpoint for the same pinned release ID.
+            endpoint = f'https://uploads.github.com/repos/{REPOSITORY}/releases/{self.release_id}/assets'
+            self.gh('api', endpoint + '?' + urlencode({'name': name}), '--method', 'POST',
+                    '--header', 'Content-Type: application/octet-stream', '--input', str(path))
 
     def promote(self):
         self.api(f'releases/{self.release_id}', dict(draft=False, prerelease=True, make_latest='false'))
