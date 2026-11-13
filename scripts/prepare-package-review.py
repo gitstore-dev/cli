@@ -21,12 +21,16 @@ from inventory import validate_install
 from versions import validate_alpha_proposal
 
 
+LINUX_PRODUCERS = ('runtime-ci.yml', 'runtime.yml')
+
+
 def selected_run(identity,workflow):
     if identity<=0:
         raise ValueError('select explicit positive CI run IDs')
+    workflows = (workflow,) if isinstance(workflow, str) else workflow
     value=json.loads(subprocess.check_output(['gh','api',f'repos/gitstore-dev/cli/actions/runs/{identity}']))
     if (value['repository']['id']!=1431005655 or value['head_repository']['id']!=1431005655
-            or value['path']!='.github/workflows/'+workflow or value['status']!='completed'
+            or value['path'] not in {'.github/workflows/'+name for name in workflows} or value['status']!='completed'
             or value['conclusion']!='success' or value['event'] not in ('push','pull_request','merge_group')
             or not re.fullmatch('[0-9a-f]{40}',value['head_sha'])):
         raise ValueError('select successful same-repository development CI, never a foreign run')
@@ -44,7 +48,7 @@ def main():
     if bool(args.replacement_cli_run)!=bool(args.replacement_linux_run):
         p.error('select both replacement producer runs or neither')
     cli=selected_run(args.cli_run,'cli.yml')
-    linux=selected_run(args.linux_run,'runtime.yml')
+    linux=selected_run(args.linux_run,LINUX_PRODUCERS)
     if cli['head_sha']!=linux['head_sha']:
         raise ValueError('all candidate platforms must come from the same source revision')
     if not args.output.is_absolute() or args.output.exists() or os.geteuid()==0:
@@ -89,7 +93,7 @@ def main():
     (args.output/'gitstore.rb').write_text(render(version,rows))
     if args.replacement_cli_run:
         next_cli=selected_run(args.replacement_cli_run,'cli.yml')
-        next_linux=selected_run(args.replacement_linux_run,'runtime.yml')
+        next_linux=selected_run(args.replacement_linux_run,LINUX_PRODUCERS)
         if next_cli['head_sha']!=next_linux['head_sha']:
             raise ValueError('replacement producers must have the same branch source')
         next_rows=[];next_versions=set();next_sources=set()

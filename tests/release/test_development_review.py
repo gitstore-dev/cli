@@ -12,6 +12,23 @@ spec.loader.exec_module(module)
 
 
 class DevelopmentReview(unittest.TestCase):
+    def test_linux_review_accepts_new_and_retained_legacy_producers(self):
+        value=dict(repository=dict(id=1431005655),head_repository=dict(id=1431005655),
+            head_sha='a'*40,status='completed',conclusion='success',event='push')
+        for workflow in ('runtime-ci.yml', 'runtime.yml', 'cli.yml', 'release.yml'):
+            value['path']='.github/workflows/'+workflow
+            with self.subTest(workflow=workflow),patch.object(module.subprocess,'check_output',
+                    return_value=json.dumps(value).encode()):
+                if workflow in ('runtime-ci.yml', 'runtime.yml'):
+                    self.assertEqual(module.selected_run(1,module.LINUX_PRODUCERS),value)
+                else:
+                    with self.assertRaises(ValueError):
+                        module.selected_run(1,module.LINUX_PRODUCERS)
+        value.update(path='.github/workflows/runtime.yml',event='workflow_dispatch')
+        with patch.object(module.subprocess,'check_output',return_value=json.dumps(value).encode()):
+            with self.assertRaises(ValueError):
+                module.selected_run(1,module.LINUX_PRODUCERS)
+
     def test_explicit_successful_public_ci_is_allowed_only_for_unsigned_review(self):
         value=dict(repository=dict(id=1431005655),head_repository=dict(id=1431005655),
             head_sha='a'*40,path='.github/workflows/cli.yml',status='completed',conclusion='success',event='pull_request')
