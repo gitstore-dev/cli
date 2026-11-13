@@ -541,7 +541,7 @@ jobs:
           import importlib.util, os
           spec = importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')
           module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-          module.selected_run(int(os.environ['SELECTED_RUN']),'runtime.yml')
+          module.selected_run(int(os.environ['SELECTED_RUN']),module.LINUX_PRODUCERS)
           PY
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
@@ -800,7 +800,7 @@ jobs:
           import importlib.util, os
           spec=importlib.util.spec_from_file_location('review','scripts/prepare-package-review.py')
           module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-          module.selected_run(int(os.environ['SELECTED_RUN']),'runtime.yml')
+          module.selected_run(int(os.environ['SELECTED_RUN']),module.LINUX_PRODUCERS)
           PY
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
