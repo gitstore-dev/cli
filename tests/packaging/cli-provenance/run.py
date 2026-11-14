@@ -82,7 +82,7 @@ def main():
             if expected and result.returncode == 0:
                 certificate = json.loads(result.stdout)[0]["verificationResult"]["signature"]["certificate"]
                 record["positiveRepositoryId"] = certificate["sourceRepositoryIdentifier"]
-        path = Path(__file__).resolve().parents[2] / "packaging/release_verification.py"
+        path = Path(__file__).resolve().parents[3] / "runtime/packaging/release_verification.py"
         spec = importlib.util.spec_from_file_location("release_verification", path)
         policy = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(policy)

@@ -103,7 +103,7 @@ Upstream GitStore service images do not require attestations; use trusted-source
 pinned-platform/digest validation online and offline. Their lack of attestations
 is not a runtime blocker. EXP-003A/B now have linking/image/auth/offline/integrity
 source and native evidence; EXP-003C has ten real offline cryptographic controls
-and three policy tests in [the publication experiment](../../runtime/experiments/cli-provenance/README.md).
+and three policy tests in [the publication experiment](../../tests/packaging/cli-provenance/README.md).
 Unsigned own candidates are rejected. No published GitStore artifact or hosted
 release signing run is verified; DEP-013 remains open for distribution/promotion,
 not as a blanket gate on source-preview service startup.

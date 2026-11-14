@@ -258,7 +258,7 @@ unimplemented. The native provisioning layer now adds the internal cache pipelin
 recorded below. No new protocol
 capability is advertised from this code.
 
-The internal [credential broker](../../../runtime/experiments/credential-broker/README.md)
+The internal [credential broker](../../../tests/runtime/credential-broker/README.md)
 uses the installed gs executable over a private same-UID descriptor, with exact
 installation/issuer/account/purpose/registry/repository keys. OS-store reads are
 default and protected files are explicit; failure never selects another source.
@@ -386,7 +386,7 @@ The T040 preparation probe additionally passes real delegated systemd cgroups
 capabilities for the tiny static payload. Normal/static and direct-ELF Clang 18
 ASan/UBSan runs pass both normal and lost-start-ack scenarios. Guest-only fixture
 session preparation is recorded in the
-[delegated libcrun evidence](../../../runtime/experiments/libcrun/delegated-evidence.json).
+[delegated libcrun evidence](../../../tests/runtime/libcrun/delegated-evidence.json).
 This original preparation checkpoint did not exercise the daemon adapter or an
 actual GitStore service. The subsequent adapter checkpoint is recorded below.
 
@@ -407,7 +407,7 @@ read-only mounts, private tmpfs and inherited descriptor checks pass. The exact
 static native library/caller also passes Clang 18 ASan/UBSan. Instrumented builds
 omit worker/workload address-space limits for ASan shadow reservations; ordinary
 runs verify those limits separately. The Mac control suite and instrumented Linux
-control suite each pass 26 CTests. See the [adapter evidence](../../../runtime/experiments/libcrun/adapter.md).
+control suite each pass 26 CTests. See the [adapter evidence](../../../tests/runtime/libcrun/adapter.md).
 Actual GitStore execution, canonical-volume/network lifetimes and public lifecycle
 dispatch remain T041–T043; capability advertisement stays gated.
 
@@ -429,7 +429,7 @@ keeper PID/start time. Registered native normal/lost-ack cases join those exact
 namespaces and mount the fixed read-only resolver; stale-keeper CREATE is rejected.
 Both combined paths pass sanitizer checks. The control suite has 28 passing checks
 on Mac and instrumented Linux at this checkpoint. See
-[network adapter evidence](../../../runtime/experiments/network-library/adapter-evidence.json).
+[network adapter evidence](../../../runtime/build-inputs/libslirp/adapter-evidence.json).
 T041 now also has a confined persistent network worker. Accepted ownership is
 recorded before a blocked fork; the parent commits PID/start/boot/scope identity
 before permitting namespace/TAP/listener effects. Only the user/net namespace FDs
@@ -964,7 +964,7 @@ closes their test/definition scope, not T067/T069/T070 persistent deployment
 execution. `runtime/profiles/scylladb.json` and `migration-targets.json` remain
 `executionEnabled: false`; neither `scylladb` nor public `migration.start` is
 advertised. The checked-in native experiment and its limits are documented in
-[Scylla verification](../../../runtime/experiments/scylladb.md).
+[Scylla verification](../../../tests/runtime/scylladb.md).
 
 `durable_migration_control_contract` passes on macOS normally and with ASan/UBSan,
 and Linux arm64 normally and with ASan/UBSan/leak detection. It covers atomic
@@ -1064,7 +1064,7 @@ normal/sanitized tests cover graph generation, failed/uncertain migration blocki
 immutable configuration files and policy-flag binding. Private production actors now verify full startup, retained restart and observer
 restoration. Public persistent startup remains gated pending remaining migration
 and crash-recovery integration. See the scenario matrix in
-[Scylla verification](../../../runtime/experiments/scylladb.md#persistent-actor-recovery-checks).
+[Scylla verification](../../../tests/runtime/scylladb.md#persistent-actor-recovery-checks).
 
 The bounded collector now supports Git/API/[controller]/Scylla streams, with
 redaction before persistence and Scylla filtering in the existing replay path.

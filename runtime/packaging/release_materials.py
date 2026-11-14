@@ -20,7 +20,7 @@ def validate_source_pin(entry,project):
         sha=pin['sha256']
         source=pin['url']
     elif name in ('libcrun','libslirp'):
-        path='runtime/experiments/libcrun/source-lock.json' if name=='libcrun' else 'runtime/experiments/network-library/source-lock.json'
+        path='runtime/build-inputs/libcrun/source-lock.json' if name=='libcrun' else 'runtime/build-inputs/libslirp/source-lock.json'
         pin=json.loads((project/path).read_text())
         sha=pin['normalizedTarSha256'] if name=='libslirp' else pin['sha256']
         source=pin['url']

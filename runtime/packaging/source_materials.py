@@ -32,7 +32,7 @@ def normalize_source(data,kind=None):
         return data
     if kind!='libslirp-gitiles':
         raise ValueError('unknown source normalization')
-    path = Path(__file__).resolve().parents[2]/'runtime/experiments/network-library/fetch-source.py'
+    path = Path(__file__).resolve().parents[2]/'runtime/build-inputs/libslirp/fetch-source.py'
     spec = importlib.util.spec_from_file_location('release_slirp_source',path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
