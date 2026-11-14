@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import tarfile
 
 from inventory import ROOT, snapshot_file, validate_install, validate_release
 from versions import encode, parse
@@ -24,6 +25,15 @@ def bundle_name(value, filename):
     # alpha releases. Never infer a layout from files present on disk.
     return (SHARED_BUNDLE if value.get('attestationLayout', 'per-subject-v1') ==
             'shared-v1' else safe_name(filename + '.sigstore.jsonl'))
+
+
+def public_artifacts(value):
+    """Keep qualification identities in the ledger, select downloads explicitly."""
+    if value.get('publicationLayout', 'all-inputs-v1') == 'all-inputs-v1':
+        return value['artifacts']
+    internal = {slot_filename(value['version'], kind, row['os'], row['arch'])
+                for row in platforms() for kind in ('gs', 'gitstored', 'manifest')}
+    return [a for a in value['artifacts'] if a['filename'] not in internal]
 
 
 def platforms():
@@ -82,7 +92,7 @@ def propose(version, revision, extra_assets=()):
         raise ValueError('this release policy only permits explicit alpha prereleases')
     required = [slot_filename(version, *slot) for slot in slots()] + sorted(GENERATED)
     required += [safe_name(name) for name in extra_assets]
-    value = dict(schemaVersion=1, attestationLayout='shared-v1', version=version, tag='v' + version, sourceRevision=revision,
+    value = dict(schemaVersion=1, attestationLayout='shared-v1', publicationLayout='packages-v1', version=version, tag='v' + version, sourceRevision=revision,
                  workflow='gitstore-dev/cli/.github/workflows/release.yml', state='proposed',
                  disclaimer=DISCLAIMER, requiredArtifacts=sorted(required), artifacts=[], receipts=[])
     validate_release(value)
@@ -148,6 +158,25 @@ def validate_bytes(value, root):
                 binary = by_name[slot_filename(value['version'], name, os_name, arch)]
                 if manifest['executables'][name]['sha256'] != binary['sha256']:
                     raise ValueError('loose executable differs from the install inventory')
+            if value.get('publicationLayout') == 'packages-v1':
+                archive_name = slot_filename(value['version'], 'archive', os_name, arch)
+                with tarfile.open(Path(root) / archive_name, 'r:gz') as archive:
+                    members = archive.getmembers()
+                    by_path = {m.name: m for m in members}
+                    if len(by_path) != len(members):
+                        raise ValueError('duplicate archive member')
+                    for path, expected_hash in [('share/gitstore/install.json', None)] + [
+                            ('bin/' + binary, manifest['executables'][binary]['sha256'])
+                            for binary in ('gs', 'gitstored')]:
+                        member = by_path.get(path)
+                        if member is None or not member.isfile() or member.size > 1024 * 1024 * 1024:
+                            raise ValueError('archive lacks qualified executable/inventory')
+                        stream = archive.extractfile(member)
+                        if expected_hash is None:
+                            if member.size > 16 * 1024 * 1024 or json.load(stream) != manifest:
+                                raise ValueError('archive install inventory differs from qualification input')
+                        elif hashlib.file_digest(stream, 'sha256').hexdigest() != expected_hash:
+                            raise ValueError('archive executable differs from qualification input')
             for artifact in value['artifacts']:
                 if (artifact['os'], artifact['arch']) == (os_name, arch) and artifact['installInventory'] != inventory_name:
                     raise ValueError('platform subject references the wrong install inventory')
@@ -167,13 +196,19 @@ def freeze(value, root):
     root = Path(root)
     if any((root / n).exists() or (root / n).is_symlink() for n in GENERATED):
         raise FileExistsError('generated subjects already exist; resume the saved packaged ledger')
+    inventories = {}
+    if value.get('publicationLayout') == 'packages-v1':
+        inventories = {slot_filename(value['version'], 'manifest', r['os'], r['arch']):
+                       json.loads((root / slot_filename(value['version'], 'manifest', r['os'], r['arch'])).read_bytes())
+                       for r in platforms()}
     payload = json.dumps(dict(schemaVersion=1, tag=value['tag'], version=value['version'],
         sourceRevision=value['sourceRevision'], disclaimer=DISCLAIMER,
-        artifacts=sorted(value['artifacts'], key=lambda a: a['filename'])), indent=2).encode() + b'\n'
+        **({'installationInventories': inventories} if inventories else {}),
+        artifacts=sorted(public_artifacts(value), key=lambda a: a['filename'])), indent=2).encode() + b'\n'
     for name, kind in [('release-inventory.json', 'manifest'), ('SHA256SUMS', 'checksums')]:
         if kind == 'checksums':
             payload = ''.join(a['sha256'] + '  ' + a['filename'] + '\n'
-                for a in sorted(value['artifacts'], key=lambda a: a['filename'])).encode()
+                for a in sorted(public_artifacts(value), key=lambda a: a['filename'])).encode()
         write_new(root / name, payload)
         value['artifacts'].append(dict(filename=name, format=kind, os='any', arch='any',
             abiFloor='not executable', packageVersion=value['version'], applicationVersion=value['version'],
@@ -229,7 +264,7 @@ def advance(value, target, root, *, reviewed_tag=None, reviewed_revision=None, t
         for artifact in value['artifacts']:
             artifact['receipt'] = ','.join(value['receipts'])
     if STATES.index(target) >= STATES.index('attested'):
-        for artifact in value['artifacts']:
+        for artifact in public_artifacts(value):
             bundle = bundle_name(value, artifact['filename'])
             snapshot_file(root, bundle)
             artifact['bundle'] = bundle
@@ -237,7 +272,7 @@ def advance(value, target, root, *, reviewed_tag=None, reviewed_revision=None, t
         if trusted_root is None:
             raise ValueError('select the reviewed GitHub/Sigstore trusted root')
         from release_verification import verify
-        for artifact in value['artifacts']:
+        for artifact in public_artifacts(value):
             verify(Path(root) / artifact['filename'], Path(root) / artifact['bundle'],
                    trusted_root, 'refs/tags/' + value['tag'], value['sourceRevision'], artifact['sha256'])
     value['state'] = target

@@ -231,11 +231,14 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, os, pathlib
+          import sys
+          sys.path.insert(0, 'runtime/packaging')
+          from release_candidate import public_artifacts
           root = pathlib.Path('candidate').resolve()
           value = json.loads((root / 'validated.json').read_text())
           with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
               stream.write('paths<<FINAL_SUBJECTS\n')
-              for artifact in value['artifacts']:
+              for artifact in public_artifacts(value):
                   stream.write(str(root / artifact['filename']) + '\n')
               stream.write('FINAL_SUBJECTS\n')
           PY
