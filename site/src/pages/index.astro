@@ -1,0 +1,91 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import release from '../../release.json';
+import InstallSelector from '../components/InstallSelector.astro';
+---
+<StarlightPage frontmatter={{ title: 'GitStore from your terminal', description: 'Install gs, work with your remote catalog, and run qualified Linux deployments. Guides and command reference for the published GitStore CLI alpha.', template: 'splash', tableOfContents: false, pagination: false }}>
+  <div class="landing">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">GITSTORE / COMMAND LINE</p>
+        <h1 id="hero-title"><span id="_top"></span>Your catalog.<br /><em>Your command line.</em></h1>
+        <p class="intro">Work with GitStore where you already work. Inspect your catalog, sync repositories, and manage local deployments on qualified Linux hosts.</p>
+        <div class="actions"><a class="primary" href="/install/">Install GitStore CLI <span aria-hidden="true">↗</span></a><a href="/manual/">Explore the manual <span aria-hidden="true">→</span></a></div>
+        <p class="release"><a href={release.releaseUrl}>{release.version}</a> · macOS & Linux · Open source</p>
+      </div>
+      <figure class="hero-art" aria-label="Abstract Git branches flowing into catalog records">
+        <picture class="light-art"><source type="image/avif" srcset="/art/hero-light-640.avif 640w, /art/hero-light-1200.avif 1200w" sizes="(max-width: 800px) 90vw, 45vw" /><img src="/art/hero-light-640.webp" width="1536" height="1024" alt="" fetchpriority="high" /></picture>
+        <picture class="dark-art"><source type="image/avif" srcset="/art/hero-dark-640.avif 640w, /art/hero-dark-1200.avif 1200w" sizes="(max-width: 800px) 90vw, 45vw" /><img src="/art/hero-dark-640.webp" width="1536" height="1024" alt="" fetchpriority="high" /></picture>
+        <figcaption>From Git history to a working catalog.</figcaption>
+      </figure>
+    </section>
+    <aside class="alpha"><strong>Early alpha.</strong> Back up retained data before upgrades. macOS supports remote commands only. Local deployments require Ubuntu 24.04 or Fedora 44 on a qualified architecture; optional components have separate limits. <a href="/guides/local-runtime/">Read the prerequisites.</a></aside>
+    <section class="install-block" aria-labelledby="install-title"><div><p class="eyebrow">01 / GET STARTED</p><h2 id="install-title">A small command.<br />A direct connection.</h2><p>Install the published CLI and companion daemon together. Remote operations need neither a running daemon nor a separate Git executable.</p><a href="/install/">Verification, upgrades & removal →</a></div><InstallSelector /></section>
+    <section class="sessions" aria-labelledby="sessions-title"><div class="section-heading"><div><p class="eyebrow">02 / IN PRACTICE</p><h2 id="sessions-title">Work from your terminal.</h2></div><p>Illustrative example sessions, drawn from the guides. Commands run on your machine.</p></div>
+      <div class="session-controls" hidden><button type="button" data-scene="remote" aria-pressed="true">Remote catalog</button><button type="button" data-scene="linux" aria-pressed="false">Linux deployment</button><button type="button" id="play-session" aria-pressed="false">Play example</button></div>
+      <div class="terminal" id="remote-session"><div class="terminal-title"><span aria-hidden="true">● ● ●</span> Example session / remote catalog</div><pre tabindex="0"><code><span>$ gs context show -o json</span>
+<span>$ gs list repository --first 25</span>
+<span>$ gs repository clone catalog</span></code></pre><p>Configure your public endpoints and credentials first. Clone uses the public Git endpoint.</p><a href="/guides/remote-cli/">Remote operations guide →</a></div>
+      <div class="terminal" id="linux-session"><div class="terminal-title"><span aria-hidden="true">● ● ●</span> Example session / qualified Linux host</div><pre tabindex="0"><code><span>$ gs serve --deployment dev --allow-provision</span>
+<span>$ gs deployment list</span>
+<span>$ gs deployment inspect dev -o json</span></code></pre><p>First use provisions pinned service images with your authorization. Host prerequisites and optional-component gates apply.</p><a href="/guides/local-runtime/">Linux local deployment guide →</a></div>
+    </section>
+    <section class="feature-grid" aria-label="Choose a workflow"><article><span class="number">01</span><h2>Connect explicitly.</h2><p>Keep installation contexts and credentials separate. Configure public GraphQL and Git endpoints independently.</p><a href="/guides/configuration/">Configuration & authentication →</a></article><article><span class="number">02</span><h2>Inspect and submit.</h2><p>Read resources, clone repositories, and submit existing commits. Transport acceptance and readiness remain distinct.</p><a href="/guides/remote-cli/">Remote workflows →</a></article><article><span class="number">03</span><h2>Know the boundaries.</h2><p>Check host prerequisites, server profiles, and command gates before using an alpha capability.</p><a href="/manual/">Published command reference →</a></article></section>
+    <footer class="landing-footer"><a href="https://gitstore.dev">GitStore</a><span>Built in the open.</span><a href={release.releaseUrl}>Release notes</a><a href="https://github.com/gitstore-dev/cli">Source on GitHub</a></footer>
+  </div>
+</StarlightPage>
+<script>
+  const controls = document.querySelector<HTMLElement>('.session-controls')!;
+  const remote = document.querySelector<HTMLElement>('#remote-session')!;
+  const linux = document.querySelector<HTMLElement>('#linux-session')!;
+  const play = document.querySelector<HTMLButtonElement>('#play-session')!;
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let scene = remote; let timer: ReturnType<typeof setInterval> | undefined;
+  function pause() { clearInterval(timer); timer = undefined; play.textContent = 'Play example'; play.setAttribute('aria-pressed', 'false'); scene.querySelectorAll('code span').forEach(s => s.classList.remove('step')); }
+  controls.hidden = false; linux.hidden = true;
+  controls.querySelectorAll<HTMLButtonElement>('[data-scene]').forEach(button => button.addEventListener('click', () => { pause(); scene = button.dataset.scene === 'linux' ? linux : remote; remote.hidden = scene !== remote; linux.hidden = scene !== linux; controls.querySelectorAll('[data-scene]').forEach(b => b.setAttribute('aria-pressed', String(b === button))); }));
+  play.addEventListener('click', () => { if (timer) return pause(); if (motion.matches) { play.textContent = 'Motion reduced — static example'; return; } let index = 0; const lines = scene.querySelectorAll('code span'); play.textContent = 'Pause example'; play.setAttribute('aria-pressed', 'true'); const step = () => { lines.forEach((line, i) => line.classList.toggle('step', i === index)); index = (index + 1) % lines.length; }; step(); timer = setInterval(step, 1400); });
+  motion.addEventListener('change', pause); document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+</script>
+<style>
+  .landing { font-size: 1rem; }
+  .hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2rem; align-items: center; padding: 2rem 0 3rem; }
+  .eyebrow { color: var(--green); font-size: .72rem; font-weight: 700; letter-spacing: .17em; }
+  h1 { font-size: clamp(2.7rem, 5vw, 4.6rem); line-height: 1.04; letter-spacing: -.055em; margin: 1.5rem 0; font-weight: 600; }
+  h1 em { font-family: Georgia, 'Times New Roman', serif; color: var(--green); font-weight: 400; }
+  .intro { font-size: 1.1rem; max-width: 35em; color: var(--muted); line-height: 1.7; }
+  .actions { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; margin: 2rem 0 1rem; }
+  .actions a, .landing-footer a { text-decoration: none; }
+  .primary { background: var(--button); color: var(--button-text); padding: .8rem 1.2rem; border-radius: .3rem; font-weight: 600; }
+  .release { font-size: .8rem; color: var(--muted); }
+  .hero-art { margin: 0; border: 1px solid var(--line); border-radius: 50% 50% .7rem .7rem; overflow: hidden; background: var(--surface); transform: rotate(-2deg); transition: transform .25s ease; }
+  .hero-art:hover { transform: rotate(0); }
+  .hero-art img { width: 100%; height: auto; display: block; }
+  .hero-art figcaption { padding: 1rem; font-size: .75rem; text-align: center; color: var(--muted); }
+  .light-art { display: none; } :global([data-theme='light']) .light-art { display: block; } :global([data-theme='light']) .dark-art { display: none; }
+  .alpha { border-block: 1px solid var(--line); padding: 1.3rem 0; font-size: .85rem; color: var(--muted); }
+  .alpha strong { color: var(--orange-text); }
+  .install-block { display: grid; grid-template-columns: 1fr 1.25fr; gap: 4rem; padding: 4rem 0; align-items: center; }
+  h2 { font-size: 1.85rem; line-height: 1.2; letter-spacing: -.03em; margin: 1rem 0; }
+  .install-block p, .feature-grid p { color: var(--muted); }
+  .section-heading { display: flex; gap: 3rem; align-items: end; justify-content: space-between; }
+  .section-heading > p { max-width: 23rem; font-size: .9rem; color: var(--muted); }
+  .session-controls { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1.5rem 0; }
+  .session-controls[hidden], .terminal[hidden] { display: none; }
+  .session-controls button { padding: .5rem .8rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: .3rem; }
+  .session-controls [aria-pressed='true'] { border-color: var(--green); box-shadow: inset 0 -2px var(--green); }
+  #play-session { margin-inline-start: auto; }
+  .terminal { background: var(--surface); border: 1px solid var(--line); border-radius: .5rem; overflow: hidden; margin-top: 1rem; }
+  .terminal-title { padding: .8rem 1.3rem; border-bottom: 1px solid var(--line); color: var(--muted); font-size: .75rem; }
+  .terminal-title span { color: var(--orange); margin-right: 1rem; letter-spacing: .2em; }
+  .terminal pre { background: transparent; padding: 1.5rem; font-size: .9rem; line-height: 2.2; overflow: auto; color: var(--ink); }
+  .terminal code { background: none; padding: 0; } .terminal code span { transition: color .2s, background .2s; } .terminal .step { color: var(--orange); background: var(--surface-muted); }
+  .terminal > p, .terminal > a { display: block; margin: 0 1.5rem 1rem; font-size: .8rem; color: var(--muted); }
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; padding: 4rem 0; }
+  .feature-grid article { border-top: 1px solid var(--line); padding-top: 1.5rem; }
+  .feature-grid h2 { font-size: 1.2rem; } .feature-grid p, .feature-grid a { font-size: .9rem; }
+  .number { color: var(--orange-text); font-family: var(--sl-font-mono); font-size: .8rem; }
+  .landing-footer { display: flex; flex-wrap: wrap; gap: 1.5rem; border-top: 1px solid var(--line); padding-top: 2rem; font-size: .85rem; color: var(--muted); }
+  .landing-footer span { margin-right: auto; }
+  @media (max-width: 800px) { .hero, .install-block { grid-template-columns: 1fr; gap: 2rem; } .hero-art { max-width: 35rem; } .feature-grid { grid-template-columns: 1fr; padding: 3rem 0; } .section-heading { display: block; } h1 { font-size: 3.3rem; } }
+</style>

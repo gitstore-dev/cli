@@ -1,0 +1,26 @@
+{
+  "name": "@gitstore/cli-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.7.0",
+  "engines": { "node": "24.16.0", "pnpm": "12.7.0" },
+  "scripts": {
+    "dev": "node scripts/prepare-content.mjs && astro dev --host 127.0.0.1",
+    "build": "node scripts/prepare-content.mjs && astro build && node scripts/check-site.mjs",
+    "preview": "astro preview --host 127.0.0.1",
+    "check": "node scripts/update-release.mjs --check && node --test scripts/*.test.mjs",
+    "test:browser": "playwright test",
+    "update-release": "node scripts/update-release.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.43.1",
+    "astro": "7.4.12"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "cheerio": "1.2.0",
+    "sharp": "0.34.5"
+  }
+}
