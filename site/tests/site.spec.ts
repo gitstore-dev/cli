@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import release from '../release.json' with { type: 'json' };
+import { readFileSync } from 'node:fs';
+const formulaVersion = /\bversion\s+"([^"]+)"/.exec(readFileSync(new URL('../../Formula/gitstore.rb', import.meta.url), 'utf8'))?.[1];
 
 test('smoke: navigation, manual and theme preference', async ({ page }) => {
   await page.goto('/');
@@ -34,6 +36,14 @@ test('architecture selection and clipboard use published assets', async ({ page,
   test.skip(browserName !== 'chromium');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/');
+  await page.locator('#install-method').selectOption('brew-0');
+  if (formulaVersion === release.version) {
+    await expect(page.locator('details:visible code')).toContainText('brew trust --formula');
+    await expect(page.locator('details:visible code')).toContainText('brew install gitstore-dev/cli/gitstore');
+  } else {
+    await expect(page.locator('details:visible code')).not.toContainText('brew install');
+    await expect(page.locator('details:visible code')).toContainText('Choose a pinned npm package');
+  }
   const deb = release.assets.find(a => a.kind === 'deb' && a.arch === 'arm64')!;
   const npm = release.assets.find(a => a.kind === 'npm' && a.os === 'darwin' && a.arch === 'arm64')!;
   await page.locator('#install-method').selectOption(deb.name);
