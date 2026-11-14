@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.0-alpha.7](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7) (2026-11-14)
+
+
+### Bug Fixes
+
+* **footprint:** attribute only allocated output sections ([fd5a197](https://github.com/gitstore-dev/cli/commit/fd5a1972c7ecda214dd5b8928196bfd765564c35))
+* **release:** preserve finalization evidence across incremental builds ([0fea793](https://github.com/gitstore-dev/cli/commit/0fea793bdbb127b49efba249532d83db317773b5))
+* **release:** select signing subjects with pinned Python dependencies ([68bde1c](https://github.com/gitstore-dev/cli/commit/68bde1c65d8f3cd0c52c637b96d3c92df633da6a))
+
+
+### Performance Improvements
+
+* **daemon:** measure production footprint and stripping options ([8fc6c5e](https://github.com/gitstore-dev/cli/commit/8fc6c5e6c73498e217183fa457c4cfb01697dffa))
+* **daemon:** record separate baseline package footprint ([08a3edf](https://github.com/gitstore-dev/cli/commit/08a3edf55712da834ab8a6e00bad49fca9cad385))
+
 ## [0.1.0-alpha.6](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.5...v0.1.0-alpha.6) (2026-11-12)
 
 
