@@ -1,0 +1,643 @@
+{
+  "schemaVersion": 1,
+  "status": "qualified, published and verified through the main-branch Homebrew tap",
+  "tag": "v0.1.0-alpha.6",
+  "sourceRevision": "01440a78153ccb9803556e5560307b40dda73a6f",
+  "releaseId": 442931548,
+  "buildRun": 43220188391,
+  "qualificationRun": 43526079380,
+  "qualificationAttempts": [
+    {
+      "attempt": 1,
+      "result": "failure",
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "homebrew"
+      ],
+      "stage": "Homebrew formula trust setup, before product installation"
+    },
+    {
+      "attempt": 2,
+      "result": "success",
+      "scope": "Retry of failed host and collector; same source and candidate; five successful hosts retained"
+    }
+  ],
+  "promotionRun": 43532331488,
+  "promotionResult": "success",
+  "formulaPullRequest": 29,
+  "formulaMergeRevision": "221b41911874e625fb7a6a5784ca84087cc9031c",
+  "subjectCount": 33,
+  "subjectBytes": 468773455,
+  "inventorySha256": "cf3bd01e5a60c3c37da2e1d891d5fc3cfd34d0c312cab3afa5ad33755889959a",
+  "checksumsSha256": "713694751e602c027d28195bd52ce84ceaa4803b6b2628cd4d08cf006715a6cc",
+  "producerVerification": {
+    "subjects": 33,
+    "result": "pass",
+    "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+    "repositoryId": "1431005655"
+  },
+  "publicDelivery": {
+    "assetCount": 66,
+    "publicHeadChecks": 66,
+    "allAssetApiSizesAndDigestsMatch": true,
+    "downloadedAndHashedSubjects": 5,
+    "downloadedBundles": 5,
+    "independentlyVerifiedSubjects": 5,
+    "disclaimerPresent": true,
+    "hostedToLogical": {
+      "gitstore_0.1.0.alpha.6-1_amd64.deb": "gitstore_0.1.0~alpha.6-1_amd64.deb",
+      "gitstore_0.1.0.alpha.6-1_amd64.deb.sigstore.jsonl": "gitstore_0.1.0~alpha.6-1_amd64.deb.sigstore.jsonl",
+      "gitstore_0.1.0.alpha.6-1_arm64.deb": "gitstore_0.1.0~alpha.6-1_arm64.deb",
+      "gitstore_0.1.0.alpha.6-1_arm64.deb.sigstore.jsonl": "gitstore_0.1.0~alpha.6-1_arm64.deb.sigstore.jsonl"
+    }
+  },
+  "subjects": [
+    {
+      "filename": "gitstore-0.1.0-alpha.6-darwin-x64.tar.gz",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-darwin-x64.tar.gz",
+      "bytes": 3683627,
+      "sha256": "0f93d567166d320e8e8eaebf778f04e813eec4684e5b75df12e89cd0a9806afd",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.6-darwin-x64.tgz",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.6-darwin-x64.tgz",
+      "bytes": 3683936,
+      "sha256": "fea42f02e2d057f5911ece8e8c604d55c33a833c8f950e572af94043fef1f561",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-darwin-x64.install.json",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-darwin-x64.install.json",
+      "bytes": 92856,
+      "sha256": "75446b1562bcf778c2b156621ad6883d11bb29504af82f905cd6b98254c60a26",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.6-darwin-x64",
+      "hostedFilename": "gs-0.1.0-alpha.6-darwin-x64",
+      "bytes": 5656956,
+      "sha256": "7b6360eb0ad81b2cb068a81bc32027cab6369a583d72fbee0670636165f1adc5",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.6-darwin-x64",
+      "hostedFilename": "gitstored-0.1.0-alpha.6-darwin-x64",
+      "bytes": 1388112,
+      "sha256": "e755d56dac1e1803559c7d60c37f127fb99e2a75591eb3aa51c61e3c1a8a7ffe",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.6-darwin-x64.tar.gz",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.6-darwin-x64.tar.gz",
+      "bytes": 25463727,
+      "sha256": "f44cb73f84d72bbd82dffd5819a757d91ffb61eb6c78978d651f630a499435a2",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-linux-x64.tar.gz",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-linux-x64.tar.gz",
+      "bytes": 12093705,
+      "sha256": "94e39a6db9f0c371f252264b9b2c6c0947b3e3eefe13df6a248426522f4c0691",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.6-linux-x64.tgz",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.6-linux-x64.tgz",
+      "bytes": 12093908,
+      "sha256": "6640083600fbe10dedf849b7b84540cebb2cfa6a119991c1997569aba368406e",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-linux-x64.install.json",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-linux-x64.install.json",
+      "bytes": 199497,
+      "sha256": "727d71e947c406aaad58622aa90405866eecf057877fd9b13999d07fda9a55b7",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.6-linux-x64",
+      "hostedFilename": "gs-0.1.0-alpha.6-linux-x64",
+      "bytes": 6531544,
+      "sha256": "08bb2f35da1662971d9f11a3d39b94277dbd172edd544bfac109d7cc696c195a",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.6-linux-x64",
+      "hostedFilename": "gitstored-0.1.0-alpha.6-linux-x64",
+      "bytes": 22087920,
+      "sha256": "f22d37dbea3d8d6417f4084f3319db9e0b7306ccb89e832cf6c965065c104ce9",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.6-1_amd64.deb",
+      "hostedFilename": "gitstore_0.1.0.alpha.6-1_amd64.deb",
+      "bytes": 9398638,
+      "sha256": "dfcea69675f88d2f12893077c10fa076c74e58b9c36d88d6d5fb3514303aeced",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.6.1.x86_64.rpm",
+      "hostedFilename": "gitstore-0.1.0-0.alpha.6.1.x86_64.rpm",
+      "bytes": 12218576,
+      "sha256": "3b6e14beecd6df9ff70d146f760ea4cd6af959812c43a165b15799e580187c68",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.6-linux-x64.tar.gz",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.6-linux-x64.tar.gz",
+      "bytes": 92466322,
+      "sha256": "21dcc5f24f47412a3da3127d520d1d7cb39935edeef429b8b5e2598ed73e24fb",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.6-linux-x64.tar.gz",
+      "hostedFilename": "gitstore-relink-0.1.0-alpha.6-linux-x64.tar.gz",
+      "bytes": 27785020,
+      "sha256": "0354964ae0ee2266d60d0ea3a7440e13d9112709e50def7d82be22c418538130",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "bytes": 11871102,
+      "sha256": "9d07348d191c2b4be011c8e939cf98ec07465c9a0d96f762f4e7ccaaf5cc7291",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.6-linux-arm64.tgz",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.6-linux-arm64.tgz",
+      "bytes": 11871193,
+      "sha256": "efbca898520420962d0e6f2213881d151304dd4e23bdd08ea84d25dac4aa00f5",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-linux-arm64.install.json",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-linux-arm64.install.json",
+      "bytes": 199030,
+      "sha256": "8d1377a55ef986d7b463d4eda3480089970594790267b92a8154e355023fcd25",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.6-linux-arm64",
+      "hostedFilename": "gs-0.1.0-alpha.6-linux-arm64",
+      "bytes": 5983816,
+      "sha256": "bcc6b22d12b0e9cc2c91b7c9e4eb1f24a8e383c20df7c67d10b9296e2c4ee056",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.6-linux-arm64",
+      "hostedFilename": "gitstored-0.1.0-alpha.6-linux-arm64",
+      "bytes": 22409424,
+      "sha256": "24db1dcf86662340c420a22cfee6eaeb681db50c8e344b26d943438e4edf47b5",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore_0.1.0~alpha.6-1_arm64.deb",
+      "hostedFilename": "gitstore_0.1.0.alpha.6-1_arm64.deb",
+      "bytes": 9193630,
+      "sha256": "a7c6722d44840987761d71e791ed136233d6d4a042d0955f1be30b493c0430b9",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-0.alpha.6.1.aarch64.rpm",
+      "hostedFilename": "gitstore-0.1.0-0.alpha.6.1.aarch64.rpm",
+      "bytes": 11995721,
+      "sha256": "5cfd5c6529e34dc470833ab737eec645ee7918aca8fc0e77f8427430e2176059",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "bytes": 92448102,
+      "sha256": "a53534899c6a7bf37abc28e0c546d70a1045c0cb5ee3e962171feac44f41e5de",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-relink-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "hostedFilename": "gitstore-relink-0.1.0-alpha.6-linux-arm64.tar.gz",
+      "bytes": 28579256,
+      "sha256": "3cf64fcfc11cf46f19bda5ba5e7946c71c2bdd8e64423d15e8aeb0d75c875ad4",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-darwin-arm64.tar.gz",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-darwin-arm64.tar.gz",
+      "bytes": 3530395,
+      "sha256": "78c056aad590e62dfadf1bd243f2182ff43935a4ba22a00317e97aebb44fe7c0",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-npm-0.1.0-alpha.6-darwin-arm64.tgz",
+      "hostedFilename": "gitstore-npm-0.1.0-alpha.6-darwin-arm64.tgz",
+      "bytes": 3530859,
+      "sha256": "73de50e7baca78d08c48320ac05e3f0b2bf138f3cab42c5f4dd636e5dcd4d5d8",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-0.1.0-alpha.6-darwin-arm64.install.json",
+      "hostedFilename": "gitstore-0.1.0-alpha.6-darwin-arm64.install.json",
+      "bytes": 92353,
+      "sha256": "a36b39def86b60698d4fc4739be1d9ca8822570dabd3aa0cc99fda62e85fa00a",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gs-0.1.0-alpha.6-darwin-arm64",
+      "hostedFilename": "gs-0.1.0-alpha.6-darwin-arm64",
+      "bytes": 5354512,
+      "sha256": "0324b20cae8e514d5bd0abc64231b34df561387f7a9dd4cb523bc27ce65e52c8",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstored-0.1.0-alpha.6-darwin-arm64",
+      "hostedFilename": "gitstored-0.1.0-alpha.6-darwin-arm64",
+      "bytes": 1378296,
+      "sha256": "666d94ae577b31277e76395d0aacb0cb916ddfb530e648ddb8682f2438b45702",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore-source-0.1.0-alpha.6-darwin-arm64.tar.gz",
+      "hostedFilename": "gitstore-source-0.1.0-alpha.6-darwin-arm64.tar.gz",
+      "bytes": 25466731,
+      "sha256": "8d7b006a05294301a2c7b900a6202bce5bee4b8ec9872bb3e53e982f4263241b",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "gitstore.rb",
+      "hostedFilename": "gitstore.rb",
+      "bytes": 2165,
+      "sha256": "42a9e2696fe3cd3371e71d480d8d3e99fec25d9211052f032a28e3a327c4d6b6",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "release-inventory.json",
+      "hostedFilename": "release-inventory.json",
+      "bytes": 19160,
+      "sha256": "cf3bd01e5a60c3c37da2e1d891d5fc3cfd34d0c312cab3afa5ad33755889959a",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    },
+    {
+      "filename": "SHA256SUMS",
+      "hostedFilename": "SHA256SUMS",
+      "bytes": 3366,
+      "sha256": "713694751e602c027d28195bd52ce84ceaa4803b6b2628cd4d08cf006715a6cc",
+      "bundleSha256": "f9ff546f7dd814ac1fe5708a5e43c2ff90c2947c9dbc04d152899280bb42472d"
+    }
+  ],
+  "qualificationReceipts": [
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "53a23ac01d4d440962c75b3cce4454f70c22211a0ad4c75842f3e7220815ce68"
+    },
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "7af367b56c0bb02cc07b5e4868d00860fda777d6bbe7f7ddca7bda6c3a2debaf"
+    },
+    {
+      "selection": [
+        "darwin",
+        "arm64",
+        "macos-15",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "ff0830fee643bfa9efd1bb03e98930f1cf4b1574bde67522dc3b54f892bebafa"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "9ea3684112d84d8a8f742263a7c5921226e243f8cfd4a41abd3cc01fd59f7e05"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "de8663ec5101df7f524bd9c9f03360a228618a13d166e00810009fab78e0b37a"
+    },
+    {
+      "selection": [
+        "darwin",
+        "x64",
+        "macos-15-intel",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "c14d52cd890fa878da7ccd5e0d6a8f1beab16e4357aa1959f091ba0d146ad26b"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "29878df6fc696c41923985e6e2eeb71c5eead9b2b164ce004841c927b5b1d31e"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "2e2eb66c875f0db2f87a7904f7ed981737a18f330510fa7334886df8ddcffd10"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "46d518ea1f92d2de82bff5666f18da8714c0646d4725630f535dff2f82192e5a"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "fedora:44",
+        "rpm"
+      ],
+      "result": "pass",
+      "receiptSha256": "62e6284935bec5e0427b99edef91bfbd955c13d520c0f05654ef76332b3d6f4e"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "cbc66cb2cce9a48db47450dee78150b584876c44e3a575a6981197cb58be1ee7"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "deb"
+      ],
+      "result": "pass",
+      "receiptSha256": "20b187cf7126efd33ec25d66bed999822d6233e301168dd90176cd7129dd2c16"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "d0a41daaf8ca113d67589c0f347d486d140475265667f777933de5c060af99f1"
+    },
+    {
+      "selection": [
+        "linux",
+        "arm64",
+        "ubuntu:24.04",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "4143d74086cb2e3e80b5404d3ca6dc480e36a2c297a61dac6e95262127c97f02"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "67883ffafa681b0e602c88fc1d94bb0864881384bce5fa4bc5f4480795ca4fdd"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "5dd7cba211b94f11747ae0fd5f970bd1d598449b97959a91b75da46d089c88d6"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "7a739c536f51867beba2fed3ba8a65677e95ba929d8c6973d73bd2055f5a7207"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "fedora:44",
+        "rpm"
+      ],
+      "result": "pass",
+      "receiptSha256": "7f42aa7e540e5b48db42e7679047e5eaca46d5335807bff67fe5570ac15df667"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "archive"
+      ],
+      "result": "pass",
+      "receiptSha256": "46ad6d2b265723f721e9ef2ddb9ed3b6bf6fe1b36a69004cd4199c9a8dc31837"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "deb"
+      ],
+      "result": "pass",
+      "receiptSha256": "8aab94a7ce89273534f1c70e3601d38c43ad884077b2e5d78192f935825bab65"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "homebrew"
+      ],
+      "result": "pass",
+      "receiptSha256": "0e7f776b3ad8b8c967abb7c973712d06d58e15ebcddc1c161582bf3613c7ebca"
+    },
+    {
+      "selection": [
+        "linux",
+        "x64",
+        "ubuntu:24.04",
+        "npm"
+      ],
+      "result": "pass",
+      "receiptSha256": "e9eb97e9c0602481fbbfbbfbd8a22d8ffef895e097f815609d970a02e3c58257"
+    }
+  ],
+  "independentVerification": {
+    "schemaVersion": 1,
+    "tag": "v0.1.0-alpha.6",
+    "sourceRevision": "01440a78153ccb9803556e5560307b40dda73a6f",
+    "state": "producer-verified",
+    "subjects": [
+      {
+        "filename": "gitstore-0.1.0-alpha.6-darwin-arm64.tar.gz",
+        "verified": true,
+        "repository": "gitstore-dev/cli",
+        "repositoryId": "1431005655",
+        "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+        "sourceRef": "refs/tags/v0.1.0-alpha.6",
+        "sourceDigest": "01440a78153ccb9803556e5560307b40dda73a6f",
+        "sha256": "78c056aad590e62dfadf1bd243f2182ff43935a4ba22a00317e97aebb44fe7c0"
+      },
+      {
+        "filename": "gitstore-npm-0.1.0-alpha.6-darwin-arm64.tgz",
+        "verified": true,
+        "repository": "gitstore-dev/cli",
+        "repositoryId": "1431005655",
+        "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+        "sourceRef": "refs/tags/v0.1.0-alpha.6",
+        "sourceDigest": "01440a78153ccb9803556e5560307b40dda73a6f",
+        "sha256": "73de50e7baca78d08c48320ac05e3f0b2bf138f3cab42c5f4dd636e5dcd4d5d8"
+      },
+      {
+        "filename": "gitstore.rb",
+        "verified": true,
+        "repository": "gitstore-dev/cli",
+        "repositoryId": "1431005655",
+        "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+        "sourceRef": "refs/tags/v0.1.0-alpha.6",
+        "sourceDigest": "01440a78153ccb9803556e5560307b40dda73a6f",
+        "sha256": "42a9e2696fe3cd3371e71d480d8d3e99fec25d9211052f032a28e3a327c4d6b6"
+      },
+      {
+        "filename": "release-inventory.json",
+        "verified": true,
+        "repository": "gitstore-dev/cli",
+        "repositoryId": "1431005655",
+        "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+        "sourceRef": "refs/tags/v0.1.0-alpha.6",
+        "sourceDigest": "01440a78153ccb9803556e5560307b40dda73a6f",
+        "sha256": "cf3bd01e5a60c3c37da2e1d891d5fc3cfd34d0c312cab3afa5ad33755889959a"
+      },
+      {
+        "filename": "SHA256SUMS",
+        "verified": true,
+        "repository": "gitstore-dev/cli",
+        "repositoryId": "1431005655",
+        "workflow": "gitstore-dev/cli/.github/workflows/release.yml",
+        "sourceRef": "refs/tags/v0.1.0-alpha.6",
+        "sourceDigest": "01440a78153ccb9803556e5560307b40dda73a6f",
+        "sha256": "713694751e602c027d28195bd52ce84ceaa4803b6b2628cd4d08cf006715a6cc"
+      }
+    ],
+    "negativeControls": [
+      {
+        "control": "altered bytes",
+        "rejected": true
+      },
+      {
+        "control": "missing bundle",
+        "rejected": true
+      },
+      {
+        "control": "wrong source revision",
+        "rejected": true
+      },
+      {
+        "control": "altered bytes with recomputed digest",
+        "rejected": true
+      },
+      {
+        "control": "wrong producer workflow",
+        "rejected": true
+      }
+    ]
+  },
+  "macPublicInstallations": [
+    {
+      "tag": "v0.1.0-alpha.6",
+      "sourceRevision": "01440a78153ccb9803556e5560307b40dda73a6f",
+      "channel": "homebrew",
+      "result": "pass",
+      "macosRuntimeBoundary": {
+        "configuredXdgExit": 6,
+        "unsetXdgExit": 6,
+        "code": "UNSUPPORTED_HOST"
+      },
+      "host": "macOS-26.6.1-arm64-arm-64bit-Mach-O",
+      "mainTapRevision": "221b41911874e625fb7a6a5784ca84087cc9031c",
+      "toolingRevision": "bf464f57275cae0be106b43d190c98564ac59b0e",
+      "formulaSha256": "42a9e2696fe3cd3371e71d480d8d3e99fec25d9211052f032a28e3a327c4d6b6",
+      "scope": "Actual main-branch Git URL tap and public GitHub archive download in a fresh private Homebrew prefix; signed binary identities, help/version without a verifier or runtime state, and removal passed",
+      "binaries": [
+        {
+          "command": "gs",
+          "sha256": "0324b20cae8e514d5bd0abc64231b34df561387f7a9dd4cb523bc27ce65e52c8"
+        },
+        {
+          "command": "gitstored",
+          "sha256": "666d94ae577b31277e76395d0aacb0cb916ddfb530e648ddb8682f2438b45702"
+        }
+      ],
+      "removed": true
+    },
+    {
+      "tag": "v0.1.0-alpha.6",
+      "sourceRevision": "01440a78153ccb9803556e5560307b40dda73a6f",
+      "channel": "npm",
+      "result": "pass",
+      "sourceUrl": "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-npm-0.1.0-alpha.6-darwin-arm64.tgz",
+      "binaries": [
+        {
+          "command": "gs",
+          "sha256": "0324b20cae8e514d5bd0abc64231b34df561387f7a9dd4cb523bc27ce65e52c8"
+        },
+        {
+          "command": "gitstored",
+          "sha256": "666d94ae577b31277e76395d0aacb0cb916ddfb530e648ddb8682f2438b45702"
+        }
+      ],
+      "macosRuntimeBoundary": {
+        "configuredXdgExit": 6,
+        "unsetXdgExit": 6,
+        "code": "UNSUPPORTED_HOST"
+      },
+      "removed": true
+    }
+  ]
+}
