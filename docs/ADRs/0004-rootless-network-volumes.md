@@ -10,7 +10,7 @@
 The current Linux backend integrates libslirp as an ordinary C dependency, with
 owned namespaces/TAP and loopback forwarding. It does not load CNI configurations
 or execute CNI plugins. The baseline comparisons below are historical design
-inputs, not a claim of CNI support. See the [network selection evidence](../../runtime/experiments/network-library.md).
+inputs, not a claim of CNI support. See the [network selection evidence](../../runtime/build-inputs/libslirp.md).
 
 CNI integration remains a separate adapter and validation task. The
 [CNI execution protocol](https://www.cni.dev/docs/spec/#section-2-execution-protocol)
@@ -98,7 +98,7 @@ stop/restart. Actual concurrent-writer and manager-loss checks refuse replacemen
 until original termination is observed. Independent backup/restore validation and
 bounded disk-full tests are private native probes; they are not public backup or
 restore commands. See [volume evidence](../../runtime/experiments/local-volumes.md)
-and [Scylla evidence](../../runtime/experiments/scylladb.md).
+and [Scylla evidence](../../tests/runtime/scylladb.md).
 
 Other Linux architectures/hosts and distribution packages remain unqualified.
 DEP-014 stays open for those broader gates. CSI remains M3, and CNI remains the

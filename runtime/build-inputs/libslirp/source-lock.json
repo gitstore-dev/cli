@@ -25,8 +25,8 @@
   "helperExecutables": [],
   "selectedVersion": "4.9.7-gstd-queueview2",
   "privatePatch": {
-    "record": "runtime/experiments/network-library/patch-lock.json",
-    "file": "runtime/experiments/network-library/queue-access.patch",
+    "record": "runtime/build-inputs/libslirp/patch-lock.json",
+    "file": "runtime/build-inputs/libslirp/queue-access.patch",
     "sha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
     "policy": "no sanitizer exemptions; normal container layout unchanged"
   },

@@ -83,7 +83,7 @@ not added speculatively.
 
 ## Experiment evidence
 
-[EXP-003C](../experiments/cli-provenance/README.md) uses the installed GitHub CLI
+[EXP-003C](../../tests/packaging/cli-provenance/README.md) uses the installed GitHub CLI
 with pinned official signed controls, without extracting or executing them. The
 three local policy tests and ten real verification controls pass. A valid signed
 external control verifies; wrong producer/workflow/ref/revision/issuer, modified

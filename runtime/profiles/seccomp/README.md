@@ -27,9 +27,9 @@ Seccomp=2, no-new-privileges, zero capabilities and clone3's explicit ENOSYS res
 The older fixture libseccomp does not recognize nine newer/other-architecture allow
 names; those remain denied by default. No filter is weakened or alternate runtime
 selected. Actual API/Git/controller compatibility and amd64 native execution remain
-unverified. See [scoped evidence](../../experiments/libcrun/delegated-evidence.json).
+unverified. See [scoped evidence](../../../tests/runtime/libcrun/delegated-evidence.json).
 
 The private daemon adapter and registered synthetic Git launch now pass the
-[adapter scenarios](../../experiments/libcrun/adapter.md). Actual GitStore service
+[adapter scenarios](../../../tests/runtime/libcrun/adapter.md). Actual GitStore service
 compatibility, network/volume ownership wiring and public dispatch remain pending;
 these checks do not establish runtime support or release readiness.

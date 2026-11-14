@@ -247,9 +247,9 @@ def main():
             components.append(dict(id=identity,license=license_id,source=dsc['url'],licenses=licenses+common))
             closure.append(dict(name=identity,sha256=archives[archive]['sha256'],license=license_id,source=dsc['url'],
                 delivery='static',systemArchive=archive,sourceMaterial=dsc['path'],sourceSha256=dsc['sha256']))
-        for name,path,archive,license_id in [('libcrun','runtime/experiments/libcrun/source-lock.json',
+        for name,path,archive,license_id in [('libcrun','runtime/build-inputs/libcrun/source-lock.json',
                 '_deps/libcrun-build/.libs/libcrun.a','LGPL-2.1-or-later'),
-                ('libslirp','runtime/experiments/network-library/source-lock.json','_deps/libslirp-build/libslirp.a','BSD-3-Clause')]:
+                ('libslirp','runtime/build-inputs/libslirp/source-lock.json','_deps/libslirp-build/libslirp.a','BSD-3-Clause')]:
             pin=json.loads((ROOT/path).read_text())
             normalized=name=='libslirp'
             entry,data=add_source('sources/native/'+name+'-'+pin['version']+('.tar' if normalized else '.tar.gz'),
