@@ -209,7 +209,7 @@ bytes, package bytes and reused host libraries. Retired private execution copies
 are additional disk usage; the configured shared-cache budget does not bound all
 deployment storage. Automatic reclamation of those copies is not implemented.
 
-[EXP-003C](../../runtime/experiments/cli-provenance/README.md) exercised the actual
+[EXP-003C](../../tests/packaging/cli-provenance/README.md) exercised the actual
 maintainer-installed `gh` verifier offline with a public signed control and
 wrong/missing/tampered controls. The [release policy](../../runtime/packaging/release-policy.md)
 pins repository identity, workflow, source and digest and rejects the unsigned

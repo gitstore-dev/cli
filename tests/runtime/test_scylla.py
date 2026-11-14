@@ -601,7 +601,7 @@ class ScyllaNative(unittest.TestCase):
         self.assertEqual(settings["disposableUid"], os.geteuid())
         self.assertIs(settings["dedicatedTestAccount"], True)
         source = Path(__file__).resolve().parents[2]
-        command = [sys.executable, str(source / "runtime/experiments/scylladb/server.py"),
+        command = [sys.executable, str(source / "tests/runtime/scylladb/server.py"),
                    "--image-root", settings["scyllaImage"],
                    "--api-image-root", settings["migrationApiImage"],
                    "--git-image-root", settings["gitImage"],

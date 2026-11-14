@@ -68,7 +68,7 @@ jobs:
           if grep -E 'gstd_test_|gstd_controlled_|gstd_failpoint' build/production/symbols.txt; then exit 1; fi
           scripts/measure-runtime-size.sh --gs "$PWD/target/release/gs" \
             --daemon "$PWD/build/production/gitstored" --output-directory "$PWD/build/measurement"
-          python3 runtime/experiments/cli-provenance/test_policy.py
+          python3 tests/packaging/cli-provenance/test_policy.py
       - name: Private-static closure for movable packages (unqualified build check)
         if: matrix.mode == 'normal'
         run: |

@@ -5,7 +5,7 @@
 GitStore profile, production adapter/network integration, amd64, hosted CI or release support.
 A later delegated-cgroup checkpoint is separately scoped below.
 
-[Source lock](libcrun/source-lock.json) pins libcrun 1.30.1, revision
+[Source lock](../build-inputs/libcrun/source-lock.json) pins libcrun 1.30.1, revision
 `079ff6a7a16d029460af882f9ea44674e6a510b6`, to the official release archive digest.
 The source archive's SHA-256 matches the digest supplied by GitHub release metadata.
 No upstream checkout is modified. Both `.a` and `.so` are built with
@@ -14,8 +14,8 @@ The crun executable is neither built, installed nor invoked.
 
 ## Actual checks
 
-[Probe](libcrun/probe.c), [static tiny payload](libcrun/payload.c),
-[runner](libcrun/run.py) and [link recipe](libcrun/build.sh) use library APIs for
+[Probe](../../tests/runtime/libcrun/probe.c), [static tiny payload](../../tests/runtime/libcrun/payload.c),
+[runner](../../tests/runtime/libcrun/run.py) and [link recipe](../../tests/runtime/libcrun/build.sh) use library APIs for
 load/free, create/start, recorded PID plus process-start-time state, SIGTERM and
 delete. Each run has private owned root/state/output directories and a single-UID
 rootless mapping. The payload has no networking or user data. Library calls use
@@ -119,7 +119,7 @@ sanitizer comparison selects only the exact experimental library directory; no
 product loader search or executable fallback is introduced. The development
 libtool wrapper was bypassed for the final direct-ELF run under PATH=/nonexistent.
 
-[Exact scoped evidence](libcrun/delegated-evidence.json) records the values and
+[Exact scoped evidence](../../tests/runtime/libcrun/delegated-evidence.json) records the values and
 limits. No GitStore service was executed and T040's production adapter is still
 pending. This extends the process-model evidence; it does not close the runtime,
 network, service-policy, recovery or release gates.

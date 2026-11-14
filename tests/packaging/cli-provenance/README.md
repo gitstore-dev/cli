@@ -2,7 +2,7 @@
 
 This is maintainer development tooling. It is not packaged with `gs`/`gitstored`
 and places no attestation requirement on GitStore's upstream service images.
-The [release policy](../../packaging/release-policy.md) defines the producer,
+The [release policy](../../../runtime/packaging/release-policy.md) defines the producer,
 workflow, stable repository ID, source/ref and final digest requirements.
 
 The real controls use official GitHub CLI test data from commit
@@ -26,8 +26,8 @@ of each negative case. No test result can publish an artifact or change the
 production verifier's fixed GitStore producer policy.
 
 ```sh
-python3 runtime/experiments/cli-provenance/test_policy.py
-python3 runtime/experiments/cli-provenance/run.py \
+python3 tests/packaging/cli-provenance/test_policy.py
+python3 tests/packaging/cli-provenance/run.py \
   --inputs /absolute/pinned-fixture-directory \
   --cli-artifact /absolute/own/unpublished/gs \
   --output /absolute/new-evidence.json

@@ -42,7 +42,7 @@ From the selected fixture's repository directory, run the explicit developer
 probe, never against an existing deployment:
 
 ```sh
-python3 runtime/experiments/libcrun/run.py \
+python3 tests/runtime/libcrun/run.py \
   build/daemon-native/native_adapter_probe \
   build/daemon-native/native_registered_payload \
   --delegated --seccomp runtime/profiles/seccomp/arm64.json --registered

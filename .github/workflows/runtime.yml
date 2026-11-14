@@ -637,7 +637,7 @@ jobs:
             "$RUNNER_TEMP/libcrun-diagnostic/native_library_payload" \
             "$RUNNER_TEMP/libcrun-diagnostic/native_adapter_probe" \
             "$RUNNER_TEMP/libcrun-diagnostic/native_registered_payload" /home/gitstorefixture/experiments/
-          sudo install -o 11000 -g 11000 -m 400 runtime/experiments/libcrun/run.py /home/gitstorefixture/experiments/libcrun-probe.py
+          sudo install -o 11000 -g 11000 -m 400 tests/runtime/libcrun/run.py /home/gitstorefixture/experiments/libcrun-probe.py
           sudo -u gitstorefixture python3 /home/gitstorefixture/experiments/libcrun-probe.py \
             /home/gitstorefixture/experiments/native_library_probe /home/gitstorefixture/experiments/native_library_payload \
             --delegated --keep --fixture-parent /home/gitstorefixture/experiments

@@ -104,9 +104,9 @@
       "revision": "ce12dcddf710a71dc0de6450ec95edbadf8e9f66",
       "url": "https://qemu.googlesource.com/libslirp/+archive/ce12dcddf710a71dc0de6450ec95edbadf8e9f66.tar.gz",
       "sha256": "6787fae6585d6f674af057189f2c21c01ecb2d8b687b3eed5509af3d13897cc4",
-      "patch": "runtime/experiments/network-library/queue-access.patch",
+      "patch": "runtime/build-inputs/libslirp/queue-access.patch",
       "patchSha256": "4b84420168569c667f5150622dd230bda9d7539eb28d46f4e6742cbf204652d8",
-      "patchRecord": "runtime/experiments/network-library/patch-lock.json",
+      "patchRecord": "runtime/build-inputs/libslirp/patch-lock.json",
       "build": {
         "default_library": "static",
         "version_suffix": "-gstd-queueview2",
@@ -128,7 +128,7 @@
       "implementation": "libcrun",
       "version": "1.30.1",
       "revision": "079ff6a7a16d029460af882f9ea44674e6a510b6",
-      "sourceLock": "runtime/experiments/libcrun/source-lock.json",
+      "sourceLock": "runtime/build-inputs/libcrun/source-lock.json",
       "build": "daemon/cmake/Libcrun.cmake",
       "link": "static libcrun; required system libraries remain separately measured",
       "runtimeExecutables": [],
@@ -139,7 +139,7 @@
         "libcap": "compatible platform ABI"
       },
       "features": "caps/seccomp/systemd enabled; no crun executable, dynload, CRIU, eBPF or alternative-language/VM handlers",
-      "evidence": "runtime/experiments/libcrun/adapter.md"
+      "evidence": "tests/runtime/libcrun/adapter.md"
     },
     "bootstrap": {
       "status": "private generated credential material, add-only broker/file provisioning and bounded public HTTP client verified on Linux arm64 controlled fixtures; real core graph and public dispatch pending",

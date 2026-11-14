@@ -44,6 +44,6 @@ cargo test --locked -p gs --test daemon_migrate
 
 cargo test --locked -p gs --test runtime_credentials
 if [ "$(uname -s)" = Linux ]; then
-  python3 runtime/experiments/credential-broker/test_broker.py \
+  python3 tests/runtime/credential-broker/test_broker.py \
     --probe "$(dirname "$daemon")/credential_probe" --gs "$gs"
 fi

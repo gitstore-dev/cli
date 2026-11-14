@@ -43,7 +43,7 @@ cc -std=c17 -O2 -Wall -Wextra -Werror -Ilibslirp-4.9.7-queueview/src -Ilibslirp-
 env -i PATH=/nonexistent HOME=/home/gitstorefixture ./network-probe
 ```
 
-The repository copy is `runtime/experiments/network-library/probe.c`; adjust only
+The repository copy is `runtime/build-inputs/libslirp/probe.c`; adjust only
 that source path if copying the repository hierarchy. No Git/container/network
 executable runs from the probe. `HOME` must name the disposable user's own home.
 For shared comparison replace the archive/GLib flags with
@@ -56,4 +56,4 @@ For instrumentation build the dependency itself with `CC=clang-18`, Meson's
 `-Db_sanitize=address,undefined -Db_lundef=false`, then link the caller with
 `-fsanitize=address,undefined`. Run with `ASAN_OPTIONS=detect_leaks=1` and
 `UBSAN_OPTIONS=halt_on_error=1`. Do not disable alignment checks. Actual failures
-and selection status are recorded in [the evidence](../network-library.md).
+and selection status are recorded in [the evidence](../../experiments/network-library.md).

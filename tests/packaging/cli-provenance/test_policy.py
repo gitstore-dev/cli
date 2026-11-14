@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-path = Path(__file__).resolve().parents[2] / "packaging/release_verification.py"
+path = Path(__file__).resolve().parents[3] / "runtime/packaging/release_verification.py"
 spec = importlib.util.spec_from_file_location("release_verification", path)
 policy = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(policy)

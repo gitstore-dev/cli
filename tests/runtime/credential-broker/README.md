@@ -63,7 +63,7 @@ Cargo's hard-linked development artifact was correctly refused; no validation ru
 was relaxed. Mode-0644 protected input is refused.
 
 ```sh
-python3 runtime/experiments/credential-broker/test_broker.py \
+python3 tests/runtime/credential-broker/test_broker.py \
   --probe build/daemon-image-sdk/credential_probe \
   --gs /absolute/path/to/gs
 ```
