@@ -18,7 +18,7 @@ checks reject test facilities. Build headers/tools are CI prerequisites; no
 developer executable or workload image is put into the measured package.
 
 Ordinary/sanitized hosted builds and library checks passed on both architectures;
-see the current [evidence record](../../docs/contributing/validation/release-alpha1.md).
+see the current [evidence record](../../docs/contributing/validation/release-qualification.md).
 Native service smoke is a separate explicit maintainer dispatch using
 `hosted_native_run`, selecting a successful unsigned Linux candidate build. It
 runs on ephemeral GitHub Ubuntu VMs, validates the exact downloaded pair and
@@ -140,12 +140,15 @@ mandatory; `gh`'s mutually exclusive identity flags must not be combined.
 
 ## Trusted hosted release qualification
 
-The final tag-qualified lane uses isolated GitHub-hosted fixtures, as selected
-for this release. Dispatch reviewed `main` only while it points at the exact
-candidate SHA, or dispatch the exact candidate tag, with `candidate_run` and
-`candidate_tag`. The existing source/workflow/run gates execute before any
-qualification host is queued. No caller-provided manifest or self-hosted release
-runner labels are needed.
+The final tag-qualified lane uses isolated GitHub-hosted fixtures. Future tags
+run it automatically after assembly through `release-qualification.yml`, called
+at the same commit by `release.yml`. Current-run artifacts require the exact
+tagged release caller; the dependency graph gates all hosts behind assembly and
+signing behind the complete receipts. Explicit split-run recovery calls the same
+workflow from `runtime.yml`: dispatch reviewed `main` only at the candidate SHA,
+or the exact candidate tag, with `candidate_run` and `candidate_tag`. External
+build runs must already have completed successfully. No caller-provided manifest
+or self-hosted release runner labels are needed.
 
 All six hosts remain mandatory: Ubuntu 24.04 and macOS 15 on both architectures,
 and Fedora 44 systemd guests on matching ephemeral Ubuntu Docker hosts. Linux

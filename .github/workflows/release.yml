@@ -5,10 +5,10 @@ on:
   workflow_dispatch:
     inputs:
       phase:
-        description: 'Build read-only candidates or promote a previously qualified build; dispatch at the exact reviewed tag'
+        description: 'Full pipeline by default; build/promote retain exact-tag manual recovery'
         type: choice
-        options: [build, promote]
-        default: build
+        options: [pipeline, build, promote]
+        default: pipeline
       candidate_run:
         description: 'Successful release.yml build run at this exact tag/source (promotion only)'
         type: string
@@ -26,6 +26,8 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.identity.outputs.version }}
+      candidate_run: ${{ github.event_name == 'workflow_dispatch' && inputs.phase == 'promote' && inputs.candidate_run || github.run_id }}
+      qualification_run: ${{ github.event_name == 'workflow_dispatch' && inputs.phase == 'promote' && inputs.qualification_run || github.run_id }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -49,7 +51,7 @@ jobs:
           PY
   build:
     needs: identity
-    if: github.event_name == 'push' || inputs.phase == 'build'
+    if: github.event_name == 'push' || inputs.phase == 'pipeline' || inputs.phase == 'build'
     strategy:
       fail-fast: false
       matrix:
@@ -148,9 +150,21 @@ jobs:
           path: ${{ runner.temp }}/candidate/
           if-no-files-found: error
           retention-days: 14
+  qualification:
+    needs: [identity, assemble]
+    if: github.event_name == 'push' || inputs.phase == 'pipeline'
+    uses: ./.github/workflows/release-qualification.yml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      candidate_tag: ${{ github.ref_name }}
   qualify:
-    needs: identity
-    if: github.event_name == 'workflow_dispatch' && inputs.phase == 'promote'
+    needs: [identity, qualification]
+    if: >-
+      always() && needs.identity.result == 'success' &&
+      ((needs.qualification.result == 'success' && (github.event_name == 'push' || inputs.phase == 'pipeline')) ||
+       (github.event_name == 'workflow_dispatch' && inputs.phase == 'promote'))
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -164,6 +178,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/check-publication-environment.py
       - name: Reject PR, foreign, wrong-source and failed input runs
+        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'promote'
         env:
           GH_TOKEN: ${{ github.token }}
           CANDIDATE_RUN: ${{ inputs.candidate_run }}
@@ -171,17 +186,22 @@ jobs:
         run: |
           python3 scripts/check-release-run.py --run-id "$CANDIDATE_RUN" --workflow release.yml --revision "$GITHUB_SHA" --tag "$GITHUB_REF_NAME"
           python3 scripts/check-release-run.py --run-id "$QUALIFICATION_RUN" --workflow runtime.yml --revision "$GITHUB_SHA" --tag "$GITHUB_REF_NAME"
+      - name: Require this exact tagged release pipeline for current-run artifacts
+        if: github.event_name == 'push' || inputs.phase == 'pipeline'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/check-release-run.py --current --workflow release.yml --revision "$GITHUB_SHA" --tag "$GITHUB_REF_NAME"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-candidate
           path: candidate
-          run-id: ${{ inputs.candidate_run }}
+          run-id: ${{ needs.identity.outputs.candidate_run }}
           github-token: ${{ github.token }}
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: release-qualification
           path: receipts
-          run-id: ${{ inputs.qualification_run }}
+          run-id: ${{ needs.identity.outputs.qualification_run }}
           github-token: ${{ github.token }}
       - name: Require all exact-byte host/channel receipts
         run: |
@@ -212,6 +232,7 @@ jobs:
           if-no-files-found: error
   attest:
     needs: [identity, qualify]
+    if: always() && needs.identity.result == 'success' && needs.qualify.result == 'success'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -276,6 +297,11 @@ jobs:
     needs: [identity, attest]
     runs-on: ubuntu-24.04
     environment: release-publication
+    if: always() && needs.identity.result == 'success' && needs.attest.result == 'success'
+    outputs:
+      tap_pr: ${{ steps.publication.outputs.tap_pr }}
+      tap_head: ${{ steps.publication.outputs.tap_head }}
+      tap_sha256: ${{ steps.publication.outputs.tap_sha256 }}
     permissions:
       contents: write
     steps:
@@ -301,6 +327,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
       - name: Reverify, publish, then propose the protected-branch tap update
+        id: publication
         env:
           GH_TOKEN: ${{ github.token }}
           GITSTORE_TAP_TOKEN: ${{ steps.tap-app.outputs.token }}
@@ -308,7 +335,23 @@ jobs:
           chmod 700 candidate
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
           "$RUNNER_TEMP/venv/bin/python" scripts/publish-release.py --candidate "$PWD/candidate/verified.json" \
-            --asset-dir "$PWD/candidate" --trusted-root "$RUNNER_TEMP/trusted-root.jsonl" --update-tap
+            --asset-dir "$PWD/candidate" --trusted-root "$RUNNER_TEMP/trusted-root.jsonl" --update-tap > "$RUNNER_TEMP/publication.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          result = json.loads((Path(os.environ['RUNNER_TEMP']) / 'publication.json').read_text())
+          tap = result.get('tap') or {}
+          print('Release published:', result['tag'])
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              if tap.get('status') == 'pending':
+                  stream.write(f"tap_pr={tap['number']}\ntap_head={tap['head']}\ntap_sha256={tap['formulaSha256']}\n")
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as stream:
+              stream.write(f"Release **{result['tag']}** is published.\n\n")
+              if tap.get('status') == 'pending':
+                  stream.write(f"Homebrew delivery is pending: {tap['pullRequest']}. The Homebrew delivery job waits for checks and the merge queue.\n")
+              else:
+                  stream.write('Homebrew formula is already current.\n')
+          PY
       - name: Request the reviewed website release update
         id: docs-dispatch
         continue-on-error: true
@@ -322,3 +365,43 @@ jobs:
         run: |
           echo '::warning::CLI publication succeeded, but the website update dispatch failed. Run the Update release documentation workflow on main with the published tag to retry.'
           echo 'CLI publication is complete. The website still documents its previous reviewed release. Retry **Update release documentation** manually on main, selecting this published tag.' >> "$GITHUB_STEP_SUMMARY"
+  homebrew:
+    name: Homebrew delivery
+    needs: publish
+    if: always() && needs.publish.result == 'success' && needs.publish.outputs.tap_pr != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+      statuses: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Create repository-scoped delivery App token
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          owner: gitstore-dev
+          repositories: cli
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Wait for required checks, enqueue the exact formula PR, and observe delivery
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITSTORE_QUEUE_TOKEN: ${{ steps.app.outputs.token }}
+          TAP_PR: ${{ needs.publish.outputs.tap_pr }}
+          TAP_HEAD: ${{ needs.publish.outputs.tap_head }}
+          TAP_SHA256: ${{ needs.publish.outputs.tap_sha256 }}
+        run: |
+          python3 scripts/queue-homebrew.py --tag "$GITHUB_REF_NAME" --pr "$TAP_PR" \
+            --head "$TAP_HEAD" --formula-sha256 "$TAP_SHA256"
+      - name: Report delivery recovery without misreporting publication
+        if: failure()
+        run: |
+          echo '::warning::The CLI release is published. Homebrew delivery did not complete; inspect the formula PR and rerun this failed job after resolving its checks. Do not rebuild or republish the release.'
+          echo 'Release publication succeeded. **Homebrew delivery remains pending.** Inspect the formula PR/checks and rerun the Homebrew delivery job for this exact tag; no new release is required.' >> "$GITHUB_STEP_SUMMARY"

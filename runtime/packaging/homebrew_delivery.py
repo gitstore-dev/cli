@@ -70,4 +70,5 @@ def propose(api, repository, tag, payload):
     if (pull['state'] != 'open' or pull['head']['sha'] != head or pull['head']['ref'] != branch
             or pull['head']['repo']['full_name'] != repository or pull['base']['ref'] != 'main'):
         raise ValueError('tap proposal closed or changed; maintainer review required')
-    return dict(status='pending', pullRequest=pull['html_url'])
+    return dict(status='pending', pullRequest=pull['html_url'], number=pull['number'],
+                head=head, formulaSha256=hashlib.sha256(payload).hexdigest())

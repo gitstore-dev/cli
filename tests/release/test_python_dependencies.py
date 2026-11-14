@@ -22,7 +22,7 @@ class PublicationDependencies(unittest.TestCase):
             self.assertTrue(re.search(r'--hash=sha256:[0-9a-f]{64}(?:\s|$)',entry))
 
     def test_publish_token_is_absent_during_dependency_installation(self):
-        workflow=(ROOT/'.github/workflows/release.yml').read_text().split('\n  publish:\n',1)[1]
+        workflow=(ROOT/'.github/workflows/release.yml').read_text().split('\n  publish:\n',1)[1].split('\n  homebrew:\n',1)[0]
         header,steps=workflow.split('    steps:\n',1)
         self.assertNotIn('GH_TOKEN',header)
         installations=0;write_steps=[]

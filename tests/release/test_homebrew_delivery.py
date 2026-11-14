@@ -62,7 +62,7 @@ class API:
             if method == 'POST':
                 self.pulls = [dict(state='open', head=dict(sha=self.head, ref=self.branch,
                     repo=dict(full_name='gitstore-dev/cli')), base=dict(ref='main'),
-                    html_url='https://github.com/gitstore-dev/cli/pull/123')]
+                    number=123, html_url='https://github.com/gitstore-dev/cli/pull/123')]
             if method == 'POST':return self.pulls[0]
             base = parse_qs(urlsplit(endpoint).query).get('base', [None])[0]
             return [p for p in self.pulls if base is None or p['base']['ref'] == base]
