@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "release": "v0.1.0-alpha.6",
+  "sourceRevision": "01440a78153ccb9803556e5560307b40dda73a6f",
+  "scope": "Immutable production bytes and production relink archive measurements; no newly qualified artifacts",
+  "followup": 44,
+  "platforms": [
+    {
+      "arch": "x64",
+      "compiler": "cc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+      "originalCompiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "linker": "GNU ld version 2.46.1-1.fc44",
+      "exactReconstruction": false,
+      "baseline": {
+        "bytes": 22087920,
+        "sha256": "f22d37dbea3d8d6417f4084f3319db9e0b7306ccb89e832cf6c965065c104ce9"
+      },
+      "stripDebug": {
+        "bytes": 15797680,
+        "sha256": "d9ed751956c0c5badb432f607903cf4fdedc89004f5e9d63289777a09afb6dcd"
+      },
+      "stripUnneeded": {
+        "bytes": 13250176,
+        "sha256": "c77f64f6cf41e2c97f227cc41b63e75b78c2e000dc1e13836ba5033b5ec8925e"
+      },
+      "savedBytes": 8837744,
+      "allocatedInputSections": [
+        {
+          "archive": "libcrypto.a",
+          "bytes": 4007771
+        },
+        {
+          "archive": "libgitstored_image.a",
+          "bytes": 3904696
+        },
+        {
+          "archive": "libcrun.a",
+          "bytes": 2830799
+        },
+        {
+          "archive": "libglib-2.0.a",
+          "bytes": 729674
+        },
+        {
+          "archive": "libgitstored_sqlite.a",
+          "bytes": 647798
+        },
+        {
+          "archive": "libgitstored_core.a",
+          "bytes": 535237
+        },
+        {
+          "archive": "libsystemd.a",
+          "bytes": 487667
+        },
+        {
+          "archive": "libssl.a",
+          "bytes": 459233
+        },
+        {
+          "archive": "libgitstored_curl.a",
+          "bytes": 381957
+        },
+        {
+          "archive": "main.c.o",
+          "bytes": 319112
+        },
+        {
+          "archive": "libcrypt.a",
+          "bytes": 188433
+        },
+        {
+          "archive": "libseccomp.a",
+          "bytes": 110350
+        },
+        {
+          "archive": "libslirp.a",
+          "bytes": 104650
+        },
+        {
+          "archive": "libjansson.a",
+          "bytes": 70374
+        },
+        {
+          "archive": "libjson-c.a",
+          "bytes": 26610
+        },
+        {
+          "archive": "libcap.a",
+          "bytes": 20676
+        }
+      ]
+    },
+    {
+      "arch": "arm64",
+      "compiler": "cc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+      "originalCompiler": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "linker": "GNU ld version 2.46.1-1.fc44",
+      "exactReconstruction": false,
+      "baseline": {
+        "bytes": 22409424,
+        "sha256": "24db1dcf86662340c420a22cfee6eaeb681db50c8e344b26d943438e4edf47b5"
+      },
+      "stripDebug": {
+        "bytes": 15940240,
+        "sha256": "df4c0c853767c3ff8b80b3d15547ef3863324c2ac73efcf849bee9f565a64c12"
+      },
+      "stripUnneeded": {
+        "bytes": 12371912,
+        "sha256": "7fa8d948e1c3634ad705816d48030cdccc15b0a0e5694eb2cad814f1ea49623d"
+      },
+      "savedBytes": 10037512,
+      "allocatedInputSections": [
+        {
+          "archive": "libgitstored_image.a",
+          "bytes": 3656201
+        },
+        {
+          "archive": "libcrypto.a",
+          "bytes": 3289700
+        },
+        {
+          "archive": "libcrun.a",
+          "bytes": 2939769
+        },
+        {
+          "archive": "libglib-2.0.a",
+          "bytes": 776057
+        },
+        {
+          "archive": "libgitstored_sqlite.a",
+          "bytes": 685380
+        },
+        {
+          "archive": "libsystemd.a",
+          "bytes": 669672
+        },
+        {
+          "archive": "libgitstored_core.a",
+          "bytes": 535460
+        },
+        {
+          "archive": "libssl.a",
+          "bytes": 484004
+        },
+        {
+          "archive": "libgitstored_curl.a",
+          "bytes": 354991
+        },
+        {
+          "archive": "libcrypt.a",
+          "bytes": 182431
+        },
+        {
+          "archive": "main.c.o",
+          "bytes": 176530
+        },
+        {
+          "archive": "libseccomp.a",
+          "bytes": 111881
+        },
+        {
+          "archive": "libslirp.a",
+          "bytes": 98485
+        },
+        {
+          "archive": "libjansson.a",
+          "bytes": 73258
+        },
+        {
+          "archive": "libjson-c.a",
+          "bytes": 28556
+        },
+        {
+          "archive": "libcap.a",
+          "bytes": 23644
+        }
+      ]
+    }
+  ]
+}
