@@ -3,8 +3,11 @@
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md),
 [data-model.md](data-model.md), [contracts](contracts/cli.md),
 [release evidence](release-evidence.md), [validation guide](quickstart.md).
-**Status**: Implementation in progress; completed tasks have local evidence in docs/contributing/validation/local-runtime.md. Actual Git
-branch is `main`; the feature pointer selects this directory independently.
+**Status**: Closed — all 85 implementation tasks are complete; the requirements
+checklist is 16/16. Acceptance evidence is recorded in
+[local runtime validation](../../docs/contributing/validation/local-runtime.md).
+See [current release qualification](../../docs/contributing/validation/release-qualification.md)
+for published support; closure does not expand the named dependency/platform gates.
 **Tests**: Explicitly required by FR-021, SC-001–013 and the constitution. For each
 story, write meaningful behavior tests before its implementation and observe the
 expected failure; complete the listed checks before marking work done.
