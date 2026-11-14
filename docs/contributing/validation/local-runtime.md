@@ -964,7 +964,7 @@ closes their test/definition scope, not T067/T069/T070 persistent deployment
 execution. `runtime/profiles/scylladb.json` and `migration-targets.json` remain
 `executionEnabled: false`; neither `scylladb` nor public `migration.start` is
 advertised. The checked-in native experiment and its limits are documented in
-[Scylla verification](../../../tests/runtime/scylladb.md).
+[Scylla verification](../../../runtime/experiments/scylladb.md).
 
 `durable_migration_control_contract` passes on macOS normally and with ASan/UBSan,
 and Linux arm64 normally and with ASan/UBSan/leak detection. It covers atomic
@@ -1064,7 +1064,7 @@ normal/sanitized tests cover graph generation, failed/uncertain migration blocki
 immutable configuration files and policy-flag binding. Private production actors now verify full startup, retained restart and observer
 restoration. Public persistent startup remains gated pending remaining migration
 and crash-recovery integration. See the scenario matrix in
-[Scylla verification](../../../tests/runtime/scylladb.md#persistent-actor-recovery-checks).
+[Scylla verification](../../../runtime/experiments/scylladb.md#persistent-actor-recovery-checks).
 
 The bounded collector now supports Git/API/[controller]/Scylla streams, with
 redaction before persistence and Scylla filtering in the existing replay path.

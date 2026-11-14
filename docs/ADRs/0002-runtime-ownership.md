@@ -94,7 +94,7 @@ coverage only. Runtime maintainers own this gate before any daemon release claim
 
 ## 2026-11-03 process-boundary implementation checkpoint
 
-[EXP-003A](../../tests/runtime/libcrun.md) records the native experiment. Actual libcrun 1.30.1 static/shared C callers
+[EXP-003A](../../runtime/experiments/libcrun.md) records the native experiment. Actual libcrun 1.30.1 static/shared C callers
 on the disposable Ubuntu arm64 fixture exercise namespace create/start/state,
 SIGTERM/delete, native callbacks and allocation/free ownership. A worker deliberately
 crashes after successful start before its reply; the payload survives and remains
@@ -127,7 +127,7 @@ Manager loss invalidates readiness. A new owned stop reopens recorded roots and
 observes the original workload before cleanup; it does not infer death from a
 missing PID or adopt a copied live deployment.
 
-The [Scylla experiment](../../tests/runtime/scylladb.md) records standalone
+The [Scylla experiment](../../runtime/experiments/scylladb.md) records standalone
 registered migrations, retained data and a surviving mutator across manager loss.
 Unsafe running migration cancellation is refused. Recovery waits for that exact
 mutator rather than signalling or retrying it; the original failed operation

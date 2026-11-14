@@ -79,7 +79,7 @@ The optional Scylla experiment separately acquired 273,983,661 compressed bytes,
 619,594,752 merged bytes and an approximately 870 MiB retained stage. Its 2 GiB
 physical cgroup ceiling is a limit, not measured consumption; its 64 TiB virtual
 address ceiling accommodates a 32 TiB address reservation, not physical RAM.
-See [Scylla verification](../../tests/runtime/scylladb.md).
+See [Scylla verification](../../runtime/experiments/scylladb.md).
 
 The [older package inventory](../../runtime/packaging/linux-arm64-candidate.json)
 is preserved as historical evidence and does not describe the current pair.

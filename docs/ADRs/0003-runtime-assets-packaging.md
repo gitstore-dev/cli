@@ -176,7 +176,7 @@ pulled for this ADR. DEP-013 stays open until experiment evidence is published.
 
 ## 2026-11-03 library footprint checkpoint
 
-[The libcrun experiment](../../tests/runtime/libcrun.md) links the actual C
+[The libcrun experiment](../../runtime/experiments/libcrun.md) links the actual C
 API, not a crun process. On the recorded Linux arm64 fixture a stripped caller
 with static libcrun is 659,648 bytes. The shared caller is 67,496 bytes plus an
 859,984-byte libcrun shared object; both still require their recorded native system
