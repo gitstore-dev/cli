@@ -34,6 +34,12 @@ wrong workflow/source/issuer or another repository ID fail promotion.
 
 ## Offline verification
 
+Future releases publish one `release.sigstore.jsonl` multi-subject bundle. Each
+subject is independently verified against that same bundle. The producer ledger
+selects `attestationLayout: shared-v1`; legacy schema-v1 ledgers without that field
+select the original per-subject layout used by alpha.5/alpha.6. Layout is never
+inferred from available filenames. No verifier is required by installers.
+
 Acquire the artifact and its attestation bundle, and refresh trust roots while
 online using reviewed GitHub CLI. Import trust roots through the maintainer's
 trusted channel; an arbitrary root shipped beside an untrusted artifact is not
