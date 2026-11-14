@@ -68,6 +68,13 @@ for (const width of [390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ['/', '/install/', '/manual/auth/login/']) {
       await page.goto(path);
+      if (path === '/') {
+        const theme = page.locator('starlight-theme-select select:visible');
+        await theme.selectOption('dark');
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+        await theme.selectOption('light');
+        await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
       if (path === '/') await page.screenshot({ path: test.info().outputPath(`homepage-${width}.png`), fullPage: true });
       await page.keyboard.press('Tab');

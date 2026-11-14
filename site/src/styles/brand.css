@@ -31,6 +31,12 @@ button, select { font: inherit; }
 button { cursor: pointer; }
 pre { tab-size: 2; }
 .sl-markdown-content :not(pre) > code { background: var(--surface-muted); }
+/* Splash pages have no mobile sidebar containing the alternative theme control. */
+@media (max-width: 49.99rem) {
+  :root:not([data-has-sidebar]) .header .right-group { display: flex; }
+  :root:not([data-has-sidebar]) .header .social-icons { display: none; }
+  :root:not([data-has-sidebar]) .header { gap: .5rem; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 }
