@@ -129,10 +129,15 @@ def validate_release(value):
     if phase >= states.index('validated'):
         if not value['receipts'] or any(not item['receipt'] for item in value['artifacts']):
             raise ValueError('missing qualification receipts')
-    if phase >= states.index('attested') and any(not item['bundle'] for item in value['artifacts']):
+    signed = value['artifacts']
+    if value.get('publicationLayout') == 'packages-v1':
+        signed = [a for a in signed if not (a['format'] == 'binary' or
+                  (a['format'] == 'manifest' and a['os'] != 'any'))]
+    if phase >= states.index('attested') and any(not item['bundle'] for item in signed):
         raise ValueError('missing attestation bundle')
     if phase >= states.index('attested'):
-        from release_candidate import bundle_name
-        if any(item['bundle'] != bundle_name(value, item['filename']) for item in value['artifacts']):
+        shared = value.get('attestationLayout') == 'shared-v1'
+        if any(item['bundle'] != ('release.sigstore.jsonl' if shared else
+                item['filename'] + '.sigstore.jsonl') for item in signed):
             raise ValueError('attestation bundle does not match selected layout')
     # Structural validation is not a cryptographic verification or promotion receipt.

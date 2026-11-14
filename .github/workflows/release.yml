@@ -229,13 +229,18 @@ jobs:
       - id: subjects
         name: Select all final subjects, including inventory, formula and checksum file
         run: |
-          python3 - <<'PY'
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
+          "$RUNNER_TEMP/venv/bin/python" - <<'PY'
           import json, os, pathlib
+          import sys
+          sys.path.insert(0, 'runtime/packaging')
+          from release_candidate import public_artifacts
           root = pathlib.Path('candidate').resolve()
           value = json.loads((root / 'validated.json').read_text())
           with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
               stream.write('paths<<FINAL_SUBJECTS\n')
-              for artifact in value['artifacts']:
+              for artifact in public_artifacts(value):
                   stream.write(str(root / artifact['filename']) + '\n')
               stream.write('FINAL_SUBJECTS\n')
           PY
@@ -251,8 +256,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
-          python3 -m venv "$RUNNER_TEMP/venv"
-          "$RUNNER_TEMP/venv/bin/pip" install --require-hashes --only-binary=:all: -r packaging/requirements.txt
           "$RUNNER_TEMP/venv/bin/python" - <<'PY'
           import json, os, pathlib, shutil, sys
           sys.path.insert(0, 'runtime/packaging')
