@@ -10,7 +10,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'runtime/packaging'))
-from finalize_elf import finalize
+from finalize_elf import finalize, finalize_record
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -65,6 +65,17 @@ class Finalization(unittest.TestCase):
             finalize(alias)
         with self.assertRaises(ValueError):
             finalize(self.source)
+
+    def test_incremental_build_reuses_unchanged_identity_and_updates_after_relink(self):
+        record = self.root / 'finalization.json'
+        first = finalize_record(self.binary, record)
+        self.assertEqual(finalize_record(self.binary, record), first)
+        self.source.write_text('int main(void) { return 42; }\n')
+        subprocess.run(['cc', '-g', str(self.source), '-o', str(self.binary)], check=True)
+        second = finalize_record(self.binary, record)
+        self.assertNotEqual(first['sha256'], second['sha256'])
+        self.assertEqual(json.loads(record.read_text()), second)
+        self.assertEqual(subprocess.run([str(self.binary)]).returncode, 42)
 
     @unittest.skipIf(os.geteuid() == 0, 'relink producer requires a non-root account')
     def test_relink_kit_retains_objects_and_identifies_final_distributed_elf(self):
