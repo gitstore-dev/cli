@@ -39,7 +39,7 @@ selected. The equivalent authenticated local command is:
 
 ```sh
 node site/scripts/update-release.mjs
-# or: node site/scripts/update-release.mjs --tag v0.1.0-alpha.6
+# or: node site/scripts/update-release.mjs --tag v0.1.0-alpha.7
 ```
 
 The updater validates release/tag/source identity, inventory, asset digests and

@@ -1,7 +1,7 @@
 ---
 import release from '../../release.json';
 const options = [
-  ...['ARM64 / Apple silicon', 'Intel / x86_64'].map((arch, index) => ({ id: `brew-${index}`, label: `macOS · Homebrew · ${arch}`, command: 'brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git\n# Homebrew 7+: trust this formula explicitly\nbrew trust --formula gitstore-dev/cli/gitstore\nbrew install gitstore-dev/cli/gitstore', note: 'Use a native Homebrew installation for the selected architecture. macOS is remote-only.' })),
+  ...['ARM64 / Apple silicon', 'Intel / x86_64'].map((arch, index) => ({ id: `brew-${index}`, label: `macOS · Homebrew · ${arch}`, command: `brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git\n# Confirm this offers ${release.version} before continuing:\nbrew info gitstore-dev/cli/gitstore\n# Homebrew 7+: trust this formula explicitly\nbrew trust --formula gitstore-dev/cli/gitstore\nbrew install gitstore-dev/cli/gitstore`, note: 'Use native Homebrew for the selected processor. The tap can lag publication during formula review; use the pinned npm package if its version differs. macOS is remote-only.' })),
   ...release.assets.filter(a => ['deb', 'rpm', 'npm'].includes(a.kind)).map(a => ({
     id: a.name, label: `${a.kind === 'deb' ? 'Ubuntu · APT' : a.kind === 'rpm' ? 'Fedora · DNF' : a.os === 'darwin' ? 'macOS · npm' : 'Linux · npm'} · ${a.arch === 'x64' ? 'Intel / x86_64' : 'ARM64'}`,
     command: a.kind === 'deb' ? `curl --fail --location --output gitstore.deb '${a.url}' &&\nsudo apt install ./gitstore.deb` : a.kind === 'rpm' ? `sudo dnf install '${a.url}'` : `npm install --global --ignore-scripts --prefix "$HOME/.local" '${a.url}'\nexport PATH="$HOME/.local/bin:$PATH"`,
