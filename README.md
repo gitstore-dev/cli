@@ -6,7 +6,7 @@ deployments on Linux.
 
 Install the matching `gs` and `gitstored` pair using
 [Homebrew, APT, DNF or npm](docs/installation.md). The
-[alpha.5 prerelease](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5)
+[alpha.6 prerelease](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.6)
 is available for Linux and macOS; macOS supports remote/control commands only.
 Upstream schemas change incompatibly. Upgrade compatibility, data preservation
 and recovery are not guaranteed; keep independent backups. Contributor builds
@@ -59,7 +59,10 @@ acknowledgment, disk footprint and recovery limits.
 
 ## Documentation
 
-Start with the [user guides](docs/README.md). Build instructions, tests, architecture,
+Read the [CLI website](https://cli.gitstore.dev) for installation, searchable
+guides and the published command manual. Canonical [user guides](docs/README.md)
+remain in this repository; website development and release updates are described
+in [website operations](site/OPERATIONS.md). Build instructions, tests, architecture,
 contracts and validation records are indexed in
 [contributor documentation](docs/contributing/README.md).
 

@@ -1,0 +1,42 @@
+:root {
+  --paper: #101b18; --ink: #f4f2e9; --muted: #b2bcb0; --orange: #ff9b77;
+  --line: #3b4c40; --green: #bdd29f; --surface: #1a2821; --surface-muted: #22332a;
+  --button: #f28c68; --button-text: #162923;
+  --sl-font: 'Avenir Next', 'Trebuchet MS', sans-serif;
+  --sl-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --sl-color-accent-low: #22332a; --sl-color-accent: #bdd29f; --sl-color-accent-high: #ff9b77;
+  --sl-color-white: #f4f2e9; --sl-color-gray-1: #e1e5d8; --sl-color-gray-2: #b2bcb0;
+  --sl-color-gray-3: #96a590; --sl-color-gray-4: #62735f; --sl-color-gray-5: #3b4c40;
+  --sl-color-gray-6: #1a2821; --sl-color-black: #101b18;
+  --sl-color-bg-nav: var(--paper); --sl-color-bg-sidebar: var(--paper);
+  --sl-content-width: 52rem;
+}
+:root[data-theme='light'] {
+  --paper: #f7f6f0; --ink: #252922; --muted: #666b60; --orange: #c94b27;
+  --line: #dcded2; --green: #3c624d; --surface: #fffef9; --surface-muted: #f0f1e9;
+  --button: #c94b27; --button-text: #fff;
+  --sl-color-accent-low: #e7eadc; --sl-color-accent: #3c624d; --sl-color-accent-high: #99371d;
+  --sl-color-white: #252922; --sl-color-gray-1: #343e32; --sl-color-gray-2: #4d5748;
+  --sl-color-gray-3: #666b60; --sl-color-gray-4: #838a7b; --sl-color-gray-5: #dcded2;
+  --sl-color-gray-6: #f0f1e9; --sl-color-gray-7: #fffef9; --sl-color-black: #f7f6f0;
+}
+body { background: var(--paper); color: var(--ink); }
+.site-title img { height: 2rem; width: 2rem; }
+a { text-underline-offset: .2em; }
+:focus-visible { outline: 3px solid var(--orange); outline-offset: 4px; }
+/* Brand orange stays unchanged for illustration/buttons; small copy needs AA contrast. */
+:root { --orange-text: #ff9b77; }
+:root[data-theme='light'] { --orange-text: #b44021; }
+button, select { font: inherit; }
+button { cursor: pointer; }
+pre { tab-size: 2; }
+.sl-markdown-content :not(pre) > code { background: var(--surface-muted); }
+/* Splash pages have no mobile sidebar containing the alternative theme control. */
+@media (max-width: 49.99rem) {
+  :root:not([data-has-sidebar]) .header .right-group { display: flex; }
+  :root:not([data-has-sidebar]) .header .social-icons { display: none; }
+  :root:not([data-has-sidebar]) .header { gap: .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
