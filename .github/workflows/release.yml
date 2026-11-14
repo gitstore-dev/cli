@@ -256,11 +256,10 @@ jobs:
           "$RUNNER_TEMP/venv/bin/python" - <<'PY'
           import json, os, pathlib, shutil, sys
           sys.path.insert(0, 'runtime/packaging')
-          from release_candidate import advance
+          from release_candidate import advance, SHARED_BUNDLE
           root = pathlib.Path('candidate').resolve()
           value = json.loads((root / 'validated.json').read_text())
-          for artifact in value['artifacts']:
-              shutil.copyfile(os.environ['BUNDLE'], root / (artifact['filename'] + '.sigstore.jsonl'))
+          shutil.copyfile(os.environ['BUNDLE'], root / SHARED_BUNDLE)
           value = advance(value, 'attested', root)
           value = advance(value, 'producer-verified', root, trusted_root=pathlib.Path(os.environ['RUNNER_TEMP']) / 'trusted-root.jsonl')
           (root / 'verified.json').write_text(json.dumps(value, indent=2))

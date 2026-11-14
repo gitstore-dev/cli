@@ -131,4 +131,8 @@ def validate_release(value):
             raise ValueError('missing qualification receipts')
     if phase >= states.index('attested') and any(not item['bundle'] for item in value['artifacts']):
         raise ValueError('missing attestation bundle')
+    if phase >= states.index('attested'):
+        from release_candidate import bundle_name
+        if any(item['bundle'] != bundle_name(value, item['filename']) for item in value['artifacts']):
+            raise ValueError('attestation bundle does not match selected layout')
     # Structural validation is not a cryptographic verification or promotion receipt.

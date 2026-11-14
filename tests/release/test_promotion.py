@@ -189,7 +189,7 @@ class Promotion(unittest.TestCase):
         value['state'] = 'producer-verified'
         for artifact in value['artifacts']:
             artifact['receipt'] = 'controlled-fixture-only'
-            artifact['bundle'] = artifact['filename'] + '.sigstore.jsonl'
+            artifact['bundle'] = candidate.bundle_name(value, artifact['filename'])
             (self.root / artifact['bundle']).write_text('controlled fixture bundle')
         value['receipts'] = ['controlled-fixture-only']
         return value
@@ -210,6 +210,26 @@ class Promotion(unittest.TestCase):
         self.assertEqual(backend.promotions, 1)
         self.assertTrue(backend.body.startswith(candidate.DISCLAIMER + '\n\n'))
         self.assertIn('Synthetic release history', backend.body)
+
+    def test_shared_bundle_is_uploaded_once_and_layout_is_strict(self):
+        value = self.verified_fixture()
+        backend = Draft()
+        publication.publish(value, self.root, backend)
+        self.assertEqual([n for n in backend.assets if n.endswith('.sigstore.jsonl')],
+                         [candidate.SHARED_BUNDLE])
+        value['artifacts'][0]['bundle'] = 'wrong.sigstore.jsonl'
+        with self.assertRaises(ValueError):
+            publication.publish(value, self.root, Draft())
+
+    def test_legacy_per_subject_layout_remains_explicitly_supported(self):
+        value = self.verified_fixture()
+        value['attestationLayout'] = 'per-subject-v1'
+        for artifact in value['artifacts']:
+            artifact['bundle'] = candidate.bundle_name(value, artifact['filename'])
+            (self.root / artifact['bundle']).write_text('legacy fixture')
+        backend = Draft()
+        publication.publish(value, self.root, backend)
+        self.assertEqual(sum(n.endswith('.sigstore.jsonl') for n in backend.assets), len(value['artifacts']))
 
     def test_conflicts_wrong_source_and_unexpected_assets_never_promote(self):
         value = self.verified_fixture()
