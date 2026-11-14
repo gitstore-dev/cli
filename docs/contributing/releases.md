@@ -67,7 +67,7 @@ as a Git URL tap; APT/DNF and npm install GitHub Release files. Nix is deferred.
    formula PR through normal checks and the merge queue. Homebrew delivery is
    pending until that merge; the publisher never writes protected main directly.
 6. **Verify delivery and record acceptance.** Check public asset names/digests,
-   downloadable `.sigstore.jsonl` bundles, the mandatory early-alpha notice,
+   the downloadable shared `release.sigstore.jsonl` bundle, the mandatory early-alpha notice,
    formula and [installation instructions](../installation.md). Update the compact
    qualification record and its machine-readable evidence. Close acceptance tasks
    only when their checks have actually passed.
@@ -83,6 +83,18 @@ as a Git URL tap; APT/DNF and npm install GitHub Release files. Nix is deferred.
 - `release-inventory.json` describes payloads. `SHA256SUMS` covers payloads and that
   inventory, excluding itself. Both are signed subjects; the mutable candidate
   ledger is not part of its own hash inventory.
+- Future candidates select `publicationLayout: packages-v1`: paired archives,
+  npm/DEB/RPM packages, source archives, Linux relink kits and formula remain
+  downloads. The eight loose executables and four loose install manifests stay
+  in the private candidate directory and qualification ledger. The public
+  inventory's `installationInventories` map embeds those four manifests; resolve
+  a payload's `installInventory` key there, rather than as a download URL. Each
+  paired archive contains the same `share/gitstore/install.json` and exact
+  qualified executable pair. Qualification receipts still bind every input and
+  final package hash, across all six hosts and 22 selections.
+  With four source archives and two relink kits this gives 21 signed subjects
+  plus one shared bundle (22 uploaded assets, 24 entries with GitHub archives).
+  Legacy ledgers without this selector retain their full public input set.
 - [Python dependencies](../../packaging/requirements.txt) have exact versions and
   SHA-256 wheel hashes. Install with `--require-hashes --only-binary=:all:`; review
   wheel resolution on every selected platform when updating the lock. Install
@@ -95,7 +107,7 @@ Optional consumer verification:
 
 ```sh
 gh attestation verify /absolute/package.tgz --repo gitstore-dev/cli \
-  --bundle /absolute/package.tgz.sigstore.jsonl
+  --bundle /absolute/release.sigstore.jsonl
 ```
 
 ## Failure and recovery

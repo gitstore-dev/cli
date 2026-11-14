@@ -1,6 +1,8 @@
 """Disposable producer fixtures; these do not constitute release qualification."""
 import copy
 import hashlib
+import io
+import tarfile
 import json
 from pathlib import Path
 import sys
@@ -84,6 +86,16 @@ class Promotion(unittest.TestCase):
             payload = json.dumps(manifest).encode()
             (self.root / name).write_bytes(payload)
             by_name[name].update(sha256=hashlib.sha256(payload).hexdigest(), bytes=len(payload), unpackedBytes=len(payload))
+            archive_name = candidate.slot_filename(self.value['version'], 'archive', os_name, arch)
+            with tarfile.open(self.root / archive_name, 'w:gz') as archive:
+                for path, data in [('share/gitstore/install.json', payload)] + [
+                        ('bin/' + binary, (self.root / candidate.slot_filename(self.value['version'], binary, os_name, arch)).read_bytes())
+                        for binary in ('gs', 'gitstored')]:
+                    member = tarfile.TarInfo(path)
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            actual = (self.root / archive_name).read_bytes()
+            by_name[archive_name].update(sha256=hashlib.sha256(actual).hexdigest(), bytes=len(actual))
 
     def packaged(self):
         value = candidate.advance(self.value, 'version-reviewed', self.root,
@@ -96,7 +108,7 @@ class Promotion(unittest.TestCase):
         candidate.validate_bytes(value, self.root)
         self.assertEqual(set(value['requiredArtifacts']), {a['filename'] for a in value['artifacts']})
         lines = (self.root / 'SHA256SUMS').read_text().splitlines()
-        self.assertEqual(len(lines), len(value['artifacts']) - 1)
+        self.assertEqual(len(lines), len(candidate.public_artifacts(value)) - 1)
         self.assertFalse(any(line.endswith('  SHA256SUMS') for line in lines))
         with self.assertRaises(ValueError):
             candidate.register(value, self.root, 'other', 'archive', 'linux', 'x64',
@@ -221,6 +233,56 @@ class Promotion(unittest.TestCase):
         with self.assertRaises(ValueError):
             publication.publish(value, self.root, Draft())
 
+    def test_shared_bundle_missing_and_conflicting_uploads_fail_closed(self):
+        value = self.verified_fixture()
+        shared = self.root / candidate.SHARED_BUNDLE
+        shared.unlink()
+        with self.assertRaises(OSError):
+            publication.publish(value, self.root, Draft())
+        shared.write_text('controlled fixture bundle')
+        backend = Draft()
+        backend.assets[candidate.SHARED_BUNDLE] = b'wrong bundle'
+        with self.assertRaises(ValueError):
+            publication.publish(value, self.root, backend)
+        self.assertEqual(backend.promotions, 0)
+
+    def test_public_surface_excludes_inputs_but_retains_embedded_inventories(self):
+        value = self.packaged()
+        public = candidate.public_artifacts(value)
+        names = {a['filename'] for a in public}
+        self.assertEqual(len(value['artifacts']) - len(public), 12)
+        checksums = (self.root / 'SHA256SUMS').read_text()
+        inventory = json.loads((self.root / 'release-inventory.json').read_bytes())
+        self.assertEqual(len(inventory['installationInventories']), 4)
+        for artifact in value['artifacts']:
+            if artifact['filename'] not in names:
+                self.assertNotIn(artifact['filename'], checksums)
+        self.assertEqual({a['filename'] for a in inventory['artifacts']}, names - candidate.GENERATED)
+        for artifact in inventory['artifacts']:
+            key = artifact['installInventory']
+            if artifact['os'] != 'any':
+                embedded = inventory['installationInventories'][key]
+                self.assertEqual((embedded['os'], embedded['arch']), (artifact['os'], artifact['arch']))
+
+    def test_archive_replacement_with_updated_ledger_still_rejects_wrong_pair(self):
+        value = copy.deepcopy(self.value)
+        artifact = next(a for a in value['artifacts'] if a['format'] == 'archive')
+        with tarfile.open(self.root / artifact['filename'], 'w:gz') as archive:
+            member = tarfile.TarInfo('bin/gs')
+            member.size = 5
+            archive.addfile(member, io.BytesIO(b'wrong'))
+        payload = (self.root / artifact['filename']).read_bytes()
+        artifact.update(sha256=hashlib.sha256(payload).hexdigest(), bytes=len(payload))
+        reviewed = candidate.advance(value, 'version-reviewed', self.root,
+            reviewed_tag=value['tag'], reviewed_revision='a' * 40)
+        with self.assertRaises(ValueError):
+            candidate.advance(reviewed, 'built', self.root)
+
+    def test_legacy_publication_keeps_all_inputs(self):
+        self.value.pop('publicationLayout')
+        value = self.packaged()
+        self.assertEqual(candidate.public_artifacts(value), value['artifacts'])
+
     def test_legacy_per_subject_layout_remains_explicitly_supported(self):
         value = self.verified_fixture()
         value['attestationLayout'] = 'per-subject-v1'
@@ -229,7 +291,7 @@ class Promotion(unittest.TestCase):
             (self.root / artifact['bundle']).write_text('legacy fixture')
         backend = Draft()
         publication.publish(value, self.root, backend)
-        self.assertEqual(sum(n.endswith('.sigstore.jsonl') for n in backend.assets), len(value['artifacts']))
+        self.assertEqual(sum(n.endswith('.sigstore.jsonl') for n in backend.assets), len(candidate.public_artifacts(value)))
 
     def test_conflicts_wrong_source_and_unexpected_assets_never_promote(self):
         value = self.verified_fixture()
