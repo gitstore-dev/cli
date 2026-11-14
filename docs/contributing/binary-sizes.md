@@ -1,5 +1,20 @@
 # Binary sizes
 
+Future Linux production candidates remove final ELF debug sections with GNU
+binutils `strip --strip-debug` before copying `gitstored`, checking closure or
+generating inventories, packages and qualification receipts. Ordinary symbols
+remain available for diagnostics. This does not change published alpha bytes.
+The relink kit preserves all application objects/static archives and records
+the tool banner, original linked digest/size and distributed digest/size in its
+`finalization` field. `originalSha256` identifies the distributed finalized ELF.
+The relink runner applies the same final debug removal; GNU strip is a rebuild
+tool dependency, never an installed runtime prerequisite. Matching build tools
+remain necessary for byte reproduction, and replacement outputs require testing.
+Measured debug-only removal saves about 6.3–6.5 MB on alpha.6 Linux copies; it does
+not establish a 7 MiB daemon or qualification of a future release. Source build
+CI checks the actual final ELF/kit identities before package lifecycle tests;
+native host and normal exact-tag release qualification still use final bytes.
+
 Measured on **2026-11-05**, Linux arm64. These are stripped development
 executables, not published releases. The hashes pin the persistent runtime,
 standalone migration, bounded restart supervision and public result projection checkpoint. Published-binary optimization is deferred

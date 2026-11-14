@@ -64,6 +64,12 @@ case "$(uname -s)" in
     *) echo 'Unsupported production candidate host' >&2; exit 2 ;;
 esac
 cmake --build "$candidate_build" --parallel 2
+if [ "$(uname -s)" = Linux ]; then
+    # Finalize only the linked executable. Relink objects/static archives retain
+    # their symbols and debug data. Inventories/receipts hash the copied result.
+    python3 "$candidate_repo/runtime/packaging/finalize_elf.py" \
+        --binary "$candidate_build/gitstored" --record "$candidate_build/finalization.json"
+fi
 install -d -m 755 "$candidate_prefix/bin"
 install -m 755 "$candidate_repo/target/release/gs" "$candidate_build/gitstored" "$candidate_prefix/bin/"
 for candidate_binary in gs gitstored; do
