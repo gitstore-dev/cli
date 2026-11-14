@@ -166,15 +166,17 @@ manager. A downgrade may be unable to read data written by a newer version.
 ## Optional download verification
 
 The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.6)
-provides checksums and a matching `.sigstore.jsonl` attestation bundle for each
-file. With GitHub CLI installed, download a package and its bundle, then verify:
+provides checksums and per-file `.sigstore.jsonl` bundles for alpha.6. Future
+releases use one shared `release.sigstore.jsonl` bundle. With GitHub CLI installed,
+download a package and the bundle for its release, then verify:
 
 ```sh
 gh attestation verify ./PACKAGE --repo gitstore-dev/cli \
-  --bundle ./PACKAGE.sigstore.jsonl
+  --bundle ./release.sigstore.jsonl
 ```
 
-Replace `PACKAGE` with the downloaded filename. Verification is optional;
+Replace `PACKAGE` with the downloaded filename; for alpha.5/alpha.6, use
+`PACKAGE.sigstore.jsonl` as the bundle path. Verification is optional;
 installation does not require or install a verifier. Debian download names use
 `.` where the checksum inventory uses `~`; save the files under the inventory
 names when checking `SHA256SUMS`.

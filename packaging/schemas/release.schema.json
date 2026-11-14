@@ -3,6 +3,9 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "publicationLayout": {
+      "enum": ["all-inputs-v1", "packages-v1"]
+    },
     "attestationLayout": {
       "enum": ["per-subject-v1", "shared-v1"]
     },

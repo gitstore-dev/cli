@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 
 from inventory import snapshot_file
-from release_candidate import DISCLAIMER, validate_bytes, safe_name
+from release_candidate import DISCLAIMER, validate_bytes, safe_name, public_artifacts
 
 
 def publish(value, root, backend, *, update_tap=False):
@@ -11,7 +11,7 @@ def publish(value, root, backend, *, update_tap=False):
         raise ValueError('only producer-verified candidates may be promoted')
     validate_bytes(value, root)
     assets = {}
-    for artifact in value['artifacts']:
+    for artifact in public_artifacts(value):
         for name in (artifact['filename'], safe_name(artifact['bundle'])):
             snapshot_file(root, name)
             assets[name] = (Path(root) / name).read_bytes()
