@@ -24,6 +24,10 @@ support, update the audit version and hashes (`shasum -a 256 docs/installation.m
 and each allowlisted guide). Do not mechanically accept hashes without reviewing
 the content. Generated content is disposable build output. `site/release.json`
 and `site/reference/gs.md` are the reviewed release inputs.
+The landing selector also reads the tracked Homebrew formula at build time. If
+its version differs from the selected release, it offers inspection instructions
+and pinned-package alternatives instead of an installation of the older formula.
+Formula changes rebuild the site so this state follows reviewed delivery.
 
 ## Release updates
 

@@ -33,7 +33,7 @@ jobs:
         run: |
           if [ "$EVENT" = workflow_dispatch ] || [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
             echo 'relevant=true' >> "$GITHUB_OUTPUT"
-          elif git diff --name-only "$BASE" HEAD | grep -Eq '^(site/|docs/|\.github/workflows/(website|docs-release)\.yml$)'; then
+          elif git diff --name-only "$BASE" HEAD | grep -Eq '^(site/|docs/|Formula/|\.github/workflows/(website|docs-release)\.yml$)'; then
             echo 'relevant=true' >> "$GITHUB_OUTPUT"
           else
             echo 'relevant=false' >> "$GITHUB_OUTPUT"
