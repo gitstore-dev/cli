@@ -23,8 +23,11 @@ from release_verification import REPOSITORY
 
 
 class GitHub:
-    def __init__(self, tag):
+    def __init__(self, tag, attestation_layout='per-subject-v1'):
         self.tag = tag
+        if attestation_layout not in ('per-subject-v1', 'shared-v1'):
+            raise ValueError('unsupported attestation layout')
+        self.attestation_layout = attestation_layout
 
     def gh(self, *arguments, payload=None):
         reply = subprocess.run(['gh', *arguments], input=payload, capture_output=True, timeout=120)
@@ -46,7 +49,7 @@ class GitHub:
         result = {}
         for arch in ('x64', 'arm64'):
             deb = slot_filename(self.tag.removeprefix('v'), 'deb', 'linux', arch)
-            for suffix in ('', '.sigstore.jsonl'):
+            for suffix in (('', '.sigstore.jsonl') if self.attestation_layout == 'per-subject-v1' else ('',)):
                 logical = deb + suffix
                 result[logical.replace('~', '.')] = logical
         return result
@@ -163,7 +166,8 @@ def main():
         if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_nlink != 1 or info.st_mode & 0o077:
             raise ValueError('unsafe publication lock')
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        print(json.dumps(publish(value, args.asset_dir, GitHub(value['tag']), update_tap=args.update_tap)))
+        print(json.dumps(publish(value, args.asset_dir, GitHub(value['tag'],
+            value.get('attestationLayout', 'per-subject-v1')), update_tap=args.update_tap)))
     finally:
         os.close(fd)
 

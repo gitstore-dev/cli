@@ -16,6 +16,14 @@ DISCLAIMER = ('GitStore and this CLI are early alpha. Upstream schemas continue 
               'guaranteed. Use, upgrade, migration or removal may cause data loss. Keep '
               'independent backups; do not use prereleases for irreplaceable data.')
 GENERATED = {'release-inventory.json', 'SHA256SUMS'}
+SHARED_BUNDLE = 'release.sigstore.jsonl'
+
+
+def bundle_name(value, filename):
+    # Missing selection is the original schema-v1 layout, retained for immutable
+    # alpha releases. Never infer a layout from files present on disk.
+    return (SHARED_BUNDLE if value.get('attestationLayout', 'per-subject-v1') ==
+            'shared-v1' else safe_name(filename + '.sigstore.jsonl'))
 
 
 def platforms():
@@ -74,7 +82,7 @@ def propose(version, revision, extra_assets=()):
         raise ValueError('this release policy only permits explicit alpha prereleases')
     required = [slot_filename(version, *slot) for slot in slots()] + sorted(GENERATED)
     required += [safe_name(name) for name in extra_assets]
-    value = dict(schemaVersion=1, version=version, tag='v' + version, sourceRevision=revision,
+    value = dict(schemaVersion=1, attestationLayout='shared-v1', version=version, tag='v' + version, sourceRevision=revision,
                  workflow='gitstore-dev/cli/.github/workflows/release.yml', state='proposed',
                  disclaimer=DISCLAIMER, requiredArtifacts=sorted(required), artifacts=[], receipts=[])
     validate_release(value)
@@ -222,7 +230,7 @@ def advance(value, target, root, *, reviewed_tag=None, reviewed_revision=None, t
             artifact['receipt'] = ','.join(value['receipts'])
     if STATES.index(target) >= STATES.index('attested'):
         for artifact in value['artifacts']:
-            bundle = safe_name(artifact['filename'] + '.sigstore.jsonl')
+            bundle = bundle_name(value, artifact['filename'])
             snapshot_file(root, bundle)
             artifact['bundle'] = bundle
     if target == 'producer-verified':

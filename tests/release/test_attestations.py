@@ -80,5 +80,14 @@ class Attestations(unittest.TestCase):
                     self.verify()
 
 
+class SharedAttestations(Attestations):
+    """Run every identity/digest/absence control with the shared release bundle."""
+    def setUp(self):
+        super().setUp()
+        shared = self.root / 'release.sigstore.jsonl'
+        self.bundle.rename(shared)
+        self.bundle = shared
+
+
 if __name__ == '__main__':
     unittest.main()

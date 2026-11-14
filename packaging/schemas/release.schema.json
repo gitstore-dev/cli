@@ -3,6 +3,9 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "attestationLayout": {
+      "enum": ["per-subject-v1", "shared-v1"]
+    },
     "schemaVersion": {
       "const": 1
     },
