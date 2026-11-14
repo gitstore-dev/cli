@@ -37,7 +37,7 @@ No release build flags were changed by this measurement.
 
 ## Actual Rust API/ABI probe
 
-The separate [Rust manifest/lock](image-library/rust-probe/Cargo.toml) uses
+The separate [Rust manifest/lock](https://github.com/gitstore-dev/cli/blob/8fb113e05255912c3e7cc10bceb2b85ade3ec8c7/runtime/experiments/image-library/rust-probe/Cargo.toml) uses
 ocirender **0.2.3**, Tokio and oci-client. The initial released oci-client 0.18.0
 probe passed synthetic transfer but did not expose an injectable HTTP transport.
 That prevents enforcing the approved token-service origin before credentials are
@@ -91,7 +91,7 @@ fixtures; its post-pull size check is not a production memory bound. Production
 requires library streaming APIs, enforced body/disk/decompression quotas,
 cancellation and activation rules before this capability is enabled. Root Cargo
 production dependencies/lock are unchanged. Reproduction is in the experiment
-[README](image-library/README.md) and [bridge runner](image-library/test_rust_bridge.py).
+[README](image-library/README.md) and [bridge runner](https://github.com/gitstore-dev/cli/blob/8fb113e05255912c3e7cc10bceb2b85ade3ec8c7/runtime/experiments/image-library/test_rust_bridge.py).
 
 ## Decision and rejected defaults
 
