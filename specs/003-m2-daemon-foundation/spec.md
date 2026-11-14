@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-03
 
-**Status**: Draft; ready for planning, no M2 implementation or runtime support claimed
+**Status**: Closed — the unblocked M2 implementation increment is complete (85/85 tasks).
+
+Closure covers the accepted scope in the [task record](tasks.md), including the
+optional OIDC lifecycle delivered by [PR #11](https://github.com/gitstore-dev/cli/pull/11).
+Published platform support is bounded by the [current release qualification](../../docs/contributing/validation/release-qualification.md).
+Admin/Storefront mappings, the macOS workload backend and other explicitly named
+dependency gates remain outside this completion claim.
 
 **Input**: User description: "implement unblocked M2 capabilities"
 
