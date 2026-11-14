@@ -90,6 +90,18 @@ for (const width of [390, 768, 1440]) {
       await page.keyboard.press('Tab');
       await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();
       await expect(page.locator(':focus')).toHaveCSS('outline-style', 'solid');
+      await page.keyboard.press('Tab');
+      const title = page.getByRole('link', { name: 'GitStore CLI', exact: true });
+      await expect(title).toBeFocused();
+      const outlineFits = await title.evaluate(link => {
+        const style = getComputedStyle(link);
+        const extent = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+        const rect = link.getBoundingClientRect();
+        const parent = link.parentElement!.getBoundingClientRect();
+        return rect.left - extent >= parent.left - .01 && rect.top - extent >= parent.top - .01 &&
+          rect.right + extent <= parent.right + .01 && rect.bottom + extent <= parent.bottom + .01;
+      });
+      expect(outlineFits, 'The title-link focus outline must fit its clipping container').toBeTruthy();
     }
   });
 }

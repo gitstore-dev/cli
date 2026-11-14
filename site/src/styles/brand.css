@@ -24,6 +24,7 @@ body { background: var(--paper); color: var(--ink); }
 .site-title img { height: 2rem; width: 2rem; }
 a { text-underline-offset: .2em; }
 :focus-visible { outline: 3px solid var(--orange); outline-offset: 4px; }
+.site-title:focus-visible { outline-offset: 1px; }
 /* Brand orange stays unchanged for illustration/buttons; small copy needs AA contrast. */
 :root { --orange-text: #ff9b77; }
 :root[data-theme='light'] { --orange-text: #b44021; }
