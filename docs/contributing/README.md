@@ -15,15 +15,18 @@ the linked architecture/contract references.
 | Product scope and milestone criteria | [Product requirements](../prd.md) |
 | Remote CLI behavior checks | [Remote validation guide](../../specs/002-m1-remote-cli/quickstart.md) |
 | Runtime behavior checks | [Runtime validation guide](../../specs/003-m2-daemon-foundation/quickstart.md) |
-| Remaining runtime implementation work | [Runtime tasks](../../specs/003-m2-daemon-foundation/tasks.md) |
+| Runtime implementation and acceptance traceability | [Runtime tasks](../../specs/003-m2-daemon-foundation/tasks.md) |
+| Published release identities and qualified hosts | [Release qualification](validation/release-qualification.md) |
+| Qualify and publish the next release | [Release runbook](releases.md) |
 
 ## Validation records
 
-[Remote CLI](validation/remote-cli.md) and
-[local runtime](validation/local-runtime.md) contain historical implementation
-checkpoints and environment-specific test results. They are archived evidence,
-not user guides or a substitute for current command documentation. Earlier binary
-measurements and support statements apply to their recorded builds.
+[Remote CLI](validation/remote-cli.md) records scoped implementation checks.
+[Local runtime](validation/local-runtime.md) indexes durable source acceptance,
+material failures and requirement traceability. Release qualification binds
+published support to exact source/artifact hashes and host receipts. Historical
+measurements apply to their recorded builds; immutable source links retain earlier
+checkpoint details without requiring them for current setup.
 
 When behavior changes, update the user guide and relevant contract first. Record
 commands, environment, outcomes and material limitations in contributor evidence;
