@@ -6,7 +6,7 @@ deployments on Linux.
 
 Install the matching `gs` and `gitstored` pair using
 [Homebrew, APT, DNF or npm](docs/installation.md). The
-[alpha.6 prerelease](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.6)
+[alpha.7 prerelease](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.7)
 is available for Linux and macOS; macOS supports remote/control commands only.
 Upstream schemas change incompatibly. Upgrade compatibility, data preservation
 and recovery are not guaranteed; keep independent backups. Contributor builds

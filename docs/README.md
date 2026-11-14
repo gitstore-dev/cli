@@ -1,9 +1,11 @@
 # GitStore CLI documentation
 
 Use `gs` to work with a GitStore installation or run a local GitStore deployment.
-Install the matching alpha.6 CLI/daemon pair using
+Install the matching alpha.7 CLI/daemon pair using
 [Homebrew, APT, DNF or npm](installation.md), or follow
 [building from source](contributing/building.md) for contributor builds.
+Confirm the Homebrew formula version before installing; the tap can lag a new
+release while its update is reviewed. Direct packages are pinned to alpha.7.
 
 | I want to… | Guide |
 | --- | --- |
