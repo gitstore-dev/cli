@@ -39,6 +39,34 @@ def allocated_sections(path):
     return result
 
 
+def allocated_contributors(map_text, executable):
+    """Count input rows only inside an actual SHF_ALLOC output section.
+
+    GNU maps print output headers in column zero and input rows indented;
+    either header can wrap before its address. Debug-section addresses are
+    offsets and can be nonzero, so address truthiness is never an alloc test.
+    """
+    sections = allocated_sections(executable)
+    memory_map = map_text.split('Linker script and memory map', 1)[1]
+    current = None
+    contributors = {}
+    for line in memory_map.splitlines():
+        if line and not line[0].isspace():
+            header = re.match(r'^(\S+)(?:\s+0x[0-9a-f]+\s+0x[0-9a-f]+(?:\s|$)|\s*$)', line)
+            current = sections.get(header[1]) if header else None
+            continue
+        match = re.match(r'^\s+(?:\S+\s+)?0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(objects/\S+)', line)
+        if current is None or not match:
+            continue
+        address, size = int(match[1], 16), int(match[2], 16)
+        start, length = current[2], current[3]
+        if not start <= address <= address + size <= start + length:
+            raise ValueError('input row lies outside its allocated output section: ' + line)
+        owner = match[3].split('(')[0]
+        contributors[owner] = contributors.get(owner, 0) + size
+    return contributors
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--kit', required=True, type=Path)
@@ -69,16 +97,7 @@ def main():
     subprocess.run(['strip', '--strip-debug', '-o', str(debug_stripped), str(binary)], check=True)
     if not allocated_sections(binary) == allocated_sections(public_stripped) == allocated_sections(debug_stripped):
         raise ValueError('stripping changed allocated ELF section bytes or metadata')
-    # Input-section rows follow an optional section name, VMA and byte count.
-    # Discarded sections occur before the linker memory map and are excluded.
-    # BSS counts memory, not file bytes. Merge/dedup/alignment remain linker costs.
-    allocated = mapfile.read_text().split('Linker script and memory map', 1)[1]
-    contributors = {}
-    for line in allocated.splitlines():
-        match = re.match(r'^\s*(?:\.[^\s]+\s+)?0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(objects/\S+)', line)
-        if match and int(match[1], 16):
-            owner = match[3].split('(')[0]
-            contributors[owner] = contributors.get(owner, 0) + int(match[2], 16)
+    contributors = allocated_contributors(mapfile.read_text(), linked)
     report = dict(schemaVersion=1, sourceRevision=manifest['sourceRevision'],
                   machine=manifest['machine'], compiler=run('cc', '--version').splitlines()[0],
                   linker=run('ld', '--version').splitlines()[0],

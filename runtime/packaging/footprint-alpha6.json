@@ -10,10 +10,22 @@
     {
       "arch": "x64",
       "packages": {
-        "archive": {"downloadBytes": 12093705, "regularFileBytes": 36110562},
-        "npm": {"downloadBytes": 12093908, "regularFileBytes": 36111000},
-        "deb": {"downloadBytes": 9398638, "regularFileBytes": 36111181},
-        "rpm": {"downloadBytes": 12218576, "declaredInstalledBytes": 36111240},
+        "archive": {
+          "downloadBytes": 12093705,
+          "regularFileBytes": 36110562
+        },
+        "npm": {
+          "downloadBytes": 12093908,
+          "regularFileBytes": 36111000
+        },
+        "deb": {
+          "downloadBytes": 9398638,
+          "regularFileBytes": 36111181
+        },
+        "rpm": {
+          "downloadBytes": 12218576,
+          "declaredInstalledBytes": 36111240
+        },
         "correspondingSourceDownloadBytes": 92466322,
         "relinkDownloadBytes": 27785020,
         "measurementScope": "Baseline immutable artifact metadata; archive/npm/DEB regular file sums exclude filesystem blocks/directories/symlink targets. RPM SIZE header is declared installed payload. New package compression and startup/RSS remain unmeasured."
@@ -38,15 +50,11 @@
       "allocatedInputSections": [
         {
           "archive": "libcrypto.a",
-          "bytes": 4007771
+          "bytes": 4007787
         },
         {
           "archive": "libgitstored_image.a",
-          "bytes": 3904696
-        },
-        {
-          "archive": "libcrun.a",
-          "bytes": 2830799
+          "bytes": 3353958
         },
         {
           "archive": "libglib-2.0.a",
@@ -55,6 +63,10 @@
         {
           "archive": "libgitstored_sqlite.a",
           "bytes": 647798
+        },
+        {
+          "archive": "libcrun.a",
+          "bytes": 551072
         },
         {
           "archive": "libgitstored_core.a",
@@ -105,10 +117,22 @@
     {
       "arch": "arm64",
       "packages": {
-        "archive": {"downloadBytes": 11871102, "regularFileBytes": 35871981},
-        "npm": {"downloadBytes": 11871193, "regularFileBytes": 35872423},
-        "deb": {"downloadBytes": 9193630, "regularFileBytes": 35872600},
-        "rpm": {"downloadBytes": 11995721, "declaredInstalledBytes": 35872659},
+        "archive": {
+          "downloadBytes": 11871102,
+          "regularFileBytes": 35871981
+        },
+        "npm": {
+          "downloadBytes": 11871193,
+          "regularFileBytes": 35872423
+        },
+        "deb": {
+          "downloadBytes": 9193630,
+          "regularFileBytes": 35872600
+        },
+        "rpm": {
+          "downloadBytes": 11995721,
+          "declaredInstalledBytes": 35872659
+        },
         "correspondingSourceDownloadBytes": 92448102,
         "relinkDownloadBytes": 28579256,
         "measurementScope": "Baseline immutable artifact metadata; archive/npm/DEB regular file sums exclude filesystem blocks/directories/symlink targets. RPM SIZE header is declared installed payload. New package compression and startup/RSS remain unmeasured."
@@ -132,16 +156,12 @@
       "savedBytes": 10037512,
       "allocatedInputSections": [
         {
-          "archive": "libgitstored_image.a",
-          "bytes": 3656201
-        },
-        {
           "archive": "libcrypto.a",
           "bytes": 3289700
         },
         {
-          "archive": "libcrun.a",
-          "bytes": 2939769
+          "archive": "libgitstored_image.a",
+          "bytes": 3130698
         },
         {
           "archive": "libglib-2.0.a",
@@ -154,6 +174,10 @@
         {
           "archive": "libsystemd.a",
           "bytes": 669672
+        },
+        {
+          "archive": "libcrun.a",
+          "bytes": 549654
         },
         {
           "archive": "libgitstored_core.a",
@@ -197,5 +221,6 @@
         }
       ]
     }
-  ]
+  ],
+  "attributionScope": "Reconstructed GNU map input rows contained in output ELF SHF_ALLOC sections only, including BSS; debug and other nonallocated contributions excluded. GCC/linker mismatch still prevents exact original-producer attribution."
 }
