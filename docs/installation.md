@@ -47,12 +47,12 @@ uses prebuilt binaries. APT and DNF are alternatives that do not require a compi
 
 ## APT — Ubuntu
 
-Download the alpha.5 package for your architecture and install it:
+Download the alpha.6 package for your architecture and install it:
 
 ```sh
 gitstore_arch="$(dpkg --print-architecture)"
 curl --fail --location --output gitstore.deb \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore_0.1.0.alpha.5-1_${gitstore_arch}.deb" &&
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore_0.1.0.alpha.6-1_${gitstore_arch}.deb" &&
   sudo apt install ./gitstore.deb
 ```
 
@@ -62,12 +62,12 @@ the installation command.
 
 ## DNF — Fedora
 
-Install alpha.5 directly from GitHub:
+Install alpha.6 directly from GitHub:
 
 ```sh
 gitstore_arch="$(uname -m)"
 sudo dnf install \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-0.alpha.5.1.${gitstore_arch}.rpm"
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-0.alpha.6.1.${gitstore_arch}.rpm"
 ```
 
 Supported architecture names are `x86_64` and `aarch64`. DNF installs the required
@@ -80,7 +80,7 @@ With Node.js and npm installed, select the package for your OS and processor:
 ```sh
 gitstore_platform="$(node -p 'process.platform + "-" + process.arch')"
 npm install --global --ignore-scripts --prefix "$HOME/.local" \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-npm-0.1.0-alpha.5-${gitstore_platform}.tgz"
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-npm-0.1.0-alpha.6-${gitstore_platform}.tgz"
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -99,7 +99,7 @@ gs --version
 gitstored --version
 ```
 
-Both commands should report `0.1.0-alpha.5`. These checks do not start services,
+Both commands should report `0.1.0-alpha.6`. These checks do not start services,
 download images or require credentials.
 
 To connect to a remote GitStore installation, follow
@@ -126,17 +126,15 @@ See [local deployments](local-runtime.md) for prerequisites, inspection, stoppin
 and recovery. An explicit `--daemon-socket` connects to an existing manager; it
 does not start one.
 
-### macOS reports `NOT_FOUND` for a deployment command
+### macOS reports `UNSUPPORTED_HOST` for a deployment command
 
-In alpha.5, running a local command without `XDG_RUNTIME_DIR` can report:
+Local deployment commands return `UNSUPPORTED_HOST` (exit code 6) because local
+workloads require Linux. Use remote commands, or run the local runtime on a
+supported Linux host. Setting `XDG_RUNTIME_DIR` does not enable macOS deployments.
 
-```text
-NOT_FOUND: Select --daemon-socket or set an absolute XDG_RUNTIME_DIR
-```
-
-This message does not mean that setting the variable enables local deployments.
-The macOS local-runtime backend is unavailable. Use remote commands, or run the
-local runtime on a supported Linux host.
+If an older alpha.5 installation instead reports `NOT_FOUND: Select --daemon-socket
+or set an absolute XDG_RUNTIME_DIR`, upgrade using the instructions below. Alpha.6
+corrects that diagnostic; it does not add a macOS local-runtime backend.
 
 To show a command's exit code in your shell:
 
@@ -167,7 +165,7 @@ manager. A downgrade may be unable to read data written by a newer version.
 
 ## Optional download verification
 
-The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.5)
+The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.6)
 provides checksums and a matching `.sigstore.jsonl` attestation bundle for each
 file. With GitHub CLI installed, download a package and its bundle, then verify:
 

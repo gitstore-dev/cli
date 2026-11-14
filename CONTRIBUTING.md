@@ -2,8 +2,9 @@
 
 User-facing setup and command documentation is in [docs/README.md](docs/README.md).
 Source builds, runtime internals, contracts and validation archives are indexed in
-[docs/contributing/](docs/contributing/README.md). The CLI and native runtime are
-in development; implemented source is not a published or fully validated release.
+[docs/contributing/](docs/contributing/README.md). Published prerelease support is limited to the platforms and capabilities in
+[release qualification](docs/contributing/validation/release-qualification.md).
+Source tests alone do not establish release support.
 
 ## Development checks
 
@@ -63,7 +64,8 @@ for trusted build identities, digest binding, first-use/offline verification and
 attestation release gate. The [release policy](runtime/packaging/release-policy.md) and maintainer-only
 offline verifier reject unsigned development candidates. Its fixture tests require
 installed developer `gh`; no verifier or helper executable is bundled with the
-product. Hosted signing/promotion has not been verified.
+product. Verified signing/publication runs and remaining limits are recorded in
+[release qualification](docs/contributing/validation/release-qualification.md).
 
 Before advertising runtime support, add C address/undefined-behavior sanitizer and
 protocol fuzz/resource-bound tests, plus identity isolation, recovery, retained-data,
