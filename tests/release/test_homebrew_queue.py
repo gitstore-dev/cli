@@ -92,6 +92,24 @@ class HomebrewQueue(unittest.TestCase):
             self.assertEqual(self.deliver(c)['status'],'ready')
             self.assertFalse(c.mutations)
 
+    def test_optional_pending_or_failing_checks_do_not_block_required_green_queue_entry(self):
+        c=Client();c.snapshot['mergeStateStatus']='UNSTABLE'
+        self.assertEqual(self.deliver(c)['status'],'ready')
+        self.assertEqual(c.mutations,[(queue.ENQUEUE,dict(id='PR_fixture',head=HEAD))])
+
+    def test_required_reviews_remain_a_gate_and_are_never_auto_approved(self):
+        c=Client();c.snapshot.update(mergeStateStatus='UNSTABLE',reviewDecision='REVIEW_REQUIRED')
+        def approve():
+            self.assertFalse(c.mutations)
+            c.snapshot['reviewDecision']='APPROVED'
+        c.ticks=[approve]
+        self.assertEqual(self.deliver(c)['status'],'ready')
+        self.assertEqual(len(c.mutations),1)
+        c=Client();c.snapshot.update(mergeStateStatus='UNSTABLE',reviewDecision='CHANGES_REQUESTED')
+        c.sleep=lambda seconds:setattr(c,'elapsed',c.elapsed+seconds)
+        with self.assertRaises(TimeoutError):self.deliver(c,timeout=40)
+        self.assertFalse(c.mutations)
+
     def test_failed_checks_and_changed_pr_never_queue(self):
         for change in ['check','head','file','mode','payload','repo','base','closed','draft']:
             c=Client()

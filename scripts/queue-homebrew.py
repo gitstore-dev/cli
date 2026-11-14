@@ -15,7 +15,7 @@ REPOSITORY_ID = 1431005655
 FORMULA = 'Formula/gitstore.rb'
 QUERY = '''query($number:Int!) {
   repository(owner:"gitstore-dev",name:"cli") { pullRequest(number:$number) {
-    id state headRefOid headRefName baseRefName isDraft merged mergeStateStatus
+    id state headRefOid headRefName baseRefName isDraft merged mergeStateStatus reviewDecision
     mergeQueueEntry { id }
   } }
 }'''
@@ -160,7 +160,8 @@ def deliver(client, tag, number, head, digest, *, timeout=3300, sleep=time.sleep
             if any(c['bucket'] in ('fail', 'cancel') for c in checks):
                 raise ValueError('Required formula checks failed; publication remains successful')
             if (checks and all(c['bucket'] in ('pass', 'skipping') for c in checks)
-                    and pull['mergeStateStatus'] == 'CLEAN'):
+                    and pull['mergeStateStatus'] in ('CLEAN', 'UNSTABLE')
+                    and pull.get('reviewDecision') not in ('REVIEW_REQUIRED', 'CHANGES_REQUESTED')):
                 # Queue-only mutation: never merge directly or use an admin bypass.
                 # GitHub atomically rejects a concurrent push via expectedHeadOid.
                 client.graphql(ENQUEUE, dict(id=node, head=head))
