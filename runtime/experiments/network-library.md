@@ -2,14 +2,14 @@
 
 T034 selects libslirp 4.9.7 with the hash-bound private queue-access patch,
 versioned `4.9.7-gstd-queueview2`, as an ordinary C code dependency. No networking
-executable is bundled or selected. The [native probe](network-library/README.md)
+executable is bundled or selected. The [native probe](../build-inputs/libslirp/README.md)
 passes the recorded topology with normal and instrumented static/shared libraries.
 Unpatched input remains rejected; runtime ownership/attachment integration is T041.
 
 ## Actual API and topology results
 
 The ordinary C code dependency is libslirp 4.9.7, pinned by immutable commit and
-archive hash in [the source lock](network-library/source-lock.json). Inputs come
+archive hash in [the source lock](../build-inputs/libslirp/source-lock.json). Inputs come
 from the upstream [QEMU mirror](https://qemu.googlesource.com/libslirp/). Both the
 tag and commit archive contain identical member names/types/modes/link targets and
 file SHA256 values; their gzip bytes differ. The original source copy is preserved;
@@ -72,9 +72,9 @@ The first candidate packed the original `qlink` type. It passed the simple nativ
 probe and upstream tests, but lowered alignment of containing reassembly types and
 produced new GCC packed-pointer conversion warnings. It also did not address the
 generic queue helper's separate access type. That candidate is **not selected**;
-its reproducible inputs remain under [rejected-qlink1](network-library/rejected-qlink1/).
+its reproducible inputs remain under [rejected-qlink1](../build-inputs/libslirp/rejected-qlink1).
 
-The [selected patch](network-library/queue-access.patch) instead leaves the original
+The [selected patch](../build-inputs/libslirp/queue-access.patch) instead leaves the original
 `qlink`, `ipq`, `ipas` and containing structure declarations unchanged. It adds a
 packed packet-access view, uses that view in the two TCP overlay conversion macros,
 and packs the existing generic queue helper's access view. Queue insertion/removal,
@@ -82,7 +82,7 @@ packet processing and protocol algorithms remain unchanged. The public API is
 still opaque `Slirp*`. This is a narrowly maintained source correction, not a
 sanitizer exemption or a new network stack. No upstream acceptance is claimed.
 
-[Patch lock](network-library/patch-lock.json) records original/patched SHA256 for
+[Patch lock](../build-inputs/libslirp/patch-lock.json) records original/patched SHA256 for
 all three headers and the exact unified patch hash. The application script verifies
 every input/output before writing any file and refuses unknown/already-patched
 source. `-gstd-queueview2` explicitly distinguishes this build from pristine 4.9.7.
@@ -96,7 +96,7 @@ Actual Ubuntu 24.04 arm64 checks:
 - Clang 18.1.3 instruments the dependency and callers with ASan/UBSan. Static and
   shared native probes, concurrent static probes and all five upstream tests pass
   with leak checking and `halt_on_error=1`. Alignment checking remains enabled.
-- [Queue-layout test](network-library/queue-layout.c) asserts original queue size,
+- [Queue-layout test](../build-inputs/libslirp/queue-layout.c) asserts original queue size,
   alignment and member offsets, then calls the actual library insert/remove helpers
   on deliberately unaligned storage with two nodes under ASan/UBSan. It passes.
 

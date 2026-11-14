@@ -79,8 +79,8 @@ pre-download quota refusal. The HTTP client injection exists only in Rust tests;
 the production C ABI accepts only HTTPS policies.
 
 For that explicit scenario build the developer registry fixture from
-`runtime/experiments/image-library/go-probe`, build SDK tests with `cargo test
---no-run`, then invoke `runtime/experiments/image-library/test_sdk.py` with explicit
+`tests/runtime/image-library/go-probe`, build SDK tests with `cargo test
+--no-run`, then invoke `tests/runtime/image-library/test_sdk.py` with explicit
 `--registry-fixture` and `--sdk-test` executable paths. The runner clears HOME/PATH
 and uses only temporary roots and synthetic credentials. The registry executable
 is developer tooling, not a product prerequisite. At the original T035 checkpoint, all 15 Linux native C tests

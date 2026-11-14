@@ -176,7 +176,7 @@ works rootless; CSI as baseline. None satisfies the default-profile constraints.
 by measured footprint and maintenance cost; do not enable an untested fallback.
 
 **Implementation checkpoint (2026-11-03)**: The native
-[libslirp 4.9.7 experiment](../../runtime/experiments/network-library.md) passes
+[libslirp 4.9.7 experiment](../../runtime/build-inputs/libslirp.md) passes
 normal rootless namespace/DNS/loopback/cleanup probes but fails Clang 18 UBSan
 alignment checks inside upstream TCP processing in both debug and release builds.
 The unpatched input remains rejected. A subsequent hash-bound access-view patch

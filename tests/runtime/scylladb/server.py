@@ -283,7 +283,7 @@ try:
             if result.returncode:
                 raise RuntimeError('Read-only ledger inspection failed')
             rows = [json.loads(line.strip()) for line in (directory / 'output.log').read_text().splitlines() if line.strip().startswith('{')]
-            targets = json.loads((Path(__file__).resolve().parents[2] / 'profiles/migration-targets.json').read_text())
+            targets = json.loads((Path(__file__).resolve().parents[3] / 'runtime/profiles/migration-targets.json').read_text())
             expected = {f['name']: (f['ledgerMd5'], f['statementCount']) for f in targets['targets'][0]['schema']['files']}
             if len(rows) != len(expected) or {r['name']: (r['checksum'], r['done']) for r in rows} != expected or any(not r['end_time'] or r['done'] <= 0 for r in rows):
                 raise RuntimeError('Actual ledger does not match the pinned complete migration bundle')

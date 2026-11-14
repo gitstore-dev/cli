@@ -13,7 +13,7 @@ class ImageSdk(unittest.TestCase):
         repository = Path(__file__).resolve().parents[2]
         subprocess.run([
             sys.executable,
-            str(repository / "runtime/experiments/image-library/test_sdk.py"),
+            str(repository / "tests/runtime/image-library/test_sdk.py"),
             "--sdk-test", settings["imageSdkTest"],
             "--registry-fixture", settings["registryFixture"],
         ], check=True, timeout=30, env={"PATH": "/nonexistent"})
