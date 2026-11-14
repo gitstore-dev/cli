@@ -21,6 +21,20 @@ def main():
     if os.geteuid()==0 or not args.candidate.is_absolute() or not args.output.is_absolute() or args.output.exists():
         parser.error('select an existing local candidate and new absolute non-root experiment directory')
     args.output.mkdir(mode=0o700)
+    if sys.platform == 'linux':
+        finalization = json.loads((args.candidate/'native/finalization.json').read_text())
+        relink = json.loads((args.candidate/'relink/relink.json').read_text())
+        binary = args.candidate/'prefix/bin/gitstored'
+        actual = hashlib.sha256(binary.read_bytes()).hexdigest()
+        if (finalization['operation'] != 'strip-debug' or finalization['sha256'] != actual or
+                relink['originalSha256'] != actual or relink['finalization'] != finalization):
+            raise ValueError('production bytes and relink transformation evidence disagree')
+        sections = subprocess.check_output(['readelf', '--sections', str(binary)])
+        if b'.debug_' in sections or b'.symtab' not in sections:
+            raise ValueError('production ELF must omit debug data and retain ordinary symbols')
+        native = args.candidate/'native/gitstored'
+        if hashlib.sha256(native.read_bytes()).hexdigest() != actual:
+            raise ValueError('installed daemon differs from finalized native ELF')
     subjects=json.loads((args.candidate/'assets/subjects.json').read_text())
     version=(ROOT/'version.txt').read_text().strip()
     tested=[]
@@ -40,6 +54,8 @@ def main():
     record=measure(args.candidate/'prefix/bin',args.output/'command-costs',100)
     record['qualification']='controlled production package lifecycle and warm command measurement only; no release qualification'
     record['packages']=tested
+    if sys.platform == 'linux':
+        record['finalization'] = finalization
     record['sourceInputs']={name:dict(sha256=hashlib.sha256((args.candidate/'prefix/bin'/name).read_bytes()).hexdigest(),
         bytes=(args.candidate/'prefix/bin'/name).stat().st_size) for name in ('gs','gitstored')}
     with (args.output/'measurement.json').open('x') as stream:

@@ -108,6 +108,7 @@ import argparse, hashlib, json, pathlib, subprocess
 p = argparse.ArgumentParser(description="Relink the selected application objects; supply matching Linux C toolchain and libc development files")
 p.add_argument("--cc", default="cc")
 p.add_argument("--output", required=True, type=pathlib.Path)
+p.add_argument("--strip", default="strip", help="GNU binutils build tool for final debug removal")
 a = p.parse_args()
 root = pathlib.Path(__file__).resolve().parent
 manifest = json.loads((root/"relink.json").read_text())
@@ -118,6 +119,11 @@ for name, record in manifest["materials"].items():
     if path.is_symlink() or hashlib.sha256(path.read_bytes()).hexdigest() != record["sha256"]:
         p.error("relink material digest mismatch; review deliberate replacements and update the local manifest before relinking")
 subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, check=True)
+if "finalization" in manifest:
+    tool = subprocess.check_output([a.strip, "--version"], text=True).splitlines()[0]
+    if not tool.startswith("GNU strip "):
+        p.error("select GNU binutils strip")
+    subprocess.run([a.strip, "--strip-debug", str(a.output)], check=True)
 '''
     payload['relink.py'] = (script.encode(), 0o755)
     qualification = ('production relink material; final release qualification remains required' if args.release_material
@@ -127,6 +133,8 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
         'Contains actual production application objects and private native archives.\n'
         'Full corresponding patched sources and license notices must accompany a release.\n'
         'Requires the matching Linux architecture, C toolchain and libc development files.\n'
+        'Finalized kits also require GNU binutils strip at rebuild time (--strip); no runtime strip dependency.\n'
+        'Only final ELF debug data is removed; supplied relink objects retain symbols/debug data.\n'
         'No glibc or OS loader is bundled. Ordinary host math/resolver/runtime libraries remain host inputs.\n'
         'Run: python3 relink.py --cc /usr/bin/cc --output /absolute/new/gitstored\n'
         'To replace a library, rebuild its archive from corresponding source with the recorded build recipe,\n'
@@ -137,6 +145,16 @@ subprocess.run([a.cc, *manifest["arguments"], "-o", str(a.output)], cwd=root, ch
         machine=platform.machine(), compiler=subprocess.check_output([str(compiler),'--version'],text=True).splitlines()[0],
         arguments=command, materials=recorded,
         originalSha256=hashlib.sha256(ordinary(build/'gitstored')).hexdigest())
+    finalization_path = build/'finalization.json'
+    if finalization_path.exists():
+        finalization = json.loads(ordinary(finalization_path))
+        if (finalization['operation'] != 'strip-debug' or finalization['schemaVersion'] != 1 or
+                finalization['sha256'] != manifest['originalSha256'] or
+                finalization['bytes'] != len(ordinary(build/'gitstored'))):
+            raise ValueError('finalization record does not identify the supplied production ELF')
+        manifest['finalization'] = finalization
+    elif args.release_material:
+        raise ValueError('production relink material requires final ELF transformation evidence')
     if args.release_material:
         manifest['sourceRevision'] = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     payload['relink.json'] = ((json.dumps(manifest,indent=2)+'\n').encode(), 0o644)
