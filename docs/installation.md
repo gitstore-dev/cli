@@ -24,6 +24,11 @@ not use prereleases for irreplaceable data.
 
 ## Homebrew — macOS or Linux
 
+The tap can lag a newly published release while its formula update is reviewed.
+After adding the tap, run `brew info gitstore-dev/cli/gitstore` and confirm it
+offers `0.1.0-alpha.7` before installing or upgrading. If it still offers an older
+version, use the matching npm, APT or DNF package below, or wait for the formula update.
+
 Add the tap:
 
 ```sh
@@ -47,12 +52,12 @@ uses prebuilt binaries. APT and DNF are alternatives that do not require a compi
 
 ## APT — Ubuntu
 
-Download the alpha.6 package for your architecture and install it:
+Download the alpha.7 package for your architecture and install it:
 
 ```sh
 gitstore_arch="$(dpkg --print-architecture)"
 curl --fail --location --output gitstore.deb \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore_0.1.0.alpha.6-1_${gitstore_arch}.deb" &&
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.7/gitstore_0.1.0.alpha.7-1_${gitstore_arch}.deb" &&
   sudo apt install ./gitstore.deb
 ```
 
@@ -62,12 +67,12 @@ the installation command.
 
 ## DNF — Fedora
 
-Install alpha.6 directly from GitHub:
+Install alpha.7 directly from GitHub:
 
 ```sh
 gitstore_arch="$(uname -m)"
 sudo dnf install \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-0.alpha.6.1.${gitstore_arch}.rpm"
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.7/gitstore-0.1.0-0.alpha.7.1.${gitstore_arch}.rpm"
 ```
 
 Supported architecture names are `x86_64` and `aarch64`. DNF installs the required
@@ -80,7 +85,7 @@ With Node.js and npm installed, select the package for your OS and processor:
 ```sh
 gitstore_platform="$(node -p 'process.platform + "-" + process.arch')"
 npm install --global --ignore-scripts --prefix "$HOME/.local" \
-  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-npm-0.1.0-alpha.6-${gitstore_platform}.tgz"
+  "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.7/gitstore-npm-0.1.0-alpha.7-${gitstore_platform}.tgz"
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -99,7 +104,7 @@ gs --version
 gitstored --version
 ```
 
-Both commands should report `0.1.0-alpha.6`. These checks do not start services,
+Both commands should report `0.1.0-alpha.7`. These checks do not start services,
 download images or require credentials.
 
 To connect to a remote GitStore installation, follow
@@ -165,9 +170,9 @@ manager. A downgrade may be unable to read data written by a newer version.
 
 ## Optional download verification
 
-The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.6)
-provides checksums and per-file `.sigstore.jsonl` bundles for alpha.6. Future
-releases use one shared `release.sigstore.jsonl` bundle. With GitHub CLI installed,
+The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.7)
+provides checksums and one shared `release.sigstore.jsonl` attestation bundle for
+the published alpha.7 packages and inventories. With GitHub CLI installed,
 download a package and the bundle for its release, then verify:
 
 ```sh
@@ -175,8 +180,8 @@ gh attestation verify ./PACKAGE --repo gitstore-dev/cli \
   --bundle ./release.sigstore.jsonl
 ```
 
-Replace `PACKAGE` with the downloaded filename; for alpha.5/alpha.6, use
-`PACKAGE.sigstore.jsonl` as the bundle path. Verification is optional;
+Replace `PACKAGE` with the downloaded filename. Older alpha.5/alpha.6 releases
+instead use a per-file `PACKAGE.sigstore.jsonl` bundle. Verification is optional;
 installation does not require or install a verifier. Debian download names use
 `.` where the checksum inventory uses `~`; save the files under the inventory
 names when checking `SHA256SUMS`.
