@@ -1,28 +1,28 @@
 class Gitstore < Formula
   desc "GitStore early-alpha CLI and user daemon"
   homepage "https://github.com/gitstore-dev/cli"
-  version "0.1.0-alpha.5"
+  version "0.1.0-alpha.6"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-alpha.5-darwin-arm64.tar.gz"
-      sha256 "c09a8522fff9f936139ae55e95b339e25e39651ea056739e9c6f5c97dcfd74a9"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-alpha.6-darwin-arm64.tar.gz"
+      sha256 "78c056aad590e62dfadf1bd243f2182ff43935a4ba22a00317e97aebb44fe7c0"
     end
     on_intel do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-alpha.5-darwin-x64.tar.gz"
-      sha256 "1045dfef77603452a65e333dc8f97e3becd252d74de86b2a0f7dcdca800ea77e"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-alpha.6-darwin-x64.tar.gz"
+      sha256 "0f93d567166d320e8e8eaebf778f04e813eec4684e5b75df12e89cd0a9806afd"
     end
   end
   on_linux do
     depends_on "ca-certificates"
     on_arm do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-alpha.5-linux-arm64.tar.gz"
-      sha256 "58020ad2a69708303dda968b0db8cac1d9f90d57f2411fabaddf9e67cb529047"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-alpha.6-linux-arm64.tar.gz"
+      sha256 "9d07348d191c2b4be011c8e939cf98ec07465c9a0d96f762f4e7ccaaf5cc7291"
     end
     on_intel do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.5/gitstore-0.1.0-alpha.5-linux-x64.tar.gz"
-      sha256 "a6a8be6eb4ec34b2ec4346103b6816642f70071037ac90f0f1cd819c20f1c389"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.6/gitstore-0.1.0-alpha.6-linux-x64.tar.gz"
+      sha256 "94e39a6db9f0c371f252264b9b2c6c0947b3e3eefe13df6a248426522f4c0691"
     end
   end
 
