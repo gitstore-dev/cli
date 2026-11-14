@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0-alpha.8](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8) (2026-11-14)
+
+
+### Bug Fixes
+
+* queue verified formula after required checks without waiting on optional jobs ([e3fdad3](https://github.com/gitstore-dev/cli/commit/e3fdad392fb7804975d08135bc676a222f6090be))
+
 ## [0.1.0-alpha.7](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7) (2026-11-14)
 
 
