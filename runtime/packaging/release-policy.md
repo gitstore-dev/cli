@@ -19,6 +19,14 @@ Promotion must bind the final artifact SHA-256 to all of these verified claims:
 | Predicate | `https://slsa.dev/provenance/v1` |
 | Runner | GitHub hosted; self-hosted signing is rejected |
 
+Future tags connect build, six-host qualification, receipt validation, signing,
+human publication approval and Homebrew delivery in one `release.yml` run.
+Qualification is a read-only reusable workflow at that same commit; signer
+identity remains `release.yml`. Current-run artifact access requires the exact
+repository, run ID, source, tag and caller workflow. External recovery inputs
+still require completed successful runs. No failed or skipped qualification can
+reach signing or publication. See [release operations](../../docs/contributing/releases.md).
+
 The workflow path is the trusted release policy identity. Alpha.5 has own signed
 positive and negative controls in the
 [current qualification record](../../docs/contributing/validation/release-qualification.md).

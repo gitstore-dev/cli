@@ -48,6 +48,24 @@ class InputRuns(unittest.TestCase):
             with self.subTest(tag=tag,revision=revision), self.assertRaises(ValueError):
                 module.validate(self.run,'release.yml',revision,tag)
 
+    def test_current_artifacts_require_the_own_tagged_release_pipeline(self):
+        self.run.update(id=123, status='in_progress', conclusion=None)
+        context = dict(GITHUB_ACTIONS='true', GITHUB_REPOSITORY_ID='1431005655',
+            GITHUB_RUN_ID='123', GITHUB_SHA='a'*40, GITHUB_REF='refs/tags/v0.1.0-alpha.1',
+            GITHUB_WORKFLOW_REF='gitstore-dev/cli/.github/workflows/release.yml@refs/tags/v0.1.0-alpha.1')
+        module.validate(self.run, 'release.yml', 'a'*40, 'v0.1.0-alpha.1', current=context)
+        for key, value in [('GITHUB_ACTIONS','false'), ('GITHUB_REPOSITORY_ID','1'),
+                ('GITHUB_RUN_ID','456'), ('GITHUB_SHA','b'*40), ('GITHUB_REF','refs/heads/main'),
+                ('GITHUB_WORKFLOW_REF','gitstore-dev/cli/.github/workflows/runtime.yml@refs/tags/v0.1.0-alpha.1')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                module.validate(self.run, 'release.yml', 'a'*40, 'v0.1.0-alpha.1', current={**context,key:value})
+        for key,value in [('head_sha','b'*40), ('event','pull_request'), ('repository',dict(id=1)),
+                          ('path','.github/workflows/runtime.yml'), ('conclusion','failure')]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                module.validate({**self.run,key:value}, 'release.yml', 'a'*40, 'v0.1.0-alpha.1', current=context)
+        with self.assertRaises(ValueError):
+            module.validate(self.run, 'release.yml', 'a'*40, 'v0.1.0-alpha.1')
+
 
 if __name__ == '__main__':
     unittest.main()
