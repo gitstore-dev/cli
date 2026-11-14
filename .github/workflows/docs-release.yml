@@ -1,0 +1,117 @@
+name: Update release documentation
+on:
+  repository_dispatch:
+    types: [release-docs-published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Published tag to validate; blank selects newest published release, including prereleases'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-release-update
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    if: github.repository == 'gitstore-dev/cli' && github.ref == 'refs/heads/main' && vars.RELEASE_PLEASE_APP_CLIENT_ID != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Create repository-scoped documentation App token
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          owner: gitstore-dev
+          repositories: cli
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app.outputs.token }}
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 24.16.0
+      - name: Prepare validated release data without checking out proposal code
+        id: proposal
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          DOCS_TAG: ${{ inputs.tag || github.event.client_payload.tag }}
+        run: |
+          pr=$(gh pr list --repo "$GITHUB_REPOSITORY" --base main --head codex/docs-release-update --state open --json number --jq '.[0].number // empty')
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          pending=false
+          if git ls-remote --exit-code --heads origin codex/docs-release-update > /dev/null 2>&1; then
+            git fetch origin refs/heads/codex/docs-release-update:refs/remotes/origin/codex/docs-release-update
+            pending=true
+          fi
+          echo "pending=$pending" >> "$GITHUB_OUTPUT"
+          PENDING="$pending" PR="$pr" node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          import {readFileSync, writeFileSync, mkdirSync, appendFileSync} from 'node:fs';
+          import {join} from 'node:path';
+          import {compareVersions, validateSnapshot, update} from './site/scripts/update-release.mjs';
+          const files = ['release.json', 'reference/gs.md'];
+          const main = files.map(path => readFileSync(join('site', path)));
+          validateSnapshot(JSON.parse(main[0]), main[1]);
+          let selected = main;
+          if (process.env.PENDING === 'true') {
+            const pending = files.map(path => execFileSync('git', ['show', `refs/remotes/origin/codex/docs-release-update:site/${path}`]));
+            validateSnapshot(JSON.parse(pending[0]), pending[1]);
+            if (compareVersions(JSON.parse(pending[0]).version, JSON.parse(main[0]).version) >= 0) selected = pending;
+          }
+          const site = join(process.env.RUNNER_TEMP, 'docs-release-data');
+          mkdirSync(join(site, 'reference'), {recursive:true});
+          files.forEach((path, i) => writeFileSync(join(site, path), selected[i]));
+          const result = await update({tag:process.env.DOCS_TAG || undefined, site});
+          const differsFromMain = files.some((path, i) => !readFileSync(join(site, path)).equals(main[i]));
+          // Repeated and stale events leave an existing proposal, including its
+          // review/audit commits and PR metadata, completely untouched.
+          const needed = result.changed || (!process.env.PR && differsFromMain);
+          appendFileSync(process.env.GITHUB_OUTPUT, `needed=${needed}\n`);
+          console.log(JSON.stringify(result));
+          JS
+      - name: Open or update one reviewed proposal
+        if: steps.proposal.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PENDING: ${{ steps.proposal.outputs.pending }}
+          PR: ${{ steps.proposal.outputs.pr }}
+        run: |
+          git config user.name 'gitstore-release-bot'
+          git config user.email 'gitstore-release-bot@users.noreply.github.com'
+          if [ "$PENDING" = true ]; then
+            git checkout -b codex/docs-release-update refs/remotes/origin/codex/docs-release-update
+            # Preserve reviewer commits. A conflict fails safely for a human to
+            # resolve; never reset or force-push a reviewed proposal.
+            git -c core.hooksPath=/dev/null merge --no-edit origin/main
+          else
+            git checkout -b codex/docs-release-update origin/main
+          fi
+          cp "$RUNNER_TEMP/docs-release-data/release.json" site/release.json
+          cp "$RUNNER_TEMP/docs-release-data/reference/gs.md" site/reference/gs.md
+          version=$(node -p 'JSON.parse(require("node:fs").readFileSync("site/release.json", "utf8")).version')
+          git add site/release.json site/reference/gs.md
+          if ! git diff --cached --quiet; then
+            git -c core.hooksPath=/dev/null commit -m "docs: update published CLI reference to $version"
+          fi
+          # A simultaneous reviewer push rejects this fast-forward push and is
+          # retained. Rerunning safely starts from that updated proposal.
+          git -c core.hooksPath=/dev/null push origin HEAD:refs/heads/codex/docs-release-update
+          node --input-type=module <<'JS'
+          import {writeFileSync} from 'node:fs';
+          writeFileSync(process.env.RUNNER_TEMP + '/docs-release-body.md', 'Update the selected published release and its bundled command reference. The updater validates release/tag/source identity, the inventory, and asset digests without executing the CLI. Authored guides remain canonical under docs/.\n\nReview and update canonical guides, installation commands, and site/content-audit.json for the selected release. The content audit intentionally blocks deployment until that review is recorded. Normal website checks must pass; merging deploys through the github-pages environment.\n');
+          JS
+          if [ -n "$PR" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --title "docs: update website for $version"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base main --head codex/docs-release-update --title "docs: update website for $version" --body-file "$RUNNER_TEMP/docs-release-body.md"
+          fi

@@ -309,3 +309,16 @@ jobs:
           gh attestation trusted-root > "$RUNNER_TEMP/trusted-root.jsonl"
           "$RUNNER_TEMP/venv/bin/python" scripts/publish-release.py --candidate "$PWD/candidate/verified.json" \
             --asset-dir "$PWD/candidate" --trusted-root "$RUNNER_TEMP/trusted-root.jsonl" --update-tap
+      - name: Request the reviewed website release update
+        id: docs-dispatch
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -n --arg tag "$GITHUB_REF_NAME" '{event_type:"release-docs-published",client_payload:{tag:$tag}}' \
+            | gh api --method POST "repos/$GITHUB_REPOSITORY/dispatches" --input -
+      - name: Report the manual documentation retry
+        if: steps.docs-dispatch.outcome == 'failure'
+        run: |
+          echo '::warning::CLI publication succeeded, but the website update dispatch failed. Run the Update release documentation workflow on main with the published tag to retry.'
+          echo 'CLI publication is complete. The website still documents its previous reviewed release. Retry **Update release documentation** manually on main, selecting this published tag.' >> "$GITHUB_STEP_SUMMARY"

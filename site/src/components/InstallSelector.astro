@@ -1,0 +1,46 @@
+---
+import release from '../../release.json';
+const options = [
+  ...['ARM64 / Apple silicon', 'Intel / x86_64'].map((arch, index) => ({ id: `brew-${index}`, label: `macOS · Homebrew · ${arch}`, command: 'brew tap gitstore-dev/cli https://github.com/gitstore-dev/cli.git\n# Homebrew 7+: trust this formula explicitly\nbrew trust --formula gitstore-dev/cli/gitstore\nbrew install gitstore-dev/cli/gitstore', note: 'Use a native Homebrew installation for the selected architecture. macOS is remote-only.' })),
+  ...release.assets.filter(a => ['deb', 'rpm', 'npm'].includes(a.kind)).map(a => ({
+    id: a.name, label: `${a.kind === 'deb' ? 'Ubuntu · APT' : a.kind === 'rpm' ? 'Fedora · DNF' : a.os === 'darwin' ? 'macOS · npm' : 'Linux · npm'} · ${a.arch === 'x64' ? 'Intel / x86_64' : 'ARM64'}`,
+    command: a.kind === 'deb' ? `curl --fail --location --output gitstore.deb '${a.url}' &&\nsudo apt install ./gitstore.deb` : a.kind === 'rpm' ? `sudo dnf install '${a.url}'` : `npm install --global --ignore-scripts --prefix "$HOME/.local" '${a.url}'\nexport PATH="$HOME/.local/bin:$PATH"`,
+    note: a.kind === 'npm' ? 'Node.js manages installation; gs itself runs without Node.js. Select your architecture explicitly.' : 'The package manager installs system dependencies. Select your architecture explicitly.',
+  })),
+];
+---
+<div class="installer">
+  <label for="install-method">Installation method & architecture</label>
+  <select id="install-method" hidden>{options.map(option => <option value={option.id}>{option.label}</option>)}</select>
+  <p id="os-suggestion" class="note" hidden></p>
+  {options.map((option, index) => <details data-install={option.id} open={index === 0}><summary>{option.label}</summary><pre tabindex="0"><code>{option.command}</code></pre><p class="note">{option.note}</p><button type="button" data-copy hidden>Copy command</button></details>)}
+  <p class="copy-status" role="status" aria-live="polite"></p>
+  <p class="note">Selected release: <a href={release.releaseUrl}>{release.version}</a>. <a href="/install/#optional-download-verification">Verify downloads before installation.</a></p>
+</div>
+<script>
+  const select = document.querySelector<HTMLSelectElement>('#install-method')!;
+  const groups = document.querySelectorAll<HTMLDetailsElement>('[data-install]');
+  select.hidden = false;
+  const choose = () => groups.forEach(group => { group.hidden = group.dataset.install !== select.value; group.open = !group.hidden; });
+  choose(); select.addEventListener('change', choose);
+  const suggestion = document.querySelector<HTMLElement>('#os-suggestion')!;
+  if (/Mac/.test(navigator.platform)) { suggestion.hidden = false; suggestion.textContent = 'Your browser suggests macOS. Confirm the installation method and processor.'; }
+  else if (/Linux/.test(navigator.platform)) { suggestion.hidden = false; suggestion.textContent = 'Your browser suggests Linux. Select your distribution and processor.'; }
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(button => { button.hidden = false; button.addEventListener('click', async () => {
+    const status = document.querySelector<HTMLElement>('.copy-status')!;
+    try { await navigator.clipboard.writeText(button.parentElement!.querySelector('code')!.textContent!); status.textContent = 'Command copied.'; }
+    catch { status.textContent = 'Copy unavailable. Select the command text and copy it manually.'; }
+  }); });
+</script>
+<style>
+  .installer { padding: 1.5rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface); min-width: 0; }
+  label { display: block; font-size: .75rem; font-weight: 600; margin-bottom: .5rem; }
+  select { width: 100%; color: var(--ink); background: var(--paper); padding: .7rem; border: 1px solid var(--line); border-radius: .2rem; }
+  details { margin-top: 1rem; } details[hidden], [hidden] { display: none; }
+  summary { font-size: .85rem; cursor: pointer; }
+  pre { font-size: .75rem; overflow: auto; line-height: 1.7; padding: 1rem; background: var(--surface-muted); border-radius: .25rem; color: var(--ink); }
+  code { background: transparent; }
+  .note { color: var(--muted); font-size: .75rem; line-height: 1.6; }
+  button { background: var(--paper); color: var(--ink); border: 1px solid var(--line); padding: .4rem .8rem; border-radius: .25rem; font-size: .8rem; }
+  .copy-status { font-size: .8rem; color: var(--green); min-height: 1.5em; }
+</style>
