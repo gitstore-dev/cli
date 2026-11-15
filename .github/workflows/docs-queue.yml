@@ -1,0 +1,109 @@
+name: Release docs delivery
+on:
+  workflow_run:
+    workflows: [CLI, Daemon, PR Title Lint, CLI website, Docs review signal]
+    types: [completed]
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  merge_group:
+    branches: [main]
+    types: [checks_requested]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'PR number to reassess; blank discovers the rolling release-docs proposal'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-eligibility-${{ github.event.merge_group.head_sha || 'proposals' }}
+  cancel-in-progress: false
+
+jobs:
+  eligibility:
+    if: github.repository_id == '1431005655' && github.event_name != 'merge_group' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+      statuses: write
+    steps:
+      # Never check out the PR, a workflow artifact, or a caller-provided ref.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 24.16.0
+      - name: Resolve the exact server-observed proposal head
+        id: proposal
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_PR: ${{ inputs.pr }}
+        run: |
+          if [ -n "$DOCS_PR" ]; then
+            python3 scripts/queue-docs.py --resolve-event --pr "$DOCS_PR"
+          else
+            python3 scripts/queue-docs.py --resolve-event
+          fi
+      - name: Publish required release-docs eligibility on this head
+        id: eligibility
+        if: steps.proposal.outputs.pr != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DOCS_PR: ${{ steps.proposal.outputs.pr }}
+          DOCS_HEAD: ${{ steps.proposal.outputs.head }}
+        run: python3 scripts/queue-docs.py --eligibility --pr "$DOCS_PR" --head "$DOCS_HEAD"
+      - name: Create repository-scoped queue App token
+        id: app
+        if: steps.proposal.outputs.rolling == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_PLEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+          owner: gitstore-dev
+          repositories: cli
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Queue only an eligible exact head, or remove a revoked queued head
+        if: steps.proposal.outputs.rolling == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITSTORE_QUEUE_TOKEN: ${{ steps.app.outputs.token }}
+          DOCS_PR: ${{ steps.proposal.outputs.pr }}
+          DOCS_HEAD: ${{ steps.proposal.outputs.head }}
+        run: python3 scripts/queue-docs.py --pr "$DOCS_PR" --head "$DOCS_HEAD"
+      - name: Surface invalid eligibility without bypassing the required status
+        if: always() && steps.eligibility.outcome == 'failure'
+        run: |
+          echo '::error::Release-docs eligibility could not be verified. Inspect this workflow and the exact PR head before retrying.'
+          exit 1
+  merge-eligibility:
+    name: ${{ github.event_name == 'merge_group' && 'Docs release eligibility' || 'Docs merge eligibility (not applicable)' }}
+    if: github.repository_id == '1431005655' && github.event_name == 'merge_group'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 24.16.0
+      - name: Revalidate included release docs before merge-group success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GROUP_HEAD: ${{ github.event.merge_group.head_sha }}
+        run: python3 scripts/queue-docs.py --merge-group "$GROUP_HEAD"
