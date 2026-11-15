@@ -154,6 +154,13 @@ export function validateSnapshot(metadata, reference) {
     assert(NAME.test(a.name) && NAME.test(a.logicalName) && HASH.test(a.sha256) && Number.isSafeInteger(a.size) && a.size > 0 && a.size <= MAX_ASSET &&
     a.url === `https://github.com/${REPO}/releases/download/${metadata.tag}/${a.name}`, 'Invalid snapshot asset');
   }
+  if (Object.hasOwn(metadata, 'verification')) {
+    const value = metadata.verification;
+    assert(value && Object.keys(value).sort().join(',') === 'bundle,checksum,layout' &&
+      value.checksum === 'SHA256SUMS' &&
+      ((value.layout === 'shared' && value.bundle === 'release.sigstore.jsonl') ||
+       (value.layout === 'per-subject' && value.bundle === null)), 'Invalid release verification layout');
+  }
 }
 
 const gh = (...args) => execFileSync('gh', args, { maxBuffer: 16 * 1024 * 1024, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -174,7 +181,8 @@ export async function verifyDownloadedAsset(path, asset) {
   assert(bytes === asset.size && digest.digest('hex') === asset.sha256, `Downloaded asset digest mismatch: ${asset.name}`);
 }
 
-export async function update({ tag, site = SITE, get = api, fetchAsset = download } = {}) {
+export async function update({ tag, site = SITE, get = api, fetchAsset = download, verifyAllAssets = true } = {}) {
+  assert(typeof verifyAllAssets === 'boolean', 'verifyAllAssets must be boolean');
   let existing;
   try { existing = JSON.parse(await readFile(join(site, 'release.json'), 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -210,6 +218,7 @@ export async function update({ tag, site = SITE, get = api, fetchAsset = downloa
     const archive = assets.find((a) => a.kind === 'archive' && a.os === 'darwin' && a.arch === 'arm64');
     let archivePath;
     for (const asset of assets) {
+      if (!verifyAllAssets && asset !== archive) continue;
       const path = await fetchAsset({ ...asset, tag: release.tag_name }, directory);
       await verifyDownloadedAsset(path, asset);
       if (asset === archive) archivePath = path;
@@ -219,8 +228,14 @@ export async function update({ tag, site = SITE, get = api, fetchAsset = downloa
     // substitute for the release producer's cryptographic provenance gate.
     for (const asset of release.assets) {
       if (asset.name === 'release-inventory.json' || asset.name === 'SHA256SUMS' || assets.some((a) => a.name === asset.name)) continue;
-      await fetchRemote(asset.name);
+      if (verifyAllAssets) await fetchRemote(asset.name);
     }
+    // All remote subjects and bundle URLs/digests/layout were checked by
+    // validateInventory above, including in the trusted queue's narrow mode.
+    // Narrow mode verifies downloaded reference bytes, not other artifact bytes.
+    const shared = release.assets.some((asset) => asset.name === 'release.sigstore.jsonl');
+    const verification = { layout: shared ? 'shared' : 'per-subject',
+      bundle: shared ? 'release.sigstore.jsonl' : null, checksum: 'SHA256SUMS' };
     // Listing first detects duplicate names and confirms the selected member is
     // ordinary; stdout-only extraction cannot overwrite source files or links.
     const listing = execFileSync('tar', ['-tzf', archivePath], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).trimEnd().split('\n');
@@ -231,13 +246,16 @@ export async function update({ tag, site = SITE, get = api, fetchAsset = downloa
     const metadata = { schemaVersion: 1, version, tag: release.tag_name, sourceCommit,
       publishedAt: release.published_at, releaseUrl: release.html_url,
       inventorySha256: sha256(inventoryBytes), assets,
-      reference: { path: 'reference/gs.md', sha256: sha256(reference) } };
+      reference: { path: 'reference/gs.md', sha256: sha256(reference) }, verification };
     validateSnapshot(metadata, reference);
     const json = `${JSON.stringify(metadata, null, 2)}\n`;
     if (existing && existing.tag === metadata.tag) {
-      assert(JSON.stringify(existing) === JSON.stringify(metadata), 'Selected immutable release changed; investigate manually');
+      const { verification: ignored, ...legacy } = metadata;
+      const migration = !Object.hasOwn(existing, 'verification');
+      assert(JSON.stringify(existing) === JSON.stringify(migration ? legacy : metadata), 'Selected immutable release changed; investigate manually');
       assert((await readFile(join(site, 'reference/gs.md'))).equals(reference), 'Committed reference differs from selected release');
-      return { changed: false, reason: 'duplicate', tag: metadata.tag };
+      if (!migration) return { changed: false, reason: 'duplicate', tag: metadata.tag };
+      assert(verifyAllAssets, 'Verification metadata migration requires full asset validation');
     }
     await mkdir(join(site, 'reference'), { recursive: true });
     // Complete validation precedes every write. Metadata is the final commit

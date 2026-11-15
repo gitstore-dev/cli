@@ -201,5 +201,10 @@
   "reference": {
     "path": "reference/gs.md",
     "sha256": "a3866f3cc1ca5e0dd1025edd471b33f613031fc00ca41a38d77811bf25d4a98b"
+  },
+  "verification": {
+    "layout": "shared",
+    "bundle": "release.sigstore.jsonl",
+    "checksum": "SHA256SUMS"
   }
 }

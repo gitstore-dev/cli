@@ -1,0 +1,15 @@
+name: Docs review signal
+on:
+  pull_request_review:
+    types: [submitted, dismissed, edited]
+permissions:
+  contents: read
+jobs:
+  signal:
+    if: github.repository_id == '1431005655' && github.event.pull_request.head.repo.id == 1431005655 && github.event.pull_request.head.ref == 'codex/docs-release-update'
+    runs-on: ubuntu-24.04
+    steps:
+      # Review events use the PR workflow definition. Keep this relay entirely
+      # unprivileged; the workflow_run consumer reads trusted main only.
+      - name: Notify the trusted default-branch eligibility workflow
+        run: ':'
