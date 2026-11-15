@@ -138,3 +138,92 @@ test('same immutable tag with changed inventory fails instead of silently replac
   await writeFile(join(f.site, 'release.json'), JSON.stringify({ ...original, sourceCommit: 'b'.repeat(40) }));
   await assert.rejects(update(f), /immutable release changed/);
 });
+
+for (const current of [false, true]) test(`records verified ${current ? 'shared' : 'per-subject'} bundle layout`, async (t) => {
+  const f = await fixture(t, current);
+  await update(f);
+  const metadata = JSON.parse(await readFile(join(f.site, 'release.json'), 'utf8'));
+  assert.deepEqual(metadata.verification, { layout: current ? 'shared' : 'per-subject',
+    bundle: current ? 'release.sigstore.jsonl' : null, checksum: 'SHA256SUMS' });
+  const bytes = await readFile(join(f.site, 'reference/gs.md'));
+  validateSnapshot(metadata, bytes);
+  const legacy = structuredClone(metadata);
+  delete legacy.verification;
+  validateSnapshot(legacy, bytes);
+  for (const bad of [null, { layout: 'shared', bundle: null, checksum: 'SHA256SUMS' },
+    { layout: 'per-subject', bundle: 'release.sigstore.jsonl', checksum: 'SHA256SUMS' },
+    { layout: 'shared', bundle: 'release.sigstore.jsonl', checksum: '../SHA256SUMS' }]) {
+    assert.throws(() => validateSnapshot({ ...metadata, verification: bad }, bytes), /verification layout/);
+  }
+});
+
+test('same-tag migration adds only missing verification metadata after full validation', async (t) => {
+  const f = await fixture(t, true);
+  await update(f);
+  const expected = await readFile(join(f.site, 'release.json'));
+  const legacy = JSON.parse(expected);
+  delete legacy.verification;
+  await writeFile(join(f.site, 'release.json'), `${JSON.stringify(legacy, null, 2)}\n`);
+  assert.deepEqual(await update(f), { changed: true, tag: f.release.tag_name });
+  assert((await readFile(join(f.site, 'release.json'))).equals(expected));
+  assert.deepEqual(await update(f), { changed: false, reason: 'duplicate', tag: f.release.tag_name });
+});
+
+test('migration never conceals immutable field, reference, or asset-byte changes', async (t) => {
+  for (const change of ['metadata', 'reference', 'asset', 'verification']) {
+    const f = await fixture(t, true);
+    await update(f);
+    const metadata = JSON.parse(await readFile(join(f.site, 'release.json'), 'utf8'));
+    delete metadata.verification;
+    if (change === 'metadata') metadata.publishedAt = '2026-01-01T00:00:00Z';
+    if (change === 'verification') metadata.verification = { layout: 'per-subject', bundle: null, checksum: 'SHA256SUMS' };
+    if (change === 'reference') await writeFile(join(f.site, 'reference/gs.md'), reference + '\n');
+    if (change === 'asset') f.payloads.set('gitstore.rb', Buffer.from('tampered'));
+    const original = `${JSON.stringify(metadata, null, 2)}\n`;
+    await writeFile(join(f.site, 'release.json'), original);
+    await assert.rejects(update(f), /immutable release changed|reference differs|digest mismatch/);
+    assert.equal(await readFile(join(f.site, 'release.json'), 'utf8'), original);
+  }
+});
+
+test('narrow queue verification downloads only inventory, checksum and digest-checked reference archive', async (t) => {
+  const f = await fixture(t, true);
+  const downloaded = [];
+  const fetchAsset = async (asset, directory) => { downloaded.push(asset.name); return f.fetchAsset(asset, directory); };
+  await update({ ...f, fetchAsset, verifyAllAssets: false });
+  const archive = f.inventory.artifacts.find(a => a.format === 'archive' && a.os === 'darwin' && a.arch === 'arm64').filename;
+  assert.deepEqual(downloaded, ['release-inventory.json', 'SHA256SUMS', archive]);
+  const narrow = await readFile(join(f.site, 'release.json'));
+  assert.deepEqual(await update(f), { changed: false, reason: 'duplicate', tag: f.release.tag_name });
+  assert((await readFile(join(f.site, 'release.json'))).equals(narrow));
+  const original = await readFile(join(f.site, 'release.json'));
+  f.payloads.set(archive, Buffer.from('tampered reference archive'));
+  await assert.rejects(update({ ...f, verifyAllAssets: false }), /Downloaded asset digest mismatch/);
+  assert((await readFile(join(f.site, 'release.json'))).equals(original));
+});
+
+test('narrow verification still rejects missing or mismatched un-downloaded metadata and bundles', async (t) => {
+  for (const change of ['asset-missing', 'asset-digest', 'bundle-missing', 'bundle-digest', 'bundle-url']) {
+    const f = await fixture(t, true);
+    await update(f);
+    const original = await readFile(join(f.site, 'release.json'));
+    const asset = f.release.assets.find(a => a.name === (change.startsWith('bundle') ? 'release.sigstore.jsonl' : 'gitstore.rb'));
+    if (change.endsWith('missing')) f.release.assets.splice(f.release.assets.indexOf(asset), 1);
+    else if (change === 'asset-digest') asset.digest = 'sha256:' + 'b'.repeat(64);
+    else if (change === 'bundle-digest') asset.digest = 'not-a-digest';
+    else asset.browser_download_url = 'https://untrusted.example/bundle';
+    await assert.rejects(update({ ...f, verifyAllAssets: false }), /Missing|mismatched|metadata|URL/);
+    assert((await readFile(join(f.site, 'release.json'))).equals(original));
+  }
+});
+
+test('narrow mode cannot migrate a legacy snapshot without all-asset verification', async (t) => {
+  const f = await fixture(t, true);
+  await update(f);
+  const legacy = JSON.parse(await readFile(join(f.site, 'release.json'), 'utf8'));
+  delete legacy.verification;
+  const original = JSON.stringify(legacy);
+  await writeFile(join(f.site, 'release.json'), original);
+  await assert.rejects(update({ ...f, verifyAllAssets: false }), /migration requires full asset validation/);
+  assert.equal(await readFile(join(f.site, 'release.json'), 'utf8'), original);
+});
