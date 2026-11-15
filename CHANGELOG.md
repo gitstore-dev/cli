@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.0-alpha.9](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9) (2026-11-15)
+
+
+### Features
+
+* **docs:** fingerprint reviewed capability inputs across releases ([05ce7cb](https://github.com/gitstore-dev/cli/commit/05ce7cbce1ea8af9b06fe6ca7d29980d593aec48))
+* **docs:** prepare and validate reviewed release proposals ([e7206ad](https://github.com/gitstore-dev/cli/commit/e7206ad2efe0b7343478436ef1128b0865914f60))
+* **docs:** validate generated prose against reviewed capability baseline ([a003726](https://github.com/gitstore-dev/cli/commit/a0037261f497e7f66c255f0958c8e6e264dc7021))
+
+
+### Bug Fixes
+
+* bind documentation verification instructions to published bundle layout ([219d736](https://github.com/gitstore-dev/cli/commit/219d73686f1badc9678c83a008cce9ca25e88e35))
+* **docs:** preserve stale proposals and isolate queue signals ([5eb01ce](https://github.com/gitstore-dev/cli/commit/5eb01cee24569ff6409763aa89ca65276037c837))
+
 ## [0.1.0-alpha.8](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8) (2026-11-14)
 
 
