@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { assessCapabilities, baselineIdentity } from './capability-audit.mjs';
+import { generatedSourcePaths, normalizeReleaseContent, renderReleaseContent } from './release-content.mjs';
 
 export const guides = [
   { source: 'docs/README.md', route: '/guides/', title: 'Guides', order: 1 },
@@ -12,6 +14,7 @@ export const guides = [
   { source: 'docs/local-runtime.md', route: '/guides/local-runtime/', title: 'Linux local deployments', order: 5 },
   { source: 'docs/local-runtime-configuration.md', route: '/guides/local-runtime-configuration/', title: 'Local runtime configuration', order: 6 },
 ];
+export const auditedSourcePaths = [...new Set([...guides.map(({ source }) => source), ...generatedSourcePaths])];
 const routeBySource = new Map(guides.map(({ source, route }) => [source, route]));
 const repository = 'https://github.com/gitstore-dev/cli';
 const siteRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -135,14 +138,19 @@ export function commandCapabilityNotice(command, audit, release) {
 }
 
 export function validateAudit(release, audit, install) {
-  if (audit.version !== release.version) throw new Error(`Review canonical docs and content-audit.json for selected release ${release.version} (audited ${audit.version})`);
-  if (audit.commandSourceCommit !== release.sourceCommit) throw new Error('Command capability audit source does not match the selected release');
-  if (JSON.stringify(audit.reviewedSources) !== JSON.stringify(guides.map(({ source }) => source))) throw new Error('Content audit must cover the exact guide allowlist in order');
+  if (audit.schemaVersion !== 2) throw new Error('Content audit requires schemaVersion 2 and reviewed capability evidence');
+  baselineIdentity(release);
+  const baseline = baselineIdentity(audit.reviewedRelease);
+  if (audit.version !== baseline.version || audit.commandSourceCommit !== baseline.sourceCommit) throw new Error('Command capability audit source/version does not match its reviewed baseline');
+  if (!/^[a-f0-9]{64}$/.test(audit.capabilityFingerprint)) throw new Error('Missing or malformed reviewed capability fingerprint');
+  if (JSON.stringify(audit.reviewedSources) !== JSON.stringify(auditedSourcePaths)) throw new Error('Content audit must cover the exact guide and generated source allowlist in order');
+  if (JSON.stringify(Object.keys(audit.sourceSha256 ?? {}).sort()) !== JSON.stringify([...auditedSourcePaths].sort()) ||
+    Object.values(audit.sourceSha256).some((value) => !/^[a-f0-9]{64}$/.test(value))) throw new Error('Missing or malformed authored source hashes');
   if (!install.includes(`Both commands should report \`${release.version}\``)) throw new Error('Installation version does not match selected release; update canonical docs/installation.md');
   const downloads = [...install.matchAll(/https:\/\/github\.com\/gitstore-dev\/cli\/releases\/(?:download|tag)\/(v[^/\s)"`]+)/g)].map((match) => match[1]);
   if (downloads.some((tag) => tag !== release.tag)) throw new Error('Installation points at a different release; update canonical docs/installation.md');
   const names = new Set((release.assets ?? []).map(({ name }) => name));
-  for (const match of install.matchAll(/https:\/\/github\.com\/gitstore-dev\/cli\/releases\/download\/v[^/]+\/([^\s"`]+)/g)) {
+  for (const match of install.matchAll(/https:\/\/github\.com\/gitstore-dev\/cli\/releases\/download\/v[^/]+\/([^\s"'`)]+)/g)) {
     const template = match[1];
     const architectures = template.endsWith('.deb') ? ['amd64', 'arm64'] : ['x86_64', 'aarch64'];
     const filenames = template.includes('${gitstore_platform}')
@@ -156,16 +164,25 @@ export function validateAudit(release, audit, install) {
   }
 }
 
-export async function prepareContent(root = siteRoot) {
+export async function prepareContent(root = siteRoot, { assess = assessCapabilities } = {}) {
   const repoRoot = path.dirname(root);
   const release = JSON.parse(await readFile(path.join(root, 'release.json'), 'utf8'));
   const audit = JSON.parse(await readFile(path.join(root, 'content-audit.json'), 'utf8'));
-  const sourceTexts = await Promise.all(guides.map(({ source }) => readFile(path.join(repoRoot, source), 'utf8')));
-  validateAudit(release, audit, sourceTexts[1]);
-  for (const [index, { source }] of guides.entries()) {
-    if (createHash('sha256').update(sourceTexts[index]).digest('hex') !== audit.sourceSha256?.[source]) {
-      throw new Error(`Canonical guide changed: review ${source} against ${release.tag} and update content-audit.json`);
+  const sources = Object.fromEntries(await Promise.all(auditedSourcePaths.map(async (source) => [source, await readFile(path.join(repoRoot, source), 'utf8')])));
+  validateAudit(release, audit, sources['docs/installation.md']);
+  for (const source of auditedSourcePaths) {
+    if (createHash('sha256').update(normalizeReleaseContent(sources[source])).digest('hex') !== audit.sourceSha256[source]) {
+      throw new Error(`Canonical authored content changed: review ${source} and update content-audit.json`);
     }
+  }
+  const rendered = renderReleaseContent({ release, sources });
+  for (const source of generatedSourcePaths) {
+    if (rendered[source] !== sources[source]) throw new Error(`Generated release content is stale or modified: ${source}`);
+  }
+  const capability = assess({ repoRoot, baselineRelease: audit.reviewedRelease, release, audit });
+  if (capability.baseline.fingerprint !== audit.capabilityFingerprint) throw new Error('Reviewed capability fingerprint does not match its Git evidence');
+  if (capability.source.fingerprint !== audit.capabilityFingerprint || capability.status !== 'unchanged') {
+    throw new Error('Selected release changes capability inputs; review and update the capability audit');
   }
   const reference = await readFile(path.join(root, release.reference.path), 'utf8');
   if (createHash('sha256').update(reference).digest('hex') !== release.reference.sha256) throw new Error('Committed command reference digest mismatch');
@@ -173,8 +190,8 @@ export async function prepareContent(root = siteRoot) {
   const output = path.join(root, 'src/content/docs');
   // This directory is generated and ignored. Never recursively remove authored source.
   for (const directory of ['guides', 'install', 'manual']) await rm(path.join(output, directory), { recursive: true, force: true });
-  for (const [index, guide] of guides.entries()) {
-    const body = rewriteLinks(sourceTexts[index].replace(/^# .+\n+/, ''), guide.source, 'main');
+  for (const guide of guides) {
+    const body = rewriteLinks(sources[guide.source].replace(/^# .+\n+/, ''), guide.source, 'main');
     const sourceLink = `${repository}/blob/main/${guide.source}`;
     const content = frontmatter(guide.title, `${guide.title} for GitStore CLI ${release.version}.`, guide.order) +
       releaseNotice(release) + capabilityNotice(guide.source) + body + `\n\n---\n\n[Edit the canonical guide on GitHub](${sourceLink}). Imported at build time from \`${guide.source}\`.\n`;
