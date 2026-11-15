@@ -55,6 +55,7 @@ export async function prepareReleaseDocs({repoRoot,baselineAudit,baselineRelease
     const current=JSON.parse(await readFile(join(staging,'release.json'),'utf8'));
     if(compareVersions(current.version,baselineRelease.version)<0) throw new Error('Proposal release is older than trusted main');
     const result=await updateRelease({tag,site:staging});
+    if(result.reason==='stale') return {changed:false,tag:current.tag,version:current.version,reviewRequired:true,files:[],reason:'stale'};
     const release=JSON.parse(await readFile(join(staging,'release.json'),'utf8'));
     if(compareVersions(release.version,baselineRelease.version)<0 || compareVersions(release.version,current.version)<0) throw new Error('Release documentation downgrade refused');
     const candidateAudit=JSON.parse(await readFile(join(repoRoot,'site/content-audit.json'),'utf8'));
