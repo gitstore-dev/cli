@@ -64,6 +64,8 @@ test('preparation is idempotent, preserves reviewed prose, and refuses stale mai
  await rm(join(repoRoot,'site/release-evidence.json'),{force:true});
  const first=await prepareReleaseDocs(options);assert.ok(first.files.includes('site/release-evidence.json'));
  const second=await prepareReleaseDocs(options);assert.equal(second.changed,false);assert.deepEqual(second.files,[]);
+ const stale=await prepareReleaseDocs({...options,updateRelease:async()=>({changed:false,reason:'stale'})});
+ assert.equal(stale.changed,false);assert.equal(stale.reason,'stale');assert.deepEqual(stale.files,[]);
  const before=await readFile(join(repoRoot,'site/release.json'),'utf8');
  await assert.rejects(()=>prepareReleaseDocs({...options,baselineRelease:{...f.release,version:'999.0.0'}}),/older than trusted main/);
  assert.equal(await readFile(join(repoRoot,'site/release.json'),'utf8'),before);

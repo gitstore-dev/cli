@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs-eligibility-${{ github.event.merge_group.head_sha || 'proposals' }}
+  group: docs-eligibility-${{ github.event.merge_group.head_sha || (github.event_name == 'pull_request_target' && github.event.pull_request.head.ref != 'codex/docs-release-update' && format('pr-{0}', github.event.pull_request.number)) || github.event.pull_request.head.ref || github.event.workflow_run.head_branch || (inputs.pr && format('pr-{0}', inputs.pr)) || 'codex/docs-release-update' }}
   cancel-in-progress: false
 
 jobs:

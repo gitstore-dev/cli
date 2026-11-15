@@ -99,7 +99,7 @@ jobs:
             if (error.status !== 1) throw error;
             differsFromMain = true;
           }
-          const needed = result.changed || (!process.env.PR && differsFromMain);
+          const needed = result.reason !== 'stale' && (result.changed || (!process.env.PR && differsFromMain));
           appendFileSync(process.env.GITHUB_OUTPUT, `needed=${needed}\ntag=${result.tag}\nreview-required=${result.reviewRequired}\n`);
           console.log(JSON.stringify(result));
           JS
