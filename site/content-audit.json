@@ -1,5 +1,34 @@
 {
+  "schemaVersion": 2,
   "version": "0.1.0-alpha.7",
+  "reviewedRelease": {
+    "version": "0.1.0-alpha.7",
+    "tag": "v0.1.0-alpha.7",
+    "sourceCommit": "8e3f5c18e4141b9baeded53271f1e09625d1eea4",
+    "reference": { "sha256": "a3866f3cc1ca5e0dd1025edd471b33f613031fc00ca41a38d77811bf25d4a98b" },
+    "assets": [
+      { "kind": "archive", "os": "darwin", "arch": "arm64" },
+      { "kind": "archive", "os": "darwin", "arch": "x64" },
+      { "kind": "archive", "os": "linux", "arch": "arm64" },
+      { "kind": "archive", "os": "linux", "arch": "x64" },
+      { "kind": "deb", "os": "linux", "arch": "arm64" },
+      { "kind": "deb", "os": "linux", "arch": "x64" },
+      { "kind": "formula", "os": "any", "arch": "any" },
+      { "kind": "npm", "os": "darwin", "arch": "arm64" },
+      { "kind": "npm", "os": "darwin", "arch": "x64" },
+      { "kind": "npm", "os": "linux", "arch": "arm64" },
+      { "kind": "npm", "os": "linux", "arch": "x64" },
+      { "kind": "relink", "os": "any", "arch": "any" },
+      { "kind": "relink", "os": "any", "arch": "any" },
+      { "kind": "rpm", "os": "linux", "arch": "arm64" },
+      { "kind": "rpm", "os": "linux", "arch": "x64" },
+      { "kind": "source", "os": "any", "arch": "any" },
+      { "kind": "source", "os": "any", "arch": "any" },
+      { "kind": "source", "os": "any", "arch": "any" },
+      { "kind": "source", "os": "any", "arch": "any" }
+    ]
+  },
+  "capabilityFingerprint": "76eb07958c5f434170bc84a82ca4b016ea7f0d2a00422df5fc5462101d065fa4",
   "reviewedSources": [
     "docs/README.md",
     "docs/installation.md",
@@ -7,16 +36,18 @@
     "docs/remote-cli.md",
     "docs/watch.md",
     "docs/local-runtime.md",
-    "docs/local-runtime-configuration.md"
+    "docs/local-runtime-configuration.md",
+    "README.md"
   ],
   "sourceSha256": {
-    "docs/README.md": "4ffc8c1ea4948d7249596b69a86a56514ec8fe08d69a67f67c6244691b099815",
-    "docs/installation.md": "805dd6a871f4c00369e4267ed75cd1ed2f9231c14d27ebfcfe34b14a52c49482",
+    "docs/README.md": "d2cf8bb3c26332cb0b2b5d4f82315254909067cbb5cddbc4c13f7848e59846ca",
+    "docs/installation.md": "620987c86c8682188afbcbfdb23631680a99030d8e5ebe66141dac0cc3d5fccc",
     "docs/configuration.md": "6959b2520283d6c80305be8e278f071ee77a0ef6039e01630f042a4284ddb0d5",
     "docs/remote-cli.md": "fb04bb1c8a210531693cd489a9af2ea4761c627282af98fdf2d8a4f94f4b54ba",
     "docs/watch.md": "190ecd63ff46c568ed1cc2cdfe36d6597a23e81ac434168a362b198cf893dbb8",
     "docs/local-runtime.md": "961a2143f56b74ff43a00f2b65dde93d8626ce4c2841e78477faf0ae0ea7a9a6",
-    "docs/local-runtime-configuration.md": "e68731e5ec8f2d97235b1e60600e62a410766b0c9a3f713aa645a69e36d448ff"
+    "docs/local-runtime-configuration.md": "e68731e5ec8f2d97235b1e60600e62a410766b0c9a3f713aa645a69e36d448ff",
+    "README.md": "da4b02303e22b208970d5978c7cfa7d1617fadeb9055c313d611cbe7329af2d2"
   },
   "commandSourceCommit": "8e3f5c18e4141b9baeded53271f1e09625d1eea4",
   "commandNotices": [
@@ -119,6 +150,7 @@
     "The managed core runtime pins GitStore alpha.8. Selecting the explicit alpha.9 remote contract does not upgrade local images or establish provider/host qualification.",
     "Remote alpha.9 client paths and optional OIDC retain the source guides' separate controlled/development evidence and qualification caveats.",
     "Admin, Storefront, browser/device/OIDC discovery, safe author updates, correlated remote waits, Collection mutations/watch, and File upload/list remain gated.",
-    "Changing the selected CLI release requires a reviewed update of this audit and the canonical docs, even when generated parser help is unchanged."
+    "Schema 2 records the last reviewed capability baseline independently of generated version/asset prose. Source hashes normalize only marked release blocks; the renderer independently checks every generated block, including root README.md.",
+    "Unchanged capability inputs can carry this audit to a later release. Changes to production sources, dependencies, runtime/profile pins, build or qualification inputs require a new reviewed capability baseline; equal parser help alone is insufficient."
   ]
 }
