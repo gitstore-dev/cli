@@ -125,10 +125,10 @@ jobs:
           node --input-type=module <<'JS'
           import {writeFileSync} from 'node:fs';
           const review = process.env.REVIEW_REQUIRED === 'true'
-            ? 'Capability evidence changed outside the trusted audit. Review site/release-evidence.json and update the canonical guides and content audit as needed; website checks remain blocked until that review is recorded.'
+            ? 'Capability evidence changed outside the trusted audit. Review site/release-evidence.json and the proposed guides and audit. Docs release eligibility waits for a human maintainer to approve this exact PR head; the bot never supplies that approval.'
             : 'The trusted audit permits the mechanical release update. Authored capability guidance and historical qualification notes are preserved; review the generated installation commands and evidence before merging.';
           writeFileSync(process.env.RUNNER_TEMP + '/docs-release-body.md',
-            `Update the website for ${process.env.SELECTED_TAG}. The trusted main policy validates published release/tag/source identity, the inventory and asset digests, and extracts the bundled command reference without executing the CLI. Release-dependent installation blocks are generated in the canonical docs/.\n\n${review}\n\nNormal review and website checks are required. Merging deploys through the github-pages environment and does not publish a CLI release.\n`);
+            `Update the website for ${process.env.SELECTED_TAG}. The trusted main policy validates published release/tag/source identity, the inventory and asset digests, and extracts the bundled command reference without executing the CLI. Release-dependent installation blocks are generated in the canonical docs/.\n\n${review}\n\nRequired checks and applicable review must pass; the repository App then requests normal merge-queue entry for this exact head. Merging deploys through the github-pages environment and does not publish a CLI release.\n`);
           JS
           if [ -n "$PR" ]; then
             gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --title "docs: update website for $version" --body-file "$RUNNER_TEMP/docs-release-body.md"
