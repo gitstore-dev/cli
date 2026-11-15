@@ -14,6 +14,7 @@ BRANCH = 'codex/docs-release-update'
 CONTEXT = 'Docs release eligibility'
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED = {
+    'README.md',
     'site/release.json', 'site/reference/gs.md', 'site/release-evidence.json',
     'site/content-audit.json', 'docs/README.md', 'docs/installation.md',
     'docs/configuration.md', 'docs/remote-cli.md', 'docs/watch.md',
