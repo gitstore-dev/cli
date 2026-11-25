@@ -79,7 +79,10 @@ jobs:
           root = pathlib.Path('build/curl-sources').resolve()
           root.mkdir()
           for name, digest in lock['files'].items():
-              with urllib.request.urlopen('https://archive.ubuntu.com/ubuntu/pool/main/c/curl/' + name, timeout=60) as source:
+              request = urllib.request.Request(
+                  'https://archive.ubuntu.com/ubuntu/pool/main/c/curl/' + name,
+                  headers={'User-Agent': 'gitstore-release-builder/1.0'})
+              with urllib.request.urlopen(request, timeout=60) as source:
                   payload = source.read(64 * 1024 * 1024)
               assert hashlib.sha256(payload).hexdigest() == digest
               (root / name).write_bytes(payload)
