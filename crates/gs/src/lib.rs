@@ -58,6 +58,11 @@ pub fn run() -> i32 {
             return exit;
         }
     };
+    // The Keychain dialog is a GUI prompt, so gate on stderr (diagnostics), not stdin,
+    // which is commonly a pipe carrying `--password-stdin` input.
+    credentials::allow_keychain_interaction(
+        !cli.non_interactive && std::io::IsTerminal::is_terminal(&std::io::stderr()),
+    );
     let result = cli.preflight().and_then(|_| dispatch(&cli));
     match result {
         Ok(()) => 0,

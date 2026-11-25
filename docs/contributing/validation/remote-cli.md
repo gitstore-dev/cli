@@ -97,7 +97,9 @@ to a cloud workspace.
   to an owner-only temporary file; incoming responses stream to the library. Progress
   redacts credentials even when split across callback chunks.
 - Linux Secret Service access refuses locked/ambiguous entries without invoking an
-  unlock prompt. macOS disables Keychain UI interaction. These code paths still need
+  unlock prompt. macOS permits the Keychain dialog only for interactive use and
+  otherwise disables it (FR-019); denial classification is unit-tested, the dialog
+  itself is not exercised. These code paths still need
   native OS-store smoke and supported-host evidence; file input is an explicit option,
   never an automatic fallback.
 

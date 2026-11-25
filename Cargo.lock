@@ -690,6 +690,7 @@ dependencies = [
  "percent-encoding",
  "reqwest",
  "rustls",
+ "security-framework",
  "security-framework-sys",
  "serde",
  "serde-saphyr",

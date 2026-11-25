@@ -56,6 +56,10 @@ Store credentials in the OS credential store under installation/issuer/account.
 Protected input may be stdin or a permission-restricted explicit credential file;
 do not encourage secret command-line arguments. File persistence fallback is opt-in
 and user-only. Registry secrets use registry/account records, never catalogue accounts.
+macOS Keychain authorization dialogs are allowed only when `--non-interactive` is not
+in effect and stderr is a terminal; otherwise access fails without prompting. A denied
+read of an existing item (for example one written by a different ad-hoc-signed build,
+see [ADR 0003](../ADRs/0003-runtime-assets-packaging.md)) must report that cause and the recovery steps, not a generic error.
 Persist rotated credentials atomically, preserving prior state on storage failure.
 Device login obeys advertised intervals, slow-down, denial, cancellation and expiry.
 

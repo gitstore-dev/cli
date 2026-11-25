@@ -101,6 +101,7 @@ use library APIs, and no external credential helper/filter/hook runs during Git 
 - [X] T037 [P] Add an opt-in live compatibility harness in `scripts/test-live.sh` plus disposable-fixture instructions in `docs/contributing/validation/remote-cli.md`; require explicit test-installation/account selection, operate only on fixture-owned resources and record live checks as not-run when access is absent. Do not run against an unrelated deployment or treat simulated fixtures as live evidence.
 - [X] T038 Run locked build/test, format/lint and cross-story isolation/input/partial-outcome/Git scenarios from `specs/002-m1-remote-cli/quickstart.md`; record compiler/Git/host/native-store/simulated/live evidence and SC-001–006 outcomes in `docs/contributing/validation/remote-cli.md`, repair failures and remove any secret-bearing temporary output.
 - [X] T039 Reconcile requirements/tasks/evidence and remaining gates in `specs/002-m1-remote-cli/tasks.md` and `docs/contributing/validation/remote-cli.md`; record DEP-013 producer/workflow/source/digest and negative-case requirements as unresolved publication gates rather than adding an unverified release. Mark only completed work checked; full M1 remains pending upstream capabilities.
+- [X] T040 [US1] Implement FR-019 in `crates/gs/src/credentials.rs` and `lib.rs`: classify Keychain statuses -128/-25243/-25293/-25308 as a denied existing item with cause and recovery text, gate the authorization dialog on `--non-interactive` and a stderr terminal, and keep the runtime broker path prompt-free; unit cases cover classification, message and generic fallback. Native dialog behavior on a mismatched item is not run; ADR 0003 records the signing decision.
 
 ## Dependencies & Execution Order
 
@@ -166,6 +167,7 @@ still needs upstream/login/export/wait/watch/update capabilities listed in the s
 | FR-011–012, FR-018 | T029–T034 |
 | FR-013 | T005, T025, T027, T035 |
 | FR-014–015 | T005–T008, T018–T020, T026–T027, T035 |
+| FR-019 | T013–T015, T040 |
 | FR-016–017 | T001–T004, T009, T014, T016–T018, T021, T023, T026–T029, T034–T039 |
 
 ## Implementation adjustments — 2026-10-29
@@ -180,3 +182,10 @@ or pack implementation was duplicated, and no external Git executable is used.
 The Linux generic keyring adapter auto-unlocks locked entries. Production lookup/removal
 uses the maintained `dbus-secret-service` API directly, never invoking an unlock prompt;
 macOS disables Keychain user interaction. Native smoke checks are opt-in and not-run.
+
+## Implementation adjustment — 2026-11-25
+
+macOS no longer disables Keychain interaction unconditionally: it is allowed for
+interactive invocations only (FR-019, T040). The 2026-10-29 note above describes the
+earlier behavior. Release binaries remain ad-hoc signed, so a credential written by
+another build can be denied; see ADR 0003 (2026-11-25 macOS code-signing checkpoint).
