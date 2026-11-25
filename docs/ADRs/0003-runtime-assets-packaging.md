@@ -240,9 +240,35 @@ notarization are not available at this stage. Option set considered:
 | Option | Fixes cross-release Keychain access | Status |
 |---|---|---|
 | Developer ID Application certificate, optionally notarized | Yes, via a stable designated requirement on the Team ID | Deferred until funding exists |
-| Self-managed signing certificate | Probably, by pinning the certificate hash; untested | Rejected: weak trust, conflicts with the DEP-013 provenance emphasis |
+| Self-managed signing certificate with a fixed binary identifier | Yes in the experiment below | Candidate, not adopted: adds a long-lived signing key to the supply chain; see conditions |
 | Ad-hoc with a fixed identifier (`codesign -s - -i <id>`) | No: the ad-hoc designated requirement is the code-directory hash, which still changes per build | Rejected: no effect |
 | Ad-hoc, unchanged (current) | No | Accepted, with the mitigations below |
+
+**Experiment (2026-11-25).** A small probe using the legacy Keychain API, prompts
+disabled, on one macOS 26.6.1 arm64 host and a throwaway file keychain. Build 1 wrote
+an item and a different build 2 read it:
+
+| Signing | Result |
+|---|---|
+| Ad-hoc (control) | denied, `errSecAuthFailed` (-25293) |
+| Self-signed certificate, default per-build identifier | denied, -25293 |
+| Self-signed certificate, fixed binary identifier | allowed |
+
+The designated requirement in the passing case was `identifier "<fixed>" and
+certificate root = H"<certificate hash>"`, identical across builds. `codesign`
+refuses an untrusted identity, so the experiment signed with a pinned `rcodesign`
+build. The probe is not `gs` (which goes through `keyring-core`); one host and one
+certificate were tested; Homebrew installation was not.
+
+**Conditions before adopting a self-managed certificate.** The stable identity is
+exactly what grants silent access to stored credentials, so a leaked key lets a
+binary it signs read them without a prompt. Adoption requires a recorded decision on:
+key custody and scope (a protected CI environment available only to tagged release
+jobs, signing separated from the build job), rotation (a new certificate orphans
+stored credentials), the signing tool as a pinned and reviewed DEP-013 dependency,
+and a threat model comparing this with the interactive dialog, an explicit credential
+file, or an Apple-mediated store. Attestation remains keyless; this would be the
+first long-lived release key.
 
 **Consequences and mitigations.**
 
@@ -258,10 +284,11 @@ notarization are not available at this stage. Option set considered:
   depend on Apple signing. It does not make the binary acceptable to Gatekeeper for
   quarantined downloads.
 
-**Revisit** when a Developer ID certificate is affordable. Sign after all binary
+**Revisit** when a Developer ID certificate is affordable, or when the conditions
+above for a self-managed certificate are met. Sign after all binary
 modification and before packaging and attestation, then confirm the designated
-requirement is identical across two consecutive builds and survives Homebrew
-installation. The first signed release will still orphan credentials stored by
+requirement and identifier are identical across two consecutive builds and survive
+Homebrew installation. The first signed release will still orphan credentials stored by
 ad-hoc builds; its release notes must say so.
 
 **Not verified.** The interactive Keychain dialog on a mismatched item has not been
