@@ -133,6 +133,7 @@ fn seeded_records_formats_paging_and_identity_preserving_deadline() {
         assert!(!inspection.stdout.is_empty());
         if format == "json" {
             let page: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+            let page = &page["data"];
             let output = manager.run(&[
                 "deployment",
                 "list",
@@ -142,6 +143,7 @@ fn seeded_records_formats_paging_and_identity_preserving_deadline() {
                 "json",
             ]);
             let page: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+            let page = &page["data"];
             assert_eq!(page["deployments"][0]["deploymentId"], "d2");
         }
     }
@@ -215,6 +217,7 @@ fn seeded_records_formats_paging_and_identity_preserving_deadline() {
     ]);
     assert!(output.status.success());
     let record: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let record = &record["data"];
     assert_eq!(record["operation"]["state"], "running");
     assert_eq!(record["deployment"]["observedGeneration"], 1);
     let output = manager.run(&["deployment", "inspect", "missing", "-o", "json"]);

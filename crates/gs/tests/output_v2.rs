@@ -34,7 +34,7 @@ fn pty_resource_list(term: &str, no_color: bool, columns: &str) -> String {
                 &mut slave,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
-                &mut size,
+                std::ptr::addr_of_mut!(size),
             )
         },
         0

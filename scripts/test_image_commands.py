@@ -34,7 +34,16 @@ class Commands(unittest.TestCase):
         self.assertEqual(result.returncode, code, f'{args[0]}: {result.stderr}')
         if raw:
             return result.stdout
-        return json.loads(result.stdout) if result.stdout else None
+        if not result.stdout:
+            return None
+        value = json.loads(result.stdout)
+        if code == 0 and args[:2] != ['api', 'graphql']:
+            self.assertEqual(value['apiVersion'], 'cli.gitstore.dev/v2')
+            self.assertIsInstance(value['kind'], str)
+            value = value['data']
+            if args[0] == 'read':
+                value = value['resource']
+        return value
 
     def graphql(self, query, variables=None):
         envelope = self.directory / 'graphql.json'

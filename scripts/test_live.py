@@ -15,7 +15,9 @@ base=[str(binary),'--config',str(a.config.resolve()),'--namespace',a.namespace,'
 def run(args,cwd=None):
     r=subprocess.run([*base,*args],env=env,cwd=cwd,capture_output=True,text=True,timeout=40)
     if r.returncode: raise RuntimeError(f'{args[0]} failed with exit {r.returncode}; inspect the disposable installation before retrying')
-    return json.loads(r.stdout)
+    value=json.loads(r.stdout)
+    assert value['apiVersion']=='cli.gitstore.dev/v2' and isinstance(value['kind'],str)
+    return value['data']['resource'] if args[0]=='read' else value['data']
 run(['read','namespace',a.namespace])
 with tempfile.TemporaryDirectory(prefix='gs-live-') as temp:
     temp=pathlib.Path(temp)

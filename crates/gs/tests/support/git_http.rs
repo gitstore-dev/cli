@@ -181,14 +181,16 @@ fn handle(
             )
             .as_bytes()));
         } else {
-            if !receive {
-                let head = repo.head().unwrap().target().unwrap();
+            let head = (!receive)
+                .then(|| repo.head().ok().and_then(|h| h.target()))
+                .flatten();
+            if let Some(head) = head {
                 bytes.extend(pkt(format!("{head} HEAD\0{caps}\n").as_bytes()));
             }
             for (i, reference) in refs.iter().enumerate() {
                 let name = reference.name().unwrap();
                 let id = reference.target().unwrap();
-                bytes.extend(pkt(if receive && i == 0 {
+                bytes.extend(pkt(if i == 0 && (receive || head.is_none()) {
                     format!("{id} {name}\0{caps}\n")
                 } else {
                     format!("{id} {name}\n")

@@ -43,7 +43,13 @@ issuer = "controlled-fixture"
             assert out.returncode==code,(args,out.returncode,out.stderr)
             assert 'synthetic-simulation-token' not in out.stdout+out.stderr
             assert 'synthetic-password' not in out.stdout+out.stderr and 'synthetic-session-' not in out.stdout+out.stderr
-            return json.loads(out.stdout) if out.stdout else None
+            if not out.stdout: return None
+            value = json.loads(out.stdout)
+            if (code == 0 or args[0] == 'create') and args[:2] != ['api', 'graphql']:
+                assert value['apiVersion'] == 'cli.gitstore.dev/v2' and isinstance(value['kind'], str)
+                value = value['data']
+                if args[0] == 'read': value = value['resource']
+            return value
         v=invoke(['api','graphql','-f','query=query Echo($n:Int){echo}', '-F','n=3']); assert v['data']['echo']['n']==3
         v=invoke(['api','graphql','-f','query={echo}'],3,'/partial'); assert v['data']['example'] is None and v['errors'] and v['extensions']['trace']=='fixture'
         invoke(['api','graphql','-f','query={echo}'],3,'/unauthorized')

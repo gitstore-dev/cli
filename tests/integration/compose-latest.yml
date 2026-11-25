@@ -1,0 +1,36 @@
+# The published API runtime is shell-less. Use its exact binary in a disposable
+# shell helper for fixture initialization; the API itself runs the runtime image.
+services:
+  credential-bootstrap:
+    image: alpine:3.23.3
+    command: !override
+      - /bin/sh
+      - -ec
+      - |
+        /bootstrap/api gitctl users add --file /config/users.yaml --username admin --password-stdin < /bootstrap/admin-password
+        /bootstrap/api gitctl generate-signing-key --private-key-path /run/api-issuer/serviceaccount-signing-key
+        chown 65532:65532 /run/api-issuer/serviceaccount-signing-key
+        /bootstrap/api gitctl generate-signing-key --private-key-path /run/controller-secrets/controller-key \
+          --record-output-path /run/controller-secrets/gitstore-controller-manager-signing-key.json --key-id controller-key
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/api:/bootstrap/api:ro
+
+  api:
+    command: !override [/app/api, --config-file, /etc/gitstore/gitstore.toml, --serviceaccount-signing-key-file, /run/api-issuer/serviceaccount-signing-key]
+    healthcheck:
+      test: !override [CMD, /app/api, gitctl, healthcheck]
+
+  serviceaccount-enrollment:
+    image: alpine:3.23.3
+    command: !override
+      - /bin/sh
+      - -ec
+      - |
+        export GITSTORE_BOOTSTRAP_ADMIN_USERNAME=admin
+        export GITSTORE_BOOTSTRAP_ADMIN_PASSWORD="$$(cat /bootstrap/admin-password)"
+        exec /bootstrap/api gitctl enroll-serviceaccount --api-url http://api:4000/admin/graphql \
+          --name gitstore-controller-manager --key-id controller-key --replace-existing-key \
+          --private-key-path /run/controller-secrets/controller-key \
+          --identity-output-path /run/controller-bootstrap/serviceaccount.env
+    volumes:
+      - ${GITSTORE_CI_STATE:?integration state is required}/api:/bootstrap/api:ro

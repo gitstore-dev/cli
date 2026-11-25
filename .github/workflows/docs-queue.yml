@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   eligibility:
-    if: github.repository_id == '1431005655' && github.event_name != 'merge_group' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    if: github.repository_id == '1431005655' && github.event_name != 'merge_group' && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') && (github.event_name != 'workflow_run' || (github.event.workflow_run.head_branch == 'codex/docs-release-update' && github.event.workflow_run.repository.id == 1431005655 && github.event.workflow_run.head_repository.id == 1431005655))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:

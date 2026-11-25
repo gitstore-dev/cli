@@ -36,6 +36,8 @@ def main():
 
         protected(state / 'admin-password', password)
         config = (FIXTURE / 'gitstore.toml').read_text()
+        if not pinned:
+            config = config.replace('[api.auth.jwt]', '[api.auth.static_users.jwt]')
         for marker in ('__CI_JWT_SECRET__', '__CI_HMAC_SECRET__'):
             secret = secrets.token_hex(32)
             sensitive.append(secret)
@@ -52,6 +54,8 @@ def main():
                 env.pop('GITSTORE_CI_' + name + '_IMAGE', None)
         compose = ['docker', 'compose', '--ansi', 'never', '--project-name',
                    'gs-cli-ci-' + uuid.uuid4().hex[:12], '--file', str(FIXTURE / 'compose.yml')]
+        if not pinned:
+            compose.extend(['--file', str(FIXTURE / 'compose-latest.yml')])
 
         def run(args, **kwargs):
             return subprocess.run(args, cwd=ROOT, env=env, check=True, timeout=300, **kwargs)
@@ -69,6 +73,14 @@ def main():
         try:
             dc('config', '--quiet')
             dc('pull', '--policy', 'always')
+            if not pinned:
+                # Copy the exact published binary for shell-based fixture setup;
+                # the actual API service still runs its unmodified runtime image.
+                container = run(['docker', 'create', IMAGES[0]], capture_output=True, text=True).stdout.strip()
+                try:
+                    run(['docker', 'cp', container + ':/app/api', str(state / 'api')])
+                finally:
+                    run(['docker', 'rm', container], stdout=subprocess.DEVNULL)
             for image in pinned['images'].values() if pinned else IMAGES:
                 # Record moving-tag provenance, without dumping container environment.
                 run(['docker', 'image', 'inspect', '--format',
