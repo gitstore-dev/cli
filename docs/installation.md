@@ -27,7 +27,7 @@ not use prereleases for irreplaceable data.
 <!-- release-docs:install-brew-target:start -->
 The tap can lag a newly published release while its formula update is reviewed.
 After adding the tap, run `brew info gitstore-dev/cli/gitstore` and confirm it
-offers `0.1.0-alpha.8` before installing or upgrading. If it still offers an older
+offers `0.1.0-alpha.9` before installing or upgrading. If it still offers an older
 version, use the matching npm, APT or DNF package below, or wait for the formula update.
 <!-- release-docs:install-brew-target:end -->
 
@@ -55,14 +55,14 @@ uses prebuilt binaries. APT and DNF are alternatives that do not require a compi
 ## APT — Ubuntu
 
 <!-- release-docs:install-deb:start -->
-Download the alpha.8 package for your architecture and install it:
+Download the alpha.9 package for your architecture and install it:
 
 ```sh
 # Choose amd64 (x86_64) or arm64 explicitly.
 gitstore_arch=amd64
 case "$gitstore_arch" in
-  amd64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore_0.1.0.alpha.8-1_amd64.deb' ;;
-  arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore_0.1.0.alpha.8-1_arm64.deb' ;;
+  amd64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore_0.1.0.alpha.9-1_amd64.deb' ;;
+  arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore_0.1.0.alpha.9-1_arm64.deb' ;;
   *) printf '%s\n' 'Choose amd64 or arm64' >&2; exit 1 ;;
 esac
 curl --fail --location --output gitstore.deb "$gitstore_url" &&
@@ -77,14 +77,14 @@ the installation command.
 ## DNF — Fedora
 
 <!-- release-docs:install-rpm:start -->
-Install alpha.8 directly from GitHub:
+Install alpha.9 directly from GitHub:
 
 ```sh
 # Choose x86_64 or aarch64 (arm64) explicitly.
 gitstore_arch=x86_64
 case "$gitstore_arch" in
-  x86_64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-0.1.0-0.alpha.8.1.x86_64.rpm' ;;
-  aarch64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-0.1.0-0.alpha.8.1.aarch64.rpm' ;;
+  x86_64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-0.1.0-0.alpha.9.1.x86_64.rpm' ;;
+  aarch64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-0.1.0-0.alpha.9.1.aarch64.rpm' ;;
   *) printf '%s\n' 'Choose x86_64 or aarch64' >&2; exit 1 ;;
 esac
 sudo dnf install "$gitstore_url"
@@ -103,10 +103,10 @@ With Node.js and npm installed, select the package for your OS and processor:
 # Choose darwin-arm64, darwin-x64, linux-arm64 or linux-x64 explicitly.
 gitstore_platform=darwin-arm64
 case "$gitstore_platform" in
-  darwin-arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-npm-0.1.0-alpha.8-darwin-arm64.tgz' ;;
-  darwin-x64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-npm-0.1.0-alpha.8-darwin-x64.tgz' ;;
-  linux-arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-npm-0.1.0-alpha.8-linux-arm64.tgz' ;;
-  linux-x64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.8/gitstore-npm-0.1.0-alpha.8-linux-x64.tgz' ;;
+  darwin-arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-npm-0.1.0-alpha.9-darwin-arm64.tgz' ;;
+  darwin-x64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-npm-0.1.0-alpha.9-darwin-x64.tgz' ;;
+  linux-arm64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-npm-0.1.0-alpha.9-linux-arm64.tgz' ;;
+  linux-x64) gitstore_url='https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.9/gitstore-npm-0.1.0-alpha.9-linux-x64.tgz' ;;
   *) printf '%s\n' 'Choose a supported OS and processor' >&2; exit 1 ;;
 esac
 npm install --global --ignore-scripts --prefix "$HOME/.local" "$gitstore_url"
@@ -130,7 +130,7 @@ gitstored --version
 ```
 
 <!-- release-docs:install-version:start -->
-Both commands should report `0.1.0-alpha.8`. These checks do not start services,
+Both commands should report `0.1.0-alpha.9`. These checks do not start services,
 download images or require credentials.
 <!-- release-docs:install-version:end -->
 
@@ -198,7 +198,7 @@ manager. A downgrade may be unable to read data written by a newer version.
 ## Optional download verification
 
 <!-- release-docs:install-verification:start -->
-The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.8) provides `SHA256SUMS` checksums and one shared
+The [release page](https://github.com/gitstore-dev/cli/releases/tag/v0.1.0-alpha.9) provides `SHA256SUMS` checksums and one shared
 `release.sigstore.jsonl` attestation bundle for the published packages and inventories.
 With GitHub CLI installed, download a package and the bundle for its release, then verify:
 
