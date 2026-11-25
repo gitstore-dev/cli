@@ -8,6 +8,7 @@ services:
       - -ec
       - |
         /bootstrap/api gitctl users add --file /config/users.yaml --username admin --password-stdin < /bootstrap/admin-password
+        chmod 644 /config/users.yaml
         /bootstrap/api gitctl generate-signing-key --private-key-path /run/api-issuer/serviceaccount-signing-key
         chown 65532:65532 /run/api-issuer/serviceaccount-signing-key
         /bootstrap/api gitctl generate-signing-key --private-key-path /run/controller-secrets/controller-key \

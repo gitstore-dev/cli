@@ -43,6 +43,10 @@ def main():
             sensitive.append(secret)
             config = config.replace(marker, secret)
         protected(state / 'config/gitstore.toml', config)
+        if not pinned:
+            # The runtime uses UID 65532. The parent temporary directory remains
+            # private on the host; only the explicitly mounted config is readable.
+            (state / 'config/gitstore.toml').chmod(0o644)
         shutil.copyfile(FIXTURE / 'policy.yaml', state / 'config/policy.yaml')
         env = dict(os.environ, GITSTORE_CI_STATE=str(state))
         if pinned:
