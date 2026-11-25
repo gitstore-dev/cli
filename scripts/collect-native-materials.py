@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 from urllib.error import HTTPError
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'runtime/packaging'))
@@ -42,9 +42,10 @@ def digest(data):
 def download(url):
     if not url.startswith('https://'):
         raise ValueError('source material must use public HTTPS')
+    request = Request(url, headers={'User-Agent': 'gitstore-release-builder/1.0'})
     for attempt in range(3):
         try:
-            with urlopen(url,timeout=60) as response:
+            with urlopen(request,timeout=60) as response:
                 if not response.url.startswith('https://'):
                     raise ValueError('source redirect left HTTPS')
                 data = response.read(512*1024*1024+1)

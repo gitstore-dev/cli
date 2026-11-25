@@ -27,7 +27,10 @@ class Downloads(unittest.TestCase):
         with patch.object(materials, 'urlopen', side_effect=[self.error(503), self.response()]) as request, \
                 patch.object(materials.time, 'sleep') as sleep:
             self.assertEqual(materials.download(self.url), b'pinned source bytes')
-            self.assertEqual(request.call_args_list, [unittest.mock.call(self.url, timeout=60)]*2)
+            selected = request.call_args.args[0]
+            self.assertEqual(selected.full_url, self.url)
+            self.assertEqual(selected.get_header('User-agent'), 'gitstore-release-builder/1.0')
+            self.assertEqual(request.call_args_list, [unittest.mock.call(selected, timeout=60)]*2)
             sleep.assert_called_once_with(1)
 
     def test_persistent_transient_failure_is_bounded(self):
@@ -39,7 +42,7 @@ class Downloads(unittest.TestCase):
             self.assertEqual(sleep.call_args_list, [unittest.mock.call(1), unittest.mock.call(2)])
 
     def test_permanent_error_and_https_downgrade_are_not_retried(self):
-        for result, expected in ((self.error(404), HTTPError),
+        for result, expected in ((self.error(403), HTTPError), (self.error(404), HTTPError),
                                  (self.response('http://example.invalid/source'), ValueError)):
             with self.subTest(result=result), patch.object(materials, 'urlopen', side_effect=[result]) as request, \
                     patch.object(materials.time, 'sleep') as sleep:
