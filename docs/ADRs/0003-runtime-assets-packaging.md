@@ -2,7 +2,7 @@
 
 **Status**: accepted (architecture and bounded evaluation plan).
 **Date**: 2026-10-27. **Owner**: CLI runtime/distribution maintainers.
-**Updated**: 2026-11-03 — clarify CLI attestation scope and library-first, host-first/on-demand dependency delivery.
+**Updated**: 2026-11-25 — record the macOS code-signing decision (unsigned/ad-hoc releases) and its credential-store consequences; earlier: 2026-11-03 — clarify CLI attestation scope and library-first, host-first/on-demand dependency delivery.
 **Evidence**: EVD-001, EVD-002, EVD-022, EVD-023; official sources below.
 **Dependencies**: DEP-012, DEP-013; ADR-0002 ownership is mandatory.
 
@@ -216,3 +216,54 @@ pins repository identity, workflow, source and digest and rejects the unsigned
 development `gs`. No own signed release positive or trusted release workflow has
 run. This is policy verification, not publication approval, and adds no runtime
 dependency on `gh` or upstream image attestations.
+
+## 2026-11-25 macOS code-signing checkpoint
+
+**Observed.** The released `v0.1.0-alpha.9` darwin-arm64 `gs` is ad-hoc,
+linker-signed (`codesign -dv`: `Signature=adhoc`, `TeamIdentifier=not set`) with a
+content-derived identifier (`gs-<hash>`), so its code identity changes with every
+build. On one maintainer machine, `gs auth login` and `gs auth status` failed with
+`OS credential store unavailable or access denied` while the login keychain was
+unlocked. Deleting the existing `dev.gitstore.gs` item (created 2026-11-14 by an
+earlier build) and logging in again fixed it.
+
+**Inferred, not verified.** The item's access list named the earlier build and not
+the new one, and `gs` disabled Keychain prompts, so macOS returned a denial instead
+of asking. The item was deleted before its access list was inspected, so the cause
+is consistent with the evidence rather than proven. Whether Homebrew re-signs or
+relocates the binary on install was not checked.
+
+**Decision.** Release binaries stay ad-hoc signed. The project has no Apple
+Developer Program membership, and a Developer ID signature, hardened runtime or
+notarization are not available at this stage. Option set considered:
+
+| Option | Fixes cross-release Keychain access | Status |
+|---|---|---|
+| Developer ID Application certificate, optionally notarized | Yes, via a stable designated requirement on the Team ID | Deferred until funding exists |
+| Self-managed signing certificate | Probably, by pinning the certificate hash; untested | Rejected: weak trust, conflicts with the DEP-013 provenance emphasis |
+| Ad-hoc with a fixed identifier (`codesign -s - -i <id>`) | No: the ad-hoc designated requirement is the code-directory hash, which still changes per build | Rejected: no effect |
+| Ad-hoc, unchanged (current) | No | Accepted, with the mitigations below |
+
+**Consequences and mitigations.**
+
+- A `brew upgrade` or any new build can orphan a stored credential. `gs` must say so
+  and give the recovery steps, not only report a generic denial.
+- Keychain authorization dialogs are allowed only for interactive use: not under
+  `--non-interactive`/`GITSTORE_NO_INPUT` and not when stderr is not a terminal.
+  Approving a dialog adds the current build to the item's access list; the next
+  build prompts again. Headless, CI and agent use fail closed and use an explicit
+  protected credential file.
+- The runtime credential broker path keeps prompts disabled unconditionally.
+- Attestation (above) is unaffected: it covers the final packaged bytes and does not
+  depend on Apple signing. It does not make the binary acceptable to Gatekeeper for
+  quarantined downloads.
+
+**Revisit** when a Developer ID certificate is affordable. Sign after all binary
+modification and before packaging and attestation, then confirm the designated
+requirement is identical across two consecutive builds and survives Homebrew
+installation. The first signed release will still orphan credentials stored by
+ad-hoc builds; its release notes must say so.
+
+**Not verified.** The interactive Keychain dialog on a mismatched item has not been
+exercised in a GUI session by automated tests; only the error classification is
+unit-tested.
