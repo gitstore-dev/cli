@@ -36,7 +36,8 @@ def download(url,digest,normalization=None):
     parsed = urlsplit(url)
     if parsed.scheme != 'https' or parsed.username or parsed.password:
         raise ValueError('select a reviewed public HTTPS source')
-    with urllib.request.urlopen(url, timeout=60) as response:
+    request = urllib.request.Request(url, headers={'User-Agent': 'gitstore-release-builder/1.0'})
+    with urllib.request.urlopen(request, timeout=60) as response:
         if not response.url.startswith('https://'):
             raise ValueError('source download redirected outside HTTPS')
         payload = response.read(512 * 1024 * 1024 + 1)
