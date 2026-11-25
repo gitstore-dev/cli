@@ -6,6 +6,7 @@ host qualification, signatures, tags, release uploads or package registry writes
 """
 import argparse
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,8 @@ import platform
 import shutil
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 import tomllib
 from urllib.parse import urlsplit
@@ -32,16 +35,39 @@ def run(*args):
     return subprocess.run(args, cwd=ROOT, check=True, capture_output=False)
 
 
+# Transient upstream failures only. 403/404 stay fatal, and the pinned digest is
+# checked after the last byte arrives, so a retry can never accept different content.
+RETRYABLE_STATUS = (429, 500, 502, 503, 504)
+DOWNLOAD_ATTEMPTS = 5
+MAX_SOURCE_BYTES = 512 * 1024 * 1024
+
+
+def read_source(url):
+    request = urllib.request.Request(url, headers={'User-Agent': 'gitstore-release-builder/1.0'})
+    for attempt in range(DOWNLOAD_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                if not response.url.startswith('https://'):
+                    raise ValueError('source download redirected outside HTTPS')
+                return response.read(MAX_SOURCE_BYTES + 1)
+        except urllib.error.HTTPError as error:
+            reason = f'HTTP {error.code}'
+            retryable = error.code in RETRYABLE_STATUS
+            error.close()
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
+            reason = type(error).__name__
+            retryable = True
+        if not retryable or attempt == DOWNLOAD_ATTEMPTS - 1:
+            raise RuntimeError(f'source download failed ({reason}) after {attempt + 1} attempt(s): {url}')
+        time.sleep(2 ** (attempt + 1))
+
+
 def download(url,digest,normalization=None):
     parsed = urlsplit(url)
     if parsed.scheme != 'https' or parsed.username or parsed.password:
         raise ValueError('select a reviewed public HTTPS source')
-    request = urllib.request.Request(url, headers={'User-Agent': 'gitstore-release-builder/1.0'})
-    with urllib.request.urlopen(request, timeout=60) as response:
-        if not response.url.startswith('https://'):
-            raise ValueError('source download redirected outside HTTPS')
-        payload = response.read(512 * 1024 * 1024 + 1)
-    if len(payload) > 512 * 1024 * 1024:
+    payload = read_source(url)
+    if len(payload) > MAX_SOURCE_BYTES:
         raise ValueError('reviewed source exceeds bounds')
     payload = normalize_source(payload,normalization)
     if hashlib.sha256(payload).hexdigest() != digest:
