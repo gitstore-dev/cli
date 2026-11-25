@@ -88,7 +88,10 @@ Make commits using your Git-compatible editor/client, then submit them:
 gs repository sync --remote gitstore --ref main
 ```
 
-Sync requires a clean worktree, an existing remote branch and fast-forward history.
+Sync requires a clean worktree and fast-forward history. An untracked local branch
+can create the first branch on an empty remote, or target the sole remote branch
+when its name matches. Otherwise specify `--ref` or configure an upstream. Sync
+does not change branch configuration.
 It does not commit, merge, rebase, reset or force-push. A remote name alone does not
 identify the installation: selection uses the configured public URLs. Ambiguous
 targets need an explicit repository or remote.

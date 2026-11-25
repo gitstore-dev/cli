@@ -504,6 +504,7 @@ pub fn sync(
     let (name, target, push_url) = candidates.remove(0);
     let head = lib(repo.head())?;
     let local = lib(head.peel_to_commit())?.id();
+    let mut implicit_untracked = false;
     let full_ref = if let Some(value) = &e.context.git_ref {
         if value.starts_with("refs/") {
             value.clone()
@@ -516,13 +517,30 @@ pub fn sync(
         }
         let branch = lib(head.shorthand())?;
         let cfg = lib(repo.config())?;
-        let upstream_remote = lib(cfg.get_string(&format!("branch.{branch}.remote")))?;
-        if upstream_remote != name {
-            return Err(Error::usage(
-                "Branch upstream does not match selected remote; use explicit --ref",
-            ));
+        match cfg.get_string(&format!("branch.{branch}.remote")) {
+            Ok(upstream_remote) if upstream_remote == name => {
+                lib(cfg.get_string(&format!("branch.{branch}.merge")))?
+            }
+            Ok(_) => {
+                return Err(Error::usage(
+                    "Branch upstream does not match selected remote; use explicit --ref",
+                ));
+            }
+            Err(error) if error.code() == ErrorCode::NotFound => {
+                match cfg.get_string(&format!("branch.{branch}.merge")) {
+                    Err(error) if error.code() == ErrorCode::NotFound => {}
+                    Ok(_) => {
+                        return Err(Error::usage(
+                            "Incomplete branch upstream; use explicit --ref",
+                        ));
+                    }
+                    Err(error) => return Err(failure(error)),
+                }
+                implicit_untracked = true;
+                format!("refs/heads/{branch}")
+            }
+            Err(error) => return Err(failure(error)),
         }
-        lib(cfg.get_string(&format!("branch.{branch}.merge")))?
     };
     if !full_ref.starts_with("refs/heads/") || !git2::Reference::is_valid_name(&full_ref) {
         return Err(Error::usage("Sync target must be a valid branch ref"));
@@ -531,20 +549,49 @@ pub fn sync(
     let mut remote = lib(repo.remote_anonymous(&target.url))?;
     let transport = Transport::new(e, cli.timeout(), vec![target.url.clone(), push_url.clone()])?;
     transport.timeout()?;
-    let mut fetch = transport.fetch(&target.url);
-    let refspec = format!("+{full_ref}:{tracking}");
-    let result = remote.fetch(&[&refspec], Some(&mut fetch), None);
-    drop(fetch);
-    transport.result(result, false)?;
-    let old = lib(repo.find_reference(&tracking))?
-        .target()
-        .ok_or_else(|| Error::remote("Missing fetched commit"))?;
-    if old == local {
+    let advertised = (|| {
+        let connection = remote.connect_auth(
+            git2::Direction::Fetch,
+            Some(transport.callbacks(None)),
+            None,
+        )?;
+        let heads = connection.list()?;
+        let selected = heads
+            .iter()
+            .find(|head| head.name() == full_ref)
+            .map(|head| head.oid());
+        let branches = heads
+            .iter()
+            .filter(|head| head.name().starts_with("refs/heads/"))
+            .count();
+        Ok((selected, branches))
+    })();
+    let (advertised, branches) = transport.result(advertised, false)?;
+    if implicit_untracked && branches > 0 && (branches != 1 || advertised.is_none()) {
+        return Err(Error::usage("Branch has no upstream; use explicit --ref"));
+    }
+    let old = if advertised.is_some() {
+        let mut fetch = transport.fetch(&target.url);
+        let refspec = format!("+{full_ref}:{tracking}");
+        let result = remote.fetch(&[&refspec], Some(&mut fetch), None);
+        drop(fetch);
+        transport.result(result, false)?;
+        Some(
+            lib(repo.find_reference(&tracking))?
+                .target()
+                .ok_or_else(|| Error::remote("Missing fetched commit"))?,
+        )
+    } else {
+        None
+    };
+    if old == Some(local) {
         return Ok(
             json!({"submission":"not-submitted","reason":"no-new-commit","revision":local.to_string(),"remote":name,"ref":full_ref}),
         );
     }
-    if !lib(repo.graph_descendant_of(local, old))? {
+    if let Some(old) = old
+        && !lib(repo.graph_descendant_of(local, old))?
+    {
         return Err(Error::new(
             5,
             "CONFLICT",
@@ -555,7 +602,7 @@ pub fn sync(
     let mut pushing = lib(repo.remote_anonymous(&push_url))?;
     let mut options = PushOptions::new();
     options
-        .remote_callbacks(transport.callbacks(Some(old)))
+        .remote_callbacks(transport.callbacks(Some(old.unwrap_or(Oid::ZERO_SHA1))))
         .follow_redirects(RemoteRedirect::None);
     let push_refspec = format!("{local}:{full_ref}");
     let result = pushing.push(&[&push_refspec], Some(&mut options));

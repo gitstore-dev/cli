@@ -262,6 +262,7 @@ fn lost_ack_replays_same_target_backup_and_key_without_retrying_automatically() 
     let replay = wait(fixture.command(&args).spawn().unwrap());
     assert!(replay.status.success());
     let accepted: Value = serde_json::from_slice(&replay.stdout).unwrap();
+    let accepted = &accepted["data"];
     assert_eq!(accepted["operationId"], "original-migration");
     assert_eq!(accepted["idempotencyKey"], "migration-key");
     peer.join().unwrap();
@@ -328,7 +329,7 @@ fn terminal_failure_and_observation_loss_preserve_identity_without_cancellation(
             assert!(output.stdout.is_empty());
         } else {
             assert_eq!(
-                serde_json::from_slice::<Value>(&output.stdout).unwrap()["state"],
+                serde_json::from_slice::<Value>(&output.stdout).unwrap()["data"]["state"],
                 "failed"
             );
         }

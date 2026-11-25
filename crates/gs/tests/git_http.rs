@@ -220,6 +220,86 @@ fn empty_clone_does_not_invent_checked_out_branch() {
 }
 
 #[test]
+fn empty_remote_accepts_first_commit_and_detects_competing_creation() {
+    for race in [false, true] {
+        let h = Harness::new();
+        let bare = h.dir.path().join("empty.git");
+        let server = git2::Repository::init_bare(&bare).unwrap();
+        let http = HttpGit::new(&bare, Auth::None);
+        configure(&h, &http.endpoint, "bearer");
+        let dest = h.dir.path().join("clone");
+        let clone = h.run(&["repository", "clone", "catalog", dest.to_str().unwrap()]);
+        assert!(clone.status.success(), "{}", stderr(&clone));
+        let repo = git2::Repository::open(&dest).unwrap();
+        repo.set_head("refs/heads/main").unwrap();
+        let local = commit(&repo, "first commit\n");
+        if race {
+            let blob = server.blob(b"competing").unwrap();
+            let mut builder = server.treebuilder(None).unwrap();
+            builder.insert("other", blob, 0o100644).unwrap();
+            let tree = server.find_tree(builder.write().unwrap()).unwrap();
+            let sig = git2::Signature::now("Fixture", "fixture@example.test").unwrap();
+            let competing = server.commit(None, &sig, &sig, "race", &tree, &[]).unwrap();
+            *http.advance.lock().unwrap() = Some(competing);
+        }
+        let result = h
+            .cmd()
+            .current_dir(&dest)
+            .args(["repository", "sync", "-o", "json"])
+            .output()
+            .unwrap();
+        if race {
+            assert_eq!(result.status.code(), Some(5), "{}", stderr(&result));
+            assert_ne!(
+                server.find_reference("refs/heads/main").unwrap().target(),
+                Some(local)
+            );
+        } else {
+            assert!(result.status.success(), "{}", stderr(&result));
+            assert_eq!(
+                server.find_reference("refs/heads/main").unwrap().target(),
+                Some(local)
+            );
+            assert!(stdout(&result).contains("accepted"));
+            assert!(
+                repo.config()
+                    .unwrap()
+                    .get_string("branch.main.remote")
+                    .is_err()
+            );
+            let repeated = h
+                .cmd()
+                .current_dir(&dest)
+                .args(["repository", "sync", "-o", "json"])
+                .output()
+                .unwrap();
+            assert!(repeated.status.success(), "{}", stderr(&repeated));
+            assert!(stdout(&repeated).contains("no-new-commit"));
+            server
+                .reference("refs/heads/other", local, false, "fixture extra branch")
+                .unwrap();
+            let advanced = commit(&repo, "local only\n");
+            let ambiguous = h
+                .cmd()
+                .current_dir(&dest)
+                .args(["repository", "sync"])
+                .output()
+                .unwrap();
+            assert_eq!(ambiguous.status.code(), Some(2), "{}", stderr(&ambiguous));
+            assert_eq!(
+                server.find_reference("refs/heads/main").unwrap().target(),
+                Some(local)
+            );
+            assert_eq!(repo.head().unwrap().target(), Some(advanced));
+        }
+        if race {
+            assert_eq!(repo.head().unwrap().target(), Some(local));
+        }
+        assert!(repo.statuses(None).unwrap().is_empty());
+    }
+}
+
+#[test]
 fn behind_divergent_and_concurrent_advancement_preserve_local_history() {
     let (h, http) = setup(Auth::None);
     configure(&h, &http.endpoint, "bearer");

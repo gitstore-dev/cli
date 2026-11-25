@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Breaking changes
+
+- Standard successful JSON and YAML output uses the `cli.gitstore.dev/v2`
+  envelope. Scripts must read command results from `data`. Direct GraphQL,
+  watch NDJSON, authoring Markdown, and stderr diagnostics retain their shapes.
+
+### Fixes
+
+- Sync a first local commit to an empty remote branch, detecting concurrent
+  branch creation without forcing the update.
+
 ## [0.1.0-alpha.9](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9) (2026-11-15)
 
 

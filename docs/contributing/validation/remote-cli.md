@@ -173,3 +173,53 @@ checks include a real CLI clone receiving a sideband message ending with a crede
 prefix, while retaining complete-credential redaction and escape sanitization.
 The local suite passes 46 Rust tests and 38 controlled CLI HTTP requests plus the
 saved collection's two assertions. Native-store and image checks remain opt-in.
+
+## Output v2 development acceptance, 2026-11-25
+
+An isolated quickstart memdb stack used GitStore alpha.10 and the alpha.9 CLI
+contract profile. Static-user login, namespace/repository creation and a pair
+of CategoryTaxonomy creates from the `gitstore-data` Product Add-Ons branch
+succeeded. Namespace reads and a one-item category page were inspected in table,
+JSON and YAML; the page reported a next page and retained the sample's Unicode,
+multiline body, hierarchy and numeric fields. A YAML numeric serialization
+defect found during this check was corrected and the page was rechecked.
+
+The categories were submitted through GraphQL in that run. Deletion of both
+categories, repository and namespace returned
+`TERMINATION_STARTED`; completion was not observed before the isolated stack
+was stopped. Its volumes remain. This evidence is development acceptance only.
+
+A separate stack was built from alpha.11 tag commit
+`b9da925e3401b9d55713ff4620262a5c654b3740` because the corresponding image
+tag was unavailable. Its API debug image had a test-only `gitctl` wrapper for
+quickstart compatibility. Two unmodified namespace-free sample manifests were
+committed in a disposable clone and pushed with Git; `gs repository sync` could
+not bootstrap the empty branch and returned `NOT_FOUND` before submission. The
+server admitted both categories and a one-item page was inspected in all three
+formats, including `hasNextPage: true`, resolved hierarchy and Unicode body.
+Deletion submissions were accepted and a subsequent namespace read returned
+`NOT_FOUND`; the isolated containers were removed and their volumes retained.
+
+On 2026-11-25, a fresh isolated stack from the same alpha.11 source verified
+first-branch sync using the CLI. An empty clone received one committed sample
+manifest; `gs repository sync` reported transport acceptance at revision
+`1af034720b24cca892671fbdf3590ef3d7d3a039`, a second sync reported
+`no-new-commit`, and a GraphQL read observed the category at that revision.
+The local branch configuration remained unchanged. The disposable category,
+repository and namespace were submitted for deletion; the namespace was then
+observed absent. The stack was stopped with its volumes retained.
+
+A separate two-manifest attempt reached alpha.11 receive-pack but failed with
+`ResourceExhausted: decode delta entry`; a subsequent authenticated clone saw
+an empty branch. This is a server-side pack validation limitation observed in
+that fixture, not evidence that the two-manifest sync succeeded. The CLI reported
+the submission as unknown and retained the local revision.
+
+The same two-manifest commit was retried against a fresh isolated quickstart
+stack using the locally fixed alpha.11 Git service. `gs repository sync`
+reported accepted transport for revision
+`77e3534a15a536a4951d4c9cfe9e4cf1a546f36e`; subsequent reads observed both
+categories at that revision, with the parent/child path resolved. The Git
+service fix resolves in-pack reference-delta bases through the quarantine
+index while retaining the blob-size check. The disposable namespace was
+observed absent after cleanup; test volumes were retained.
