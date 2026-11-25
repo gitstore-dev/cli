@@ -30,14 +30,14 @@
     "sourceSha256": "acb1e6f5d832484bf6d32b681e858c38add8b2acdfd42ac5df24b8afb46552b4"
   },
   {
-    "name": "libsystemd@255.4-1ubuntu8.18",
-    "sha256": "36144531da477218aaa4693452a087be55241e2014e2a15f4e6988fef34b74b6",
+    "name": "libsystemd@255.4-1ubuntu8.19",
+    "sha256": "7d0e15fba18d6bb1fd7289b35f0c6d74afdfdf0e3dadf6eda543088e7b660b1b",
     "license": "LGPL-2.1-or-later",
-    "source": "https://archive.ubuntu.com/ubuntu/pool/main/s/systemd/systemd_255.4-1ubuntu8.18.dsc",
+    "source": "https://archive.ubuntu.com/ubuntu/pool/main/s/systemd/systemd_255.4-1ubuntu8.19.dsc",
     "delivery": "static",
     "systemArchive": "libsystemd.a",
-    "sourceMaterial": "sources/distro/systemd/systemd_255.4-1ubuntu8.18.dsc",
-    "sourceSha256": "04154737afced0898fc7966b85e88505fb3a17f46c8c7079576d022cdeb67304"
+    "sourceMaterial": "sources/distro/systemd/systemd_255.4-1ubuntu8.19.dsc",
+    "sourceSha256": "4a6620bfc005468d25887e815a9a4396ba9c43c0af0857d47304d2e73f779d3f"
   },
   {
     "name": "libseccomp@2.5.5-1ubuntu3.1",
