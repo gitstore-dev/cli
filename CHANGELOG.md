@@ -13,6 +13,21 @@
 - Sync a first local commit to an empty remote branch, detecting concurrent
   branch creation without forcing the update.
 
+## [0.1.0-alpha.10](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10) (2026-11-25)
+
+
+### Features
+
+* **cli:** refresh output and support first-branch sync ([d6052c8](https://github.com/gitstore-dev/cli/commit/d6052c8e5c6606451bae01cdb62ff284a3816b98))
+
+
+### Bug Fixes
+
+* **build:** retry transient source download failures in release builds ([8c7e844](https://github.com/gitstore-dev/cli/commit/8c7e84427721bfe6f0ba18094ae66e345b9e49e8))
+* **cli:** diagnose denied Keychain credentials and allow interactive approval ([e74d1fe](https://github.com/gitstore-dev/cli/commit/e74d1fe71f7d04a8815c152cd79d996ae5b925c3))
+* preserve released website and support nonroot CI ([dd40d5c](https://github.com/gitstore-dev/cli/commit/dd40d5ca5ceca26ada0c562b919f19aa5d8945bc))
+* repair output v2 CI and reduce redundant runs ([d1c10d0](https://github.com/gitstore-dev/cli/commit/d1c10d010b6b8aa646ddc3eb4bf80a1c342dfcca))
+
 ## [0.1.0-alpha.9](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9) (2026-11-15)
 
 
