@@ -44,6 +44,12 @@ list, show, switch and validate them without any server or daemon running.
 5. **Given** a selected CLI-owned stored credential, **When** local logout runs,
    **Then** that credential is removed and remote invalidation is reported unsupported;
    unrelated identities and caller-managed external credential files are untouched.
+6. **Given** a stored macOS Keychain credential the running `gs` build may not use
+   (for example one written by a different ad-hoc-signed release), **When** a
+   credential operation runs, **Then** an interactive invocation may show the
+   Keychain authorization dialog, while `--non-interactive`, `GITSTORE_NO_INPUT` or a
+   non-terminal stderr fails without prompting. The error names the denied stored
+   credential as the cause with its recovery steps and never prints the credential.
 
 ### User Story 2 — Run explicit operations without the Admin UI (Priority: P1)
 
@@ -115,7 +121,8 @@ unchanged local history on all rejected cases.
 ### Edge Cases
 
 - Empty selectors; malformed config; interrupted selection persistence; missing
-  keychain entry; unavailable credential store; unsafe credential file permissions.
+  keychain entry; unavailable credential store; stored credential denied to this
+  binary after an upgrade; unsafe credential file permissions.
 - Proxy endpoint prefixes, cross-installation overrides and redirects that could
   expose credentials to another host.
 - Invalid formats, multiple stdin consumers, conflicting GraphQL input modes,
@@ -187,6 +194,13 @@ unchanged local history on all rejected cases.
 - **FR-018**: Implement clone/fetch/push and repository inspection through a maintained
   library, without wrapping C Git or another Git executable. End users must not
   require a separately installed Git executable.
+
+- **FR-019**: Allow the macOS Keychain authorization dialog only when
+  `--non-interactive`/`GITSTORE_NO_INPUT` is not in effect and stderr is a terminal;
+  never for the runtime credential broker. Distinguish a denied existing item from an
+  absent or unavailable store, and state the cause and recovery (remove the stored
+  item or use an explicit credential file) without exposing secrets. Release
+  binaries are ad-hoc signed (ADR 0003), so denial after an upgrade is expected.
 
 ### Scope and dependency decisions
 

@@ -55,13 +55,55 @@ pub trait Store {
     }
 }
 pub struct Native;
+/// Whether the macOS Keychain may show its authorization dialog. Off unless
+/// `allow_keychain_interaction` is called, so library and daemon paths fail closed.
+#[cfg(target_os = "macos")]
+static KEYCHAIN_INTERACTION: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+/// Permit the Keychain authorization dialog for this process. Callers enable it
+/// only for interactive use; `--non-interactive` must never reach this.
+pub fn allow_keychain_interaction(allowed: bool) {
+    #[cfg(target_os = "macos")]
+    KEYCHAIN_INTERACTION.store(allowed, std::sync::atomic::Ordering::Relaxed);
+    #[cfg(not(target_os = "macos"))]
+    let _ = allowed;
+}
+#[cfg(target_os = "macos")]
+const KEYCHAIN_ACCESS_DENIED: &str = "OS credential store denied access to an existing gs credential. Release binaries are ad-hoc signed, so a credential written by another gs build is not readable by this one. Remove it with 'security delete-generic-password -s dev.gitstore.gs' (this removes every stored gs session) and log in again, or use --credential-file";
+/// Keychain statuses meaning an item exists but this binary may not use it:
+/// errSecUserCanceled, errSecNoAccessForItem, errSecAuthFailed and
+/// errSecInteractionNotAllowed (prompts are disabled for non-interactive use).
+#[cfg(target_os = "macos")]
+fn access_denied(status: i32) -> bool {
+    matches!(status, -128 | -25243 | -25293 | -25308)
+}
+#[cfg(target_os = "macos")]
+fn keychain_status(err: &keyring_core::error::Error) -> Option<i32> {
+    use keyring_core::error::Error as E;
+    match err {
+        E::PlatformFailure(e) | E::NoStorageAccess(e) => e
+            .downcast_ref::<security_framework::base::Error>()
+            .map(|e| e.code()),
+        _ => None,
+    }
+}
+#[cfg(target_os = "macos")]
+fn keychain_error(err: &keyring_core::error::Error, generic: &str) -> Error {
+    match keychain_status(err) {
+        Some(status) if access_denied(status) => Error::auth(KEYCHAIN_ACCESS_DENIED),
+        _ => Error::auth(generic),
+    }
+}
 #[cfg(target_os = "macos")]
 fn entry(key: &str) -> Result<keyring_core::Entry> {
     #[cfg(target_os = "macos")]
     let store = {
-        // CLI credential access must fail instead of opening a Keychain UI prompt.
-        let status =
-            unsafe { security_framework_sys::keychain::SecKeychainSetUserInteractionAllowed(0) };
+        // Non-interactive CLI credential access must fail instead of opening a
+        // Keychain UI prompt; interactive use may approve the dialog once.
+        let allowed = KEYCHAIN_INTERACTION.load(std::sync::atomic::Ordering::Relaxed);
+        let status = unsafe {
+            security_framework_sys::keychain::SecKeychainSetUserInteractionAllowed(allowed as u8)
+        };
         if status != 0 {
             return Err(Error::auth("Cannot disable credential-store interaction"));
         }
@@ -78,7 +120,7 @@ impl Store for Native {
         {
             entry(key)?
                 .set_password(value.expose())
-                .map_err(|_| Error::auth("OS session persistence denied or unavailable"))
+                .map_err(|e| keychain_error(&e, "OS session persistence denied or unavailable"))
         }
         #[cfg(target_os = "linux")]
         {
@@ -213,7 +255,8 @@ impl Store for Native {
             match entry(key)?.get_password() {
                 Ok(s) => Secret::new(s).map(Some),
                 Err(keyring_core::error::Error::NoEntry) => Ok(None),
-                Err(_) => Err(Error::auth(
+                Err(e) => Err(keychain_error(
+                    &e,
                     "OS credential store unavailable or access denied",
                 )),
             }
@@ -236,7 +279,7 @@ impl Store for Native {
             match entry(key)?.delete_credential() {
                 Ok(()) => Ok(true),
                 Err(keyring_core::error::Error::NoEntry) => Ok(false),
-                Err(_) => Err(Error::auth("Cannot remove OS credential entry")),
+                Err(e) => Err(keychain_error(&e, "Cannot remove OS credential entry")),
             }
         }
         #[cfg(not(any(target_os = "macos", target_os = "linux")))]
@@ -323,5 +366,32 @@ mod tests {
     fn secret_is_single_line() {
         assert!(Secret::new("a\nb".into()).is_err());
         assert_eq!(Secret::new("token\r\n".into()).unwrap().expose(), "token");
+    }
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn keychain_access_denied_statuses_are_classified() {
+        for status in [-128, -25243, -25293, -25308] {
+            assert!(access_denied(status), "{status}");
+        }
+        // errSecItemNotFound and errSecNotAvailable are not access denials.
+        for status in [-25300, -25291, 0] {
+            assert!(!access_denied(status), "{status}");
+        }
+    }
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn keychain_denial_reports_recovery_and_other_errors_stay_generic() {
+        let denied = keyring_core::error::Error::PlatformFailure(Box::new(
+            security_framework::base::Error::from_code(-25308),
+        ));
+        let e = keychain_error(&denied, "generic");
+        assert!(e.message.contains("security delete-generic-password"));
+        assert!(e.message.contains("--credential-file"));
+        let other = keyring_core::error::Error::PlatformFailure(Box::new(
+            security_framework::base::Error::from_code(-25291),
+        ));
+        assert_eq!(keychain_error(&other, "generic").message, "generic");
+        let opaque = keyring_core::error::Error::PlatformFailure("x".into());
+        assert_eq!(keychain_error(&opaque, "generic").message, "generic");
     }
 }
