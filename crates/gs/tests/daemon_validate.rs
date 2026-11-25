@@ -99,6 +99,7 @@ fn readonly_native_preflight_and_local_selection() {
         assert!(!output.stdout.is_empty());
         if format == "json" {
             let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+            let plan = &plan["data"];
             assert_eq!(plan["valid"], false);
             assert_eq!(plan["effectivePlan"]["profileId"], "core");
             let diagnostic = plan["diagnostics"].to_string();
@@ -108,6 +109,7 @@ fn readonly_native_preflight_and_local_selection() {
     }
     let output = manager.run(&["git", "config", "validate", "-o", "json"]);
     let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let plan = &plan["data"];
     assert_eq!(plan["diagnostics"][0]["code"], "PROFILE_NOT_FOUND");
     for directory in ["config", "state", "cache"] {
         assert_eq!(
@@ -144,6 +146,7 @@ fn local_config_precedence_and_secret_safe_errors() {
         String::from_utf8_lossy(&output.stderr)
     );
     let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let plan = &plan["data"];
     assert_eq!(plan["effectivePlan"]["profileId"], "core");
     assert_eq!(plan["effectivePlan"]["datastore"], "scylladb");
     assert_eq!(

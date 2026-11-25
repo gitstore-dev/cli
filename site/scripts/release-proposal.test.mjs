@@ -12,6 +12,9 @@ async function fixture(){
  const baselineAudit=JSON.parse(await read('site/content-audit.json'));
  const sources=Object.fromEntries(await Promise.all(auditedSourcePaths.map(async p=>[p,await read(p)])));
  Object.assign(sources,renderReleaseContent({release,sources}));
+ // The fixture represents a reviewed snapshot of the current input, even when
+ // a PR intentionally changes authored documentation since the last release.
+ baselineAudit.sourceSha256=sourceHashes(sources);
  return {repoRoot:root,release,baselineAudit,sources,candidateAudit:baselineAudit,reference:await read('site/reference/gs.md')};
 }
 test('trusted baseline carries forward unchanged capabilities; generated versions do not alter prose hashes',async()=>{

@@ -135,7 +135,18 @@ impl Fixture {
         if output.stdout.is_empty() {
             Value::Null
         } else {
-            serde_json::from_slice(&output.stdout).unwrap()
+            let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+            if code == 0 && args.first() != Some(&"api") {
+                assert_eq!(value["apiVersion"], "cli.gitstore.dev/v2");
+                assert!(value["kind"].is_string());
+                if args.first() == Some(&"read") {
+                    value["data"]["resource"].clone()
+                } else {
+                    value["data"].clone()
+                }
+            } else {
+                value
+            }
         }
     }
     fn clone_to(&self, name: &str, extra: &[&str]) -> Repository {
