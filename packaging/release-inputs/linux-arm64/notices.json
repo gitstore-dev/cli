@@ -6423,12 +6423,12 @@
       }
     },
     {
-      "id": "libsystemd@255.4-1ubuntu8.18",
+      "id": "libsystemd@255.4-1ubuntu8.19",
       "license": "LGPL-2.1-or-later",
-      "source": "https://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/systemd_255.4-1ubuntu8.18.dsc",
+      "source": "https://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/systemd_255.4-1ubuntu8.19.dsc",
       "licenses": [
         {
-          "path": "licenses/distro-systemd@255.4-1ubuntu8.18/LICENSE-0.txt",
+          "path": "licenses/distro-systemd@255.4-1ubuntu8.19/LICENSE-0.txt",
           "sha256": "a7d06854714a1ca99f6dbd1a1641dde5bcf28635be149f6554449618f8f427f3"
         },
         {

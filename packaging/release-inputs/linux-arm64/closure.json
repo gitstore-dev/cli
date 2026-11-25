@@ -30,14 +30,14 @@
     "dependencyPin": "sqlite"
   },
   {
-    "name": "libsystemd@255.4-1ubuntu8.18",
-    "sha256": "50169d59e85dc1b7e44b73fcaadab95f3a3897d1b6ac4a976fae5a6690b5f7ba",
+    "name": "libsystemd@255.4-1ubuntu8.19",
+    "sha256": "d6045b5ee6427ce0f9b70ccc9e534f510c28f99ab66977ec462a6b36c099242f",
     "license": "LGPL-2.1-or-later",
-    "source": "https://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/systemd_255.4-1ubuntu8.18.dsc",
+    "source": "https://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/systemd_255.4-1ubuntu8.19.dsc",
     "delivery": "static",
     "systemArchive": "libsystemd.a",
-    "sourceMaterial": "sources/distro/systemd/systemd_255.4-1ubuntu8.18.dsc",
-    "sourceSha256": "04154737afced0898fc7966b85e88505fb3a17f46c8c7079576d022cdeb67304"
+    "sourceMaterial": "sources/distro/systemd/systemd_255.4-1ubuntu8.19.dsc",
+    "sourceSha256": "4a6620bfc005468d25887e815a9a4396ba9c43c0af0857d47304d2e73f779d3f"
   },
   {
     "name": "libseccomp@2.5.5-1ubuntu3.1",
