@@ -268,6 +268,7 @@ fn lost_ack_rerun_preserves_key_intent_and_original_operation() {
         String::from_utf8_lossy(&replay.stderr)
     );
     let result: Value = serde_json::from_slice(&replay.stdout).unwrap();
+    let result = &result["data"];
     assert_eq!(result["operationId"], "original-operation");
     assert_eq!(result["replayed"], true);
     let changed = wait(
@@ -325,6 +326,7 @@ fn detached_ack_timeout_does_not_submit_cancellation() {
     let replay = wait(f.command(&args).spawn().unwrap());
     assert!(replay.status.success());
     let result: Value = serde_json::from_slice(&replay.stdout).unwrap();
+    let result = &result["data"];
     assert_eq!(result["operationId"], "detached-operation");
     assert_eq!(result["state"], "running");
     peer.join().unwrap();

@@ -175,7 +175,7 @@ pub fn list_request_for_profile(
 pub fn checked(client: &Client, r: &Request, f: Format) -> Result<Value> {
     let reply = client.execute(r)?;
     if let Some(error) = reply.error {
-        output::emit(&reply.body, f)?;
+        output::emit_raw(&reply.body, f)?;
         return Err(error);
     }
     Ok(reply.body)

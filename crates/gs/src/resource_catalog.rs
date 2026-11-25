@@ -164,7 +164,7 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
     };
     let catalog = catalog(profile)?;
     let Some(path) = path else {
-        return output::emit(&catalog, cli.format());
+        return output::emit_kind(&catalog, cli.format(), "CatalogResult");
     };
     let mut parts = path.split('.');
     let kind = parts.next().unwrap_or("");
@@ -178,8 +178,9 @@ pub fn dispatch(cli: &Cli) -> Result<()> {
             Error::usage("Field is unavailable in the selected built-in projection")
         })?;
     }
-    output::emit(
+    output::emit_kind(
         &json!({"origin":"local built-in","profile":profile,"upstreamRevision":catalog["upstreamRevision"],"path":path,"definition":selected}),
         cli.format(),
+        "CatalogResult",
     )
 }

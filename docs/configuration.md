@@ -63,6 +63,10 @@ alpha.9 knowledge and require no configuration, credentials, network or daemon.
 Use their explicit `--profile m0-2026-10-27` option to inspect legacy availability.
 Their output includes the source revision, profile, field types, writable fields
 and implemented operations. Selected context configuration is not consulted.
+Standard JSON and YAML results use the `cli.gitstore.dev/v2` envelope. For
+example, `gs read product example -o json` returns the resource at
+`data.resource`; `gs list product -o json` returns `data.items` and
+`data.pageInfo`. Direct GraphQL and watch streams retain their protocol shapes.
 Arbitrary CRDs, server discovery and author updates remain gated. Typed name/label
 watches are available in this explicit profile; see [watch behavior](watch.md).
 

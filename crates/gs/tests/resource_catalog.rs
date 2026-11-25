@@ -11,6 +11,7 @@ fn builtin_help_is_local_profiled_and_tracks_implemented_operations() {
         let out = h.run(&["api-resources", "--profile", profile, "-o", "json"]);
         assert!(out.status.success(), "{}", stderr(&out));
         let catalog: Value = serde_json::from_slice(&out.stdout).unwrap();
+        let catalog = &catalog["data"];
         assert_eq!(catalog["origin"], "local built-in");
         assert_eq!(catalog["profile"], profile);
         let entries = catalog["resources"].as_array().unwrap();
@@ -30,12 +31,13 @@ fn builtin_help_is_local_profiled_and_tracks_implemented_operations() {
     let out = h.run(&["explain", "product.spec.title", "-o", "json"]);
     assert!(out.status.success(), "{}", stderr(&out));
     let value: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let value = &value["data"];
     assert_eq!(value["definition"]["type"], "String!");
     assert_eq!(value["definition"]["writable"], true);
     let out = h.run(&["explain", "product.status.observedGeneration", "-o", "json"]);
     assert!(out.status.success(), "{}", stderr(&out));
     assert_eq!(
-        serde_json::from_slice::<Value>(&out.stdout).unwrap()["definition"]["writable"],
+        serde_json::from_slice::<Value>(&out.stdout).unwrap()["data"]["definition"]["writable"],
         false
     );
     assert_eq!(

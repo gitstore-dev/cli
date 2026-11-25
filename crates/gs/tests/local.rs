@@ -16,6 +16,7 @@ fn selection_is_atomic_and_reports_sources() {
     let o = h.run(&["context", "show", "-o", "json"]);
     assert!(o.status.success(), "{}", stderr(&o));
     let v: serde_json::Value = serde_json::from_slice(&o.stdout).unwrap();
+    let v = &v["data"];
     assert_eq!(v["account"], "alice");
     assert_eq!(v["sources"]["account"], "context");
     let original = std::fs::read(h.config()).unwrap();
@@ -86,6 +87,7 @@ fn flag_environment_precedence_and_invalid_config() {
         .unwrap();
     assert!(o.status.success());
     let v: serde_json::Value = serde_json::from_slice(&o.stdout).unwrap();
+    let v = &v["data"];
     assert_eq!(v["namespace"], "explicit");
     assert_eq!(v["sources"]["namespace"], "flag");
     let o = h
@@ -95,6 +97,7 @@ fn flag_environment_precedence_and_invalid_config() {
         .output()
         .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&o.stdout).unwrap();
+    let v = &v["data"];
     assert_eq!(v["namespace"], "environment");
     assert_eq!(v["sources"]["namespace"], "environment");
     let original = std::fs::read_to_string(h.config()).unwrap();

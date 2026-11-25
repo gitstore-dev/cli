@@ -77,6 +77,20 @@ write check alone does not prevent a race. Do not substitute a controller-status
 
 `-o`/`--output` accepts json/yaml/table/markdown only where applicable:
 
+The next alpha changes standard successful JSON and YAML output to a
+`cli.gitstore.dev/v2` envelope, ordered `apiVersion`, `kind`, `summary`, `data`.
+Resource reads place the complete resource in `data.resource`; resource lists
+retain `data.items` and `data.pageInfo`. Other commands place their result in
+`data`. Scripts consuming the former top-level fields must migrate. Direct
+GraphQL responses, watch NDJSON, authoring Markdown, and machine-readable stderr
+diagnostics retain their existing shapes.
+The result kinds are `ResourceRead`, `ResourceList`, `MutationResult`,
+`ContextResult`, `ConfigResult`, `AuthResult`, `CatalogResult`,
+`DeploymentResult`, and `OperationResult`. `summary` is a concise projection;
+`data` remains the complete command result. YAML serialization rejects a number
+that cannot be represented without changing its value rather than silently
+rounding it.
+
 | Commands | Default | Applicable formats |
 | --- | --- | --- |
 | Resource read | table | table/json/yaml; markdown when body is exposed, gated by DEP-005. |
@@ -159,7 +173,10 @@ remotes. Fail on no worktree/remote,
 multiple eligible targets, mismatched installation or dirty worktree. No context fallback
 that silently targets another repository.
 
-Fetch the selected remote ref into its remote-tracking ref. Do not modify the worktree
+For an untracked local branch and one eligible remote, infer the branch only when
+the remote has no branches or its sole branch has the same name; otherwise require
+`--ref`. A first push checks that the remote ref is still absent and does not alter
+branch configuration. Fetch an existing selected remote ref into its remote-tracking ref. Do not modify the worktree
 or local branch. If the remote is equal, report no new submission. If remote is an
 ancestor of local, push a normal fast-forward update; if local is behind or histories
 diverge, report conflict and require explicit user Git action. No commit, reset, rebase,

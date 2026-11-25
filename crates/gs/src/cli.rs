@@ -35,6 +35,7 @@ pub struct Cli {
     pub non_interactive: bool,
     #[arg(long,global=true,value_parser=parse_duration)]
     pub timeout: Option<Duration>,
+    /// Output format; JSON and YAML use the v2 result envelope except for raw protocol output.
     #[arg(short = 'o', long, global = true, value_enum)]
     pub output: Option<Format>,
     #[arg(long, global = true)]

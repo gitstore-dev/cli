@@ -126,13 +126,13 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 c.current_context = Some(name.clone());
                 Ok(())
             })?;
-            return output::emit(&json!({"context":name}), cli.format());
+            return output::emit_kind(&json!({"context":name}), cli.format(), "ContextResult");
         }
         Command::Context {
             command: ContextCommand::List,
         } => {
             let c = config::load(&p)?;
-            return output::emit(&json!(c.contexts.iter().map(|(n,cx)|json!({"name":n,"endpoint":cx.endpoint,"account":cx.account,"selected":Some(n)==c.current_context.as_ref()})).collect::<Vec<_>>()),cli.format());
+            return output::emit_kind(&json!(c.contexts.iter().map(|(n,cx)|json!({"name":n,"endpoint":cx.endpoint,"account":cx.account,"selected":Some(n)==c.current_context.as_ref()})).collect::<Vec<_>>()),cli.format(), "ContextResult");
         }
         _ => {}
     }
@@ -210,7 +210,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 cli.timeout(),
             )?;
             let reply = client.execute(request)?;
-            output::emit(&reply.body, cli.format())?;
+            output::emit_raw(&reply.body, cli.format())?;
             return reply.error.map_or(Ok(()), Err);
         }
         Command::Read(args) => {
@@ -312,12 +312,22 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 cli.timeout(),
             )?;
             let (v, error) = authoring::submit(&client, &docs)?;
-            output::emit(&v, cli.format())?;
+            output::emit_kind(&v, cli.format(), "MutationResult")?;
             return error.map_or(Ok(()), Err);
         }
         Command::Repository { command } => git::dispatch(cli, &e, command)?,
         Command::Watch(args) => return watch::dispatch(cli, &e, args),
         _ => return Err(Error::unsupported("M1 remote implementation pending")),
     };
-    output::emit(&value, cli.format())
+    let kind = match &cli.command {
+        Command::Read(_) => "ResourceRead",
+        Command::List(_) => "ResourceList",
+        Command::Delete(_) => "MutationResult",
+        Command::Context { .. } => "ContextResult",
+        Command::Config { .. } => "ConfigResult",
+        Command::Auth { .. } => "AuthResult",
+        Command::Repository { .. } => "OperationResult",
+        _ => "Result",
+    };
+    output::emit_kind(&value, cli.format(), kind)
 }

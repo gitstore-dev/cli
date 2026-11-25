@@ -132,7 +132,19 @@ fn structured_reads_and_pages_preserve_body_metadata_spec_and_status() {
             } else {
                 serde_saphyr::from_str(std::str::from_utf8(&out.stdout).unwrap()).unwrap()
             };
-            assert_eq!(actual, expected);
+            assert_eq!(actual["apiVersion"], "cli.gitstore.dev/v2");
+            assert_eq!(
+                actual["kind"],
+                if list { "ResourceList" } else { "ResourceRead" }
+            );
+            assert_eq!(
+                if list {
+                    &actual["data"]
+                } else {
+                    &actual["data"]["resource"]
+                },
+                &expected
+            );
             assert!(out.stderr.is_empty());
         }
     }
