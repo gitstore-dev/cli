@@ -13,6 +13,13 @@
 - Sync a first local commit to an empty remote branch, detecting concurrent
   branch creation without forcing the update.
 
+## [0.1.0-alpha.11](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11) (2026-11-26)
+
+
+### Bug Fixes
+
+* **test:** unwrap CLI v2 envelopes in the release runtime fixture ([99029e6](https://github.com/gitstore-dev/cli/commit/99029e630d65f065eb5dee0d9c33ae412ffc9366))
+
 ## [0.1.0-alpha.10](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10) (2026-11-25)
 
 
