@@ -202,7 +202,7 @@
         "gs create"
       ],
       "title": "Creation is limited to mapped kinds",
-      "message": "Product/Category creation is supported; Namespace/Repository creation requires the explicit alpha.9 contract. Collection/File creation and arbitrary CRDs remain unavailable. Remote `--wait` is unavailable (DEP-004).",
+      "message": "Product/Category creation is supported; Namespace/Repository creation requires the explicit alpha.9 contract. Collection, File, variant and serviceaccount creation and arbitrary CRDs remain unavailable. Remote `--wait` is unavailable (DEP-004).",
       "evidence": "crates/gs/src/authoring.rs"
     },
     {
@@ -210,7 +210,7 @@
         "gs delete"
       ],
       "title": "Deletion is limited to mapped kinds",
-      "message": "Collection deletion (DEP-002) and File deletion (DEP-007) are unavailable. Accepted deletion starts termination; it does not prove completed cleanup. Remote `--wait` is unavailable (DEP-004).",
+      "message": "Collection deletion (DEP-002), File deletion (DEP-007) and variant or serviceaccount deletion are unavailable. Accepted deletion starts termination; it does not prove completed cleanup. Remote `--wait` is unavailable (DEP-004).",
       "evidence": "crates/gs/src/resources.rs"
     },
     {
@@ -218,15 +218,15 @@
         "gs read"
       ],
       "title": "Profile and export limits",
-      "message": "File ID reads, hydrated YAML and writable `--authoring -o markdown` projections require the explicit alpha.9 contract. Lossy authoring exports and plain Markdown presentation are unavailable. Remote `--wait` is unavailable (DEP-004).",
+      "message": "`variant` reads need the alpha.9 contract, and `serviceaccount` has no single read (use `gs list serviceaccount`). File ID reads, hydrated YAML and writable `--authoring -o markdown` projections require the explicit alpha.9 contract. Lossy authoring exports and plain Markdown presentation are unavailable. Remote `--wait` is unavailable (DEP-004).",
       "evidence": "crates/gs/src/lib.rs"
     },
     {
       "commands": [
         "gs list"
       ],
-      "title": "Bounded lists and unavailable File listing",
-      "message": "File listing is unavailable (DEP-007). Each invocation returns one bounded page, not a full multi-page snapshot. Hydrated YAML requires the explicit alpha.9 contract. Remote `--wait` is unavailable (DEP-004).",
+      "title": "Bounded lists and profile-gated kinds",
+      "message": "`gs list file` and `gs list serviceaccount` require the explicit alpha.12 contract; `variant` lists need alpha.9 or newer. File upload, payload and credential readiness remain unavailable (DEP-007). Each invocation returns one bounded page, not a full multi-page snapshot. Hydrated YAML requires the explicit alpha.9 contract. Remote `--wait` is unavailable (DEP-004).",
       "evidence": "crates/gs/src/resources.rs"
     },
     {
@@ -263,7 +263,7 @@
     "Native core qualification covers Ubuntu 24.04 and Fedora 44 on x86_64 and arm64. macOS is remote/control only.",
     "The managed core runtime pins GitStore alpha.8. Selecting the explicit alpha.9 remote contract does not upgrade local images or establish provider/host qualification.",
     "Remote alpha.9 client paths and optional OIDC retain the source guides' separate controlled/development evidence and qualification caveats.",
-    "Admin, Storefront, browser/device/OIDC discovery, safe author updates, correlated remote waits, Collection mutations/watch, and File upload/list remain gated.",
+    "Admin, Storefront, browser/device/OIDC discovery, safe author updates, correlated remote waits, Collection mutations/watch, and File upload remains gated and File list needs the explicit alpha.12 profile.",
     "Schema 2 records the last reviewed capability baseline independently of generated version/asset prose. Source hashes normalize only marked release blocks; the renderer independently checks every generated block, including root README.md.",
     "Unchanged capability inputs can carry this audit to a later release. Changes to production sources, dependencies, runtime/profile pins, build or qualification inputs require a new reviewed capability baseline; equal parser help alone is insufficient."
   ]

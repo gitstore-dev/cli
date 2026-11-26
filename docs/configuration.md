@@ -45,8 +45,15 @@ For GitStore alpha.9, explicitly select
 including `/admin/graphql`. The legacy `m0-2026-10-27` profile keeps its original
 File selector. The alpha.9 profile supports File name or ID reads, full core
 resource JSON/YAML reads/lists and exact Namespace/Repository creation inputs.
-File IDs need no namespace. There is no File list/write mapping. These client
+File IDs need no namespace. There is no File write mapping. These client
 additions have controlled validation; shipped-version acceptance is still open.
+
+To also list Files and service accounts, select
+`contract_profile = "gitstore-alpha12-2026-11-26"`. It accepts everything the alpha.9
+profile does, plus `gs list file` and `gs list serviceaccount`; `gs list variant` and
+`gs read variant` already work from alpha.9. Typed watches still require the alpha.9
+profile. A command that needs a newer profile than the selected one fails with
+`UNSUPPORTED_CAPABILITY` before any request.
 Selecting the remote contract does not change local runtime image pins.
 
 Use `gs read product NAME --authoring -o markdown` for a writable Markdown
