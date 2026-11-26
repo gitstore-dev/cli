@@ -48,6 +48,8 @@ jobs:
             "$RUNNER_TEMP/release-policy-venv/bin/python" -m unittest discover -s tests/release -v
   control-package:
     name: macOS control pair ${{ matrix.runner }}
+    # Not a required check: run on pull requests, not again in the merge queue.
+    if: github.event_name != 'merge_group'
     strategy:
       fail-fast: false
       matrix:
