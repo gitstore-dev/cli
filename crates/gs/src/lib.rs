@@ -24,7 +24,6 @@ pub mod runtime_credentials;
 pub mod scoped_authoring;
 pub mod watch;
 pub mod watch_checkpoint;
-use clap::Parser;
 use cli::*;
 use credentials::Store;
 use error::{Error, Result};
@@ -35,8 +34,42 @@ pub(crate) fn initialize_http_tls() {
         let _ = rustls::crypto::ring::default_provider().install_default();
     });
 }
+fn namespace_origin(e: &config::Effective) -> String {
+    match e.sources.get("namespace").map(String::as_str) {
+        Some("flag") => "--namespace".into(),
+        Some("environment") => "GITSTORE_NAMESPACE".into(),
+        _ => format!("context \"{}\"", e.name),
+    }
+}
+fn explain_selection_not_found(
+    error: Error,
+    s: &cli::Selection,
+    e: &config::Effective,
+    listing: bool,
+) -> Error {
+    match resources::Kind::parse(&s.kind) {
+        Ok(kind) => resources::explain_not_found(
+            error,
+            kind,
+            s.name.as_deref(),
+            s.id.as_deref(),
+            e.context.namespace.as_deref(),
+            &namespace_origin(e),
+            listing,
+        ),
+        Err(_) => error,
+    }
+}
+fn missing_name(verb: &str, kind: &str) -> Error {
+    Error::usage(&format!(
+        "Missing {kind} name. Use: gs {verb} {kind} <name>, gs {verb} {kind}/<name> or gs {verb} {kind} --id <id>. Run gs {verb} --help for usage"
+    ))
+}
 pub fn run() -> i32 {
-    let cli = match Cli::try_parse() {
+    let parsed = cli::command()
+        .try_get_matches()
+        .and_then(|matches| <Cli as clap::FromArgMatches>::from_arg_matches(&matches));
+    let mut cli = match parsed {
         Ok(c) => c,
         Err(e) => {
             let exit = if e.use_stderr() { 2 } else { 0 };
@@ -50,10 +83,23 @@ pub fn run() -> i32 {
                 }) || args
                     .iter()
                     .any(|a| matches!(a.as_str(), "--output=json" | "--output=yaml"));
-                output::diagnostic(
-                    &Error::usage("Invalid command-line arguments; run gs --help"),
-                    machine,
+                // An incomplete command prints its help or usage (argument names only,
+                // never values) and fails. Other parse errors can echo user input, so
+                // they stay generic.
+                let incomplete = matches!(
+                    e.kind(),
+                    clap::error::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand
+                        | clap::error::ErrorKind::MissingRequiredArgument
+                        | clap::error::ErrorKind::MissingSubcommand
                 );
+                if incomplete && !machine {
+                    let _ = e.print();
+                } else {
+                    output::diagnostic(
+                        &Error::usage("Invalid command-line arguments; run gs --help"),
+                        machine,
+                    );
+                }
             }
             return exit;
         }
@@ -63,7 +109,10 @@ pub fn run() -> i32 {
     credentials::allow_keychain_interaction(
         !cli.non_interactive && std::io::IsTerminal::is_terminal(&std::io::stderr()),
     );
-    let result = cli.preflight().and_then(|_| dispatch(&cli));
+    let result = cli
+        .normalize()
+        .and_then(|_| cli.preflight())
+        .and_then(|_| dispatch(&cli));
     match result {
         Ok(()) => 0,
         Err(e) => {
@@ -97,7 +146,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
         Command::Read(args) => {
             let _ = resources::Kind::parse(&args.selection.kind)?;
             if args.selection.name.is_none() && args.selection.id.is_none() {
-                return Err(Error::usage("Select a name or --id"));
+                return Err(missing_name("read", &args.selection.kind));
             }
         }
         Command::Delete(s) => {
@@ -106,7 +155,7 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 k.can_delete()?;
             }
             if s.name.is_none() && s.id.is_none() {
-                return Err(Error::usage("Select a name or --id"));
+                return Err(missing_name("delete", &s.kind));
             }
         }
         Command::List(a) => {
@@ -256,7 +305,8 @@ fn dispatch(cli: &Cli) -> Result<()> {
                     cli.format()
                 },
                 e.context.contract_profile.as_deref(),
-            )?;
+            )
+            .map_err(|error| explain_selection_not_found(error, s, &e, false))?;
             if args.authoring {
                 return export::emit(&value);
             }
@@ -291,7 +341,18 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 a.after.as_deref(),
                 cli.format(),
                 e.context.contract_profile.as_deref(),
-            )?
+            )
+            .map_err(|error| {
+                resources::explain_not_found(
+                    error,
+                    kind,
+                    None,
+                    None,
+                    e.context.namespace.as_deref(),
+                    &namespace_origin(&e),
+                    true,
+                )
+            })?
         }
         Command::Delete(s) => {
             e.profile()?;
@@ -301,7 +362,8 @@ fn dispatch(cli: &Cli) -> Result<()> {
                 credentials::token(cli, &e)?,
                 cli.timeout(),
             )?;
-            resources::delete(&client, s, e.context.namespace.as_deref(), cli.format())?
+            resources::delete(&client, s, e.context.namespace.as_deref(), cli.format())
+                .map_err(|error| explain_selection_not_found(error, s, &e, false))?
         }
         Command::Create(a) => {
             e.profile()?;

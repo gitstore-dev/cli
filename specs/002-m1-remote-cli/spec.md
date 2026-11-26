@@ -202,6 +202,21 @@ unchanged local history on all rejected cases.
   item or use an explicit credential file) without exposing secrets. Release
   binaries are ad-hoc signed (ADR 0003), so denial after an upgrade is expected.
 
+- **FR-020**: Accept `<kind> <name>` and `<kind>/<name>` for `read` and `delete`. The
+  slash form is kind and name, never `namespace/name`; mixing it with a separate name or
+  `--id`, or a malformed form, fails with exit 2 before any request.
+
+- **FR-021**: A missing target reports the kind, name, namespace and the source of that
+  namespace selection (flag, environment or context); listing in an unknown namespace says
+  the namespace is missing. Exit category and `NOT_FOUND` code are unchanged.
+
+- **FR-022**: A command run without required arguments prints help or usage on stderr with
+  nothing on stdout and exits 2, without echoing argument values. Machine output keeps the
+  structured diagnostic. A missing resource name lists the accepted spellings.
+
+- **FR-023**: The table view distinguishes no status returned, no conditions reported, no
+  Ready condition and a real Ready condition (status and reason).
+
 ### Scope and dependency decisions
 
 The [M0 matrix](../../docs/contracts/command-matrix.md) and
