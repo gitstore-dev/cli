@@ -226,7 +226,7 @@
         "gs list"
       ],
       "title": "Bounded lists and profile-gated kinds",
-      "message": "`gs list file` and `gs list serviceaccount` require the explicit alpha.12 contract; `variant` lists need alpha.9 or newer. File upload, payload and credential readiness remain unavailable (DEP-007). Each invocation returns one bounded page, not a full multi-page snapshot. Hydrated YAML requires the explicit alpha.9 contract. Remote `--wait` is unavailable (DEP-004).",
+      "message": "File listing is unavailable before the explicit alpha.12 contract (DEP-007): `gs list file` and `gs list serviceaccount` require it, and `variant` lists need alpha.9 or newer. File upload, payload and credential readiness remain unavailable. Each invocation returns one bounded page, not a full multi-page snapshot. Hydrated YAML requires the explicit alpha.9 contract. Remote `--wait` is unavailable (DEP-004).",
       "evidence": "crates/gs/src/resources.rs"
     },
     {
