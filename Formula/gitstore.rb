@@ -1,28 +1,28 @@
 class Gitstore < Formula
   desc "GitStore early-alpha CLI and user daemon"
   homepage "https://github.com/gitstore-dev/cli"
-  version "0.1.0-alpha.11"
+  version "0.1.0-alpha.12"
   license "MIT"
 
   on_macos do
     on_arm do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.11/gitstore-0.1.0-alpha.11-darwin-arm64.tar.gz"
-      sha256 "e5650d0946471c5af5d25eb65a95815e7a1e0bd162a043bdaf5e13d9b851cead"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.12/gitstore-0.1.0-alpha.12-darwin-arm64.tar.gz"
+      sha256 "2a239323f8644463c3591c8f48435673592839aa57f6bf8b4543d2ee4b812e9d"
     end
     on_intel do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.11/gitstore-0.1.0-alpha.11-darwin-x64.tar.gz"
-      sha256 "2b83d713d755f689bd653af51096c51243d37f657e710e26c5947f19fe9c5858"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.12/gitstore-0.1.0-alpha.12-darwin-x64.tar.gz"
+      sha256 "4e2852928a2d689fd2e2c9c57730bbbd222ad36a388f98028c4d7841d00e5996"
     end
   end
   on_linux do
     depends_on "ca-certificates"
     on_arm do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.11/gitstore-0.1.0-alpha.11-linux-arm64.tar.gz"
-      sha256 "e07f5b74a9956c651d8e06922f771719806e75b76e2aef7c12bc59204d387c13"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.12/gitstore-0.1.0-alpha.12-linux-arm64.tar.gz"
+      sha256 "d398514edf0f84a62c05c996a5ae6ef7fa5ca8f22f940d6e3c97705d32ae5890"
     end
     on_intel do
-      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.11/gitstore-0.1.0-alpha.11-linux-x64.tar.gz"
-      sha256 "2dcd365628c23a612edee6f9442ef818c1aa878112e0b62547655860b5b76f27"
+      url "https://github.com/gitstore-dev/cli/releases/download/v0.1.0-alpha.12/gitstore-0.1.0-alpha.12-linux-x64.tar.gz"
+      sha256 "df9765f85a3496734cdd67c1d65e0c6d7a3720b52ac6fcf0596458f98d0afe38"
     end
   end
 
