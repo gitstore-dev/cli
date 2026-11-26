@@ -124,7 +124,7 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-057 | gs deployment logs <deployment-id> | logs managed deployment | local deployment ID | DAEMON | stream.subscribe(kind=logs) | supported-contract | M2 | EVD-022, EVD-024 | DEP-008, DEP-012 |
 | CMD-058 | gs transfer product <name> (destination syntax gated) | Transfer Product | source/destination namespace and identity | GATED | No accepted transfer/atomicity contract | deferred | M3 | EVD-001 | DEP-010 |
 | CMD-059 | gs file upload -f <blob> (remaining syntax gated) | Upload payload and admit manifest separately | namespace/File and payload endpoint | GATED | No verified public transfer mapping | deferred | M3 | EVD-016, EVD-020 | DEP-007 |
-| CMD-060 | gs list file (not offered) | Explicitly exclude inferred File list | namespace | GATED | No list field; not part of first-release target | deferred | M3 | EVD-016 | DEP-007 |
+| CMD-060 | gs list file | List File metadata | namespace | READ | files(namespace!, Relay pagination) | supported-contract (alpha.12 profile; fails unsupported before it) | M1 | EVD-016, [alpha.12](../../runtime/profiles/alpha12-evidence.json) | DEP-007 (upload, payload/LFS, credential readiness) |
 | CMD-061 | gs create mediaasset (syntax/capability gated) | create extension resource | discovered scope | GATED | Explicit advertised callable mapping required | deferred | M3 | EVD-001, EVD-021 | DEP-006 |
 | CMD-062 | gs read mediaasset (syntax/capability gated) | read extension resource | discovered scope | GATED | Explicit advertised callable mapping required | deferred | M3 | EVD-001, EVD-021 | DEP-006 |
 | CMD-063 | gs list mediaasset (syntax/capability gated) | list extension resource | discovered scope | GATED | Explicit advertised callable mapping required | deferred | M3 | EVD-001, EVD-021 | DEP-006 |
@@ -149,6 +149,10 @@ authorization and result guarantees are the named dependency, not permission to 
 | CMD-082 | Authoring Markdown export (syntax gated) | Re-importable frontmatter plus raw body | same selector as underlying read/list | EXPORT | Only fields exposed by supported read/list; no status reconstruction | blocked | M1 | EVD-003, EVD-011, EVD-012, EVD-013, EVD-014, EVD-015, EVD-016 | DEP-005 |
 | CMD-083 | Registry credential setup (syntax gated) | Provide private image credentials | registry/account, separate from API identity | GATED | Image backend challenge/token scope contract | blocked | M2 | EVD-022 | DEP-013 |
 | CMD-084 | gs repository clone <repository> [directory] [--remote <name>] | Clone with gitstore as the default remote; allow override and configure branch tracking | selected installation/namespace/repository and local destination | CLONE | Smart HTTP info/refs and upload-pack; reject nonempty destination; see CLI behavior | supported-contract | M1 | EVD-018, EVD-003 | — |
+| CMD-085 | gs list variant | list product variant | namespace | READ | productVariants(namespace!, Relay pagination); user kind `variant` = upstream ProductVariant | supported-contract (alpha.9 profile or newer) | M1 | [alpha.12](../../runtime/profiles/alpha12-evidence.json) | — |
+| CMD-086 | gs read variant <name> | read product variant | namespace/name or Relay ID | READ | productVariant(by: ProductVariantBy!) | supported-contract (alpha.9 profile or newer) | M1 | [alpha.12](../../runtime/profiles/alpha12-evidence.json) | — |
+| CMD-087 | gs list serviceaccount | list service account | cluster | READ | serviceAccounts(Relay pagination); no spec/status/body; no single-read query | supported-contract (alpha.12 profile) | M1 | [alpha.12](../../runtime/profiles/alpha12-evidence.json) | — |
+| CMD-088 | gs create/update/delete variant, file; any serviceaccount mutation | Mutations for these kinds | namespace/name or Relay ID | WRITE | Not implemented in the CLI | deferred | M3 | [alpha.12](../../runtime/profiles/alpha12-evidence.json) | DEP-007 (file) |
 
 ## Inventory boundaries
 

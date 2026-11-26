@@ -69,6 +69,19 @@ pub struct Effective {
     pub context: Context,
     pub sources: BTreeMap<String, String>,
 }
+/// Explicit contract profiles. Alpha.12 accepts everything alpha.9 does and adds
+/// File and ServiceAccount lists (ADR evidence: GitStore v0.1.0-alpha.12,
+/// 66d9b3c13eacbed1b8487b8c4d6b0173b4cbcad2, schemas identical to alpha.11 for these fields).
+pub const ALPHA9: &str = "gitstore-alpha9-2026-11-05";
+pub const ALPHA12: &str = "gitstore-alpha12-2026-11-26";
+/// Alpha.9 behavior: reads, hydrated export, authoring and auth.
+pub fn alpha9_or_later(profile: Option<&str>) -> bool {
+    matches!(profile, Some(ALPHA9 | ALPHA12))
+}
+/// Capabilities that appeared after alpha.9: File and ServiceAccount lists.
+pub fn alpha12_or_later(profile: Option<&str>) -> bool {
+    profile == Some(ALPHA12)
+}
 pub fn path(c: &Cli) -> Result<PathBuf> {
     if let Some(p) = &c.config {
         if p.as_os_str().is_empty() {
@@ -288,7 +301,7 @@ impl Effective {
     pub fn profile(&self) -> Result<()> {
         if !matches!(
             self.context.contract_profile.as_deref(),
-            Some("m0-2026-10-27" | "gitstore-alpha9-2026-11-05")
+            Some("m0-2026-10-27" | ALPHA9 | ALPHA12)
         ) {
             return Err(Error::unsupported(
                 "explicit compatible contract_profile required",

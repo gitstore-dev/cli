@@ -222,6 +222,13 @@ unchanged local history on all rejected cases.
   data writes nothing to stdout, and an error the CLI cannot explain points to `-o json`.
   `api graphql` is unchanged.
 
+- **FR-025**: With `contract_profile = "gitstore-alpha12-2026-11-26"` (and `variant` from the
+  alpha.9 profile) support `gs list variant`, `gs read variant`, `gs list file` and
+  `gs list serviceaccount`. `variant` is upstream `ProductVariant`; `serviceaccount` is
+  cluster-scoped and list-only. A capability newer than the selected profile, a single
+  `serviceaccount` read, and mutations or watches for these kinds fail unsupported (exit 6)
+  before any request. Typed watch keeps requiring the alpha.9 profile. DEP-007 stays open.
+
 ### Scope and dependency decisions
 
 The [M0 matrix](../../docs/contracts/command-matrix.md) and

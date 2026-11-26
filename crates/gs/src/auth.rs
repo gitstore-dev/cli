@@ -52,7 +52,7 @@ pub fn dispatch(cli: &Cli, effective: &Effective) -> Result<Value> {
         })?;
     if configured.version != 1
         || configured.provider != "static-users"
-        || effective.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+        || !crate::config::alpha9_or_later(effective.context.contract_profile.as_deref())
     {
         return Err(Error::unsupported(
             "Only the explicit alpha.9 static-users v1 auth contract is available",

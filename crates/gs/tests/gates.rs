@@ -7,7 +7,6 @@ fn unsupported_before_config_or_network() {
         vec!["watch", "collection"],
         vec!["watch", "product", "--id", "opaque"],
         vec!["update", "-f", "/must-not-open"],
-        vec!["list", "file"],
         vec!["explain", "unregistered-crd"],
         vec!["repository", "sync", "--wait", "ready"],
     ] {

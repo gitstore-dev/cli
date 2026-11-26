@@ -104,6 +104,7 @@ use library APIs, and no external credential helper/filter/hook runs during Git 
 - [X] T040 [US1] Implement FR-019 in `crates/gs/src/credentials.rs` and `lib.rs`: classify Keychain statuses -128/-25243/-25293/-25308 as a denied existing item with cause and recovery text, gate the authorization dialog on `--non-interactive` and a stderr terminal, and keep the runtime broker path prompt-free; unit cases cover classification, message and generic fallback. Native dialog behavior on a mismatched item is not run; ADR 0003 records the signing decision.
 - [X] T041 [US2] Implement FR-020–023 in `crates/gs/src/{cli,lib,resources,output}.rs`: `<kind>/<name>` normalization, explained NOT_FOUND messages with namespace origin, help-on-incomplete command tree, and distinct Ready cell states; unit cases plus `crates/gs/tests/resource_ux.rs` process cases against the loopback GraphQL fixture. Native terminals and live servers are not exercised.
 - [X] T042 [US2] Implement FR-024 in `crates/gs/src/resources.rs`: keep the raw GraphQL response on stdout for `-o json|yaml` and for partial data, suppress it for table results without data, and point unexplained errors to `-o json`; process cases in `crates/gs/tests/error_output.rs` against the loopback GraphQL fixture.
+- [X] T043 [US2] Implement FR-025 in `crates/gs/src/{config,resources,projections,lib,watch,auth,authoring}.rs`: the alpha.12 profile, `variant` and `serviceaccount` kinds, File list, profile gating before any request, and `runtime/profiles/alpha12-evidence.json`; process cases in `crates/gs/tests/list_kinds.rs`. The generated queries were replayed read-only against a running GitStore alpha.11; variant and file lists returned no rows there, and no mutation or watch was run.
 
 ## Dependencies & Execution Order
 
@@ -172,6 +173,7 @@ still needs upstream/login/export/wait/watch/update capabilities listed in the s
 | FR-019 | T013–T015, T040 |
 | FR-020–023 | T018–T022, T041 |
 | FR-024 | T019–T022, T042 |
+| FR-025 | T018–T022, T043 |
 | FR-016–017 | T001–T004, T009, T014, T016–T018, T021, T023, T026–T029, T034–T039 |
 
 ## Implementation adjustments — 2026-10-29
