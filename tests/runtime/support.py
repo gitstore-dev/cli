@@ -18,6 +18,21 @@ import time
 from urllib.parse import urlsplit
 
 
+V2_API_VERSION = "cli.gitstore.dev/v2"
+
+
+def v2_data(document):
+    """Return the result payload of a CLI v2 envelope; raw documents pass through.
+
+    `-o json` wraps results as {apiVersion, kind, summary, data}. Raw protocol
+    output (for example `api graphql`) is not wrapped and is returned unchanged.
+    """
+    if (isinstance(document, dict) and document.get("apiVersion") == V2_API_VERSION
+            and "data" in document):
+        return document["data"]
+    return document
+
+
 class Fixture:
     def __init__(self, offline=None, unsupported=False, oidc=False):
         if os.geteuid() == 0 or not Path("/proc/self/ns/user").exists():
@@ -161,7 +176,7 @@ class Fixture:
                 raise AssertionError("Expected explicit pre-effect failure")
             return result
         try:
-            return json.loads(result.stdout)
+            return v2_data(json.loads(result.stdout))
         except ValueError:
             raise AssertionError("Public command did not return exactly one JSON document") from None
 
@@ -220,12 +235,12 @@ class Fixture:
             if not any(code in result.stderr for code in (b"OPERATION_FAILED", b"INVALID_ARGUMENT")):
                 raise AssertionError("Asset scenario did not reach the expected verification failure")
             return
-        operation = json.loads(result.stdout)
+        operation = v2_data(json.loads(result.stdout))
         # Durable acceptance is valid even if a later bounded verification worker
         # fails. Require the recorded unsuccessful outcome, not a synchronous hash.
         terminal = self.call("--timeout", "60s", "--wait", "terminal", "deployment", "inspect", name,
                              "--operation", operation["operationId"], success=False)
-        record = json.loads(terminal.stdout)
+        record = v2_data(json.loads(terminal.stdout))
         if record["operation"]["state"] != "failed" or record["deployment"]["readiness"] == "ready":
             raise AssertionError("Invalid asset did not produce a recorded failed unready start")
 
