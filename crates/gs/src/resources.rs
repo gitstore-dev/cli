@@ -172,10 +172,25 @@ pub fn list_request_for_profile(
         json!({"query":format!("query List($first:Int!,$after:String{param}){{{field}({arg}first:$first,after:$after){{edges{{node{{{}}}}} pageInfo{{hasNextPage hasPreviousPage startCursor endCursor}}}}}}",profile_fields(k, profile)),"variables":vars}),
     )
 }
+/// Does a GraphQL response carry any non-null top-level data?
+fn has_data(body: &Value) -> bool {
+    body["data"]
+        .as_object()
+        .is_some_and(|data| data.values().any(|value| !value.is_null()))
+}
 pub fn checked(client: &Client, r: &Request, f: Format) -> Result<Value> {
     let reply = client.execute(r)?;
-    if let Some(error) = reply.error {
-        output::emit_raw(&reply.body, f)?;
+    if let Some(mut error) = reply.error {
+        // Machine formats always receive the raw response, and partial data is never
+        // dropped. A human reader with nothing but errors gets the diagnostic alone;
+        // the raw response is one flag away.
+        if matches!(f, Format::Json | Format::Yaml) || has_data(&reply.body) {
+            output::emit_raw(&reply.body, f)?;
+        } else {
+            error
+                .message
+                .push_str(" (use -o json for the server response)");
+        }
         return Err(error);
     }
     Ok(reply.body)
