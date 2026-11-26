@@ -15,6 +15,20 @@ For candidate results and remaining gates, see [release qualification](validatio
   deployment policy for `v0.1.0-alpha.*`. Promotion refuses a missing reviewer rule.
 - Keep App/signing credentials out of PR and native fixture jobs. Use the scoped
   App for release proposals/tags so their events trigger downstream workflows.
+- Keep the repository Actions event policy **"Allow pull_request_target for release
+  docs delivery"** (id 17922, `enforcement: active`). Release docs delivery
+  (`docs-queue.yml`) uses `pull_request_target` to post the required
+  `Docs release eligibility` status on every pull request, and GitHub's default
+  policy blocks that event in public repositories from 2026-12-02. The policy
+  allows `pull_request_target`, `workflow_run`, `merge_group` and
+  `workflow_dispatch` for that one workflow path only. It is a repository setting,
+  not a file; inspect it with
+  `gh api repos/gitstore-dev/cli/actions/policies -H 'X-GitHub-Api-Version: 2026-03-10'`.
+  It is an allowlist, so adding a trigger to `docs-queue.yml` also needs adding it
+  to the policy. The workflow stays safe to allow because both jobs check out
+  `main` only, run trusted scripts with `gh`/`node` argument arrays, pass event
+  values through `env:`, and treat a fork PR that copies the proposal branch name as
+  an ordinary PR. Deleting the policy restores the default (blocked) behavior.
 
 No external package registry account is required. Homebrew uses the repository
 as a Git URL tap; APT/DNF and npm install GitHub Release files. Nix is deferred.
