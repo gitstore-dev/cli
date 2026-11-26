@@ -2,13 +2,11 @@ name: Daemon
 on:
   pull_request:
     branches: [main]
-  merge_group:
-    branches: [main]
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   native:
     runs-on: ubuntu-24.04
