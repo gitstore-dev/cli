@@ -1286,7 +1286,7 @@ Usage: gs read [OPTIONS] <KIND> [NAME]
 
 Arguments:
   <KIND>
-          
+          Resource kind, or `<kind>/<name>`
 
   [NAME]
           
@@ -1419,7 +1419,7 @@ Usage: gs delete [OPTIONS] <KIND> [NAME]
 
 Arguments:
   <KIND>
-          
+          Resource kind, or `<kind>/<name>`
 
   [NAME]
           

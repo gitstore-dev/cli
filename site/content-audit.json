@@ -1,12 +1,12 @@
 {
   "schemaVersion": 2,
-  "version": "0.1.0-alpha.11",
+  "version": "0.1.0-alpha.12",
   "reviewedRelease": {
-    "version": "0.1.0-alpha.11",
-    "tag": "v0.1.0-alpha.11",
-    "sourceCommit": "6792e9554024b40bdb705601af77c7d8abe2e834",
+    "version": "0.1.0-alpha.12",
+    "tag": "v0.1.0-alpha.12",
+    "sourceCommit": "c6bc32977046dea099399780cf77f005524f59e3",
     "reference": {
-      "sha256": "efd6e8bf73773b19f68d5ffd600b3e2d2c2a8773d394a93825083a71308850b1"
+      "sha256": "655a66323ed5aabdc977c4ca5d8c1897633a8fa2e231fdeabd2395d0ab60e444"
     },
     "assets": [
       {
@@ -106,7 +106,7 @@
       }
     ]
   },
-  "capabilityFingerprint": "1df8a0ed3ae30cdb9c373fdb9c0d4651ec49038e151f111b4696df97165e7318",
+  "capabilityFingerprint": "1cab4efc24df46a62d1807f100313b70fbf2d7970c04e5983a8db6706b29c3a0",
   "reviewedSources": [
     "docs/README.md",
     "docs/installation.md",
@@ -127,7 +127,7 @@
     "docs/local-runtime-configuration.md": "e68731e5ec8f2d97235b1e60600e62a410766b0c9a3f713aa645a69e36d448ff",
     "README.md": "da4b02303e22b208970d5978c7cfa7d1617fadeb9055c313d611cbe7329af2d2"
   },
-  "commandSourceCommit": "6792e9554024b40bdb705601af77c7d8abe2e834",
+  "commandSourceCommit": "c6bc32977046dea099399780cf77f005524f59e3",
   "commandNotices": [
     {
       "commands": [
