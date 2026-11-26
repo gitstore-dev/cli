@@ -234,6 +234,11 @@ stdout, and exits 2; the message lists argument names, never values. Under `-o j
 keeps the structured diagnostic. Other parse errors stay generic because they can echo input.
 A missing resource name lists the accepted spellings.
 
+When a resource command fails, `-o json|yaml` still writes the raw GraphQL response to stdout,
+and partial data is never dropped. The table view writes nothing to stdout when the response
+has no data, so the diagnostic on stderr is the whole output; an error the CLI cannot explain
+adds "use -o json for the server response". `api graphql` always keeps the raw response.
+
 In the table view, `Ready` is the Ready condition's status with its reason when present.
 Three states are distinct and none means Ready: `- (status not returned)` when the server sent
 no status, `none reported (no conditions yet)` when the status has no conditions, and

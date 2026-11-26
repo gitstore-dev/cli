@@ -217,6 +217,11 @@ unchanged local history on all rejected cases.
 - **FR-023**: The table view distinguishes no status returned, no conditions reported, no
   Ready condition and a real Ready condition (status and reason).
 
+- **FR-024**: When `read`, `list` or `delete` fails, machine formats keep the raw GraphQL
+  response on stdout and any partial data is kept in every format. A table result with no
+  data writes nothing to stdout, and an error the CLI cannot explain points to `-o json`.
+  `api graphql` is unchanged.
+
 ### Scope and dependency decisions
 
 The [M0 matrix](../../docs/contracts/command-matrix.md) and
