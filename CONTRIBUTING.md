@@ -40,8 +40,9 @@ only the PR title does not change the release classification of existing commits
 
 ## Application CI
 
-CLI and daemon checks run on pull requests and merge-queue entries. They do not
-repeat on the resulting main-branch push. Runtime library checks in
+CLI checks run on pull requests and, for the required Ubuntu leg only, on merge-queue
+entries; the macOS leg and the daemon checks run on pull requests only. None repeat on the
+resulting main-branch push. Runtime library checks in
 `runtime-ci.yml` run on pull requests and main pushes; they cover the Linux SDK
 on both architectures in normal and sanitized builds. Manual host, package and
 release qualification remains in the dispatch-only `runtime.yml` workflow.
