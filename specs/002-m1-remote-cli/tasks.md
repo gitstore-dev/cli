@@ -102,6 +102,7 @@ use library APIs, and no external credential helper/filter/hook runs during Git 
 - [X] T038 Run locked build/test, format/lint and cross-story isolation/input/partial-outcome/Git scenarios from `specs/002-m1-remote-cli/quickstart.md`; record compiler/Git/host/native-store/simulated/live evidence and SC-001–006 outcomes in `docs/contributing/validation/remote-cli.md`, repair failures and remove any secret-bearing temporary output.
 - [X] T039 Reconcile requirements/tasks/evidence and remaining gates in `specs/002-m1-remote-cli/tasks.md` and `docs/contributing/validation/remote-cli.md`; record DEP-013 producer/workflow/source/digest and negative-case requirements as unresolved publication gates rather than adding an unverified release. Mark only completed work checked; full M1 remains pending upstream capabilities.
 - [X] T040 [US1] Implement FR-019 in `crates/gs/src/credentials.rs` and `lib.rs`: classify Keychain statuses -128/-25243/-25293/-25308 as a denied existing item with cause and recovery text, gate the authorization dialog on `--non-interactive` and a stderr terminal, and keep the runtime broker path prompt-free; unit cases cover classification, message and generic fallback. Native dialog behavior on a mismatched item is not run; ADR 0003 records the signing decision.
+- [X] T041 [US2] Implement FR-020–023 in `crates/gs/src/{cli,lib,resources,output}.rs`: `<kind>/<name>` normalization, explained NOT_FOUND messages with namespace origin, help-on-incomplete command tree, and distinct Ready cell states; unit cases plus `crates/gs/tests/resource_ux.rs` process cases against the loopback GraphQL fixture. Native terminals and live servers are not exercised.
 
 ## Dependencies & Execution Order
 
@@ -168,6 +169,7 @@ still needs upstream/login/export/wait/watch/update capabilities listed in the s
 | FR-013 | T005, T025, T027, T035 |
 | FR-014–015 | T005–T008, T018–T020, T026–T027, T035 |
 | FR-019 | T013–T015, T040 |
+| FR-020–023 | T018–T022, T041 |
 | FR-016–017 | T001–T004, T009, T014, T016–T018, T021, T023, T026–T029, T034–T039 |
 
 ## Implementation adjustments — 2026-10-29

@@ -74,6 +74,30 @@ impl Serialize for PlainValue<'_> {
     }
 }
 
+/// Readiness for the table view. Distinguishes "the server sent no status",
+/// "the server reported no conditions yet" and "conditions exist but none is Ready"
+/// from a real Ready condition, which is shown with its status and reason.
+fn ready_cell(resource: &Value) -> String {
+    let Some(status) = resource.get("status").filter(|s| s.is_object()) else {
+        return "- (status not returned)".into();
+    };
+    let conditions = status["conditions"]
+        .as_array()
+        .map_or(&[][..], Vec::as_slice);
+    if conditions.is_empty() {
+        return "none reported (no conditions yet)".into();
+    }
+    match conditions.iter().find(|c| c["type"] == "Ready") {
+        Some(ready) => {
+            let state = ready["status"].as_str().unwrap_or("unknown").to_owned();
+            match ready["reason"].as_str().filter(|r| !r.is_empty()) {
+                Some(reason) => format!("{state} ({reason})"),
+                None => state,
+            }
+        }
+        None => "none reported (no Ready condition)".into(),
+    }
+}
 pub fn emit(v: &Value, f: Format) -> Result<()> {
     emit_kind(
         v,
@@ -222,15 +246,7 @@ fn table_with(v: &Value, width: usize, color: bool) -> String {
                 && v["spec"].is_object()
                 && v["apiVersion"].is_string() =>
         {
-            let ready = v["status"]["conditions"]
-                .as_array()
-                .and_then(|conditions| {
-                    conditions
-                        .iter()
-                        .find(|condition| condition["type"] == "Ready")
-                })
-                .map(|condition| cell(&condition["status"]))
-                .unwrap_or_else(|| "unknown".into());
+            let ready = ready_cell(v);
             format!(
                 "RESOURCE\n  Kind:      {}\n  Namespace: {}\n  Name:      {}\n  Title:     {}\n  Ready:     {}\n",
                 cell(&v["kind"]),
@@ -452,7 +468,7 @@ mod tests {
         );
         assert_eq!(
             table_with(&resource, 80, false),
-            "RESOURCE\n  Kind:      Product\n  Namespace: shop\n  Name:      hat\n  Title:     Hat\n  Ready:     unknown\n"
+            "RESOURCE\n  Kind:      Product\n  Namespace: shop\n  Name:      hat\n  Title:     Hat\n  Ready:     - (status not returned)\n"
         );
     }
 
@@ -474,5 +490,37 @@ mod tests {
         assert!(rendered.contains("Product / hat"));
         assert!(rendered.contains("submission=unknown"));
         assert!(rendered.contains("admission=unverified"));
+    }
+
+    #[test]
+    fn ready_cell_distinguishes_missing_status_empty_conditions_and_real_conditions() {
+        let with = |status: Value| json!({"status": status});
+        assert_eq!(ready_cell(&json!({})), "- (status not returned)");
+        assert_eq!(
+            ready_cell(&with(json!({"conditions": []}))),
+            "none reported (no conditions yet)"
+        );
+        assert_eq!(
+            ready_cell(&with(json!({}))),
+            "none reported (no conditions yet)"
+        );
+        assert_eq!(
+            ready_cell(&with(
+                json!({"conditions": [{"type": "Synced", "status": "True"}]})
+            )),
+            "none reported (no Ready condition)"
+        );
+        assert_eq!(
+            ready_cell(&with(
+                json!({"conditions": [{"type": "Ready", "status": "True"}]})
+            )),
+            "True"
+        );
+        assert_eq!(
+            ready_cell(&with(
+                json!({"conditions": [{"type": "Ready", "status": "False", "reason": "Pending"}]})
+            )),
+            "False (Pending)"
+        );
     }
 }

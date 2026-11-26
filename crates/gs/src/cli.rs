@@ -293,11 +293,33 @@ pub struct ReadArgs {
 }
 #[derive(Args)]
 pub struct Selection {
+    /// Resource kind, or `<kind>/<name>`.
     pub kind: String,
     #[arg(conflicts_with = "id")]
     pub name: Option<String>,
     #[arg(long, conflicts_with = "name")]
     pub id: Option<String>,
+}
+impl Selection {
+    /// Accept `<kind>/<name>` as well as `<kind> <name>`, like `kubectl get kind/name`.
+    pub fn split_kind_name(&mut self) -> Result<()> {
+        let Some((kind, name)) = self.kind.split_once('/') else {
+            return Ok(());
+        };
+        if self.name.is_some() || self.id.is_some() {
+            return Err(Error::usage(
+                "Use either <kind>/<name> or separate kind and name arguments, not both",
+            ));
+        }
+        if kind.is_empty() || name.is_empty() || name.contains('/') {
+            return Err(Error::usage(
+                "Use <kind>/<name>, for example repository/docs",
+            ));
+        }
+        self.name = Some(name.to_owned());
+        self.kind = kind.to_owned();
+        Ok(())
+    }
 }
 #[derive(Args)]
 pub struct ListArgs {
@@ -326,7 +348,33 @@ pub enum RepositoryCommand {
         remote: Option<String>,
     },
 }
+/// The command tree, printing help (and failing) when a command that needs
+/// arguments is run without any.
+pub fn command() -> clap::Command {
+    use clap::CommandFactory;
+    fn help_when_incomplete(command: clap::Command) -> clap::Command {
+        let needs_argument = command.is_subcommand_required_set()
+            || command
+                .get_arguments()
+                .any(|a| a.is_positional() && a.is_required_set());
+        let command = if needs_argument {
+            command.arg_required_else_help(true)
+        } else {
+            command
+        };
+        command.mut_subcommands(help_when_incomplete)
+    }
+    help_when_incomplete(Cli::command())
+}
 impl Cli {
+    /// Rewrite accepted spellings into one canonical form before validation.
+    pub fn normalize(&mut self) -> Result<()> {
+        match &mut self.command {
+            Command::Read(args) => args.selection.split_kind_name(),
+            Command::Delete(selection) => selection.split_kind_name(),
+            _ => Ok(()),
+        }
+    }
     pub fn timeout(&self) -> Duration {
         self.timeout.unwrap_or(
             if crate::deployment::is_local(&self.command) && self.wait.is_some() {
@@ -469,5 +517,47 @@ impl Cli {
             return Err(Error::usage("Stdin may have only one consumer"));
         }
         Ok(())
+    }
+}
+#[cfg(test)]
+mod selection_tests {
+    use super::Selection;
+    fn selection(kind: &str, name: Option<&str>, id: Option<&str>) -> Selection {
+        Selection {
+            kind: kind.into(),
+            name: name.map(Into::into),
+            id: id.map(Into::into),
+        }
+    }
+    #[test]
+    fn kind_slash_name_is_split_like_kubectl() {
+        let mut s = selection("repository/docs", None, None);
+        s.split_kind_name().unwrap();
+        assert_eq!(
+            (s.kind.as_str(), s.name.as_deref()),
+            ("repository", Some("docs"))
+        );
+    }
+    #[test]
+    fn separate_kind_and_name_are_untouched() {
+        let mut s = selection("repository", Some("docs"), None);
+        s.split_kind_name().unwrap();
+        assert_eq!(
+            (s.kind.as_str(), s.name.as_deref()),
+            ("repository", Some("docs"))
+        );
+    }
+    #[test]
+    fn ambiguous_or_malformed_selectors_are_rejected() {
+        for (kind, name, id) in [
+            ("repository/docs", Some("other"), None),
+            ("repository/docs", None, Some("id")),
+            ("repository/", None, None),
+            ("/docs", None, None),
+            ("repository/a/b", None, None),
+        ] {
+            let mut s = selection(kind, name, id);
+            assert!(s.split_kind_name().is_err(), "{kind} {name:?} {id:?}");
+        }
     }
 }

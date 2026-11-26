@@ -217,6 +217,38 @@ fn profile_fields(kind: Kind, profile: Option<&str>) -> String {
         kind.fields()
     }
 }
+/// Replace a bare NOT_FOUND with what was looked up and where the namespace came from.
+/// Other errors pass through. `origin` describes the namespace selection source.
+pub fn explain_not_found(
+    mut error: Error,
+    kind: Kind,
+    name: Option<&str>,
+    id: Option<&str>,
+    namespace: Option<&str>,
+    origin: &str,
+    listing: bool,
+) -> Error {
+    if error.code != "NOT_FOUND" {
+        return error;
+    }
+    let kind_name = kind.field();
+    let message = match (kind == Kind::Namespace, listing, name, id, namespace) {
+        (_, _, None, Some(id), _) => format!("{kind_name} with id \"{id}\" was not found"),
+        (true, ..) => format!(
+            "namespace \"{}\" was not found. Run 'gs list namespace' to see the available namespaces",
+            name.unwrap_or_default()
+        ),
+        (false, true, _, _, Some(ns)) => format!(
+            "namespace \"{ns}\" was not found (selected by {origin}). Run 'gs list namespace' to see the available namespaces, or pass --namespace"
+        ),
+        (false, false, Some(name), _, Some(ns)) => format!(
+            "{kind_name} \"{name}\" was not found in namespace \"{ns}\" (selected by {origin}). Check the name, or pass --namespace; 'gs list namespace' shows the available namespaces"
+        ),
+        _ => return error,
+    };
+    error.message = message;
+    error
+}
 pub fn read(
     client: &Client,
     s: &Selection,
@@ -298,4 +330,61 @@ pub fn delete(client: &Client, s: &Selection, n: Option<&str>, f: Format) -> Res
     Ok(
         json!({"id":id,"outcome":p["outcome"],"submission":"accepted","readiness":"unverified","resource":p[k.field()]}),
     )
+}
+#[cfg(test)]
+mod not_found_tests {
+    use super::*;
+    fn not_found() -> Error {
+        Error::new(4, "NOT_FOUND", "GraphQL target not found")
+    }
+    fn explain(kind: Kind, name: Option<&str>, id: Option<&str>, listing: bool) -> Error {
+        explain_not_found(
+            not_found(),
+            kind,
+            name,
+            id,
+            Some("catalogue"),
+            "context \"development\"",
+            listing,
+        )
+    }
+    #[test]
+    fn missing_resource_names_kind_name_namespace_and_origin() {
+        let e = explain(Kind::Repository, Some("gitstore-system"), None, false);
+        assert_eq!((e.exit, e.code), (4, "NOT_FOUND"));
+        assert_eq!(
+            e.message,
+            "repository \"gitstore-system\" was not found in namespace \"catalogue\" (selected by context \"development\"). Check the name, or pass --namespace; 'gs list namespace' shows the available namespaces"
+        );
+    }
+    #[test]
+    fn listing_in_a_missing_namespace_says_the_namespace_is_missing() {
+        let e = explain(Kind::Repository, None, None, true);
+        assert!(e.message.starts_with(
+            "namespace \"catalogue\" was not found (selected by context \"development\")"
+        ));
+        assert!(e.message.contains("gs list namespace"));
+    }
+    #[test]
+    fn namespace_reads_and_id_lookups_do_not_blame_the_selected_namespace() {
+        let e = explain(Kind::Namespace, Some("nope"), None, false);
+        assert!(e.message.starts_with("namespace \"nope\" was not found"));
+        assert!(!e.message.contains("catalogue"));
+        let e = explain(Kind::Product, None, Some("abc"), false);
+        assert_eq!(e.message, "product with id \"abc\" was not found");
+    }
+    #[test]
+    fn other_errors_are_untouched() {
+        let other = Error::new(3, "CREDENTIAL", "denied");
+        let e = explain_not_found(
+            other,
+            Kind::Repository,
+            Some("x"),
+            None,
+            Some("ns"),
+            "flag",
+            false,
+        );
+        assert_eq!((e.code, e.message.as_str()), ("CREDENTIAL", "denied"));
+    }
 }

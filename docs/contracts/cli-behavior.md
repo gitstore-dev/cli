@@ -44,6 +44,11 @@ Reject an ID decoded as another kind. The user-facing `category` maps to manifes
 repositories/catalogue contents block deletion, not an automatic cascade. Deleting a
 resource requests termination; final cleanup belongs to controllers.
 
+`read` and `delete` accept `<kind> <name>` and `<kind>/<name>`, as `kubectl get kind/name`
+does. `<kind>/<name>` is never `namespace/name`: the namespace comes from `--namespace`,
+`GITSTORE_NAMESPACE` or the selected context. Combining `<kind>/<name>` with a separate
+name or `--id`, an empty part or more than one slash is a usage error before any request.
+
 ## Authentication
 
 Use advertised installation/provider/flow capabilities individually. Absence of shared
@@ -218,6 +223,21 @@ Errors include `code`, `stage`, `retryable`, safe `message`, optional `operation
 report `submission=unknown` and inspection guidance. For multi-document aggregate exit,
 use the first nonzero outcome in input order; per-item errors remain authoritative.
 Server codes are preserved; classify only codes with known semantics, not message guesses.
+
+A missing target (exit 4) names the kind and name and the namespace it was looked up in,
+and says whether that namespace came from `--namespace`, `GITSTORE_NAMESPACE` or the
+selected context. Listing in a namespace the server does not know says the namespace is
+missing. Lookups by ID do not blame the selected namespace. The server code stays `NOT_FOUND`.
+
+A command run without the arguments it needs prints its help or usage to stderr, nothing to
+stdout, and exits 2; the message lists argument names, never values. Under `-o json|yaml` it
+keeps the structured diagnostic. Other parse errors stay generic because they can echo input.
+A missing resource name lists the accepted spellings.
+
+In the table view, `Ready` is the Ready condition's status with its reason when present.
+Three states are distinct and none means Ready: `- (status not returned)` when the server sent
+no status, `none reported (no conditions yet)` when the status has no conditions, and
+`none reported (no Ready condition)` when conditions exist without a Ready one.
 
 ## Export fidelity
 
