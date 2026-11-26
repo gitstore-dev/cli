@@ -13,6 +13,20 @@
 - Sync a first local commit to an empty remote branch, detecting concurrent
   branch creation without forcing the update.
 
+## [0.1.0-alpha.12](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12) (2026-11-26)
+
+
+### Features
+
+* **cli:** accept kind/name, explain missing targets and print help for incomplete commands ([49fc74c](https://github.com/gitstore-dev/cli/commit/49fc74ce7af7547225833419f2fb8949650702f3))
+* **cli:** list variants, files and service accounts under the alpha.12 profile ([d419e16](https://github.com/gitstore-dev/cli/commit/d419e16fe59c48168339d2babbcfe73f89665abb))
+
+
+### Bug Fixes
+
+* **build:** retry pinned source downloads with backoff before the standard fetch ([21225ff](https://github.com/gitstore-dev/cli/commit/21225ff14516c2e66834bd202939db24397da091))
+* **cli:** stop printing raw GraphQL errors to stdout in table output ([c7950b7](https://github.com/gitstore-dev/cli/commit/c7950b79765d8750dff7f86e47dff211d0cc75ac))
+
 ## [0.1.0-alpha.11](https://github.com/gitstore-dev/cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11) (2026-11-26)
 
 
