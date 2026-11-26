@@ -10,12 +10,25 @@ browser login and separately installed Git executable are not required.
 gs context show -o json
 gs list repository --first 25
 gs read product summer-shirt -o json
+gs read repository/docs
 ```
 
 Read/list are available for Namespace, Repository, Product, CategoryTaxonomy
 (`category`) and Collection. With the explicit alpha.9 profile, File metadata can
-be read by namespace/name or ID (`gs read file --id ID`, no namespace required);
-File listing is not available.
+be read by namespace/name or ID (`gs read file --id ID`, no namespace required),
+and ProductVariant is available as `variant` (`gs list variant`,
+`gs read variant NAME`). With the explicit alpha.12 profile
+(`gitstore-alpha12-2026-11-26`), `gs list file` and `gs list serviceaccount` also
+work. A service account is cluster-scoped and list-only: the server has no
+single-service-account read, so `gs read serviceaccount` is unsupported. Create,
+update and delete for `variant`, `file` and `serviceaccount` are not implemented.
+
+Select a resource as `gs read repository docs` or `gs read repository/docs`, like
+`kubectl get kind/name`. The slash form is kind and name, never `namespace/name`:
+the namespace comes from `--namespace`, `GITSTORE_NAMESPACE` or the selected
+context. A missing resource names the kind, name and namespace, and says where the
+namespace was selected, so a wrong context namespace is easy to spot. A command run
+without the arguments it needs prints its help and exits 2.
 
 List returns one page of 1–100 objects with an opaque continuation cursor. Use
 JSON for structured resource inspection. Table is the default. The alpha.9 profile
@@ -23,6 +36,11 @@ supports full schema-exposed core JSON/YAML and conditional writable Markdown:
 `gs read product summer-shirt --authoring -o markdown`. Unrepresentable authoring
 fields fail explicitly; see [configuration and fidelity limits](configuration.md).
 Legacy resource YAML and plain Markdown presentation remain unavailable.
+
+In the table view, `Ready` shows the Ready condition's status and reason. A resource
+with no status, no conditions yet, or conditions without a Ready one is labelled
+as such, not as ready. When a command fails, `-o json` still writes the raw GraphQL
+response to stdout; the table view prints only the diagnostic.
 
 ## Supply credentials for one command
 
