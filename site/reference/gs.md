@@ -68,6 +68,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -132,6 +134,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -187,6 +191,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -245,6 +251,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -298,6 +306,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -351,6 +361,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -408,6 +420,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -464,6 +478,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -517,6 +533,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -578,6 +596,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -631,6 +651,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -684,6 +706,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -740,6 +764,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -794,6 +820,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -856,6 +884,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -909,6 +939,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -967,6 +999,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1029,6 +1063,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1106,6 +1142,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1162,6 +1200,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1227,6 +1267,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1293,6 +1335,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1356,6 +1400,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1419,6 +1465,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1475,6 +1523,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1532,6 +1582,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1592,6 +1644,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1649,6 +1703,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1705,6 +1761,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1783,6 +1841,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1860,6 +1920,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1919,6 +1981,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -1978,6 +2042,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2038,6 +2104,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2101,6 +2169,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2164,6 +2234,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2241,6 +2313,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2298,6 +2372,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2375,6 +2451,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2431,6 +2509,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2496,6 +2576,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2553,6 +2635,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2630,6 +2714,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2686,6 +2772,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2751,6 +2839,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2808,6 +2898,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2885,6 +2977,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -2941,6 +3035,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3006,6 +3102,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3063,6 +3161,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3140,6 +3240,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3196,6 +3298,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3261,6 +3365,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3318,6 +3424,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3395,6 +3503,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3451,6 +3561,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3516,6 +3628,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3573,6 +3687,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
@@ -3634,6 +3750,8 @@ Options:
           
 
   -o, --output <OUTPUT>
+          Output format; JSON and YAML use the v2 result envelope except for raw protocol output
+          
           [possible values: json, yaml, table, markdown]
 
       --wait <WAIT>
