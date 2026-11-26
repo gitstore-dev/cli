@@ -2,11 +2,11 @@
 
 Use `gs` to work with a GitStore installation or run a local GitStore deployment.
 <!-- release-docs:docs-intro:start -->
-Install the matching alpha.11 CLI/daemon pair using
+Install the matching alpha.12 CLI/daemon pair using
 [Homebrew, APT, DNF or npm](installation.md), or follow
 [building from source](contributing/building.md) for contributor builds.
 Confirm the Homebrew formula version before installing; the tap can lag a new
-release while its update is reviewed. Direct packages are pinned to alpha.11.
+release while its update is reviewed. Direct packages are pinned to alpha.12.
 <!-- release-docs:docs-intro:end -->
 
 | I want to… | Guide |

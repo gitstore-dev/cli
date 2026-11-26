@@ -3,185 +3,188 @@
   "policy": "capability-inputs-v1",
   "status": "review-required",
   "baseline": {
-    "version": "0.1.0-alpha.9",
-    "sourceCommit": "66c5a3e06a749438b4b5d18fb1fb9bfedf44a26f",
-    "fingerprint": "e61bfda797e11e1d15a3080d99d775030445ffd0c2f1e79d01ec31fd1f62b2ca"
-  },
-  "source": {
     "version": "0.1.0-alpha.11",
     "sourceCommit": "6792e9554024b40bdb705601af77c7d8abe2e834",
     "fingerprint": "1df8a0ed3ae30cdb9c373fdb9c0d4651ec49038e151f111b4696df97165e7318"
   },
-  "fingerprint": "1df8a0ed3ae30cdb9c373fdb9c0d4651ec49038e151f111b4696df97165e7318",
+  "source": {
+    "version": "0.1.0-alpha.12",
+    "sourceCommit": "c6bc32977046dea099399780cf77f005524f59e3",
+    "fingerprint": "1cab4efc24df46a62d1807f100313b70fbf2d7970c04e5983a8db6706b29c3a0"
+  },
+  "fingerprint": "1cab4efc24df46a62d1807f100313b70fbf2d7970c04e5983a8db6706b29c3a0",
   "changedInputs": [
     {
       "path": "$reference",
       "change": "modified",
-      "beforeSha256": "a3866f3cc1ca5e0dd1025edd471b33f613031fc00ca41a38d77811bf25d4a98b",
-      "afterSha256": "efd6e8bf73773b19f68d5ffd600b3e2d2c2a8773d394a93825083a71308850b1",
+      "beforeSha256": "efd6e8bf73773b19f68d5ffd600b3e2d2c2a8773d394a93825083a71308850b1",
+      "afterSha256": "655a66323ed5aabdc977c4ca5d8c1897633a8fa2e231fdeabd2395d0ab60e444",
       "beforeMode": "data",
       "afterMode": "data"
     },
     {
       "path": ".github/workflows/cli.yml",
       "change": "modified",
-      "beforeSha256": "00822cfc93eac790d0b53e56ae55575da76e4e8dc1173486cffe57b4962ae22b",
-      "afterSha256": "0db9ad274057bc415f251e6ef57c539ad33f537b536b3dbe8493b02c5646e36c",
+      "beforeSha256": "0db9ad274057bc415f251e6ef57c539ad33f537b536b3dbe8493b02c5646e36c",
+      "afterSha256": "95cc6c9e94a2a8b0474865318713567bf9a9fb99c59d37f9a5eee53a38eb3c0a",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
       "path": ".github/workflows/daemon.yml",
       "change": "modified",
-      "beforeSha256": "99e326d71eae692eca6bcce186d69de0c181e3fa3de4e717248e256d46c57c54",
-      "afterSha256": "c05197b337036d5a63cc888b8731892d9399afc3c87f67ad42189d655e01541a",
+      "beforeSha256": "c05197b337036d5a63cc888b8731892d9399afc3c87f67ad42189d655e01541a",
+      "afterSha256": "2d05a6a63903092d9c208a2ea1f771a18252a85bc86c3dcfa078d13d8c32cba3",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": ".github/workflows/docs-queue.yml",
+      "path": "crates/gs/src/auth.rs",
       "change": "modified",
-      "beforeSha256": "a30357a24e2a9c1b713b703bd00cf778bc73af85206ea99e60960f49e134272e",
-      "afterSha256": "f9cab4b90eb2aaef3af7d5445c0b30d81baa5cbb26d70610c6bbf9f5ba67e883",
+      "beforeSha256": "1f8ebd075a3383d3437504955c9923b6082c181767164b9bfecf33e629352231",
+      "afterSha256": "0bfcdbf24beeba97c8de290831ffbbd185fec43049482c420be7550da9342cf7",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "Cargo.lock",
+      "path": "crates/gs/src/authoring.rs",
       "change": "modified",
-      "beforeSha256": "f758389abd1fa14f075b4201ff491d9341a22e169e0c16a3758aaa541d83c016",
-      "afterSha256": "ea7a460296665f6f7747c65cf41b796e7aa3adf23290aaa706484b38f5e84743",
-      "beforeMode": "100644",
-      "afterMode": "100644"
-    },
-    {
-      "path": "crates/gs/Cargo.toml",
-      "change": "modified",
-      "beforeSha256": "df504be3e24cc9cbb76b5ecbb041bbf0b3c02bd86355cad6658c400305aa1302",
-      "afterSha256": "9ee53c95e3d995c5af99d3a5c14fda15a8afa9890e75dc73a34177008757a99e",
+      "beforeSha256": "013b606c337b0e353c772fb1b1db06f8f282c11086644e9f16b70001fb7cd6aa",
+      "afterSha256": "1521c21f124b782d6ddc34372e34dcc67c43e6e91b025dfbaae936ae5cf86b5a",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
       "path": "crates/gs/src/cli.rs",
       "change": "modified",
-      "beforeSha256": "cca191f5d198951121791578e93941630a6eb96bd2a6accca1345dac1ddd258c",
-      "afterSha256": "b60446c916a0f284209c18070fddd5ac0290a5ac14553ed415548c21877d2ab1",
+      "beforeSha256": "b60446c916a0f284209c18070fddd5ac0290a5ac14553ed415548c21877d2ab1",
+      "afterSha256": "e96b3f7a4dc2d26898936d6d9560615d0350f132fa4f0de6c20a113b20dfcefd",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "crates/gs/src/credentials.rs",
+      "path": "crates/gs/src/config.rs",
       "change": "modified",
-      "beforeSha256": "b03e7a6d1edf49e6ee1e316098e6125b15f767f1a5f538f76c80e4e7d7489579",
-      "afterSha256": "fa2a49340edfc2a667e38a5d7fa280ab73aa4b5092dfc10df2a6587c4ae6937f",
-      "beforeMode": "100644",
-      "afterMode": "100644"
-    },
-    {
-      "path": "crates/gs/src/git.rs",
-      "change": "modified",
-      "beforeSha256": "0721422519bc8dda1885e928abb80d373e2262f960c1b63ef2018119662f87c6",
-      "afterSha256": "cc0ebd1e634c144e865e877433b83ee5bec34a26802b87e9f8e1d1db0b8d1232",
+      "beforeSha256": "aa03d0d7cb5909e8f1bb6b675959b8abeeaf78d32a84beba1609f6621caac0cb",
+      "afterSha256": "8b4d81178616b4af38cfa63d84b7c97879b31df08eb1e87f11545b57f9c0f3f8",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
       "path": "crates/gs/src/lib.rs",
       "change": "modified",
-      "beforeSha256": "ec83dd5682a1281d76b72e9bd32e785f7fbe7bd28bb08e819ec15719019fc6b0",
-      "afterSha256": "b848f0461664ba28f6532166b3fc529052d439e1eff0ce7b2b58a5b4fe6b716c",
+      "beforeSha256": "b848f0461664ba28f6532166b3fc529052d439e1eff0ce7b2b58a5b4fe6b716c",
+      "afterSha256": "2677e23381acea1cd59870f22777faa3aac5bc8f10e468c6a5efb954b8127f1b",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
       "path": "crates/gs/src/output.rs",
       "change": "modified",
-      "beforeSha256": "5625f7fdddcafe299339823792a87cb78cd5292a02bca848841ef29fdfac320d",
-      "afterSha256": "ca94327f7f8907502c7e0601520808d4fcfed9797c5cbefdfa50c90fe14c8e33",
+      "beforeSha256": "ca94327f7f8907502c7e0601520808d4fcfed9797c5cbefdfa50c90fe14c8e33",
+      "afterSha256": "d17fcb2de6861ada8294879439b57740406687f675632ddc25e7a6dcabdf9297",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "crates/gs/src/resource_catalog.rs",
+      "path": "crates/gs/src/projections.rs",
       "change": "modified",
-      "beforeSha256": "8439a2e14cbf1149e7590507234fbfa082ad390120707e34580ed0c8137d1fe2",
-      "afterSha256": "b105ebed10281e08c4aa2f067e823e05712f71153b3fa8fb1a762e754f7fa702",
+      "beforeSha256": "896de0c0c088f4fff5e89afaae413edfc49b60d343c2c1da6d603e79d2fed40a",
+      "afterSha256": "2174c1ef727c201b1f6283b8e3f5e15edbafbffc9b23a942c0ee9b9b759f0cd4",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
       "path": "crates/gs/src/resources.rs",
       "change": "modified",
-      "beforeSha256": "7cecdc62238d0fed0bec38b0950d692592536fa9f3f8966ce09a153616334059",
-      "afterSha256": "0005a96b9123f386d64e10354a877f473f680159e9587457458d3f319db2d2a2",
+      "beforeSha256": "0005a96b9123f386d64e10354a877f473f680159e9587457458d3f319db2d2a2",
+      "afterSha256": "04ebdf0738aa74cffcc657bc4f1dfbd9539a62ae1e758dbc8b69d430bc28d186",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "docs/ADRs/0003-runtime-assets-packaging.md",
+      "path": "crates/gs/src/watch.rs",
       "change": "modified",
-      "beforeSha256": "35e95835ef0567f877b4dd3f4bb92a1753f996bf5b2162bbb017e57bc5fa8aa5",
-      "afterSha256": "0baf2059169bbc314f2610738223dc48cdd86b10d1d46c5c55812caac37c981a",
+      "beforeSha256": "5ceb4e9ab794796fe6af426f117a1d420fb01f1160fb189eeb78cde0d7470622",
+      "afterSha256": "ff4bedd67f31112579311b889507c9eb053cdc8f6491930084e1aab2ccca6ca9",
       "beforeMode": "100644",
+      "afterMode": "100644"
+    },
+    {
+      "path": "daemon/cmake/Dependencies.cmake",
+      "change": "modified",
+      "beforeSha256": "731a4ea9b761a9eed14a13f70c6ba65fc30bc71d42b9eca41034f7ce3a5e9df2",
+      "afterSha256": "041549816cf4aefde624c3244958074a48a48d42bfc58bb3c58a20de4c653b72",
+      "beforeMode": "100644",
+      "afterMode": "100644"
+    },
+    {
+      "path": "daemon/cmake/Libcrun.cmake",
+      "change": "modified",
+      "beforeSha256": "3f8182163b7cb38e91318f3140e5a8f16f620ca66248f8e6b295be3a5f2d88e8",
+      "afterSha256": "a58550f0437cc1b8b9766e88d4054c3659525ed4eeb272c30b6713126139b2de",
+      "beforeMode": "100644",
+      "afterMode": "100644"
+    },
+    {
+      "path": "daemon/cmake/PrefetchSource.cmake",
+      "change": "added",
+      "beforeSha256": null,
+      "afterSha256": "62abd681d880a7e14dfdac385a80358fd34971c95aeabc1b6c128bf75b50a132",
+      "beforeMode": null,
       "afterMode": "100644"
     },
     {
       "path": "docs/contracts/cli-behavior.md",
       "change": "modified",
-      "beforeSha256": "47418bdd9b04c6f46e5e5580ec6557a1a72f493976b41f3c1d245b01c33c092f",
-      "afterSha256": "230a1d8e89d56128c4eb5da0e13378b0ea878f2cabf8c70c92aea047e79f6c78",
+      "beforeSha256": "230a1d8e89d56128c4eb5da0e13378b0ea878f2cabf8c70c92aea047e79f6c78",
+      "afterSha256": "19851d17a6863aa3161bf6bc9dfc2cf672ad6174dab3361651588337acea0e49",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "docs/contributing/validation/remote-cli.md",
+      "path": "docs/contracts/command-matrix.md",
       "change": "modified",
-      "beforeSha256": "2fa168c051cfc11344df2c153d20c0b8b1d856b280a5d25fba1a7b0e8ea4d1a2",
-      "afterSha256": "bb3acda4ba5ce40c50d51a75bec122982f0774a486bb693a5aa7e677906875a9",
+      "beforeSha256": "7938847edd442a4c49e184b9a9e84bdbe947ef521c53ffaf5874588912a3f547",
+      "afterSha256": "aeab88f958461405fba0fa573eb1fa28a6a00bb03ba1e94cb3ba031c572550c5",
       "beforeMode": "100644",
       "afterMode": "100644"
     },
     {
-      "path": "scripts/build-release-platform.py",
+      "path": "docs/contracts/dependencies.md",
       "change": "modified",
-      "beforeSha256": "5acab941f96c731840ed8d40c3de5dccea15c9b70d16cbda8ccd1b08705d2a54",
-      "afterSha256": "eaf5bbf3a59054b3197e96c34de5944d5d58c6b67512e72c313858372f32ab81",
-      "beforeMode": "100755",
-      "afterMode": "100755"
+      "beforeSha256": "8c7a09aac81abbd109cc1be19ced33ca4271e2f46ca42909289c571c84fcb03c",
+      "afterSha256": "a9ecc09f70261b494d18a2e812358fbcb76e5d68714cf8a3a51a001be46b69f1",
+      "beforeMode": "100644",
+      "afterMode": "100644"
+    },
+    {
+      "path": "runtime/profiles/alpha12-evidence.json",
+      "change": "added",
+      "beforeSha256": null,
+      "afterSha256": "ea96f3c52ecbc7016fd8270bb7987725a0fc86149b70a532bacf61c83342ad4a",
+      "beforeMode": null,
+      "afterMode": "100644"
     }
   ],
   "ignoredChanges": [
     ".release-please-manifest.json",
     "CHANGELOG.md",
+    "CONTRIBUTING.md",
     "Formula/gitstore.rb",
     "README.md",
-    "crates/gs/tests/daemon_inspect.rs",
-    "crates/gs/tests/daemon_lifecycle.rs",
-    "crates/gs/tests/daemon_migrate.rs",
-    "crates/gs/tests/daemon_validate.rs",
-    "crates/gs/tests/export.rs",
-    "crates/gs/tests/git_http.rs",
-    "crates/gs/tests/images.rs",
-    "crates/gs/tests/local.rs",
-    "crates/gs/tests/output_v2.rs",
-    "crates/gs/tests/resource_catalog.rs",
-    "crates/gs/tests/support/git_http.rs",
+    "crates/gs/tests/error_output.rs",
+    "crates/gs/tests/gates.rs",
+    "crates/gs/tests/list_kinds.rs",
+    "crates/gs/tests/resource_ux.rs",
     "docs/README.md",
     "docs/installation.md",
-    "scripts/test_image_commands.py",
-    "scripts/test_integration.py",
-    "scripts/test_live.py",
-    "scripts/test_remote.py",
     "site/content-audit.json",
+    "site/reference/gs.md",
     "site/release-evidence.json",
     "site/release.json",
     "specs/002-m1-remote-cli/spec.md",
-    "specs/002-m1-remote-cli/tasks.md",
-    "tests/integration/compose-latest.yml",
-    "tests/packaging/test_release_downloads.py",
-    "tests/packaging/test_runtime_envelope.py",
-    "tests/runtime/support.py"
+    "specs/002-m1-remote-cli/tasks.md"
   ],
   "auditNoticesSha256": "601cc56d9fbe22a25c9b58a83c101c342e02d382dc4980bb8ffe916b010fd4f8",
   "authoredSources": {
