@@ -65,6 +65,11 @@ Legacy configuration retains its flat mapping. Controlled selector tests pass;
 successful shipped File hydration remains an acceptance requirement. This closes
 the client selector gap, not File list/upload/LFS or credential readiness.
 
+GitStore alpha.12 adds `files(namespace)`; the CLI lists Files under the explicit
+`gitstore-alpha12-2026-11-26` profile ([evidence](../../runtime/profiles/alpha12-evidence.json)).
+That closes the list gap only. Upload, payload/LFS and credential readiness remain open,
+so DEP-007 stays open.
+
 Confirm public list separately from upload negotiation; validate transfer auth/checksum/size/retention, manifest partial failure and LFS batch/missing objects. No payload command inferred from metadata/source types.
 
 ## DEP-008

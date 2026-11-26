@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "profile": "gitstore-alpha12-2026-11-26",
+  "release": "v0.1.0-alpha.12",
+  "serverRevision": "66d9b3c13eacbed1b8487b8c4d6b0173b4cbcad2",
+  "publishedAt": "2026-11-25T18:53:55Z",
+  "releaseUrl": "https://github.com/gitstore-dev/GitStore/releases/tag/v0.1.0-alpha.12",
+  "baselineProfile": "gitstore-alpha9-2026-11-05",
+  "baselineRevision": "68f8471edc947e417c98b6e8299a1367ab6b20da",
+  "alpha11Revision": "b9da925e3401b9d55713ff4620262a5c654b3740",
+  "scope": "Client read/list contract only: committed GraphQL SDL at the revisions above plus one read-only live introspection and query replay. No mutation, watch or write behavior is verified.",
+  "sourceEvidence": [
+    {
+      "path": "shared/schemas/admin/file.graphqls",
+      "alpha12GitBlobOid": "ae71dcc3eb410861e4669a6ddbfb5a94e2d2d000",
+      "alpha11GitBlobOid": "ae71dcc3eb410861e4669a6ddbfb5a94e2d2d000",
+      "alpha9GitBlobOid": "07b8ca37941a0f06f721f3127be10ea4b2e0b69c",
+      "identicalAlpha11ToAlpha12": true,
+      "changedSinceAlpha9": true,
+      "url": "https://github.com/gitstore-dev/GitStore/blob/66d9b3c13eacbed1b8487b8c4d6b0173b4cbcad2/shared/schemas/admin/file.graphqls"
+    },
+    {
+      "path": "shared/schemas/admin/product_variant.graphqls",
+      "alpha12GitBlobOid": "2acf8f28c20033cb413b8bb245aa6858594aaa8e",
+      "alpha11GitBlobOid": "2acf8f28c20033cb413b8bb245aa6858594aaa8e",
+      "alpha9GitBlobOid": "7378924a84fd54a1c4a06f0cb0070ff7d09b1546",
+      "identicalAlpha11ToAlpha12": true,
+      "changedSinceAlpha9": true,
+      "url": "https://github.com/gitstore-dev/GitStore/blob/66d9b3c13eacbed1b8487b8c4d6b0173b4cbcad2/shared/schemas/admin/product_variant.graphqls"
+    },
+    {
+      "path": "shared/schemas/admin/serviceaccount.graphqls",
+      "alpha12GitBlobOid": "0941ce9224c312b49643fb222529eb3f7168b9e4",
+      "alpha11GitBlobOid": "0941ce9224c312b49643fb222529eb3f7168b9e4",
+      "alpha9GitBlobOid": "e3340135702258f0c065495ac04c2811b02cf1c9",
+      "identicalAlpha11ToAlpha12": true,
+      "changedSinceAlpha9": true,
+      "url": "https://github.com/gitstore-dev/GitStore/blob/66d9b3c13eacbed1b8487b8c4d6b0173b4cbcad2/shared/schemas/admin/serviceaccount.graphqls"
+    }
+  ],
+  "verifiedSourceContracts": {
+    "variant": {
+      "userKind": "variant",
+      "upstreamType": "ProductVariant",
+      "read": "productVariant(by: ProductVariantBy!)",
+      "list": "productVariants(namespace: String!, first, after, last, before)",
+      "availableSince": "alpha.9",
+      "clientProjection": "core subset: title, sku, productRef, selectedOptions, inventory, status conditions, body; pricing, media and resolved status are not projected",
+      "mutations": "not implemented in the CLI"
+    },
+    "file": {
+      "list": "files(namespace: String!, first, after, last, before): FileConnection!",
+      "availableSince": "after alpha.9",
+      "remainingDep007": "upload, payload/LFS and credential readiness"
+    },
+    "serviceaccount": {
+      "list": "serviceAccounts(first, after, last, before): ServiceAccountConnection!",
+      "scope": "cluster",
+      "availableSince": "after alpha.9",
+      "singleRead": "none",
+      "shape": "id, apiVersion, kind, metadata, keyIDs, groups, lifecycle; no spec, status or body",
+      "mutations": "exist upstream; list-only in the CLI"
+    }
+  },
+  "alpha9ToAlpha12Compatibility": {
+    "method": "Diff of shared/schemas/**/*.graphqls between the baseline and alpha.12 revisions",
+    "existingKindReadFieldsRemoved": false,
+    "changes": [
+      "additions: files list, FileConnection, serviceAccounts list, ProductVariant and Collection watch subscriptions, rbac/translation/user schemas",
+      "ServiceAccount: Actor status replaced by lifecycle and groups; Node interface added",
+      "optional input additions: resource-termination uid, RBAC resourceVersion",
+      "documentation wording"
+    ],
+    "watchSemanticsChanged": true,
+    "watchHandling": "Typed watch keeps requiring the alpha.9 profile; alpha.12 bookmark/resume semantics are not verified"
+  },
+  "liveCheck": {
+    "server": "0.1.0-alpha.11 (revision b9da925e3401b9d55713ff4620262a5c654b3740)",
+    "date": "2026-11-26",
+    "method": "Read-only introspection of the Query type and replay of the four generated queries (list variant, read variant, list file, list serviceaccount)",
+    "result": "All four queries passed GraphQL validation. Variant and file lists returned no rows, so those projections were not exercised on real nodes; the service account list returned one node with the full projection."
+  }
+}

@@ -47,6 +47,9 @@ fn metadata(kind: Kind) -> Result<(&'static str, &'static str)> {
         Kind::Collection => Err(Error::unsupported(
             "DEP-002: Collection has no public typed watch",
         )),
+        Kind::Variant | Kind::ServiceAccount => Err(Error::unsupported(
+            "watch for variant and serviceaccount is not implemented in the CLI",
+        )),
     }
 }
 

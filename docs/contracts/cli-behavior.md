@@ -298,3 +298,29 @@ checkpoints. Expiry/gaps require explicit recovery; duplicates are possible.
 ID watches remain DEP-018 and Collection remains DEP-002. See
 [watch semantics](../watch.md); no snapshot or immediate existing-socket logout
 revocation guarantee is implied.
+
+## Alpha.12 remote contract selection
+
+`contract_profile = "gitstore-alpha12-2026-11-26"` accepts everything the alpha.9 profile
+does (reads, hydrated export, authoring, auth, projections) and adds three list capabilities.
+Evidence: [alpha.12 source contracts](../../runtime/profiles/alpha12-evidence.json); the
+three schema files are byte-identical in GitStore alpha.11 and alpha.12, and the generated
+queries passed GraphQL validation against a running alpha.11 server.
+
+| Command | Server field | Profile |
+| --- | --- | --- |
+| `gs list variant`, `gs read variant <name>` | `productVariants(namespace)`, `productVariant(by)` | alpha.9 or newer |
+| `gs list file` | `files(namespace)` | alpha.12 |
+| `gs list serviceaccount` | `serviceAccounts` (cluster-scoped, no namespace) | alpha.12 |
+
+`variant` is the user-facing name for upstream `ProductVariant`, as `category` is for
+`CategoryTaxonomy`. Its projection is a core subset (title, sku, productRef, selectedOptions,
+inventory, status conditions, body); pricing, media and resolved status are not projected.
+`serviceaccount` is an Actor, not a catalogue resource: it has no spec, status or body, and
+upstream has no single-read query, so `gs read serviceaccount` fails unsupported and points
+to `gs list serviceaccount`. A capability newer than the selected profile fails unsupported
+before any request. Mutations for `variant` and `file`, and any `serviceaccount` mutation,
+are not implemented; delete, create and watch for these kinds fail unsupported. Typed watch
+keeps requiring the alpha.9 profile because alpha.12 changed bookmark and resume semantics.
+Upstream File list does not close DEP-007: upload, payload/LFS and credential readiness
+remain open.

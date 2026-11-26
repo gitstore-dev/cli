@@ -159,11 +159,13 @@ fn dispatch(cli: &Cli) -> Result<()> {
             }
         }
         Command::List(a) => {
-            resources::list_request(
+            // Shape check only: the profile lives in the config, which is not read yet.
+            resources::list_request_for_profile(
                 resources::Kind::parse(&a.kind)?,
                 Some("preflight"),
                 a.first,
                 a.after.as_deref(),
+                None,
             )?;
         }
         _ => {}
@@ -270,15 +272,13 @@ fn dispatch(cli: &Cli) -> Result<()> {
         Command::Read(args) => {
             let s = &args.selection;
             e.profile()?;
-            if args.authoring
-                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
-            {
+            if args.authoring && !config::alpha9_or_later(e.context.contract_profile.as_deref()) {
                 return Err(Error::unsupported(
                     "Authoring export requires the alpha.9 profile",
                 ));
             }
             if cli.format() == Format::Yaml
-                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+                && !config::alpha9_or_later(e.context.contract_profile.as_deref())
             {
                 return Err(Error::unsupported(
                     "DEP-005: hydrated YAML requires the alpha.9 profile",
@@ -315,18 +315,19 @@ fn dispatch(cli: &Cli) -> Result<()> {
         Command::List(a) => {
             e.profile()?;
             if cli.format() == Format::Yaml
-                && e.context.contract_profile.as_deref() != Some("gitstore-alpha9-2026-11-05")
+                && !config::alpha9_or_later(e.context.contract_profile.as_deref())
             {
                 return Err(Error::unsupported(
                     "DEP-005: hydrated YAML requires the alpha.9 profile",
                 ));
             }
             let kind = resources::Kind::parse(&a.kind)?;
-            let _ = resources::list_request(
+            let _ = resources::list_request_for_profile(
                 kind,
                 e.context.namespace.as_deref(),
                 a.first,
                 a.after.as_deref(),
+                e.context.contract_profile.as_deref(),
             )?;
             let client = graphql::Client::new(
                 &e.context.endpoint,

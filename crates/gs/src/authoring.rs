@@ -149,8 +149,8 @@ fn parse_resolved(
     let kind = match front.kind.as_str() {
         "Product" => Kind::Product,
         "CategoryTaxonomy" => Kind::Category,
-        "Namespace" if profile == Some("gitstore-alpha9-2026-11-05") => Kind::Namespace,
-        "Repository" if profile == Some("gitstore-alpha9-2026-11-05") => Kind::Repository,
+        "Namespace" if crate::config::alpha9_or_later(profile) => Kind::Namespace,
+        "Repository" if crate::config::alpha9_or_later(profile) => Kind::Repository,
         "Namespace" | "Repository" => return Err(Error::unsupported("DEP-005")),
         "Collection" => return Err(Error::unsupported("DEP-002")),
         _ => return Err(Error::unsupported("DEP-006")),

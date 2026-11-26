@@ -14,6 +14,10 @@ pub enum Kind {
     Category,
     Collection,
     File,
+    /// User-facing `variant`; upstream `ProductVariant` (like `category` for `CategoryTaxonomy`).
+    Variant,
+    /// List-only: upstream has no single-read query and the CLI does not implement its mutations.
+    ServiceAccount,
 }
 impl Kind {
     pub fn parse(s: &str) -> Result<Self> {
@@ -24,12 +28,15 @@ impl Kind {
             "category" => Ok(Self::Category),
             "collection" => Ok(Self::Collection),
             "file" => Ok(Self::File),
+            "variant" => Ok(Self::Variant),
+            "serviceaccount" => Ok(Self::ServiceAccount),
             _ => Err(Error::unsupported(
                 "verified kind mapping required; DEP-006",
             )),
         }
     }
-    pub fn field(self) -> &'static str {
+    /// The name users type, and the one messages use.
+    pub fn name(self) -> &'static str {
         match self {
             Self::Namespace => "namespace",
             Self::Repository => "repository",
@@ -37,7 +44,21 @@ impl Kind {
             Self::Category => "category",
             Self::Collection => "collection",
             Self::File => "file",
+            Self::Variant => "variant",
+            Self::ServiceAccount => "serviceaccount",
         }
+    }
+    /// The singular GraphQL query field.
+    pub fn field(self) -> &'static str {
+        match self {
+            Self::Variant => "productVariant",
+            Self::ServiceAccount => "serviceAccount",
+            other => other.name(),
+        }
+    }
+    /// Cluster-scoped kinds have no namespace argument.
+    pub fn cluster_scoped(self) -> bool {
+        matches!(self, Self::Namespace | Self::ServiceAccount)
     }
     pub fn type_name(self) -> &'static str {
         match self {
@@ -47,6 +68,8 @@ impl Kind {
             Self::Category => "Category",
             Self::Collection => "Collection",
             Self::File => "File",
+            Self::Variant => "ProductVariant",
+            Self::ServiceAccount => "ServiceAccount",
         }
     }
     pub fn manifest(self) -> &'static str {
@@ -56,18 +79,42 @@ impl Kind {
             self.type_name()
         }
     }
-    fn plural(self) -> Result<&'static str> {
+    fn plural(self) -> &'static str {
         match self {
-            Self::Namespace => Ok("namespaces"),
-            Self::Repository => Ok("repositories"),
-            Self::Product => Ok("products"),
-            Self::Category => Ok("categories"),
-            Self::Collection => Ok("collections"),
-            Self::File => Err(Error::unsupported("DEP-007: no File list mapping")),
+            Self::Namespace => "namespaces",
+            Self::Repository => "repositories",
+            Self::Product => "products",
+            Self::Category => "categories",
+            Self::Collection => "collections",
+            Self::File => "files",
+            Self::Variant => "productVariants",
+            Self::ServiceAccount => "serviceAccounts",
+        }
+    }
+    /// Capabilities newer than the selected contract profile fail before any request.
+    /// `None` is the pre-config shape check and never gates.
+    fn check_profile(self, listing: bool, profile: Option<&str>) -> Result<()> {
+        let Some(_) = profile else {
+            return Ok(());
+        };
+        match self {
+            Self::Variant if !crate::config::alpha9_or_later(profile) => Err(Error::unsupported(
+                "variant requires the alpha.9 or newer contract profile",
+            )),
+            Self::File if listing && !crate::config::alpha12_or_later(profile) => Err(
+                Error::unsupported("DEP-007: File list requires the alpha.12 contract profile"),
+            ),
+            Self::ServiceAccount if !crate::config::alpha12_or_later(profile) => Err(
+                Error::unsupported("serviceaccount list requires the alpha.12 contract profile"),
+            ),
+            _ => Ok(()),
         }
     }
     pub fn fields(self) -> String {
-        let metadata = if self == Self::Namespace {
+        if self == Self::ServiceAccount {
+            return "id apiVersion kind metadata { name uid resourceVersion generation revision } keyIDs groups lifecycle { state }".into();
+        }
+        let metadata = if self.cluster_scoped() {
             "name uid resourceVersion generation revision"
         } else {
             "name namespace uid resourceVersion generation revision"
@@ -75,8 +122,9 @@ impl Kind {
         let spec = match self {
             Self::Namespace => "",
             Self::Repository => "spec { defaultBranch }",
-            Self::Product | Self::Category | Self::Collection => "spec { title }",
+            Self::Product | Self::Category | Self::Collection | Self::Variant => "spec { title }",
             Self::File => "spec { contentType }",
+            Self::ServiceAccount => "",
         };
         format!("id apiVersion kind metadata {{ {metadata} }} body {spec}")
     }
@@ -84,6 +132,12 @@ impl Kind {
         match self {
             Self::Collection => Err(Error::unsupported("DEP-002")),
             Self::File => Err(Error::unsupported("DEP-007")),
+            Self::Variant => Err(Error::unsupported(
+                "variant mutations are not implemented in the CLI",
+            )),
+            Self::ServiceAccount => {
+                Err(Error::unsupported("serviceaccount is list-only in the CLI"))
+            }
             _ => Ok(()),
         }
     }
@@ -97,6 +151,11 @@ pub fn selection(s: &Selection, n: Option<&str>) -> Result<Request> {
 }
 fn selection_fields(s: &Selection, n: Option<&str>, fields: &str) -> Result<Request> {
     let k = Kind::parse(&s.kind)?;
+    if k == Kind::ServiceAccount {
+        return Err(Error::unsupported(
+            "serviceaccount has no single-read query; use gs list serviceaccount",
+        ));
+    }
     if s.name.is_some() == s.id.is_some() {
         return Err(Error::usage("Select exactly one name or --id"));
     }
@@ -145,8 +204,10 @@ fn selection_fields(s: &Selection, n: Option<&str>, fields: &str) -> Result<Requ
     };
     graphql::validate(json!({"query":query,"variables":vars}))
 }
+/// A list request for a context with no explicit newer profile: the oldest contract, so
+/// capabilities added later (File and ServiceAccount lists, variants) are unsupported.
 pub fn list_request(k: Kind, n: Option<&str>, first: u16, after: Option<&str>) -> Result<Request> {
-    list_request_for_profile(k, n, first, after, None)
+    list_request_for_profile(k, n, first, after, Some("m0-2026-10-27"))
 }
 pub fn list_request_for_profile(
     k: Kind,
@@ -158,14 +219,15 @@ pub fn list_request_for_profile(
     if !(1..=100).contains(&first) {
         return Err(Error::usage("Page size must be 1..100"));
     }
-    let field = k.plural()?;
-    let (param, arg) = if k == Kind::Namespace {
+    k.check_profile(true, profile)?;
+    let field = k.plural();
+    let (param, arg) = if k.cluster_scoped() {
         ("", "")
     } else {
         (",$namespace:String!", "namespace:$namespace,")
     };
     let mut vars = json!({"first":first,"after":after});
-    if k != Kind::Namespace {
+    if !k.cluster_scoped() {
         vars["namespace"] = json!(namespace(n)?)
     }
     graphql::validate(
@@ -201,7 +263,8 @@ pub fn selection_for_profile(
     profile: Option<&str>,
 ) -> Result<Request> {
     let kind = Kind::parse(&s.kind)?;
-    if profile != Some("gitstore-alpha9-2026-11-05") || kind != Kind::File {
+    kind.check_profile(false, profile)?;
+    if !crate::config::alpha9_or_later(profile) || kind != Kind::File {
         return selection_fields(s, n, &profile_fields(kind, profile));
     }
     if s.name.is_some() == s.id.is_some() {
@@ -226,7 +289,7 @@ pub fn selection_for_profile(
     }))
 }
 fn profile_fields(kind: Kind, profile: Option<&str>) -> String {
-    if profile == Some("gitstore-alpha9-2026-11-05") {
+    if crate::config::alpha9_or_later(profile) {
         crate::projections::fields(kind)
     } else {
         kind.fields()
@@ -246,7 +309,7 @@ pub fn explain_not_found(
     if error.code != "NOT_FOUND" {
         return error;
     }
-    let kind_name = kind.field();
+    let kind_name = kind.name();
     let message = match (kind == Kind::Namespace, listing, name, id, namespace) {
         (_, _, None, Some(id), _) => format!("{kind_name} with id \"{id}\" was not found"),
         (true, ..) => format!(
@@ -300,7 +363,7 @@ pub fn list(
         &list_request_for_profile(k, n, first, after, profile)?,
         f,
     )?;
-    let data = &body["data"][k.plural()?];
+    let data = &body["data"][k.plural()];
     let edges = data["edges"]
         .as_array()
         .ok_or_else(|| Error::remote("Missing connection edges"))?;
@@ -401,5 +464,74 @@ mod not_found_tests {
             false,
         );
         assert_eq!((e.code, e.message.as_str()), ("CREDENTIAL", "denied"));
+    }
+    #[test]
+    fn variant_and_serviceaccount_map_to_upstream_names() {
+        let v = Kind::parse("variant").unwrap();
+        assert_eq!(
+            (v.name(), v.field(), v.type_name(), v.manifest(), v.plural()),
+            (
+                "variant",
+                "productVariant",
+                "ProductVariant",
+                "ProductVariant",
+                "productVariants"
+            )
+        );
+        let a = Kind::parse("serviceaccount").unwrap();
+        assert!(a.cluster_scoped() && !v.cluster_scoped());
+        assert_eq!(a.plural(), "serviceAccounts");
+        for unknown in [
+            "productvariant",
+            "variants",
+            "service-account",
+            "ServiceAccount",
+        ] {
+            assert!(Kind::parse(unknown).is_err(), "{unknown}");
+        }
+    }
+    #[test]
+    fn newer_capabilities_are_gated_by_profile_and_none_only_checks_shape() {
+        use crate::config::{ALPHA9, ALPHA12};
+        let m0 = Some("m0-2026-10-27");
+        assert!(Kind::Variant.check_profile(true, m0).is_err());
+        assert!(Kind::Variant.check_profile(true, Some(ALPHA9)).is_ok());
+        assert!(Kind::File.check_profile(true, Some(ALPHA9)).is_err());
+        assert!(Kind::File.check_profile(true, Some(ALPHA12)).is_ok());
+        assert!(
+            Kind::File.check_profile(false, Some(ALPHA9)).is_ok(),
+            "File reads predate alpha.12"
+        );
+        assert!(
+            Kind::ServiceAccount
+                .check_profile(true, Some(ALPHA9))
+                .is_err()
+        );
+        assert!(
+            Kind::ServiceAccount
+                .check_profile(true, Some(ALPHA12))
+                .is_ok()
+        );
+        for kind in [Kind::Variant, Kind::File, Kind::ServiceAccount] {
+            assert!(kind.check_profile(true, None).is_ok());
+        }
+    }
+    #[test]
+    fn not_found_names_variants_by_their_user_facing_kind() {
+        let e = explain_not_found(
+            Error::new(4, "NOT_FOUND", "x"),
+            Kind::Variant,
+            Some("hat-red"),
+            None,
+            Some("shop"),
+            "context \"one\"",
+            false,
+        );
+        assert!(
+            e.message
+                .starts_with("variant \"hat-red\" was not found in namespace \"shop\""),
+            "{}",
+            e.message
+        );
     }
 }
